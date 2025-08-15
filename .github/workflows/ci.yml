@@ -16,6 +16,8 @@ jobs:
     
     steps:
     - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
     
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
@@ -71,13 +73,14 @@ jobs:
     
     steps:
     - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
     
     - name: Setup Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-        cache-dependency-path: vespera-utilities/package-lock.json
     
     - name: Install dependencies
       working-directory: vespera-utilities
@@ -101,13 +104,14 @@ jobs:
     
     steps:
     - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
     
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'npm'
-        cache-dependency-path: plugins/Obsidian/Vespera-Scriptorium/package-lock.json
     
     - name: Install dependencies
       working-directory: plugins/Obsidian/Vespera-Scriptorium
@@ -129,6 +133,8 @@ jobs:
     
     steps:
     - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
     
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -170,6 +176,8 @@ jobs:
     
     steps:
     - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
     
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -206,6 +214,8 @@ jobs:
     
     steps:
     - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
     
     - name: Set up Python
       uses: actions/setup-python@v5
