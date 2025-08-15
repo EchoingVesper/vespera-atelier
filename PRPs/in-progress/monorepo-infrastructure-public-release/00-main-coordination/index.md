@@ -56,6 +56,13 @@ The systematic approach addresses user-facing issues first (Priority 1: Onboardi
 **Issue**: No ongoing infrastructure monitoring or automated maintenance procedures  
 **Deliverables**: Health monitoring, automated maintenance procedures, dependency management automation
 
+### Priority 5: Codex Protocol & Unified View System (Week 2)
+**Location**: [05-codex-protocol-unified-view-system/](../05-codex-protocol-unified-view-system/README.md)  
+**Status**: [DRAFT]  
+**Orchestrator Tasks**: `{To be assigned}`  
+**Issue**: No shared virtual file organization system between Vespera Scriptorium and Obsidian plugin  
+**Deliverables**: Codex Protocol implementation, virtual view system, vespera-utilities package with 5+ view types
+
 ## Multi-Agent Coordination Structure
 
 **Orchestrator Role**: Primary coordination hub for all specialist agents
@@ -78,7 +85,7 @@ The systematic approach addresses user-facing issues first (Priority 1: Onboardi
 ## Success Metrics
 
 **Completion Criteria**:
-- [ ] All 4 priority areas completed successfully
+- [ ] All 5 priority areas completed successfully
 - [ ] All orchestrator artifacts stored and synthesized
 - [ ] All deliverables meet quality standards
 - [ ] GitHub Issue #1 resolved - users can successfully run `pnpm install`
@@ -104,6 +111,7 @@ The systematic approach addresses user-facing issues first (Priority 1: Onboardi
 - Priority 2: [02-github-actions-cicd/index.md](../02-github-actions-cicd/index.md)
 - Priority 3: [03-documentation-public-consumption/index.md](../03-documentation-public-consumption/index.md)
 - Priority 4: [04-monitoring-maintenance-setup/index.md](../04-monitoring-maintenance-setup/index.md)
+- Priority 5: [05-codex-protocol-unified-view-system/README.md](../05-codex-protocol-unified-view-system/README.md)
 
 **Coordination Tools**:
 - Master Checklist: [tracking/checklist.md](tracking/checklist.md)
