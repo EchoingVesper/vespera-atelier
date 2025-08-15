@@ -50,7 +50,7 @@ jobs:
             return missing
         
         missing_docs = []
-        for root, dirs, files in os.walk('mcp_task_orchestrator'):
+        for root, dirs, files in os.walk('vespera_scriptorium'):
             for file in files:
                 if file.endswith('.py') and not file.startswith('__'):
                     filepath = os.path.join(root, file)
@@ -95,12 +95,12 @@ jobs:
     - name: Check cyclomatic complexity
       run: |
         echo "Checking code complexity..."
-        uv run radon cc mcp_task_orchestrator -a -nc --total-average
+        uv run radon cc vespera_scriptorium -a -nc --total-average
         
     - name: Check maintainability index
       run: |
         echo "Checking maintainability index..."
-        uv run radon mi mcp_task_orchestrator -nc
+        uv run radon mi vespera_scriptorium -nc
 
   performance:
     runs-on: ubuntu-latest

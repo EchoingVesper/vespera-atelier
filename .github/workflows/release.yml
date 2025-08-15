@@ -33,7 +33,7 @@ jobs:
       run: uv sync --all-extras
         
     - name: Run full test suite
-      run: uv run pytest --cov=mcp_task_orchestrator --tb=short
+      run: uv run pytest --cov=vespera_scriptorium --tb=short
       
     - name: Run security validation
       run: uv run pytest tests/security/ -v

@@ -41,20 +41,20 @@ jobs:
     - name: Run linting
       working-directory: packages/vespera-scriptorium
       run: |
-        black --check mcp_task_orchestrator/
-        isort --check-only mcp_task_orchestrator/
-        flake8 mcp_task_orchestrator/
+        black --check vespera_scriptorium/
+        isort --check-only vespera_scriptorium/
+        flake8 vespera_scriptorium/
     
     - name: Run type checking
       working-directory: packages/vespera-scriptorium
       continue-on-error: true  # Allow mypy to fail for now
       run: |
-        mypy mcp_task_orchestrator/
+        mypy vespera_scriptorium/
     
     - name: Run tests
       working-directory: packages/vespera-scriptorium
       run: |
-        pytest tests/unit/ tests/integration/test_complete_task.py tests/integration/test_orchestrator.py tests/integration/test_task_execution.py -v --cov=mcp_task_orchestrator --cov-report=xml
+        pytest tests/unit/ tests/integration/test_complete_task.py tests/integration/test_orchestrator.py tests/integration/test_task_execution.py -v --cov=vespera_scriptorium --cov-report=xml
     
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3
@@ -80,8 +80,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-        cache-dependency-path: 'vespera-utilities/package-lock.json'
     
     - name: Install dependencies
       working-directory: vespera-utilities
@@ -112,8 +110,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: 'plugins/Obsidian/Vespera-Scriptorium/package-lock.json'
     
     - name: Install dependencies
       working-directory: plugins/Obsidian/Vespera-Scriptorium
@@ -147,8 +143,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: 'vespera-utilities/package-lock.json'
     
     - name: Install Python dependencies
       working-directory: packages/vespera-scriptorium
@@ -170,7 +164,7 @@ jobs:
       working-directory: packages/vespera-scriptorium
       run: |
         # Test basic CLI functionality
-        python -m mcp_task_orchestrator_cli --help
+        python -m vespera_scriptorium_cli --help
         vespera-scriptorium --help
 
   # Security and quality checks
@@ -195,7 +189,7 @@ jobs:
     - name: Run Bandit security scan
       working-directory: packages/vespera-scriptorium
       run: |
-        bandit -r mcp_task_orchestrator/ -f json -o bandit-report.json || true
+        bandit -r vespera_scriptorium/ -f json -o bandit-report.json || true
     
     - name: Check for known vulnerabilities
       working-directory: packages/vespera-scriptorium
