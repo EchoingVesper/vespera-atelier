@@ -109,14 +109,13 @@ jobs:
         password: ${{ secrets.PYPI_API_TOKEN }}
         
     - name: Create GitHub Release
-      uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Vespera Scriptorium ${{ github.ref }}
-        body: |
-          ## Vespera Scriptorium Release
+      run: |
+        TAG_NAME=${GITHUB_REF#refs/tags/}
+        gh release create $TAG_NAME dist/* \
+          --title "Vespera Scriptorium $TAG_NAME" \
+          --notes "## Vespera Scriptorium Release
           
           This release includes:
           - Full MCP orchestration capabilities
@@ -125,15 +124,13 @@ jobs:
           - Professional documentation and guides
           
           ### Installation
-          ```bash
+          \`\`\`bash
           pip install vespera-scriptorium
-          ```
+          \`\`\`
           
           ### Quick Start
-          ```bash
+          \`\`\`bash
           vespera-scriptorium --server
-          ```
+          \`\`\`
           
-          See the [documentation](https://github.com/your-org/vespera-atelier/tree/main/packages/vespera-scriptorium) for full setup instructions.
-        draft: false
-        prerelease: false
+          See the [documentation](https://github.com/EchoingVesper/vespera-atelier/tree/main/packages/vespera-scriptorium) for full setup instructions."
