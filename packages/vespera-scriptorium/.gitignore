@@ -1,0 +1,172 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyc
+*$py.class
+
+# Generated example roles file
+example_roles.yaml
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Virtual environments
+venv/
+.venv*/
+env/
+ENV/
+test_env/
+clean_test_env/
+
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+.pypirc
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+test_results/
+performance_reports/
+
+# Databases
+*.db
+*.sqlite3
+*.db-shm
+*.db-wal
+data/*.db
+data/*.db-*
+
+# Logs
+*.log
+logs/
+
+# Task Orchestrator persistence
+.task_orchestrator/
+.task_orchestrator/tasks/active/
+.task_orchestrator/tasks/archive/
+.task_orchestrator/locks/
+.task_orchestrator/logs/
+
+# Backup files
+backup_obsolete_files/
+data/backups/*.bak*
+backups/
+archives/
+.claude/commands-backup-*/
+.migration-temp/
+# PRPs/completed/ - Intentionally tracked for historical reference
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+.cursor/
+.windsurf/
+.continue/
+
+# Local configuration
+.local/
+local_settings.py
+.tools/
+
+# Claude Code - Include commands and settings in version control
+# Exclude only temporary files and user-specific state
+.claude/logs/
+.claude/temp/
+.claude/cache/
+.claude/session/
+.claude/.mcp-session-*
+.claude/*-session.md
+.claude/settings.local.json
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Documentation builds
+docs/_build/
+site/
+
+# Cache directories
+.cache/
+.pytest_cache/
+
+# Development artifacts
+*.tmp
+*.temp
+.benchmark_results/
+.temp_cleanup/
+
+# Backup files
+*.bak
+*.old
+*.orig
+*~
+*.swn
+
+# OS-specific files
+Thumbs.db
+.Spotlight-V100
+.Trashes
+
+# Python type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+
+# Session/temporary files
+*-session.md
+files-created-this-session.md
+
+# Claude Code specific patterns
+.claude-temp/
+.claude-session/
+*-claude-session.md
+claude-work-session-*.md
+.claude-cache/
+.mcp.json
+
+# Temporary development artifacts
+temp/
+dev-temp/
+scratch/
+.working/
+
+# PRP-specific files (temporary/cache only - PRPs themselves should be committed)
+PRPs/*.tmp
+PRPs/.cache/
+.prp-session/
+
+# Reference entries
+reference/
+reference/*
+
+# Temporary files from development (Phase 4 Cleanup Prevention)
+fix_*.py
+system_health*.json
+security_test_suite*.*
+test-*hooks*.sh
+validation_*.json
+test_mcp_compatibility.py
+*_test_report_*.json
+
+# Scripts testing temporary directory (except README)
+scripts/testing/temporary/*.py
+scripts/testing/temporary/*.sh
+scripts/testing/temporary/*.json
+scripts/testing/temporary/*.log
+
+# Note: This project doesn't use Supabase - entries removed
+# Note: Duplicate database and venv entries cleaned up above
