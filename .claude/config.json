@@ -1,0 +1,42 @@
+{
+  "name": "Vespera Atelier Monorepo",
+  "description": "Intelligent platform for document-centric orchestration and creative workflows",
+  "mcp": {
+    "servers": {
+      "vespera-scriptorium": {
+        "command": "python",
+        "args": ["-m", "mcp_task_orchestrator.server"],
+        "cwd": "packages/vespera-scriptorium",
+        "env": {
+          "MCP_TASK_ORCHESTRATOR_USE_DI": "true",
+          "PYTHONPATH": "${workspaceFolder}/packages/vespera-scriptorium"
+        }
+      }
+    }
+  },
+  "workspaces": {
+    "packages": [
+      "packages/vespera-scriptorium",
+      "packages/vespera-atelier", 
+      "packages/vespera-utilities"
+    ],
+    "plugins": [
+      "plugins/Obsidian/Vespera-Scriptorium"
+    ],
+    "primary": "packages/vespera-scriptorium"
+  },
+  "commands": {
+    "directories": [
+      ".claude/commands/monorepo",
+      ".claude/commands/PRPs",
+      ".claude/commands/development",
+      ".claude/commands/code-quality",
+      ".claude/commands/git-operations"
+    ]
+  },
+  "hooks": {
+    "directories": [
+      ".claude/hooks"
+    ]
+  }
+}
