@@ -5,10 +5,28 @@ through systematic multi-phase workflows with git worktree isolation and executi
 
 ## Meta-PRP File: $ARGUMENTS
 
+## Scaffolded Template Execution
+
+**CRITICAL**: This execution assumes the meta-PRP was created using the scaffolded `PRPs/templates/meta-prp-template/`
+with complete hierarchical structure, template files, and git worktree strategy.
+
+### Pre-Execution Validation
+Verify the meta-PRP structure before execution:
+```bash
+# Check that all placeholders were filled
+grep -r "{.*}" PRPs/in-progress/{project-name}/ || echo "✅ All placeholders filled"
+
+# Verify main coordination entry point exists
+test -f PRPs/in-progress/{project-name}/00-main-coordination/index.md && echo "✅ Main coordination ready"
+
+# Check priority structure
+ls PRPs/in-progress/{project-name}/01-* 02-* 03-* 04-* 2>/dev/null | wc -l | grep -q "4" && echo "✅ 4 priorities configured"
+```
+
 ## Template Reference
 
-**CRITICAL**: This execution assumes the meta-PRP was created using `PRPs/templates/meta_prp_structure.md` template with
-hierarchical structure and git worktree strategy.
+The execution follows the comprehensive scaffolded template structure with pre-built coordination patterns,
+executive dysfunction support, and multi-agent workflow integration.
 
 ## Immediate Orchestrator Session Activation
 
@@ -220,7 +238,7 @@ sub_agent_spawning_claude_code_mode:
       - The orchestrator is your coordination backbone - maintain session throughout
       
       EXECUTIVE DYSFUNCTION SUPPORT:
-      - Pre-created directory structure in PRPs/templates/meta_prp_structure.md eliminates decisions
+      - Pre-created directory structure from PRPs/templates/meta-prp-template/ eliminates decisions
       - Isolated worktree prevents overwhelm from other agent activities
       - Progress automatically preserved via git commits
       - Clear single focus area reduces cognitive load
@@ -547,7 +565,7 @@ python scripts/validate_multi_agent_success.py $ARGUMENTS
 
 ### Executive Dysfunction Design Success
 
-- [ ] **Template structure followed** from PRPs/templates/meta_prp_structure.md
+- [ ] **Scaffolded template followed** from PRPs/templates/meta-prp-template/
 - [ ] **Pre-created directories** eliminated decision paralysis during execution
 - [ ] **Worktree isolation** prevented agent conflicts and overwhelm
 - [ ] **Auto-preservation** maintained progress through WIP commits

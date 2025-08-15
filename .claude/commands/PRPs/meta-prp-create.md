@@ -5,10 +5,37 @@ capabilities with sub-agent coordination, git worktree isolation, and executive 
 
 ## Meta-PRP Concept: $ARGUMENTS
 
+## Scaffolded Template Workflow
+
+**CRITICAL**: Use the comprehensive scaffolded template system for efficient meta-PRP creation:
+
+### Step 1: Copy Template Structure
+```bash
+cp -r PRPs/templates/meta-prp-template PRPs/in-progress/{project-name}
+cd PRPs/in-progress/{project-name}
+```
+
+### Step 2: Fill All Placeholders
+Replace all `{PLACEHOLDER}` values throughout the copied structure:
+- `{PROJECT_NAME}` - Your project name  
+- `{PRIORITY_X_NAME}` - Names for each priority area
+- `{DATE}` - Current date
+- `{TIMELINE}` - Estimated timelines
+- All other placeholders found in template files
+
+### Step 3: Initialize and Execute
+```bash
+# Initialize orchestrator session
+orchestrator_initialize_session working_directory="$(pwd)"
+
+# Begin execution with main coordination
+# Follow 00-main-coordination/index.md as primary entry point
+```
+
 ## Template Reference
 
-**CRITICAL**: Refer to `PRPs/templates/meta_prp_structure.md` for the complete hierarchical structure template with
-executive dysfunction design patterns and git worktree strategy.
+The scaffolded template at `PRPs/templates/meta-prp-template/` provides complete pre-built directory structure,
+executive dysfunction design patterns, and git worktree strategy ready for immediate use.
 
 ## Pre-Execution Orchestrator Health Check
 
@@ -181,13 +208,17 @@ agent_spawning_with_worktrees:
 
 ## Meta-PRP Generation with Orchestrator Integration
 
-### Hierarchical Structure Creation
+### Scaffolded Template Usage
 
 ```yaml
 meta_prp_structure_creation:
-  step_1_template_application:
-    action: "Apply PRPs/templates/meta_prp_structure.md template"
-    output: "Complete directory hierarchy"
+  step_1_template_copy:
+    action: "Copy PRPs/templates/meta-prp-template/ to PRPs/in-progress/{project-name}"
+    output: "Complete pre-built directory hierarchy with template files"
+    
+  step_2_placeholder_replacement:
+    action: "Replace all {PLACEHOLDER} values throughout copied structure"
+    placeholders: ["{PROJECT_NAME}", "{PRIORITY_X_NAME}", "{DATE}", "{TIMELINE}", etc.]
     
   step_2_worktree_setup:
     create_worktrees_for_priorities:
@@ -195,7 +226,12 @@ meta_prp_structure_creation:
       priority_2: "git worktree add ../worktrees/agent-priority-2 -b feature/priority-2"
       coordination: "git worktree add ../worktrees/agent-coordination -b feature/coordination"
     
-  step_3_executive_dysfunction_optimizations:
+  step_3_template_customization:
+    priority_areas: "Rename 01-priority-template → 01-{your-priority}"
+    subtask_categories: "Customize category templates within each priority"
+    navigation_links: "Update all navigation links throughout structure"
+    
+  step_4_executive_dysfunction_optimizations:
     pre_created_structure: "All directories exist, no decision paralysis"
     clear_naming: "Numbered priorities eliminate choice overhead"
     working_directories: "Auto-generated vs manual content clearly marked"
@@ -520,7 +556,7 @@ python scripts/test_meta_prp_workflow.py PRPs/{concept}-meta-prp.md
 
 ### Executive Dysfunction Design Requirements
 
-- [ ] **Template structure applied** from PRPs/templates/meta_prp_structure.md
+- [ ] **Scaffolded template used** from PRPs/templates/meta-prp-template/
 - [ ] **Pre-created directories** eliminate decision paralysis at task initiation
 - [ ] **Clear numbering system** (00-99) removes naming decisions
 - [ ] **Working directories marked** with README files explaining auto-generated vs manual
