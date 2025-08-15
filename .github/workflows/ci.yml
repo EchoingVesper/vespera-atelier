@@ -81,6 +81,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+        cache-dependency-path: 'vespera-utilities/package-lock.json'
     
     - name: Install dependencies
       working-directory: vespera-utilities
@@ -112,6 +113,7 @@ jobs:
       with:
         node-version: '20'
         cache: 'npm'
+        cache-dependency-path: 'plugins/Obsidian/Vespera-Scriptorium/package-lock.json'
     
     - name: Install dependencies
       working-directory: plugins/Obsidian/Vespera-Scriptorium
@@ -146,6 +148,7 @@ jobs:
       with:
         node-version: '20'
         cache: 'npm'
+        cache-dependency-path: 'vespera-utilities/package-lock.json'
     
     - name: Install Python dependencies
       working-directory: packages/vespera-scriptorium
