@@ -6,8 +6,8 @@ defined in the domain layer, along with database-specific utilities.
 
 The database layer supports multiple storage backends:
 - Operational databases (SQLite, PostgreSQL) for transactional data
-- Vector databases (ChromaDB, Pinecone) for embeddings and semantic search
-- Graph databases (Neo4j, ArangoDB) for relationships and knowledge graphs
+- Vector databases (ChromaDB, Pinecone) for embeddings and semantic search [PRODUCTION READY]
+- Graph databases (Neo4j - EXPERIMENTAL) for relationships - prefer Obsidian Graph view for Codex
 """
 
 from .base import (

@@ -1,8 +1,15 @@
 """
-Neo4j adapter for graph storage.
+Neo4j adapter for graph storage (EXPERIMENTAL/STUB).
+
+⚠️  EXPERIMENTAL STATUS: This adapter is a stub implementation preserved for
+    future flexibility. For Codex Protocol and graph visualization, prefer
+    Obsidian's built-in Graph view and Bases features instead.
 
 This module provides a graph database adapter for Neo4j,
 enabling relationship management and knowledge graph operations.
+
+STATUS: Functional but not production-ready. Use only for experimentation.
+PREFERRED: Obsidian plugin integration with native Graph view and Bases.
 """
 
 from contextlib import asynccontextmanager

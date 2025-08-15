@@ -1,6 +1,10 @@
 
 
-# Neo4j Desktop Setup for Task Orchestrator RAG
+# Neo4j Desktop Setup for Task Orchestrator RAG (EXPERIMENTAL/DEPRECATED)
+
+⚠️ **EXPERIMENTAL STATUS**: This setup is preserved for reference but is not recommended for production use.
+
+**PREFERRED ALTERNATIVE**: Use Obsidian's built-in Graph view and Bases features for Codex Protocol implementation instead of Neo4j.
 
 #
 
