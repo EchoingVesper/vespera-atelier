@@ -15,6 +15,38 @@ def main_sync():
     try:
         # Import asyncio first to ensure it's available
         import asyncio
+        import argparse
+        
+        # Parse command line arguments before doing anything else
+        parser = argparse.ArgumentParser(
+            description="MCP Task Orchestrator Server",
+            formatter_class=argparse.RawDescriptionHelpFormatter
+        )
+        parser.add_argument(
+            "--version", "-V",
+            action="version",
+            version="MCP Task Orchestrator 1.8.0"
+        )
+        parser.add_argument(
+            "--health-check",
+            action="store_true",
+            help="Run health checks and exit"
+        )
+        parser.add_argument(
+            "--server",
+            action="store_true",
+            default=True,
+            help="Start the MCP server (default)"
+        )
+        
+        # Parse arguments
+        args = parser.parse_args()
+        
+        # Handle health check command
+        if args.health_check:
+            from .presentation.cli import CLIInterface
+            cli = CLIInterface()
+            return asyncio.run(cli.health_check())
         
         # Set working directory context for workspace detection
         # This helps with the workspace paradigm requirements

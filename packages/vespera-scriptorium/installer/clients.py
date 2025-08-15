@@ -318,8 +318,10 @@ class ClientManager:
             client_name = client_name.strip().lower()
             
             # Handle common aliases
-            if client_name in ['claude', 'claude_desktop']:
+            if client_name in ['claude_desktop']:
                 client_name = 'claude_desktop'
+            elif client_name in ['claude', 'claude_code']:
+                client_name = 'claude_code'
             elif client_name in ['code', 'vscode', 'vs_code']:
                 client_name = 'vscode'
             
@@ -354,7 +356,7 @@ class ClientManager:
             # If force mode or existing config detected, remove first
             if self.config.force or self._claude_code_server_exists():
                 try:
-                    remove_cmd = ['claude', 'mcp', 'remove', 'task-orchestrator']
+                    remove_cmd = ['claude', 'mcp', 'remove', 'vespera-scriptorium']
                     subprocess.run(remove_cmd, check=True, capture_output=True, timeout=30)
                     if self.config.verbose:
                         self.console.print("[dim]Removed existing Claude Code configuration[/dim]")
@@ -365,7 +367,7 @@ class ClientManager:
             # Add server using claude mcp add-json command with correct syntax
             cmd = [
                 'claude', 'mcp', 'add-json',
-                'task-orchestrator',
+                'vespera-scriptorium',
                 server_json
             ]
             
@@ -378,7 +380,7 @@ class ClientManager:
             )
             
             if self.config.verbose:
-                self.console.print(f"[dim]Command: {' '.join(cmd[:3])} task-orchestrator <config>[/dim]")
+                self.console.print(f"[dim]Command: {' '.join(cmd[:3])} vespera-scriptorium <config>[/dim]")
                 if result.stdout:
                     self.console.print(f"[dim]Output: {result.stdout.strip()}[/dim]")
                     
@@ -392,10 +394,10 @@ class ClientManager:
             raise ClientConfigurationError("Claude Code configuration timed out")
     
     def _claude_code_server_exists(self) -> bool:
-        """Check if task-orchestrator server already exists in Claude Code."""
+        """Check if vespera-scriptorium server already exists in Claude Code."""
         try:
             result = subprocess.run(
-                ['claude', 'mcp', 'get', 'task-orchestrator'],
+                ['claude', 'mcp', 'get', 'vespera-scriptorium'],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -443,7 +445,7 @@ class ClientManager:
         if client_id == 'claude_code':
             try:
                 subprocess.run(
-                    ['claude', 'mcp', 'remove', 'task-orchestrator'],
+                    ['claude', 'mcp', 'remove', 'vespera-scriptorium'],
                     check=True,
                     capture_output=True,
                     timeout=30
@@ -463,8 +465,8 @@ class ClientManager:
         try:
             config = self._load_json_config(config_path)
             
-            if server_key in config and 'task-orchestrator' in config[server_key]:
-                del config[server_key]['task-orchestrator']
+            if server_key in config and 'vespera-scriptorium' in config[server_key]:
+                del config[server_key]['vespera-scriptorium']
                 
                 # Remove empty server sections
                 if not config[server_key]:
@@ -513,8 +515,8 @@ class ClientManager:
         if server_key not in config:
             config[server_key] = {}
         
-        # Add the task-orchestrator server
-        config[server_key]['task-orchestrator'] = server_config
+        # Add the vespera-scriptorium server
+        config[server_key]['vespera-scriptorium'] = server_config
     
     def _get_python_command(self) -> Path:
         """Get the correct Python executable path for MCP server configuration."""
@@ -538,15 +540,26 @@ class ClientManager:
         return None
     
     def _build_server_config(self) -> Dict[str, Any]:
-        """Build MCP server configuration (legacy method for backward compatibility)."""
-        python_command = self._get_python_command()
+        """Build MCP server configuration for vespera-scriptorium."""
         server_path = self._get_server_path()
         
-        return {
-            "command": str(python_command),
-            "args": ["-m", "mcp_task_orchestrator"],
-            "cwd": str(server_path.parent) if self.config.scope == InstallationScope.PROJECT else None
-        }
+        # Always use the venv's vespera-scriptorium command for project installations
+        venv_path = self._get_venv_path()
+        if venv_path and venv_path.exists():
+            vespera_command = venv_path / "bin" / "vespera-scriptorium"
+            if vespera_command.exists():
+                return {
+                    "command": str(vespera_command),
+                    "args": [],
+                    "cwd": str(server_path.parent),
+                    "env": {
+                        "MCP_TASK_ORCHESTRATOR_USE_DI": "true"
+                    }
+                }
+        
+        # Fallback to global command if venv not found
+        raise ClientConfigurationError(f"Could not find vespera-scriptorium command in virtual environment at {venv_path}")
+        
     
     def _get_server_path(self) -> Path:
         """Get the path to the MCP server module."""

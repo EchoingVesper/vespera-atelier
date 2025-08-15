@@ -31,6 +31,7 @@ cd /home/aya/dev/monorepo/vespera-atelier
 ## Package-Specific Commands
 
 ### Vespera Scriptorium
+
 ```bash
 cd packages/vespera-scriptorium
 pip install -e ".[dev]"
@@ -38,12 +39,14 @@ pytest tests/
 ```
 
 ### Vespera Atelier
+
 ```bash
 cd packages/vespera-atelier
 # Package-specific commands here
 ```
 
 ### Obsidian Plugin
+
 ```bash
 cd plugins/Obsidian/Vespera-Scriptorium
 npm install
