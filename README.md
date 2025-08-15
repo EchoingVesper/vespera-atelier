@@ -140,7 +140,9 @@ vespera-atelier/
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU Affero General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+
+**Why AGPL-3.0?** We believe in keeping creative tools and AI advancements open-source. The AGPL ensures that all improvements, even those used in web services, remain available to the community. This prevents corporate appropriation while encouraging collaborative innovation.
 
 ## Links
 
