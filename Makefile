@@ -1,7 +1,7 @@
 # Vespera Atelier Monorepo Build System
 # ====================================
 
-.PHONY: help install build test lint clean dev setup-hooks check format
+.PHONY: help install build test lint clean dev setup-hooks check format monitor dashboard alerts docs health
 
 # Default target
 help:
@@ -19,6 +19,14 @@ help:
 	@echo "  dev            Setup development environment"
 	@echo "  setup-hooks    Setup pre-commit hooks"
 	@echo "  ci-test        Run CI test suite"
+	@echo ""
+	@echo "Monitoring and Maintenance:"
+	@echo "  monitor        Run monitoring dashboard"
+	@echo "  dashboard      Start continuous monitoring dashboard"
+	@echo "  alerts         Check system alerts"
+	@echo "  health-check   Run comprehensive health check"
+	@echo "  maintenance    Run maintenance tasks"
+	@echo "  docs           Validate and update documentation"
 	@echo ""
 	@echo "Package-specific targets:"
 	@echo "  scriptorium-*  Commands for vespera-scriptorium"
@@ -238,3 +246,107 @@ status:
 	@echo "vespera-scriptorium dist/: $(shell ls packages/vespera-scriptorium/dist/ 2>/dev/null | wc -l) files"
 	@echo "vespera-utilities dist/: $(shell ls vespera-utilities/dist/ 2>/dev/null | wc -l) files"
 	@echo "Obsidian plugin dist/: $(shell ls plugins/Obsidian/Vespera-Scriptorium/dist/ 2>/dev/null | wc -l) files"
+
+# Monitoring and Maintenance
+monitor:
+	@echo "Running monitoring dashboard..."
+	python tools/monitoring/dashboard.py
+
+dashboard:
+	@echo "Starting continuous monitoring dashboard..."
+	python tools/monitoring/dashboard.py --continuous
+
+alerts:
+	@echo "Checking system alerts..."
+	python tools/monitoring/alerts.py --test
+
+alerts-monitor:
+	@echo "Starting continuous alert monitoring..."
+	python tools/monitoring/alerts.py --monitor
+
+health-check:
+	@echo "Running comprehensive health check..."
+	@if [ -f ".github/workflows/health-check.yml" ]; then \
+		echo "Health check workflow exists - run: gh workflow run health-check.yml"; \
+	fi
+	@if [ -f "packages/vespera-scriptorium/tools/diagnostics/health_check.py" ]; then \
+		cd packages/vespera-scriptorium && python tools/diagnostics/health_check.py; \
+	else \
+		echo "⚠️ Health check tool not found"; \
+	fi
+
+health-report:
+	@echo "Generating comprehensive health report..."
+	@if [ -f "packages/vespera-scriptorium/tools/diagnostics/health_check.py" ]; then \
+		cd packages/vespera-scriptorium && python tools/diagnostics/health_check.py --report health_report_$(shell date +%Y%m%d_%H%M%S).json; \
+	else \
+		echo "⚠️ Health check tool not found"; \
+	fi
+
+maintenance:
+	@echo "Running maintenance tasks..."
+	@if [ -f "packages/vespera-scriptorium/scripts/maintenance/automated_cleanup.py" ]; then \
+		cd packages/vespera-scriptorium && python scripts/maintenance/automated_cleanup.py; \
+	fi
+	find . -name "*.pyc" -delete 2>/dev/null || true
+	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+	find . -name "*.log" -path "*/logs/*" -delete 2>/dev/null || true
+
+maintenance-full:
+	@echo "Running full maintenance..."
+	@if [ -f ".github/workflows/maintenance.yml" ]; then \
+		echo "Maintenance workflow exists - run: gh workflow run maintenance.yml"; \
+	fi
+	make maintenance
+
+docs:
+	@echo "Validating and updating documentation..."
+	python tools/documentation/auto-docs.py --comprehensive
+
+docs-validate:
+	@echo "Validating documentation..."
+	python tools/documentation/auto-docs.py --validate --check-links
+
+docs-update:
+	@echo "Updating documentation..."
+	python tools/documentation/auto-docs.py --update --generate
+
+docs-report:
+	@echo "Generating documentation report..."
+	python tools/documentation/auto-docs.py --comprehensive --output docs_report_$(shell date +%Y%m%d_%H%M%S).json
+
+# Monitoring setup
+monitor-setup:
+	@echo "Setting up monitoring infrastructure..."
+	pip install rich requests psutil
+	@if [ ! -f "tools/monitoring/alerts-config.json" ]; then \
+		echo "Creating default alerts configuration..."; \
+		python tools/monitoring/alerts.py --test; \
+	fi
+
+# Emergency procedures
+emergency-health:
+	@echo "Running emergency health check..."
+	@echo "Checking critical systems..."
+	@if [ -f "packages/vespera-scriptorium/scripts/diagnostics/emergency_fix.py" ]; then \
+		cd packages/vespera-scriptorium && python scripts/diagnostics/emergency_fix.py; \
+	fi
+	@echo "Checking repository integrity..."
+	git status
+	@echo "Emergency health check completed."
+
+emergency-cleanup:
+	@echo "Running emergency cleanup..."
+	find . -name "*.db-wal" -delete 2>/dev/null || true
+	find . -name "*.db-shm" -delete 2>/dev/null || true
+	find . -name "*.tmp" -delete 2>/dev/null || true
+	find . -name "core.*" -delete 2>/dev/null || true
+	make clean
+	@echo "Emergency cleanup completed."
+
+# Full system status
+system-status: version-check health-check
+	@echo ""
+	@echo "MONITORING STATUS:"
+	@echo "=================="
+	make monitor --no-print-directory 2>/dev/null || echo "⚠️ Monitoring dashboard not available"

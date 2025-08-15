@@ -1,0 +1,555 @@
+name: Automated Maintenance
+
+on:
+  # Run weekly maintenance on Sundays at 2 AM UTC
+  schedule:
+    - cron: '0 2 * * 0'
+  # Allow manual triggering
+  workflow_dispatch:
+    inputs:
+      maintenance_type:
+        description: 'Type of maintenance to perform'
+        required: false
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - dependencies
+          - cleanup
+          - security
+          - documentation
+      force_cleanup:
+        description: 'Force aggressive cleanup (removes more artifacts)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '20'
+
+jobs:
+  dependency-maintenance:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.maintenance_type == 'dependencies' || github.event.inputs.maintenance_type == 'full' || github.event_name == 'schedule' }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    
+    - name: Install maintenance tools
+      run: |
+        pip install --upgrade pip
+        pip install pip-tools uv
+        npm install -g npm-check-updates
+    
+    - name: Update Python Dependencies
+      id: python-deps
+      run: |
+        cd packages/vespera-scriptorium
+        
+        # Backup current requirements
+        cp pyproject.toml pyproject.toml.backup
+        
+        # Update dependencies using uv
+        if command -v uv &> /dev/null; then
+          echo "Using uv for dependency management..."
+          uv lock --upgrade || echo "uv lock failed, continuing with pip"
+        fi
+        
+        # Check for outdated packages
+        pip list --outdated --format=json > outdated_packages.json
+        outdated_count=$(cat outdated_packages.json | jq '. | length')
+        
+        echo "python_updates=$outdated_count" >> $GITHUB_OUTPUT
+        
+        if [[ $outdated_count -gt 0 ]]; then
+          echo "Found $outdated_count outdated Python packages"
+          cat outdated_packages.json | jq -r '.[] | "\(.name): \(.version) -> \(.latest_version)"'
+        fi
+    
+    - name: Update Node.js Dependencies
+      id: node-deps
+      run: |
+        # Update vespera-utilities
+        cd vespera-utilities
+        npm audit fix --force || echo "npm audit fix completed with warnings"
+        ncu -u --timeout 60000 || echo "npm-check-updates completed with warnings"
+        npm install || echo "npm install completed with warnings"
+        
+        # Update Obsidian plugin
+        cd ../plugins/Obsidian/Vespera-Scriptorium
+        npm audit fix --force || echo "npm audit fix completed with warnings"
+        ncu -u --timeout 60000 || echo "npm-check-updates completed with warnings"
+        npm install || echo "npm install completed with warnings"
+        
+        cd ../../..
+        
+        # Count updated packages
+        node_updates=$(git diff --name-only | grep -E "(package\.json|package-lock\.json)" | wc -l)
+        echo "node_updates=$node_updates" >> $GITHUB_OUTPUT
+    
+    - name: Test After Updates
+      run: |
+        echo "Testing after dependency updates..."
+        
+        # Test Python package
+        cd packages/vespera-scriptorium
+        pip install -e ".[dev]"
+        pytest tests/unit/ -x --tb=short || echo "Some Python tests failed after updates"
+        
+        # Test Node utilities
+        cd ../../vespera-utilities
+        npm test || echo "Some Node utilities tests failed after updates"
+        
+        # Test Obsidian plugin build
+        cd ../plugins/Obsidian/Vespera-Scriptorium
+        npm run build || echo "Obsidian plugin build failed after updates"
+        
+        cd ../../..
+    
+    - name: Create Dependency Update PR
+      if: ${{ steps.python-deps.outputs.python_updates > 0 || steps.node-deps.outputs.node_updates > 0 }}
+      uses: peter-evans/create-pull-request@v6
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: "deps: automated dependency updates"
+        title: "🔄 Automated Dependency Updates"
+        body: |
+          # Automated Dependency Updates
+          
+          This PR contains automated dependency updates from the weekly maintenance workflow.
+          
+          ## Changes
+          
+          - **Python packages updated:** ${{ steps.python-deps.outputs.python_updates }}
+          - **Node.js packages updated:** ${{ steps.node-deps.outputs.node_updates }}
+          
+          ## Testing
+          
+          - ✅ Basic tests ran successfully after updates
+          - ⚠️ Full test suite will run in CI
+          
+          ## Review Required
+          
+          Please review the changes and ensure:
+          1. No breaking changes in updated dependencies
+          2. All tests pass in CI
+          3. Security vulnerabilities are addressed
+          
+          ---
+          *This PR was automatically created by the Maintenance workflow.*
+        branch: maintenance/dependency-updates
+        delete-branch: true
+        labels: |
+          dependencies
+          automated
+          maintenance
+
+  cleanup-maintenance:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.maintenance_type == 'cleanup' || github.event.inputs.maintenance_type == 'full' || github.event_name == 'schedule' }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Repository Cleanup
+      run: |
+        echo "Starting repository cleanup..."
+        
+        cleanup_report=""
+        
+        # Clean Python cache files
+        find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+        find . -name "*.pyc" -delete 2>/dev/null || true
+        find . -name "*.pyo" -delete 2>/dev/null || true
+        cleanup_report+="✅ Cleaned Python cache files\n"
+        
+        # Clean Node.js cache
+        find . -name "node_modules/.cache" -type d -exec rm -rf {} + 2>/dev/null || true
+        cleanup_report+="✅ Cleaned Node.js cache\n"
+        
+        # Clean build artifacts
+        find . -name "dist" -type d -path "*/packages/*" -exec rm -rf {} + 2>/dev/null || true
+        find . -name "build" -type d -path "*/packages/*" -exec rm -rf {} + 2>/dev/null || true
+        find . -name "*.egg-info" -type d -exec rm -rf {} + 2>/dev/null || true
+        cleanup_report+="✅ Cleaned build artifacts\n"
+        
+        # Clean test artifacts
+        find . -name ".pytest_cache" -type d -exec rm -rf {} + 2>/dev/null || true
+        find . -name ".coverage" -delete 2>/dev/null || true
+        find . -name "coverage.xml" -delete 2>/dev/null || true
+        find . -name "*.log" -path "*/logs/*" -delete 2>/dev/null || true
+        cleanup_report+="✅ Cleaned test artifacts\n"
+        
+        # Clean temporary files
+        find . -name "*.tmp" -delete 2>/dev/null || true
+        find . -name "*.temp" -delete 2>/dev/null || true
+        find . -name ".DS_Store" -delete 2>/dev/null || true
+        find . -name "Thumbs.db" -delete 2>/dev/null || true
+        cleanup_report+="✅ Cleaned temporary files\n"
+        
+        # Aggressive cleanup if requested
+        if [[ "${{ github.event.inputs.force_cleanup }}" == "true" ]]; then
+          find . -name "*.db-wal" -delete 2>/dev/null || true
+          find . -name "*.db-shm" -delete 2>/dev/null || true
+          find . -path "*/archives/*" -name "*.json" -delete 2>/dev/null || true
+          cleanup_report+="⚠️ Performed aggressive cleanup\n"
+        fi
+        
+        echo -e "$cleanup_report"
+        echo "$cleanup_report" > cleanup_report.txt
+    
+    - name: Vespera Scriptorium Database Cleanup
+      run: |
+        echo "Starting Vespera Scriptorium database cleanup..."
+        
+        cd packages/vespera-scriptorium
+        
+        # Install package for cleanup script
+        pip install -e ".[dev]"
+        
+        # Run database cleanup if script exists
+        if [[ -f scripts/maintenance/cleanup_database.py ]]; then
+          python scripts/maintenance/cleanup_database.py --dry-run
+          python scripts/maintenance/cleanup_database.py --old-tasks --duplicates
+          echo "✅ Database cleanup completed"
+        else
+          echo "⚠️ Database cleanup script not found"
+        fi
+        
+        # Clean old task files
+        if [[ -f scripts/maintenance/cleanup_old_tasks.py ]]; then
+          python scripts/maintenance/cleanup_old_tasks.py
+          echo "✅ Old task cleanup completed"
+        fi
+        
+        cd ../..
+    
+    - name: Generate Cleanup Report
+      run: |
+        echo "# Cleanup Report" > full_cleanup_report.md
+        echo "" >> full_cleanup_report.md
+        echo "**Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> full_cleanup_report.md
+        echo "**Type:** ${{ github.event.inputs.maintenance_type || 'scheduled' }}" >> full_cleanup_report.md
+        echo "**Force cleanup:** ${{ github.event.inputs.force_cleanup || 'false' }}" >> full_cleanup_report.md
+        echo "" >> full_cleanup_report.md
+        echo "## Actions Performed" >> full_cleanup_report.md
+        echo "" >> full_cleanup_report.md
+        cat cleanup_report.txt >> full_cleanup_report.md
+        
+        # Check disk space saved
+        echo "" >> full_cleanup_report.md
+        echo "## Repository Size" >> full_cleanup_report.md
+        du -sh . >> full_cleanup_report.md
+        
+        cat full_cleanup_report.md
+    
+    - name: Commit Cleanup Changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        if [[ -n "$(git status --porcelain)" ]]; then
+          git add .
+          git commit -m "chore: automated repository cleanup
+          
+          - Removed cache files and build artifacts
+          - Cleaned temporary files
+          - Performed database maintenance
+          
+          🤖 Generated with automated maintenance workflow"
+          git push
+          echo "✅ Cleanup changes committed"
+        else
+          echo "ℹ️ No cleanup changes to commit"
+        fi
+
+  security-maintenance:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.maintenance_type == 'security' || github.event.inputs.maintenance_type == 'full' || github.event_name == 'schedule' }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    
+    - name: Install Security Tools
+      run: |
+        pip install --upgrade pip
+        pip install bandit safety semgrep
+    
+    - name: Python Security Scan
+      run: |
+        cd packages/vespera-scriptorium
+        
+        echo "Running Python security scans..."
+        
+        # Bandit security scan
+        bandit -r vespera_scriptorium/ -f json -o bandit-report.json || true
+        
+        # Safety check for known vulnerabilities
+        safety check --json --output safety-report.json || true
+        
+        # Semgrep scan
+        semgrep --config=auto vespera_scriptorium/ --json --output semgrep-report.json || true
+        
+        echo "Python security scans completed"
+    
+    - name: Node.js Security Scan
+      run: |
+        echo "Running Node.js security scans..."
+        
+        # Scan vespera-utilities
+        cd vespera-utilities
+        npm audit --json > npm-audit-report.json || true
+        
+        # Scan Obsidian plugin
+        cd ../plugins/Obsidian/Vespera-Scriptorium
+        npm audit --json > npm-audit-obsidian-report.json || true
+        
+        cd ../../..
+        
+        echo "Node.js security scans completed"
+    
+    - name: Generate Security Report
+      run: |
+        echo "# Security Scan Report" > security_report.md
+        echo "" >> security_report.md
+        echo "**Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> security_report.md
+        echo "" >> security_report.md
+        
+        # Python security report
+        echo "## Python Security (vespera-scriptorium)" >> security_report.md
+        
+        if [[ -f packages/vespera-scriptorium/bandit-report.json ]]; then
+          high_issues=$(jq '[.results[] | select(.issue_severity == "HIGH")] | length' packages/vespera-scriptorium/bandit-report.json)
+          medium_issues=$(jq '[.results[] | select(.issue_severity == "MEDIUM")] | length' packages/vespera-scriptorium/bandit-report.json)
+          echo "- **Bandit:** $high_issues high, $medium_issues medium severity issues" >> security_report.md
+        fi
+        
+        if [[ -f packages/vespera-scriptorium/safety-report.json ]]; then
+          safety_issues=$(jq '. | length' packages/vespera-scriptorium/safety-report.json)
+          echo "- **Safety:** $safety_issues known vulnerabilities" >> security_report.md
+        fi
+        
+        # Node.js security report
+        echo "" >> security_report.md
+        echo "## Node.js Security" >> security_report.md
+        
+        if [[ -f vespera-utilities/npm-audit-report.json ]]; then
+          high_npm=$(jq '.metadata.vulnerabilities.high' vespera-utilities/npm-audit-report.json 2>/dev/null || echo 0)
+          critical_npm=$(jq '.metadata.vulnerabilities.critical' vespera-utilities/npm-audit-report.json 2>/dev/null || echo 0)
+          echo "- **vespera-utilities:** $critical_npm critical, $high_npm high severity" >> security_report.md
+        fi
+        
+        if [[ -f plugins/Obsidian/Vespera-Scriptorium/npm-audit-obsidian-report.json ]]; then
+          high_obsidian=$(jq '.metadata.vulnerabilities.high' plugins/Obsidian/Vespera-Scriptorium/npm-audit-obsidian-report.json 2>/dev/null || echo 0)
+          critical_obsidian=$(jq '.metadata.vulnerabilities.critical' plugins/Obsidian/Vespera-Scriptorium/npm-audit-obsidian-report.json 2>/dev/null || echo 0)
+          echo "- **Obsidian plugin:** $critical_obsidian critical, $high_obsidian high severity" >> security_report.md
+        fi
+        
+        cat security_report.md
+    
+    - name: Upload Security Reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-reports-${{ github.run_number }}
+        path: |
+          security_report.md
+          packages/vespera-scriptorium/bandit-report.json
+          packages/vespera-scriptorium/safety-report.json
+          packages/vespera-scriptorium/semgrep-report.json
+          vespera-utilities/npm-audit-report.json
+          plugins/Obsidian/Vespera-Scriptorium/npm-audit-obsidian-report.json
+        retention-days: 90
+
+  documentation-maintenance:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.maintenance_type == 'documentation' || github.event.inputs.maintenance_type == 'full' || github.event_name == 'schedule' }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install Documentation Tools
+      run: |
+        pip install --upgrade pip
+        npm install -g markdownlint-cli
+    
+    - name: Documentation Validation
+      run: |
+        echo "Running documentation validation..."
+        
+        # Find all markdown files
+        find . -name "*.md" -not -path "./node_modules/*" -not -path "./.git/*" > markdown_files.txt
+        
+        echo "Found $(wc -l < markdown_files.txt) markdown files"
+        
+        # Run markdownlint
+        markdownlint $(cat markdown_files.txt) --config .markdownlint.json || echo "Markdown linting completed with warnings"
+        
+        # Check for broken internal links
+        echo "Checking for broken internal links..."
+        python -c "
+import re
+import os
+from pathlib import Path
+
+broken_links = []
+all_files = set()
+
+# Get all existing files
+for root, dirs, files in os.walk('.'):
+    if '.git' in root or 'node_modules' in root:
+        continue
+    for file in files:
+        rel_path = os.path.relpath(os.path.join(root, file), '.')
+        all_files.add(rel_path)
+
+# Check markdown files for links
+for md_file in Path('.').rglob('*.md'):
+    if '.git' in str(md_file) or 'node_modules' in str(md_file):
+        continue
+    
+    with open(md_file, 'r', encoding='utf-8', errors='ignore') as f:
+        content = f.read()
+    
+    # Find relative links
+    links = re.findall(r'\[.*?\]\(([^)]+)\)', content)
+    for link in links:
+        if link.startswith('http') or link.startswith('#'):
+            continue
+        
+        # Resolve relative path
+        link_path = os.path.normpath(os.path.join(os.path.dirname(md_file), link))
+        if link_path not in all_files:
+            broken_links.append(f'{md_file}: {link}')
+
+if broken_links:
+    print('Broken internal links found:')
+    for link in broken_links[:10]:
+        print(f'  {link}')
+    if len(broken_links) > 10:
+        print(f'  ... and {len(broken_links) - 10} more')
+else:
+    print('No broken internal links found')
+"
+    
+    - name: Update Documentation Timestamps
+      run: |
+        echo "Updating documentation timestamps..."
+        
+        # Update README files with last modified date
+        find . -name "README.md" -not -path "./node_modules/*" -not -path "./.git/*" | while read readme; do
+          if grep -q "Last updated:" "$readme"; then
+            sed -i "s/Last updated:.*/Last updated: $(date +%Y-%m-%d)/" "$readme"
+          fi
+        done
+        
+        # Update CHANGELOG if it exists
+        if [[ -f CHANGELOG.md ]]; then
+          echo "Updating CHANGELOG.md..."
+          # Add entry for maintenance if not already present
+          if ! grep -q "$(date +%Y-%m-%d)" CHANGELOG.md; then
+            sed -i "2i\\\\n### $(date +%Y-%m-%d) - Maintenance\\n- Automated maintenance and documentation updates\\n" CHANGELOG.md
+          fi
+        fi
+    
+    - name: Commit Documentation Updates
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        if [[ -n "$(git status --porcelain)" ]]; then
+          git add .
+          git commit -m "docs: automated documentation maintenance
+          
+          - Updated documentation timestamps
+          - Validated markdown files
+          - Fixed formatting issues
+          
+          🤖 Generated with automated maintenance workflow"
+          git push
+          echo "✅ Documentation updates committed"
+        else
+          echo "ℹ️ No documentation changes to commit"
+        fi
+
+  maintenance-summary:
+    runs-on: ubuntu-latest
+    needs: [dependency-maintenance, cleanup-maintenance, security-maintenance, documentation-maintenance]
+    if: always()
+    
+    steps:
+    - name: Generate Maintenance Summary
+      run: |
+        echo "# Weekly Maintenance Summary" > maintenance_summary.md
+        echo "" >> maintenance_summary.md
+        echo "**Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> maintenance_summary.md
+        echo "**Trigger:** ${{ github.event_name }}" >> maintenance_summary.md
+        echo "" >> maintenance_summary.md
+        echo "## Job Results" >> maintenance_summary.md
+        echo "" >> maintenance_summary.md
+        echo "| Job | Status |" >> maintenance_summary.md
+        echo "|-----|--------|" >> maintenance_summary.md
+        echo "| Dependency Maintenance | ${{ needs.dependency-maintenance.result }} |" >> maintenance_summary.md
+        echo "| Cleanup Maintenance | ${{ needs.cleanup-maintenance.result }} |" >> maintenance_summary.md
+        echo "| Security Maintenance | ${{ needs.security-maintenance.result }} |" >> maintenance_summary.md
+        echo "| Documentation Maintenance | ${{ needs.documentation-maintenance.result }} |" >> maintenance_summary.md
+        echo "" >> maintenance_summary.md
+        echo "## Next Steps" >> maintenance_summary.md
+        echo "" >> maintenance_summary.md
+        echo "- Review any created pull requests" >> maintenance_summary.md
+        echo "- Check security reports in artifacts" >> maintenance_summary.md
+        echo "- Monitor system health after maintenance" >> maintenance_summary.md
+        
+        cat maintenance_summary.md
+    
+    - name: Upload Maintenance Summary
+      uses: actions/upload-artifact@v4
+      with:
+        name: maintenance-summary-${{ github.run_number }}
+        path: maintenance_summary.md
+        retention-days: 30

@@ -1,0 +1,448 @@
+name: Repository Health Check
+
+on:
+  # Run daily at 6 AM UTC
+  schedule:
+    - cron: '0 6 * * *'
+  # Run on push to main for immediate feedback
+  push:
+    branches: [main]
+  # Allow manual triggering
+  workflow_dispatch:
+    inputs:
+      check_type:
+        description: 'Type of health check to run'
+        required: false
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - infrastructure
+          - dependencies
+          - security
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '20'
+
+jobs:
+  repository-health:
+    runs-on: ubuntu-latest
+    outputs:
+      health-status: ${{ steps.health.outputs.status }}
+      issues-found: ${{ steps.health.outputs.issues }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    
+    - name: Install health check dependencies
+      run: |
+        pip install --upgrade pip
+        pip install pyyaml requests gitpython psutil
+        npm install -g @npmcli/arborist
+    
+    - name: Repository Structure Health Check
+      id: structure
+      run: |
+        echo "::group::Repository Structure Check"
+        
+        # Check essential files exist
+        essential_files=(
+          "package.json"
+          "pnpm-workspace.yaml"
+          "Makefile"
+          ".github/workflows/ci.yml"
+          ".github/dependabot.yml"
+          "packages/vespera-scriptorium/pyproject.toml"
+          "vespera-utilities/package.json"
+          "plugins/Obsidian/Vespera-Scriptorium/package.json"
+        )
+        
+        missing_files=()
+        for file in "${essential_files[@]}"; do
+          if [[ ! -f "$file" ]]; then
+            missing_files+=("$file")
+            echo "❌ Missing: $file"
+          else
+            echo "✅ Found: $file"
+          fi
+        done
+        
+        if [[ ${#missing_files[@]} -gt 0 ]]; then
+          echo "structure_status=FAILED" >> $GITHUB_OUTPUT
+          echo "structure_issues=${missing_files[*]}" >> $GITHUB_OUTPUT
+        else
+          echo "structure_status=PASSED" >> $GITHUB_OUTPUT
+          echo "structure_issues=" >> $GITHUB_OUTPUT
+        fi
+        
+        echo "::endgroup::"
+    
+    - name: Dependency Health Check
+      id: dependencies
+      run: |
+        echo "::group::Dependency Health Check"
+        
+        # Check Python dependencies
+        cd packages/vespera-scriptorium
+        pip install -e ".[dev]" 2>&1 | tee pip_install.log
+        pip_exit_code=${PIPESTATUS[0]}
+        
+        # Check Node dependencies
+        cd ../../vespera-utilities
+        npm ci 2>&1 | tee npm_install.log
+        npm_exit_code=$?
+        
+        cd ../plugins/Obsidian/Vespera-Scriptorium
+        npm ci 2>&1 | tee npm_obsidian_install.log
+        npm_obsidian_exit_code=$?
+        
+        cd ../../..
+        
+        # Evaluate results
+        issues=()
+        if [[ $pip_exit_code -ne 0 ]]; then
+          issues+=("Python dependency installation failed")
+        fi
+        if [[ $npm_exit_code -ne 0 ]]; then
+          issues+=("Node utilities dependency installation failed")
+        fi
+        if [[ $npm_obsidian_exit_code -ne 0 ]]; then
+          issues+=("Obsidian plugin dependency installation failed")
+        fi
+        
+        if [[ ${#issues[@]} -gt 0 ]]; then
+          echo "dependency_status=FAILED" >> $GITHUB_OUTPUT
+          echo "dependency_issues=${issues[*]}" >> $GITHUB_OUTPUT
+        else
+          echo "dependency_status=PASSED" >> $GITHUB_OUTPUT
+          echo "dependency_issues=" >> $GITHUB_OUTPUT
+        fi
+        
+        echo "::endgroup::"
+    
+    - name: Build Health Check
+      id: build
+      run: |
+        echo "::group::Build Health Check"
+        
+        build_issues=()
+        
+        # Test Python package build
+        cd packages/vespera-scriptorium
+        python -m build 2>&1 | tee build.log
+        if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+          build_issues+=("Python package build failed")
+        fi
+        
+        # Test Node utilities build
+        cd ../../vespera-utilities
+        npm run build 2>&1 | tee build.log
+        if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+          build_issues+=("Node utilities build failed")
+        fi
+        
+        # Test Obsidian plugin build
+        cd ../plugins/Obsidian/Vespera-Scriptorium
+        npm run build 2>&1 | tee build.log
+        if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+          build_issues+=("Obsidian plugin build failed")
+        fi
+        
+        cd ../../..
+        
+        if [[ ${#build_issues[@]} -gt 0 ]]; then
+          echo "build_status=FAILED" >> $GITHUB_OUTPUT
+          echo "build_issues=${build_issues[*]}" >> $GITHUB_OUTPUT
+        else
+          echo "build_status=PASSED" >> $GITHUB_OUTPUT
+          echo "build_issues=" >> $GITHUB_OUTPUT
+        fi
+        
+        echo "::endgroup::"
+    
+    - name: Test Health Check
+      id: tests
+      run: |
+        echo "::group::Test Health Check"
+        
+        test_issues=()
+        
+        # Run Python tests
+        cd packages/vespera-scriptorium
+        pytest tests/unit/ tests/integration/test_complete_task.py tests/integration/test_orchestrator.py tests/integration/test_task_execution.py -v --tb=short 2>&1 | tee test.log
+        if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+          test_issues+=("Python tests failed")
+        fi
+        
+        # Run Node utilities tests
+        cd ../../vespera-utilities
+        npm test 2>&1 | tee test.log
+        if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+          test_issues+=("Node utilities tests failed")
+        fi
+        
+        cd ..
+        
+        if [[ ${#test_issues[@]} -gt 0 ]]; then
+          echo "test_status=FAILED" >> $GITHUB_OUTPUT
+          echo "test_issues=${test_issues[*]}" >> $GITHUB_OUTPUT
+        else
+          echo "test_status=PASSED" >> $GITHUB_OUTPUT
+          echo "test_issues=" >> $GITHUB_OUTPUT
+        fi
+        
+        echo "::endgroup::"
+    
+    - name: Security Health Check
+      id: security
+      run: |
+        echo "::group::Security Health Check"
+        
+        security_issues=()
+        
+        # Check Python security
+        cd packages/vespera-scriptorium
+        pip install bandit safety
+        
+        # Run bandit security scan
+        bandit -r vespera_scriptorium/ -f json -o bandit-report.json || true
+        if [[ -f bandit-report.json ]]; then
+          high_severity=$(jq '.results[] | select(.issue_severity == "HIGH") | length' bandit-report.json 2>/dev/null | wc -l)
+          if [[ $high_severity -gt 0 ]]; then
+            security_issues+=("High severity security issues found in Python code")
+          fi
+        fi
+        
+        # Check for known vulnerabilities
+        safety check --json --output safety-report.json || true
+        if [[ -f safety-report.json && $(cat safety-report.json | jq '. | length' 2>/dev/null || echo 0) -gt 0 ]]; then
+          security_issues+=("Known vulnerabilities found in Python dependencies")
+        fi
+        
+        cd ../..
+        
+        # Check Node.js security
+        cd vespera-utilities
+        npm audit --audit-level=high --json > npm-audit.json || true
+        if [[ -f npm-audit.json ]]; then
+          vulnerabilities=$(jq '.metadata.vulnerabilities.high + .metadata.vulnerabilities.critical' npm-audit.json 2>/dev/null || echo 0)
+          if [[ $vulnerabilities -gt 0 ]]; then
+            security_issues+=("High/Critical vulnerabilities found in Node utilities")
+          fi
+        fi
+        
+        cd ../plugins/Obsidian/Vespera-Scriptorium
+        npm audit --audit-level=high --json > npm-audit-obsidian.json || true
+        if [[ -f npm-audit-obsidian.json ]]; then
+          vulnerabilities=$(jq '.metadata.vulnerabilities.high + .metadata.vulnerabilities.critical' npm-audit-obsidian.json 2>/dev/null || echo 0)
+          if [[ $vulnerabilities -gt 0 ]]; then
+            security_issues+=("High/Critical vulnerabilities found in Obsidian plugin")
+          fi
+        fi
+        
+        cd ../../..
+        
+        if [[ ${#security_issues[@]} -gt 0 ]]; then
+          echo "security_status=FAILED" >> $GITHUB_OUTPUT
+          echo "security_issues=${security_issues[*]}" >> $GITHUB_OUTPUT
+        else
+          echo "security_status=PASSED" >> $GITHUB_OUTPUT
+          echo "security_issues=" >> $GITHUB_OUTPUT
+        fi
+        
+        echo "::endgroup::"
+    
+    - name: Vespera Scriptorium Internal Health Check
+      id: internal
+      run: |
+        echo "::group::Vespera Scriptorium Internal Health Check"
+        
+        cd packages/vespera-scriptorium
+        
+        # Run the internal health check tool if it exists
+        if [[ -f tools/diagnostics/health_check.py ]]; then
+          python tools/diagnostics/health_check.py --health --json > internal_health.json 2>&1 || true
+          
+          if [[ -f internal_health.json ]]; then
+            # Check if the internal health check passed
+            overall_healthy=$(jq -r '.health_checks.overall_healthy // false' internal_health.json 2>/dev/null)
+            if [[ "$overall_healthy" == "true" ]]; then
+              echo "internal_status=PASSED" >> $GITHUB_OUTPUT
+              echo "internal_issues=" >> $GITHUB_OUTPUT
+            else
+              echo "internal_status=FAILED" >> $GITHUB_OUTPUT
+              echo "internal_issues=Internal health checks failed" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "internal_status=SKIPPED" >> $GITHUB_OUTPUT
+            echo "internal_issues=Health check tool execution failed" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "internal_status=SKIPPED" >> $GITHUB_OUTPUT
+          echo "internal_issues=Health check tool not found" >> $GITHUB_OUTPUT
+        fi
+        
+        cd ../..
+        
+        echo "::endgroup::"
+    
+    - name: Generate Health Report
+      id: health
+      run: |
+        echo "::group::Health Report Generation"
+        
+        # Collect all check results
+        structure_status="${{ steps.structure.outputs.structure_status }}"
+        dependency_status="${{ steps.dependencies.outputs.dependency_status }}"
+        build_status="${{ steps.build.outputs.build_status }}"
+        test_status="${{ steps.tests.outputs.test_status }}"
+        security_status="${{ steps.security.outputs.security_status }}"
+        internal_status="${{ steps.internal.outputs.internal_status }}"
+        
+        # Collect all issues
+        all_issues=()
+        [[ -n "${{ steps.structure.outputs.structure_issues }}" ]] && all_issues+=(${{ steps.structure.outputs.structure_issues }})
+        [[ -n "${{ steps.dependencies.outputs.dependency_issues }}" ]] && all_issues+=(${{ steps.dependencies.outputs.dependency_issues }})
+        [[ -n "${{ steps.build.outputs.build_issues }}" ]] && all_issues+=(${{ steps.build.outputs.build_issues }})
+        [[ -n "${{ steps.tests.outputs.test_issues }}" ]] && all_issues+=(${{ steps.tests.outputs.test_issues }})
+        [[ -n "${{ steps.security.outputs.security_issues }}" ]] && all_issues+=(${{ steps.security.outputs.security_issues }})
+        [[ -n "${{ steps.internal.outputs.internal_issues }}" ]] && all_issues+=(${{ steps.internal.outputs.internal_issues }})
+        
+        # Determine overall status
+        if [[ "$structure_status" == "PASSED" && "$dependency_status" == "PASSED" && "$build_status" == "PASSED" && "$test_status" == "PASSED" && "$security_status" == "PASSED" ]]; then
+          overall_status="HEALTHY"
+        else
+          overall_status="UNHEALTHY"
+        fi
+        
+        # Create report
+        cat << EOF > health_report.md
+        # Repository Health Check Report
+        
+        **Generated:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        **Overall Status:** $overall_status
+        
+        ## Check Results
+        
+        | Check | Status | Issues |
+        |-------|--------|--------|
+        | Repository Structure | $structure_status | ${{ steps.structure.outputs.structure_issues }} |
+        | Dependencies | $dependency_status | ${{ steps.dependencies.outputs.dependency_issues }} |
+        | Build | $build_status | ${{ steps.build.outputs.build_issues }} |
+        | Tests | $test_status | ${{ steps.tests.outputs.test_issues }} |
+        | Security | $security_status | ${{ steps.security.outputs.security_issues }} |
+        | Internal Health | $internal_status | ${{ steps.internal.outputs.internal_issues }} |
+        
+        ## Summary
+        
+        EOF
+        
+        if [[ "$overall_status" == "HEALTHY" ]]; then
+          echo "✅ All health checks passed. Repository is in good condition." >> health_report.md
+        else
+          echo "❌ Some health checks failed. Issues found:" >> health_report.md
+          for issue in "${all_issues[@]}"; do
+            echo "- $issue" >> health_report.md
+          done
+        fi
+        
+        echo "status=$overall_status" >> $GITHUB_OUTPUT
+        echo "issues=${#all_issues[@]}" >> $GITHUB_OUTPUT
+        
+        # Display report
+        cat health_report.md
+        
+        echo "::endgroup::"
+    
+    - name: Upload Health Reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: health-check-reports
+        path: |
+          health_report.md
+          packages/vespera-scriptorium/bandit-report.json
+          packages/vespera-scriptorium/safety-report.json
+          packages/vespera-scriptorium/internal_health.json
+          vespera-utilities/npm-audit.json
+          plugins/Obsidian/Vespera-Scriptorium/npm-audit-obsidian.json
+        retention-days: 30
+
+  notify-on-failure:
+    runs-on: ubuntu-latest
+    needs: repository-health
+    if: ${{ needs.repository-health.outputs.health-status == 'UNHEALTHY' && github.event_name == 'schedule' }}
+    
+    steps:
+    - name: Create Issue on Health Check Failure
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const title = `🚨 Repository Health Check Failed - ${new Date().toISOString().split('T')[0]}`;
+          const body = `
+          # Repository Health Check Failed
+          
+          **Date:** ${new Date().toUTCString()}
+          **Issues Found:** ${{ needs.repository-health.outputs.issues-found }}
+          **Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          
+          ## Action Required
+          
+          The automated health check has detected issues with the repository. Please:
+          
+          1. Review the workflow run logs
+          2. Download and examine the health check reports
+          3. Address the identified issues
+          4. Re-run the health check workflow to verify fixes
+          
+          ## Artifacts
+          
+          Health check reports are available in the workflow artifacts for detailed analysis.
+          
+          ---
+          *This issue was automatically created by the Repository Health Check workflow.*
+          `;
+          
+          // Check if an open health check issue already exists
+          const existingIssues = await github.rest.issues.listForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            labels: 'health-check,automated'
+          });
+          
+          const existingHealthIssue = existingIssues.data.find(issue => 
+            issue.title.includes('Repository Health Check Failed')
+          );
+          
+          if (!existingHealthIssue) {
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['health-check', 'automated', 'priority-high']
+            });
+          } else {
+            // Update existing issue with new information
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: existingHealthIssue.number,
+              body: `**Update:** Health check failed again on ${new Date().toUTCString()}\n\n**Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
+            });
+          }

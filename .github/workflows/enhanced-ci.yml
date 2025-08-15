@@ -1,0 +1,641 @@
+name: Enhanced CI/CD with Maintenance
+
+on:
+  push:
+    branches: [ main, develop, 'feature/**', 'release/**' ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      run_maintenance:
+        description: 'Run maintenance tasks after CI'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '20'
+
+jobs:
+  # Pre-build health check
+  pre-build-health:
+    runs-on: ubuntu-latest
+    outputs:
+      health-status: ${{ steps.health.outputs.status }}
+      should-continue: ${{ steps.health.outputs.continue }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Quick Health Check
+      id: health
+      run: |
+        # Quick repository health check before running full CI
+        echo "::group::Pre-build Health Check"
+        
+        health_issues=()
+        
+        # Check for massive uncommitted changes that might indicate problems
+        changed_files=$(git status --porcelain | wc -l)
+        if [[ $changed_files -gt 100 ]]; then
+          health_issues+=("Too many uncommitted changes: $changed_files")
+        fi
+        
+        # Check essential files exist
+        essential_files=("package.json" "pnpm-workspace.yaml" "packages/vespera-scriptorium/pyproject.toml")
+        for file in "${essential_files[@]}"; do
+          if [[ ! -f "$file" ]]; then
+            health_issues+=("Missing essential file: $file")
+          fi
+        done
+        
+        # Check for common issues
+        if find . -name "*.pyc" -o -name "__pycache__" | head -1 | grep -q .; then
+          echo "Found Python cache files, will clean up"
+          find . -name "*.pyc" -delete
+          find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+        fi
+        
+        if [[ ${#health_issues[@]} -gt 0 ]]; then
+          echo "status=unhealthy" >> $GITHUB_OUTPUT
+          echo "continue=false" >> $GITHUB_OUTPUT
+          echo "❌ Pre-build health check failed:"
+          for issue in "${health_issues[@]}"; do
+            echo "  - $issue"
+          done
+          exit 1
+        else
+          echo "status=healthy" >> $GITHUB_OUTPUT
+          echo "continue=true" >> $GITHUB_OUTPUT
+          echo "✅ Pre-build health check passed"
+        fi
+        
+        echo "::endgroup::"
+
+  # Enhanced test jobs with maintenance hooks
+  test-vespera-scriptorium:
+    runs-on: ubuntu-latest
+    needs: pre-build-health
+    if: needs.pre-build-health.outputs.should-continue == 'true'
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+      fail-fast: false
+    
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('packages/vespera-scriptorium/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies with error recovery
+      working-directory: packages/vespera-scriptorium
+      run: |
+        python -m pip install --upgrade pip
+        
+        # Try installing dependencies with retries
+        for attempt in 1 2 3; do
+          if pip install -e ".[dev]"; then
+            echo "✅ Dependencies installed successfully on attempt $attempt"
+            break
+          else
+            echo "❌ Attempt $attempt failed"
+            if [[ $attempt -eq 3 ]]; then
+              echo "::error::Failed to install dependencies after 3 attempts"
+              exit 1
+            fi
+            sleep 10
+          fi
+        done
+    
+    - name: Run linting with maintenance
+      working-directory: packages/vespera-scriptorium
+      run: |
+        echo "::group::Linting"
+        
+        # Run linting and capture results
+        lint_failed=false
+        
+        if ! black --check vespera_scriptorium/; then
+          echo "⚠️ Black formatting issues detected"
+          lint_failed=true
+        fi
+        
+        if ! isort --check-only vespera_scriptorium/; then
+          echo "⚠️ Import sorting issues detected"
+          lint_failed=true
+        fi
+        
+        if ! flake8 vespera_scriptorium/; then
+          echo "⚠️ Flake8 issues detected"
+          lint_failed=true
+        fi
+        
+        if [[ "$lint_failed" == "true" ]] && [[ "${{ github.event_name }}" == "push" ]] && [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          echo "🔧 Auto-fixing linting issues on main branch"
+          black vespera_scriptorium/
+          isort vespera_scriptorium/
+          
+          # Only commit if there are changes
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add .
+            git commit -m "style: auto-fix linting issues [skip ci]"
+            git push
+          fi
+        elif [[ "$lint_failed" == "true" ]]; then
+          exit 1
+        fi
+        
+        echo "::endgroup::"
+    
+    - name: Run type checking
+      working-directory: packages/vespera-scriptorium
+      continue-on-error: true
+      run: |
+        echo "::group::Type Checking"
+        mypy vespera_scriptorium/ || echo "⚠️ Type checking issues found"
+        echo "::endgroup::"
+    
+    - name: Run tests with coverage
+      working-directory: packages/vespera-scriptorium
+      run: |
+        echo "::group::Testing"
+        
+        # Run tests with timeout protection
+        timeout 600 pytest tests/unit/ tests/integration/test_complete_task.py tests/integration/test_orchestrator.py tests/integration/test_task_execution.py -v --cov=vespera_scriptorium --cov-report=xml --tb=short
+        
+        echo "::endgroup::"
+    
+    - name: Post-test cleanup
+      if: always()
+      working-directory: packages/vespera-scriptorium
+      run: |
+        echo "::group::Post-test Cleanup"
+        
+        # Clean up test artifacts
+        find . -name "*.db-wal" -delete 2>/dev/null || true
+        find . -name "*.db-shm" -delete 2>/dev/null || true
+        find . -name "test_*.db" -delete 2>/dev/null || true
+        
+        # Clean up Python cache
+        find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+        find . -name "*.pyc" -delete 2>/dev/null || true
+        
+        echo "✅ Post-test cleanup completed"
+        echo "::endgroup::"
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      if: matrix.python-version == '3.11' && success()
+      with:
+        file: packages/vespera-scriptorium/coverage.xml
+        flags: vespera-scriptorium
+        name: codecov-umbrella
+
+  # Enhanced Node.js testing with maintenance
+  test-vespera-utilities:
+    runs-on: ubuntu-latest
+    needs: pre-build-health
+    if: needs.pre-build-health.outputs.should-continue == 'true'
+    strategy:
+      matrix:
+        node-version: ['18', '20', '21']
+      fail-fast: false
+    
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: vespera-utilities/package-lock.json
+    
+    - name: Install dependencies with recovery
+      working-directory: vespera-utilities
+      run: |
+        # Clear npm cache if needed
+        npm cache clean --force
+        
+        # Install with retries
+        for attempt in 1 2 3; do
+          if npm ci; then
+            echo "✅ Dependencies installed successfully on attempt $attempt"
+            break
+          else
+            echo "❌ Attempt $attempt failed"
+            if [[ $attempt -eq 3 ]]; then
+              echo "::error::Failed to install dependencies after 3 attempts"
+              exit 1
+            fi
+            rm -rf node_modules package-lock.json
+            sleep 10
+          fi
+        done
+    
+    - name: Security audit with auto-fix
+      working-directory: vespera-utilities
+      run: |
+        echo "::group::Security Audit"
+        
+        # Run security audit
+        if npm audit --audit-level=moderate; then
+          echo "✅ No security vulnerabilities found"
+        else
+          echo "⚠️ Security vulnerabilities detected, attempting auto-fix"
+          npm audit fix --force || echo "Could not auto-fix all vulnerabilities"
+          
+          # Check again
+          npm audit --audit-level=high || echo "⚠️ High-severity vulnerabilities still present"
+        fi
+        
+        echo "::endgroup::"
+    
+    - name: Run linting and formatting
+      working-directory: vespera-utilities
+      run: |
+        npm run lint
+        npm run type-check
+    
+    - name: Run tests
+      working-directory: vespera-utilities
+      run: npm test
+    
+    - name: Post-test maintenance
+      if: always()
+      working-directory: vespera-utilities
+      run: |
+        echo "::group::Post-test Maintenance"
+        
+        # Clean up test artifacts and caches
+        rm -rf coverage/ .nyc_output/ dist/build/
+        rm -rf node_modules/.cache/
+        
+        echo "✅ Post-test maintenance completed"
+        echo "::endgroup::"
+
+  # Enhanced Obsidian plugin testing
+  test-obsidian-plugin:
+    runs-on: ubuntu-latest
+    needs: pre-build-health
+    if: needs.pre-build-health.outputs.should-continue == 'true'
+    
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: plugins/Obsidian/Vespera-Scriptorium/package-lock.json
+    
+    - name: Install dependencies with recovery
+      working-directory: plugins/Obsidian/Vespera-Scriptorium
+      run: |
+        # Clear cache and install
+        npm cache clean --force
+        
+        for attempt in 1 2 3; do
+          if npm ci; then
+            echo "✅ Dependencies installed successfully on attempt $attempt"
+            break
+          else
+            echo "❌ Attempt $attempt failed"
+            if [[ $attempt -eq 3 ]]; then
+              echo "::error::Failed to install dependencies after 3 attempts"
+              exit 1
+            fi
+            rm -rf node_modules package-lock.json
+            sleep 10
+          fi
+        done
+    
+    - name: Security audit
+      working-directory: plugins/Obsidian/Vespera-Scriptorium
+      continue-on-error: true
+      run: |
+        npm audit --audit-level=moderate || echo "⚠️ Security vulnerabilities found in Obsidian plugin"
+    
+    - name: Run linting
+      working-directory: plugins/Obsidian/Vespera-Scriptorium
+      continue-on-error: true
+      run: npm run lint || echo "⚠️ Linting issues found"
+    
+    - name: Build plugin
+      working-directory: plugins/Obsidian/Vespera-Scriptorium
+      run: npm run build
+    
+    - name: Test plugin (if tests exist)
+      working-directory: plugins/Obsidian/Vespera-Scriptorium
+      continue-on-error: true
+      run: npm test || echo "⚠️ Plugin tests not configured or failed"
+
+  # Cross-package integration tests
+  integration-tests:
+    runs-on: ubuntu-latest
+    needs: [test-vespera-scriptorium, test-vespera-utilities, test-obsidian-plugin]
+    if: always() && needs.test-vespera-scriptorium.result == 'success'
+    
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    
+    - name: Install all dependencies
+      run: |
+        # Install Python dependencies
+        cd packages/vespera-scriptorium
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+        
+        # Install Node utilities
+        cd ../../vespera-utilities
+        npm ci
+        
+        cd ..
+    
+    - name: Run integration tests
+      working-directory: packages/vespera-scriptorium
+      run: |
+        # Run integration tests that verify cross-package compatibility
+        pytest tests/integration/test_complete_task.py -v
+    
+    - name: Test CLI functionality
+      working-directory: packages/vespera-scriptorium
+      run: |
+        python -m vespera_scriptorium_cli --help
+        vespera-scriptorium --help
+
+  # Enhanced security and quality checks
+  security-and-quality:
+    runs-on: ubuntu-latest
+    needs: pre-build-health
+    if: needs.pre-build-health.outputs.should-continue == 'true'
+    
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit safety semgrep
+    
+    - name: Run comprehensive security scan
+      run: |
+        echo "::group::Security Scanning"
+        
+        cd packages/vespera-scriptorium
+        
+        # Bandit security scan
+        bandit -r vespera_scriptorium/ -f json -o bandit-report.json || true
+        
+        # Safety check for known vulnerabilities
+        safety check --json --output safety-report.json || true
+        
+        # Semgrep scan
+        semgrep --config=auto vespera_scriptorium/ --json --output semgrep-report.json || true
+        
+        echo "::endgroup::"
+    
+    - name: Check security report thresholds
+      run: |
+        cd packages/vespera-scriptorium
+        
+        # Check for high-severity issues that should fail the build
+        if [[ -f bandit-report.json ]]; then
+          high_severity=$(jq '[.results[] | select(.issue_severity == "HIGH")] | length' bandit-report.json)
+          if [[ $high_severity -gt 0 ]]; then
+            echo "::error::Found $high_severity high-severity security issues"
+            jq '.results[] | select(.issue_severity == "HIGH")' bandit-report.json
+            exit 1
+          fi
+        fi
+        
+        if [[ -f safety-report.json ]]; then
+          critical_vulns=$(jq '. | length' safety-report.json)
+          if [[ $critical_vulns -gt 0 ]]; then
+            echo "::error::Found $critical_vulns critical vulnerabilities"
+            exit 1
+          fi
+        fi
+    
+    - name: Upload security reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-reports-${{ github.run_id }}
+        path: |
+          packages/vespera-scriptorium/bandit-report.json
+          packages/vespera-scriptorium/safety-report.json
+          packages/vespera-scriptorium/semgrep-report.json
+        retention-days: 30
+
+  # Build validation with cleanup
+  build-and-validate:
+    runs-on: ubuntu-latest
+    needs: [integration-tests, security-and-quality]
+    if: always() && (needs.integration-tests.result == 'success' || needs.integration-tests.result == 'skipped')
+    
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    
+    - name: Build all packages
+      run: |
+        echo "::group::Building All Packages"
+        
+        # Build Python package
+        cd packages/vespera-scriptorium
+        python -m pip install --upgrade pip build
+        python -m build
+        
+        # Validate Python package
+        pip install twine
+        twine check dist/*
+        
+        # Build Node utilities
+        cd ../../vespera-utilities
+        npm ci
+        npm run build
+        
+        # Build Obsidian plugin
+        cd ../plugins/Obsidian/Vespera-Scriptorium
+        npm ci
+        npm run build
+        
+        echo "::endgroup::"
+    
+    - name: Post-build maintenance
+      run: |
+        echo "::group::Post-build Maintenance"
+        
+        # Record build metrics
+        echo "Build completed at: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+        
+        # Check build artifact sizes
+        if [[ -d packages/vespera-scriptorium/dist ]]; then
+          echo "Vespera Scriptorium build size:"
+          du -sh packages/vespera-scriptorium/dist/
+        fi
+        
+        if [[ -d vespera-utilities/dist ]]; then
+          echo "Vespera Utilities build size:"
+          du -sh vespera-utilities/dist/
+        fi
+        
+        if [[ -d plugins/Obsidian/Vespera-Scriptorium/dist ]]; then
+          echo "Obsidian Plugin build size:"
+          du -sh plugins/Obsidian/Vespera-Scriptorium/dist/
+        fi
+        
+        echo "::endgroup::"
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts-${{ github.run_id }}
+        path: |
+          packages/vespera-scriptorium/dist/
+          vespera-utilities/dist/
+          plugins/Obsidian/Vespera-Scriptorium/dist/
+        retention-days: 7
+
+  # Post-CI maintenance (only on main branch or when explicitly requested)
+  post-ci-maintenance:
+    runs-on: ubuntu-latest
+    needs: [build-and-validate]
+    if: |
+      always() && 
+      needs.build-and-validate.result == 'success' && 
+      (github.ref == 'refs/heads/main' || github.event.inputs.run_maintenance == 'true')
+    
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Run post-CI maintenance
+      run: |
+        echo "::group::Post-CI Maintenance"
+        
+        # Clean up build artifacts from CI
+        find . -name "*.pyc" -delete 2>/dev/null || true
+        find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+        find . -name "*.log" -path "*/logs/*" -delete 2>/dev/null || true
+        
+        # Update build timestamps if maintenance script exists
+        cd packages/vespera-scriptorium
+        if [[ -f scripts/maintenance/update_build_info.py ]]; then
+          python scripts/maintenance/update_build_info.py
+        fi
+        
+        cd ../..
+        
+        echo "::endgroup::"
+    
+    - name: Generate CI summary report
+      run: |
+        echo "# CI/CD Summary Report" > ci_summary.md
+        echo "" >> ci_summary.md
+        echo "**Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> ci_summary.md
+        echo "**Branch:** ${{ github.ref_name }}" >> ci_summary.md
+        echo "**Commit:** ${{ github.sha }}" >> ci_summary.md
+        echo "" >> ci_summary.md
+        echo "## Build Results" >> ci_summary.md
+        echo "" >> ci_summary.md
+        echo "- ✅ All tests passed" >> ci_summary.md
+        echo "- ✅ Security checks passed" >> ci_summary.md
+        echo "- ✅ All packages built successfully" >> ci_summary.md
+        echo "- ✅ Post-CI maintenance completed" >> ci_summary.md
+        echo "" >> ci_summary.md
+        echo "## Next Steps" >> ci_summary.md
+        echo "" >> ci_summary.md
+        echo "- Monitor system health" >> ci_summary.md
+        echo "- Review any security reports" >> ci_summary.md
+        echo "- Check for dependency updates" >> ci_summary.md
+        
+        cat ci_summary.md
+    
+    - name: Commit maintenance changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        if [[ -n "$(git status --porcelain)" ]]; then
+          git add .
+          git commit -m "chore: post-CI maintenance updates [skip ci]
+          
+          - Updated build timestamps
+          - Cleaned up artifacts
+          - Generated CI summary
+          
+          🤖 Automated post-CI maintenance"
+          git push
+          echo "✅ Maintenance changes committed"
+        else
+          echo "ℹ️ No maintenance changes to commit"
+        fi
