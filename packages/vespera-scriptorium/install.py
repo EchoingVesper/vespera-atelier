@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-MCP Task Orchestrator Universal Installer
+Vespera Scriptorium Universal Installer
 
 A comprehensive installation automation script that manages the complete lifecycle
-for the MCP Task Orchestrator project. Supports installation, uninstallation, 
+for the Vespera Scriptorium project. Supports installation, uninstallation, 
 and reinstallation for both end users and developers with comprehensive mode support.
 
 Features:
@@ -48,7 +48,7 @@ def create_argument_parser() -> argparse.ArgumentParser:
     """Create and configure the command-line argument parser."""
     
     parser = argparse.ArgumentParser(
-        description="MCP Task Orchestrator Universal Installer",
+        description="Vespera Scriptorium Universal Installer",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -68,7 +68,7 @@ Examples:
   %(prog)s --no-clients             # Skip MCP configuration entirely
   
   %(prog)s --uninstall              # Remove package, preserve config/data
-  %(prog)s --uninstall --purge      # Remove everything including .task_orchestrator/
+  %(prog)s --uninstall --purge      # Remove everything including .vespera_scriptorium/
   %(prog)s --uninstall --config     # Remove only configuration files
   
   %(prog)s --reinstall              # Preserve config, clean package install
@@ -84,7 +84,7 @@ Examples:
   %(prog)s --backup-only            # Create config backup without installing
 
 For detailed documentation, visit:
-https://github.com/EchoingVesper/mcp-task-orchestrator
+https://github.com/EchoingVesper/vespera-scriptorium
         """.strip()
     )
     
@@ -189,7 +189,7 @@ https://github.com/EchoingVesper/mcp-task-orchestrator
     parser.add_argument(
         "--purge",
         action="store_true",
-        help="Remove all data including configuration and user data (.task_orchestrator/)"
+        help="Remove all data including configuration and user data (.vespera_scriptorium/)"
     )
     parser.add_argument(
         "--config",
@@ -328,8 +328,8 @@ def main() -> int:
         
         # Handle version information
         if args.version_info:
-            print("MCP Task Orchestrator Universal Installer v2.0.0")
-            print("https://github.com/EchoingVesper/mcp-task-orchestrator")
+            print("Vespera Scriptorium Universal Installer v2.0.0")
+            print("https://github.com/EchoingVesper/vespera-scriptorium")
             return 0
         
         # Validate arguments

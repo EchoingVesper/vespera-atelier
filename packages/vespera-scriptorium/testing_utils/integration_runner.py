@@ -265,7 +265,7 @@ class IntegrationTestRunner(BaseTestRunner):
         """Setup database connections for integration tests."""
         try:
             # Import database managers
-            from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
+            from vespera_scriptorium.db.persistence import DatabasePersistenceManager
             
             # Create test database manager
             test_db_manager = DatabasePersistenceManager(

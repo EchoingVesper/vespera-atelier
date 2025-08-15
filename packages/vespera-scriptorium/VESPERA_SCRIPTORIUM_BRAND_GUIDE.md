@@ -1,6 +1,6 @@
 # Vespera Scriptorium Brand Guide
 
-**Project:** MCP Task Orchestrator → Vespera Scriptorium Transition  
+**Project:** Vespera Scriptorium → Vespera Scriptorium Transition  
 **Purpose:** Brand Identity and Content Transformation Guidelines  
 **Date:** 2025-08-14  
 **Orchestrator Task ID:** task_191ee97d
@@ -300,7 +300,7 @@ Recommendations for optimal usage across different use cases.
 
 **Before (Technical Focus):**
 ```markdown
-# MCP Task Orchestrator
+# Vespera Scriptorium
 
 A Model Context Protocol server that provides intelligent task orchestration, 
 specialized AI roles, and persistent memory for AI-assisted development.

@@ -30,14 +30,14 @@
 
 # 1. File-based output
 
-from mcp_task_orchestrator.testing import TestOutputWriter
+from vespera_scriptorium.testing import TestOutputWriter
 writer = TestOutputWriter(output_dir)
 with writer.write_test_output("test_name", "text") as session:
     session.write_line("Test output here...")
 
 # 2. Alternative runners
 
-from mcp_task_orchestrator.testing import DirectFunctionRunner
+from vespera_scriptorium.testing import DirectFunctionRunner
 runner = DirectFunctionRunner(output_dir=Path("outputs"))
 result = runner.execute_test(test_function, "test_name")
 
@@ -53,7 +53,7 @@ with managed_sqlite_connection("test.db") as conn:
 
 # 4. Hang protection
 
-from mcp_task_orchestrator.monitoring.hang_detection import with_hang_detection
+from vespera_scriptorium.monitoring.hang_detection import with_hang_detection
 @with_hang_detection("operation", timeout=30.0)
 async def my_operation():
     

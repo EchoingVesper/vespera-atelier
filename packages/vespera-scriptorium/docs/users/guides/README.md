@@ -1,6 +1,6 @@
 
 
-# MCP Task Orchestrator User Guide
+# Vespera Scriptorium User Guide
 
 *Transform complex projects from overwhelming to organized in minutes*
 

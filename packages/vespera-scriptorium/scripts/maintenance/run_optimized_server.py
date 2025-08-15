@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Optimized MCP Task Orchestrator Server Runner
+Optimized Vespera Scriptorium Server Runner
 
-This script initializes the database and starts the MCP Task Orchestrator server
+This script initializes the database and starts the Vespera Scriptorium server
 with the optimized database-backed persistence implementation.
 """
 
@@ -32,13 +32,13 @@ def initialize_database():
         os.environ["MCP_TASK_ORCHESTRATOR_USE_DB"] = "true"
         
         # Import the database models and create the tables
-        from mcp_task_orchestrator.db.models import Base
+        from vespera_scriptorium.db.models import Base
         from sqlalchemy import create_engine
         
         # Get the database path
         db_path = os.environ.get("MCP_TASK_ORCHESTRATOR_DB_PATH")
         if not db_path:
-            db_path = Path(__file__).parent / "task_orchestrator.db"
+            db_path = Path(__file__).parent / "vespera_scriptorium.db"
         
         # Create the database engine and tables
         db_url = f"sqlite:///{db_path}"
@@ -53,13 +53,13 @@ def initialize_database():
 
 # Start the server
 async def start_server():
-    """Start the MCP Task Orchestrator server."""
+    """Start the Vespera Scriptorium server."""
     try:
         # Import the server module
-        from mcp_task_orchestrator.server import main
+        from vespera_scriptorium.server import main
         
         # Start the server
-        logger.info("Starting MCP Task Orchestrator server...")
+        logger.info("Starting Vespera Scriptorium server...")
         await main()
     except Exception as e:
         logger.error(f"Error starting server: {e}", exc_info=True)

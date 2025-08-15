@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script for the MCP Task Orchestrator server.
+Test script for the Vespera Scriptorium server.
 
 This script tests that the server can be imported and initialized correctly.
 """
@@ -14,14 +14,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 class TestServer(unittest.TestCase):
-    """Test cases for the MCP Task Orchestrator server."""
+    """Test cases for the Vespera Scriptorium server."""
 
     def test_imports(self):
         """Test that all required modules can be imported."""
         try:
-            from mcp_task_orchestrator import server
-#             from mcp_task_orchestrator.orchestrator import  # TODO: Complete this import
-#             from mcp_task_orchestrator.domain.entities.task import  # TODO: Complete this import
+            from vespera_scriptorium import server
+#             from vespera_scriptorium.orchestrator import  # TODO: Complete this import
+#             from vespera_scriptorium.domain.entities.task import  # TODO: Complete this import
             self.assertTrue(True, "All imports successful")
         except ImportError as e:
             self.fail(f"Import error: {e}")
@@ -29,7 +29,7 @@ class TestServer(unittest.TestCase):
     def test_server_initialization(self):
         """Test that the server can be initialized."""
         try:
-            from mcp_task_orchestrator import server
+            from vespera_scriptorium import server
             self.assertIsNotNone(server.app, "Server app is initialized")
             self.assertIsNotNone(server.orchestrator, "Orchestrator is initialized")
             self.assertIsNotNone(server.state_manager, "State manager is initialized")

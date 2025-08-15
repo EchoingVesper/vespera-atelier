@@ -109,7 +109,7 @@ docs/
 
 - **Missing Documentation**:
   - select_mode tool specification
-  - Role copying automation (config → .task_orchestrator/roles)
+  - Role copying automation (config → .vespera_scriptorium/roles)
   - Session-mode linking architecture
   - Recovery when yaml files deleted
 
@@ -285,7 +285,7 @@ text
 
 - Enhanced role system architecture
 
-- Automatic role copying mechanism (config → .task_orchestrator/roles)
+- Automatic role copying mechanism (config → .vespera_scriptorium/roles)
 
 - select_mode tool specification and implementation
 

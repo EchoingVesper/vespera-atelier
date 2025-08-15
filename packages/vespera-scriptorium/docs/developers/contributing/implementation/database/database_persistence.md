@@ -6,7 +6,7 @@
 
 # Overview
 
-The MCP Task Orchestrator now supports a robust database-backed persistence mechanism that replaces the previous file-based system. This implementation eliminates lock contention issues and provides proper transaction support.
+The Vespera Scriptorium now supports a robust database-backed persistence mechanism that replaces the previous file-based system. This implementation eliminates lock contention issues and provides proper transaction support.
 
 #
 
@@ -82,7 +82,7 @@ You can enable the database-backed persistence in one of the following ways:
 ```text
 
 python
-   from mcp_task_orchestrator.persistence_factory import create_persistence_manager
+   from vespera_scriptorium.persistence_factory import create_persistence_manager
    
    
 
@@ -103,7 +103,7 @@ text
 ```text
 
 python
-   from mcp_task_orchestrator.orchestrator.state import StateManager
+   from vespera_scriptorium.orchestrator.state import StateManager
    
    
 
@@ -145,7 +145,7 @@ text
 ```text
 
 python
-   from mcp_task_orchestrator.persistence_factory import create_persistence_manager
+   from vespera_scriptorium.persistence_factory import create_persistence_manager
    
    
 
@@ -208,7 +208,7 @@ python migrate_to_db.py --base-dir /path/to/base/dir --db-url "sqlite:///path/to
 
 # Logging
 
-The database persistence implementation logs detailed information about its operations. Logs are stored in the `.task_orchestrator/logs/db_persistence.log` file.
+The database persistence implementation logs detailed information about its operations. Logs are stored in the `.vespera_scriptorium/logs/db_persistence.log` file.
 
 #
 

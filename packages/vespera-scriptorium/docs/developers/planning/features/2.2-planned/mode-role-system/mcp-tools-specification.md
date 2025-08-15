@@ -38,7 +38,7 @@ This document specifies the new MCP tools for mode/role system management.
       "custom_development_mode.yaml",
       "/absolute/path/to/custom_roles.yaml"
     ],
-    "validation": "Must exist in .task_orchestrator/roles/ directory"
+    "validation": "Must exist in .vespera_scriptorium/roles/ directory"
   },
   "validate_first": {
     "type": "boolean", 
@@ -89,7 +89,7 @@ json
     "auto_task_routing": true
   },
   "previous_mode": "default_roles.yaml",
-  "backup_location": ".task_orchestrator/backups/mode_backup_20250601_143022.yaml"
+  "backup_location": ".vespera_scriptorium/backups/mode_backup_20250601_143022.yaml"
 }
 
 ```text
@@ -330,7 +330,7 @@ json
 {
   "success": true,
   "mode_created": "analytics_project_mode.yaml",
-  "file_path": ".task_orchestrator/roles/analytics_project_mode.yaml",
+  "file_path": ".vespera_scriptorium/roles/analytics_project_mode.yaml",
   "mode_details": {
     "total_roles": 9,
     "standard_roles": 7,
@@ -379,7 +379,7 @@ json
 {
   "success": true,
   "backup_created": "mode_backup_20250601_143022.yaml",
-  "backup_path": ".task_orchestrator/backups/mode_backup_20250601_143022.yaml",
+  "backup_path": ".vespera_scriptorium/backups/mode_backup_20250601_143022.yaml",
   "backed_up_mode": "development_roles.yaml",
   "session_id": "session_abc123",
   "backup_size": "2.4KB",

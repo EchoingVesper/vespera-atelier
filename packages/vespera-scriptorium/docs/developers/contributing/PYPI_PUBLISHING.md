@@ -1,6 +1,6 @@
 
 
-# PyPI Publishing Guide for MCP Task Orchestrator
+# PyPI Publishing Guide for Vespera Scriptorium
 
 #
 
@@ -51,7 +51,7 @@ twine upload --repository testpypi dist/*
 
 # Test installation from TestPyPI
 
-pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ mcp-task-orchestrator
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ mcp-vespera-scriptorium
 
 ```text
 
@@ -81,11 +81,11 @@ bash
 
 # Install from PyPI
 
-pip install mcp-task-orchestrator
+pip install mcp-vespera-scriptorium
 
 # For development install with extras
 
-pip install mcp-task-orchestrator[dev]
+pip install mcp-vespera-scriptorium[dev]
 ```text
 
 #
@@ -104,7 +104,7 @@ pip install mcp-task-orchestrator[dev]
 
 # Important Notes
 
-- Package name `mcp-task-orchestrator` appears to be available on PyPI
+- Package name `mcp-vespera-scriptorium` appears to be available on PyPI
 
 - First upload establishes ownership
 

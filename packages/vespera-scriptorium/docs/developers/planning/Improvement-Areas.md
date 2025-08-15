@@ -1,24 +1,24 @@
 
 
-# MCP Task Orchestrator: Improvement Areas Analysis Prompt
+# Vespera Scriptorium: Improvement Areas Analysis Prompt
 
 #
 
 # Task Overview
 
-Conduct a comprehensive analysis of the MCP Task Orchestrator codebase to identify key areas for improvement, focusing on code quality, security, testing, and user experience.
+Conduct a comprehensive analysis of the Vespera Scriptorium codebase to identify key areas for improvement, focusing on code quality, security, testing, and user experience.
 
 #
 
 # Context
 
-The MCP Task Orchestrator has been transformed into a well-tested, open-source project with cross-platform support and automatic configuration management. Before public release, we need to identify and address any remaining weaknesses or gaps in the implementation.
+The Vespera Scriptorium has been transformed into a well-tested, open-source project with cross-platform support and automatic configuration management. Before public release, we need to identify and address any remaining weaknesses or gaps in the implementation.
 
 #
 
 # Requested Analysis
 
-Use the MCP Task Orchestrator to break down and analyze the following improvement areas:
+Use the Vespera Scriptorium to break down and analyze the following improvement areas:
 
 1. **Error Handling & Recovery**
 

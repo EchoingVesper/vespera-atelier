@@ -2,7 +2,7 @@
 
 # Tool Naming Conventions and Architecture
 
-*Architectural analysis and recommendations for MCP Task Orchestrator tool naming*
+*Architectural analysis and recommendations for Vespera Scriptorium tool naming*
 
 #
 

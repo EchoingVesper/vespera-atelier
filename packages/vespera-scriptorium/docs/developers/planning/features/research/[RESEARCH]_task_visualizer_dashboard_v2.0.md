@@ -14,7 +14,7 @@
 
 # 📋 Overview
 
-Add a comprehensive task visualization and monitoring dashboard to the MCP Task Orchestrator, providing users with real-time insights into task progress, specialist workload, and system performance. This feature addresses the current gap in user-friendly task tracking and monitoring capabilities.
+Add a comprehensive task visualization and monitoring dashboard to the Vespera Scriptorium, providing users with real-time insights into task progress, specialist workload, and system performance. This feature addresses the current gap in user-friendly task tracking and monitoring capabilities.
 
 **Problem Statement**: Users currently lack visibility into orchestrator task status beyond basic CLI output, making it difficult to track progress, identify bottlenecks, and manage complex workflows effectively.
 

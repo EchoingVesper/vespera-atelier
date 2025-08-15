@@ -45,7 +45,7 @@ def initialize_database_with_migration(base_dir: str = None, db_path: str = None
                     if not base_dir:
                         base_dir = os.getcwd()
                 
-                db_path = os.path.join(base_dir, ".task_orchestrator", "task_orchestrator.db")
+                db_path = os.path.join(base_dir, ".vespera_scriptorium", "vespera_scriptorium.db")
         
         # Ensure database directory exists
         db_dir = Path(db_path).parent
@@ -103,7 +103,7 @@ def get_state_manager() -> StateManager:
             # 3. Use a fallback database
         
         _state_manager = StateManager(base_dir=base_dir)
-        logger.info(f"Initialized StateManager with persistence in {base_dir}/.task_orchestrator")
+        logger.info(f"Initialized StateManager with persistence in {base_dir}/.vespera_scriptorium")
     
     return _state_manager
 
@@ -182,7 +182,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[types.TextCont
             base_dir = os.environ.get("MCP_TASK_ORCHESTRATOR_BASE_DIR", os.getcwd())
             db_path = os.environ.get("MCP_TASK_ORCHESTRATOR_DB_PATH")
             if not db_path:
-                db_path = os.path.join(base_dir, ".task_orchestrator", "task_orchestrator.db")
+                db_path = os.path.join(base_dir, ".vespera_scriptorium", "vespera_scriptorium.db")
             
             database_url = f"sqlite:///{db_path}"
             migration_system = AutoMigrationSystem(database_url)
@@ -216,7 +216,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[types.TextCont
             base_dir = os.environ.get("MCP_TASK_ORCHESTRATOR_BASE_DIR", os.getcwd())
             db_path = os.environ.get("MCP_TASK_ORCHESTRATOR_DB_PATH")
             if not db_path:
-                db_path = os.path.join(base_dir, ".task_orchestrator", "task_orchestrator.db")
+                db_path = os.path.join(base_dir, ".vespera_scriptorium", "vespera_scriptorium.db")
             
             database_url = f"sqlite:///{db_path}"
             migration_system = AutoMigrationSystem(database_url)

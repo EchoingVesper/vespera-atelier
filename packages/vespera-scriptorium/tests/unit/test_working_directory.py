@@ -12,7 +12,7 @@ from pathlib import Path
 # Add the source directory to the Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from mcp_task_orchestrator.infrastructure.mcp.handlers import handle_initialize_session
+from vespera_scriptorium.infrastructure.mcp.handlers import handle_initialize_session
 
 
 async def test_working_directory():
@@ -27,7 +27,7 @@ async def test_working_directory():
     
     # Test 2: With explicit working_directory parameter
     print("\n=== Test 2: Explicit working directory ===")
-    test_dir = "/mnt/e/My Work/Programming/MCP Servers/mcp-task-orchestrator/test_project"
+    test_dir = "/mnt/e/My Work/Programming/MCP Servers/vespera-scriptorium/test_project"
     result2 = await handle_initialize_session({"working_directory": test_dir})
     data2 = json.loads(result2[0].text)
     print(f"Working directory: {data2.get('working_directory')}")
@@ -42,12 +42,12 @@ async def test_working_directory():
     else:
         print("✗ Error not handled properly")
     
-    # Check if .task_orchestrator was created in the right place
-    expected_path = Path(test_dir) / ".task_orchestrator"
+    # Check if .vespera_scriptorium was created in the right place
+    expected_path = Path(test_dir) / ".vespera_scriptorium"
     if expected_path.exists():
-        print(f"✓ .task_orchestrator created at: {expected_path}")
+        print(f"✓ .vespera_scriptorium created at: {expected_path}")
     else:
-        print("✓ .task_orchestrator not created")
+        print("✓ .vespera_scriptorium not created")
     
     print("\n=== Test Summary ===")
     print("✓ Auto-detection works")

@@ -1,12 +1,12 @@
 
-# MCP Task Orchestrator - Tools Testing Tracker
+# Vespera Scriptorium - Tools Testing Tracker
 
 **Testing Framework for 16 MCP Tools with 3x Validation Gates**
 
 #
 # Testing Overview
 
-- **Total Tools**: 16 MCP Task Orchestrator tools
+- **Total Tools**: 16 Vespera Scriptorium tools
 
 - **Validation Gates**: 3 per tool (Basic, Edge Cases, Integration)
 

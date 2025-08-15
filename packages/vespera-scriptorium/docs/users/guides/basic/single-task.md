@@ -6,7 +6,7 @@
 
 # Overview
 
-Single task execution is the simplest workflow in MCP Task Orchestrator. Use this pattern when you have a well-defined task that can be completed by one or two specialists working together.
+Single task execution is the simplest workflow in Vespera Scriptorium. Use this pattern when you have a well-defined task that can be completed by one or two specialists working together.
 
 #
 

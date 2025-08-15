@@ -65,7 +65,7 @@ class GitHubFixesValidator:
         
         # Check if ResponseFormatter exists
         try:
-            from mcp_task_orchestrator.infrastructure.mcp.handlers.compatibility.response_formatter import ResponseFormatter
+            from vespera_scriptorium.infrastructure.mcp.handlers.compatibility.response_formatter import ResponseFormatter
             validations.append(ValidationResult(
                 passed=True,
                 message="ResponseFormatter class found",
@@ -75,7 +75,7 @@ class GitHubFixesValidator:
             
             # Check if SerializationValidator exists
             try:
-                from mcp_task_orchestrator.infrastructure.mcp.handlers.compatibility.serialization import SerializationValidator
+                from vespera_scriptorium.infrastructure.mcp.handlers.compatibility.serialization import SerializationValidator
                 validations.append(ValidationResult(
                     passed=True,
                     message="SerializationValidator class found",
@@ -148,7 +148,7 @@ class GitHubFixesValidator:
         
         # Check if compatibility layer exists
         try:
-            from mcp_task_orchestrator.infrastructure.mcp.handlers.compatibility.response_formatter import ResponseFormatter
+            from vespera_scriptorium.infrastructure.mcp.handlers.compatibility.response_formatter import ResponseFormatter
             formatter = ResponseFormatter()
             
             # Check if format_update_response method exists
@@ -253,7 +253,7 @@ class GitHubFixesValidator:
         
         # Check TaskUseCase has delete_task method
         try:
-            from mcp_task_orchestrator.application.usecases.manage_tasks import TaskUseCase
+            from vespera_scriptorium.application.usecases.manage_tasks import TaskUseCase
             
             if hasattr(TaskUseCase, 'delete_task'):
                 validations.append(ValidationResult(
@@ -318,8 +318,8 @@ class GitHubFixesValidator:
         
         # Check repository interface
         try:
-            from mcp_task_orchestrator.domain.repositories.task_repository import TaskRepository
-            from mcp_task_orchestrator.domain.repositories.async_task_repository import AsyncTaskRepository
+            from vespera_scriptorium.domain.repositories.task_repository import TaskRepository
+            from vespera_scriptorium.domain.repositories.async_task_repository import AsyncTaskRepository
             
             # Check sync repository
             if hasattr(TaskRepository, 'delete_task'):
@@ -388,7 +388,7 @@ class GitHubFixesValidator:
         
         # Check TaskUseCase has cancel_task method
         try:
-            from mcp_task_orchestrator.application.usecases.manage_tasks import TaskUseCase
+            from vespera_scriptorium.application.usecases.manage_tasks import TaskUseCase
             
             if hasattr(TaskUseCase, 'cancel_task'):
                 validations.append(ValidationResult(
@@ -453,8 +453,8 @@ class GitHubFixesValidator:
         
         # Check repository interfaces (cancel_task is new, likely not in base interface)
         try:
-            from mcp_task_orchestrator.domain.repositories.task_repository import TaskRepository
-            from mcp_task_orchestrator.domain.repositories.async_task_repository import AsyncTaskRepository
+            from vespera_scriptorium.domain.repositories.task_repository import TaskRepository
+            from vespera_scriptorium.domain.repositories.async_task_repository import AsyncTaskRepository
             
             # Check if cancel_task exists in repositories
             sync_has_cancel = hasattr(TaskRepository, 'cancel_task')
@@ -525,7 +525,7 @@ class GitHubFixesValidator:
         
         # Check if format_query_response exists
         try:
-            from mcp_task_orchestrator.infrastructure.mcp.handlers.compatibility.response_formatter import ResponseFormatter
+            from vespera_scriptorium.infrastructure.mcp.handlers.compatibility.response_formatter import ResponseFormatter
             formatter = ResponseFormatter()
             
             if hasattr(formatter, 'format_query_response'):

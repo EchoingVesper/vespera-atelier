@@ -3,16 +3,16 @@
 
 import sys
 import os
-sys.path.insert(0, r"E:\My Work\Programming\MCP Task Orchestrator")
+sys.path.insert(0, r"E:\My Work\Programming\Vespera Scriptorium")
 
 try:
     # Set environment variables
-    os.environ["MCP_TASK_ORCHESTRATOR_DB_PATH"] = r"E:\My Work\Programming\MCP Task Orchestrator\task_orchestrator.db"
-    os.environ["MCP_TASK_ORCHESTRATOR_BASE_DIR"] = r"E:\My Work\Programming\MCP Task Orchestrator"
+    os.environ["MCP_TASK_ORCHESTRATOR_DB_PATH"] = r"E:\My Work\Programming\Vespera Scriptorium\vespera_scriptorium.db"
+    os.environ["MCP_TASK_ORCHESTRATOR_BASE_DIR"] = r"E:\My Work\Programming\Vespera Scriptorium"
     
-    from mcp_task_orchestrator.orchestrator.orchestration_state_manager import StateManager
-    from mcp_task_orchestrator.orchestrator.task_orchestration_service import TaskOrchestrator
-    from mcp_task_orchestrator.orchestrator.specialist_management_service import SpecialistManager
+    from vespera_scriptorium.orchestrator.orchestration_state_manager import StateManager
+    from vespera_scriptorium.orchestrator.task_orchestration_service import TaskOrchestrator
+    from vespera_scriptorium.orchestrator.specialist_management_service import SpecialistManager
     
     # Initialize components
     state_manager = StateManager()

@@ -36,7 +36,7 @@ class LockTrackingModel(Base):
 
 # 2. Implemented cleanup_stale_locks Method
 
-**Location**: `mcp_task_orchestrator/db/persistence.py`
+**Location**: `vespera_scriptorium/db/persistence.py`
 
 **Method Signature**: 
 
@@ -161,11 +161,11 @@ INFO - All integration tests passed! Missing method issue is resolved.
 
 # Files Modified
 
-1. **`mcp_task_orchestrator/db/models.py`**
+1. **`vespera_scriptorium/db/models.py`**
 
 - Added LockTrackingModel class
 
-2. **`mcp_task_orchestrator/db/persistence.py`**
+2. **`vespera_scriptorium/db/persistence.py`**
 
 - Added cleanup_stale_locks method
 

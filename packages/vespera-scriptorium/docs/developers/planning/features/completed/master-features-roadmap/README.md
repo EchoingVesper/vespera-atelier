@@ -31,7 +31,7 @@ modularized_from: "docs/developers/planning/features/completed/[COMPLETED]_maste
 #
 # 🎯 Executive Summary
 
-The MCP Task Orchestrator v2.0 represents a fundamental transformation from a task-focused system to a comprehensive session-aware project management platform. This roadmap outlines 16 total features across 4 major categories, with estimated implementation effort of 20-24 weeks.
+The Vespera Scriptorium v2.0 represents a fundamental transformation from a task-focused system to a comprehensive session-aware project management platform. This roadmap outlines 16 total features across 4 major categories, with estimated implementation effort of 20-24 weeks.
 
 #
 # Key Transformation Areas
@@ -88,7 +88,7 @@ This comprehensive roadmap is organized into focused modules for detailed planni
 #
 ## Core Transformation
 
-The v2.0 roadmap fundamentally transforms the MCP Task Orchestrator from:
+The v2.0 roadmap fundamentally transforms the Vespera Scriptorium from:
 
 **From**: Task-centric tool with basic orchestration
 
@@ -200,4 +200,4 @@ The v2.0 roadmap fundamentally transforms the MCP Task Orchestrator from:
 
 - Troubleshooting guides for common issues
 
-This master roadmap provides the strategic framework for transforming the MCP Task Orchestrator into a next-generation project management platform while maintaining reliability and ease of use.
+This master roadmap provides the strategic framework for transforming the Vespera Scriptorium into a next-generation project management platform while maintaining reliability and ease of use.

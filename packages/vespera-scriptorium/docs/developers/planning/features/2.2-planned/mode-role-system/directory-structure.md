@@ -24,7 +24,7 @@ This document specifies the enhanced directory structure for the mode/role syste
 
 ```text
 project_root/
-├── .task_orchestrator/
+├── .vespera_scriptorium/
 │   ├── roles/                          
 # Mode configurations
 │   │   ├── project_roles.yaml         
@@ -356,7 +356,7 @@ backups/mode_backup_*.yaml ←→ sessions/[id]/mode_binding.yaml
 
 When a project is first initialized:
 
-1. Create `.task_orchestrator/` directory structure
+1. Create `.vespera_scriptorium/` directory structure
 
 2. Create `roles/` subdirectory
 

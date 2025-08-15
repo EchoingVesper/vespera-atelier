@@ -20,16 +20,16 @@ PRPs/v2.0-release-meta-prp/meta-coordination-orchestrator.md
 
 # Phase 1-4 files (01-12)
 PRPs/v2.0-release-meta-prp/01-documentation-automation-spec-orchestrator.md
-PRPs/v2.0-release-meta-prp/02-git-integration-task-orchestrator.md
+PRPs/v2.0-release-meta-prp/02-git-integration-vespera-scriptorium.md
 PRPs/v2.0-release-meta-prp/03-health-monitoring-spec-orchestrator.md
-PRPs/v2.0-release-meta-prp/04-smart-routing-task-orchestrator.md
+PRPs/v2.0-release-meta-prp/04-smart-routing-vespera-scriptorium.md
 PRPs/v2.0-release-meta-prp/05-template-library-spec-orchestrator.md
 PRPs/v2.0-release-meta-prp/06-testing-automation-spec-orchestrator.md
-PRPs/v2.0-release-meta-prp/07-integration-testing-task-orchestrator.md
-PRPs/v2.0-release-meta-prp/09-documentation-update-task-orchestrator.md
-PRPs/v2.0-release-meta-prp/10-repository-cleanup-task-orchestrator.md
-PRPs/v2.0-release-meta-prp/11-git-commit-organization-task-orchestrator.md
-PRPs/v2.0-release-meta-prp/12-release-preparation-task-orchestrator.md
+PRPs/v2.0-release-meta-prp/07-integration-testing-vespera-scriptorium.md
+PRPs/v2.0-release-meta-prp/09-documentation-update-vespera-scriptorium.md
+PRPs/v2.0-release-meta-prp/10-repository-cleanup-vespera-scriptorium.md
+PRPs/v2.0-release-meta-prp/11-git-commit-organization-vespera-scriptorium.md
+PRPs/v2.0-release-meta-prp/12-release-preparation-vespera-scriptorium.md
 ```
 
 ## Common Patterns to Fix

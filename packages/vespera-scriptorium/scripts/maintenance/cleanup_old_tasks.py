@@ -91,7 +91,7 @@ def cleanup_old_tasks(db_path, age_days=2):
     conn.close()
 
 if __name__ == "__main__":
-    db_path = Path("task_orchestrator.db")
+    db_path = Path("vespera_scriptorium.db")
     
     if not db_path.exists():
         print("Database not found!")

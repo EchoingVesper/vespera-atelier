@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Validation script for MCP Task Orchestrator configurations.
+Validation script for Vespera Scriptorium configurations.
 
 This script validates that all detected MCP client configurations
 are properly formatted and contain valid paths.
@@ -14,7 +14,7 @@ from pathlib import Path
 # Add installer directory to path
 sys.path.insert(0, str(Path(__file__).parent / "installer"))
 
-from mcp_task_orchestrator_cli.client_detector import ClientDetector
+from vespera_scriptorium_cli.client_detector import ClientDetector
 
 def validate_config(client_id, config_path):
     """Validate a client configuration file."""
@@ -59,7 +59,7 @@ def validate_config(client_id, config_path):
 
 def main():
     """Validate all detected client configurations."""
-    print("\nMCP Task Orchestrator - Configuration Validation")
+    print("\nVespera Scriptorium - Configuration Validation")
     print("=" * 50)
     
     # Initialize detector

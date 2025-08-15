@@ -37,7 +37,7 @@ modularized_from: "docs/developers/planning/features/research/[CRITICAL]_enhance
 
 - **Issue #36**: Orchestrator files created in wrong directory
 
-- **User Impact**: Users cannot control where .task_orchestrator folder is created
+- **User Impact**: Users cannot control where .vespera_scriptorium folder is created
 
 - **Required Fix**: Session-directory association with persistent session management
 
@@ -49,7 +49,7 @@ The `working_directory` parameter has been added to `orchestrator_initialize_ses
 #
 # Architectural Vision
 
-Transform the MCP Task Orchestrator from a task-focused system into a **session-aware organizational framework** where:
+Transform the Vespera Scriptorium from a task-focused system into a **session-aware organizational framework** where:
 
 - **Sessions** represent large, cohesive project units (comparable to GitHub repositories or project workspaces)
 

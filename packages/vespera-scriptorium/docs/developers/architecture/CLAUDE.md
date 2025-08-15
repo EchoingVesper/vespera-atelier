@@ -41,7 +41,7 @@ You are working with architectural documentation and design decisions. Before pr
 5. **Consider Long-term Implications**: What are the maintenance and evolution impacts?
 </architecture_context_analysis>
 
-Architectural documentation guidance for the MCP Task Orchestrator's design decisions and technical records.
+Architectural documentation guidance for the Vespera Scriptorium's design decisions and technical records.
 
 #
 

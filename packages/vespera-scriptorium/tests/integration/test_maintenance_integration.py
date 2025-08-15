@@ -13,19 +13,19 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import json
 
-from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
-from mcp_task_orchestrator.db.models import Base
-from mcp_task_orchestrator.orchestrator.task_orchestration_service import TaskOrchestrator
-from mcp_task_orchestrator.orchestrator.maintenance import MaintenanceCoordinator
-from mcp_task_orchestrator.orchestrator.orchestration_state_manager import StateManager
-from mcp_task_orchestrator.orchestrator.specialist_management_service import SpecialistManager
-from mcp_task_orchestrator.orchestrator.task_lifecycle import TaskLifecycleManager
-from mcp_task_orchestrator.orchestrator.streaming_artifacts import StreamingArtifactManager
-from mcp_task_orchestrator.orchestrator.artifacts import ArtifactManager
+from vespera_scriptorium.db.persistence import DatabasePersistenceManager
+from vespera_scriptorium.db.models import Base
+from vespera_scriptorium.orchestrator.task_orchestration_service import TaskOrchestrator
+from vespera_scriptorium.orchestrator.maintenance import MaintenanceCoordinator
+from vespera_scriptorium.orchestrator.orchestration_state_manager import StateManager
+from vespera_scriptorium.orchestrator.specialist_management_service import SpecialistManager
+from vespera_scriptorium.orchestrator.task_lifecycle import TaskLifecycleManager
+from vespera_scriptorium.orchestrator.streaming_artifacts import StreamingArtifactManager
+from vespera_scriptorium.orchestrator.artifacts import ArtifactManager
 # Import Clean Architecture v2.0 models
-from mcp_task_orchestrator.domain.entities.task import Task, TaskStatus, TaskType
-from mcp_task_orchestrator.domain.value_objects.complexity_level import ComplexityLevel
-from mcp_task_orchestrator.domain.value_objects.specialist_type import SpecialistType
+from vespera_scriptorium.domain.entities.task import Task, TaskStatus, TaskType
+from vespera_scriptorium.domain.value_objects.complexity_level import ComplexityLevel
+from vespera_scriptorium.domain.value_objects.specialist_type import SpecialistType
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
@@ -164,7 +164,7 @@ class TestMaintenanceIntegration:
         # Step 3: Simulate task aging and run maintenance
         # Manually update task timestamps to simulate aging
         with Session(test_environment["engine"]) as session:
-            from mcp_task_orchestrator.db.models import SubTaskModel
+            from vespera_scriptorium.db.models import SubTaskModel
             task = session.query(SubTaskModel).filter_by(id=design_task["id"]).first()
             if task:
                 task.updated_at = datetime.utcnow() - timedelta(days=100)
@@ -253,7 +253,7 @@ class TestMaintenanceIntegration:
         
         # Manually age the stale task
         with Session(test_environment["engine"]) as session:
-            from mcp_task_orchestrator.db.models import SubTaskModel
+            from vespera_scriptorium.db.models import SubTaskModel
             task = session.query(SubTaskModel).filter_by(
                 parent_id=stale_task["task_id"]
             ).first()
@@ -433,7 +433,7 @@ class TestMaintenanceIntegration:
         
         # Age half the tasks
         with Session(test_environment["engine"]) as session:
-            from mcp_task_orchestrator.db.models import TaskBreakdownModel
+            from vespera_scriptorium.db.models import TaskBreakdownModel
             tasks = session.query(TaskBreakdownModel).all()
             for i, task in enumerate(tasks[:task_count//2]):
                 task.created_at = datetime.utcnow() - timedelta(days=60)

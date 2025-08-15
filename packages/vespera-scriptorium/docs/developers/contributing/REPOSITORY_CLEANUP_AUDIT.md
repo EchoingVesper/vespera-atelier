@@ -1,6 +1,6 @@
 
 
-# Repository Cleanup Audit Report - mcp-task-orchestrator
+# Repository Cleanup Audit Report - mcp-vespera-scriptorium
 
 #
 
@@ -44,11 +44,11 @@ This comprehensive audit identifies unnecessary files, build artifacts, and impr
 
 # 3. Database Files
 
-- `data/backups/migration_backup_20250606_041333/task_orchestrator.db`
+- `data/backups/migration_backup_20250606_041333/vespera_scriptorium.db`
 
 - `data/backups/task_orchestrator_backup_20250603_053935.db`
 
-- `tests/unit/task_orchestrator.db`
+- `tests/unit/vespera_scriptorium.db`
 
 **Action**: Remove these database files. They contain user data and should not be in version control.
 
@@ -58,11 +58,11 @@ This comprehensive audit identifies unnecessary files, build artifacts, and impr
 
 # 4. Backup Files
 
-- `mcp_task_orchestrator/orchestrator/core.py.bak`
+- `vespera_scriptorium/orchestrator/core.py.bak`
 
-- `mcp_task_orchestrator/orchestrator/state.py.bak`
+- `vespera_scriptorium/orchestrator/state.py.bak`
 
-- `mcp_task_orchestrator/persistence.py.bak`
+- `vespera_scriptorium/persistence.py.bak`
 
 **Action**: Remove these backup files. They are redundant with version control.
 
@@ -78,7 +78,7 @@ This comprehensive audit identifies unnecessary files, build artifacts, and impr
   - `/CLAUDE.md` (root)
   - `/architecture/CLAUDE.md`
   - `/docs/CLAUDE.md`
-  - `/mcp_task_orchestrator/CLAUDE.md`
+  - `/vespera_scriptorium/CLAUDE.md`
   - `/scripts/CLAUDE.md`
   - `/tests/CLAUDE.md`
 
@@ -312,9 +312,9 @@ rm -rf venv_test/ venv_mcp/
 
 # Remove database files
 
-rm -f data/backups/migration_backup_20250606_041333/task_orchestrator.db
+rm -f data/backups/migration_backup_20250606_041333/vespera_scriptorium.db
 rm -f data/backups/task_orchestrator_backup_20250603_053935.db
-rm -f tests/unit/task_orchestrator.db
+rm -f tests/unit/vespera_scriptorium.db
 
 # Remove backup files
 

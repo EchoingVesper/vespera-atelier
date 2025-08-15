@@ -207,7 +207,7 @@ class PipelineResult:
 
 class PipelineConfig(BaseModel):
     """Configuration for the validation pipeline."""
-    name: str = "MCP Task Orchestrator Validation"
+    name: str = "Vespera Scriptorium Validation"
     version: str = "2.0"
     fail_fast: bool = True
     parallel_execution: bool = False

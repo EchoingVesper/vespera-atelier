@@ -13,8 +13,8 @@
 # Option 1: Install from PyPI (Recommended)
 
 ```bash
-pip install mcp-task-orchestrator
-python -m mcp_task_orchestrator_cli install
+pip install mcp-vespera-scriptorium
+python -m vespera_scriptorium_cli install
 
 ```text
 
@@ -32,8 +32,8 @@ python -m mcp_task_orchestrator_cli install
 
 ```text
 bash
-   git clone https://github.com/EchoingVesper/mcp-task-orchestrator.git
-   cd mcp-task-orchestrator
+   git clone https://github.com/EchoingVesper/mcp-vespera-scriptorium.git
+   cd mcp-vespera-scriptorium
    
 
 ```text
@@ -48,7 +48,7 @@ text
 text
 bash
    pip install -e .
-   python -m mcp_task_orchestrator_cli install
+   python -m vespera_scriptorium_cli install
    
 
 ```text
@@ -72,7 +72,7 @@ text
 ```text
 text
 bash
-python -m mcp_task_orchestrator_cli install
+python -m vespera_scriptorium_cli install
 
 ```text
 Automatically detects and configures all compatible MCP clients.
@@ -87,7 +87,7 @@ Automatically detects and configures all compatible MCP clients.
 
 ```text
 bash
-python -m mcp_task_orchestrator_cli install --client claude_desktop
+python -m vespera_scriptorium_cli install --client claude_desktop
 
 ```text
 text
@@ -97,7 +97,7 @@ Installs globally, works across multiple projects using dynamic directory detect
 
 ```text
 bash
-python -m mcp_task_orchestrator_cli install --client claude_code --scope project
+python -m vespera_scriptorium_cli install --client claude_code --scope project
 
 ```text
 text
@@ -107,7 +107,7 @@ Installs for the current project directory only. Run this command in each projec
 
 ```text
 bash
-python -m mcp_task_orchestrator_cli install --client windsurf,cursor
+python -m vespera_scriptorium_cli install --client windsurf,cursor
 
 ```text
 text
@@ -117,7 +117,7 @@ These clients automatically detect project context when opened in project folder
 
 ```text
 bash
-python -m mcp_task_orchestrator_cli install --client claude_desktop,windsurf,cursor
+python -m vespera_scriptorium_cli install --client claude_desktop,windsurf,cursor
 
 ```text
 text
@@ -132,7 +132,7 @@ text
 
 ```text
 bash
-python -m mcp_task_orchestrator_cli install --client claude_desktop --working-dir "/path/to/project"
+python -m vespera_scriptorium_cli install --client claude_desktop --working-dir "/path/to/project"
 
 ```text
 text
@@ -141,7 +141,7 @@ text
 
 ```text
 bash
-python -m mcp_task_orchestrator_cli install --force
+python -m vespera_scriptorium_cli install --force
 
 ```text
 text
@@ -150,7 +150,7 @@ text
 
 ```text
 bash
-python -m mcp_task_orchestrator_cli install --name "my-orchestrator"
+python -m vespera_scriptorium_cli install --name "my-orchestrator"
 
 ```text
 text
@@ -219,11 +219,11 @@ The `run_installer.py` method is the recommended installation approach because i
 
 # Claude Desktop Approach (Recommended)
 
-1. **Install once globally**: `python -m mcp_task_orchestrator_cli install --client claude_desktop`
+1. **Install once globally**: `python -m vespera_scriptorium_cli install --client claude_desktop`
 
 2. **Works everywhere**: The orchestrator automatically detects your current project
 
-3. **Project-specific data**: Each project gets its own `.task_orchestrator` directory
+3. **Project-specific data**: Each project gets its own `.vespera_scriptorium` directory
 
 4. **Use anywhere**: Open Claude Desktop from any project directory
 
@@ -233,7 +233,7 @@ The `run_installer.py` method is the recommended installation approach because i
 
 # Claude Code Approach (Per-Project)
 
-1. **Install per project**: `cd /path/to/project && python -m mcp_task_orchestrator_cli install --client claude_code --scope project`
+1. **Install per project**: `cd /path/to/project && python -m vespera_scriptorium_cli install --client claude_code --scope project`
 
 2. **Project isolation**: Each project has its own orchestrator configuration
 
@@ -259,11 +259,11 @@ The orchestrator automatically detects your project directory using:
 
 Each project gets its own:
 
-- Task database (`.task_orchestrator/task_orchestrator.db`)
+- Task database (`.vespera_scriptorium/vespera_scriptorium.db`)
 
-- Artifact storage (`.task_orchestrator/artifacts/`)
+- Artifact storage (`.vespera_scriptorium/artifacts/`)
 
-- Custom role definitions (`.task_orchestrator/roles/project_roles.yaml`)
+- Custom role definitions (`.vespera_scriptorium/roles/project_roles.yaml`)
 
 #
 
@@ -298,7 +298,7 @@ python installer/cleanup.py
 
 2. ✅ Installs all dependencies with correct versions (mcp>=1.9.0, psutil, SQLAlchemy, etc.)
 
-3. ✅ Initializes SQLite database for task persistence (`.task_orchestrator/database/`)
+3. ✅ Initializes SQLite database for task persistence (`.vespera_scriptorium/database/`)
 
 4. ✅ Sets up maintenance coordinator and automated cleanup system
 
@@ -322,7 +322,7 @@ python installer/cleanup.py
 
 # Step 1: Basic Tool Availability
 
-In your MCP client, look for `task-orchestrator` in the available tools/servers list.
+In your MCP client, look for `vespera-scriptorium` in the available tools/servers list.
 
 #
 
@@ -362,7 +362,7 @@ claude --version
 
 # Then re-run the installer
 
-python -m mcp_task_orchestrator_cli install --client claude_code
+python -m vespera_scriptorium_cli install --client claude_code
 
 ```text
 text
@@ -376,7 +376,7 @@ bash
 
 # to create the configuration directory, then re-run installer
 
-python -m mcp_task_orchestrator_cli install --force
+python -m vespera_scriptorium_cli install --force
 
 ```text
 text
@@ -388,7 +388,7 @@ bash
 
 # Use --force to overwrite existing configuration
 
-python -m mcp_task_orchestrator_cli install --force
+python -m vespera_scriptorium_cli install --force
 
 ```text
 text
@@ -449,7 +449,7 @@ text
 
 ```text
 bash
-python -m mcp_task_orchestrator_cli install --help
+python -m vespera_scriptorium_cli install --help
 
 ```text
 text
@@ -458,7 +458,7 @@ text
 
 ```text
 bash
-python -m mcp_task_orchestrator_cli install --no-auto-detect --client claude_desktop
+python -m vespera_scriptorium_cli install --no-auto-detect --client claude_desktop
 
 ```text
 text
@@ -487,7 +487,7 @@ bash
 
 # Should show database files
 
-ls -la .task_orchestrator/database/
+ls -la .vespera_scriptorium/database/
 
 ```text
 text
@@ -537,7 +537,7 @@ Expected response should include:
 
 - [ ] Session initialization works
 
-- [ ] Database directory exists (`.task_orchestrator/database/`)
+- [ ] Database directory exists (`.vespera_scriptorium/database/`)
 
 - [ ] Maintenance coordinator responds
 
@@ -585,7 +585,7 @@ If automatic installation fails, see manual configuration examples in each clien
 
 - **Module errors**: Delete `venv_mcp/` and reinstall with `python run_installer.py`
 
-- **Database errors**: Delete `.task_orchestrator/database/` and restart server to recreate
+- **Database errors**: Delete `.vespera_scriptorium/database/` and restart server to recreate
 
 - **Maintenance coordinator not working**: Ensure database is properly initialized
 
@@ -603,7 +603,7 @@ If automatic installation fails, see manual configuration examples in each clien
 
 - **Migration errors**: Delete database directory and let system recreate it
 
-- **Task persistence not working**: Check `.task_orchestrator/database/` directory exists
+- **Task persistence not working**: Check `.vespera_scriptorium/database/` directory exists
 
 #
 
@@ -621,12 +621,12 @@ python test_validation.py
 
 # Check database status
 
-ls -la .task_orchestrator/database/
-sqlite3 .task_orchestrator/database/tasks.db ".schema"
+ls -la .vespera_scriptorium/database/
+sqlite3 .vespera_scriptorium/database/tasks.db ".schema"
 
 # Test maintenance features
 
-python -c "from mcp_task_orchestrator.orchestrator.maintenance import MaintenanceCoordinator; print('Maintenance module OK')"
+python -c "from vespera_scriptorium.orchestrator.maintenance import MaintenanceCoordinator; print('Maintenance module OK')"
 
 # Clean install (if needed)
 
@@ -634,7 +634,7 @@ rm -rf venv_mcp/
 
 # Linux/Mac
 
-rm -rf .task_orchestrator/  
+rm -rf .vespera_scriptorium/  
 
 # Remove database
 
@@ -642,7 +642,7 @@ rmdir /s venv_mcp
 
 # Windows
 
-rmdir /s .task_orchestrator  
+rmdir /s .vespera_scriptorium  
 
 # Windows
 
@@ -663,7 +663,7 @@ bash
 
 python -c "
 import sqlite3
-conn = sqlite3.connect('.task_orchestrator/database/tasks.db')
+conn = sqlite3.connect('.vespera_scriptorium/database/tasks.db')
 cursor = conn.cursor()
 cursor.execute('SELECT name FROM sqlite_master WHERE type=\"table\";')
 tables = cursor.fetchall()

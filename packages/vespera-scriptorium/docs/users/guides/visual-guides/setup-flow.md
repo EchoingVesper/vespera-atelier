@@ -25,13 +25,13 @@
                     │                             │
                     │ Option 1 (PyPI):            │
                     │ 1. pip install              │
-                    │    mcp-task-orchestrator    │
-                    │ 2. mcp-task-orchestrator-cli│
+                    │    mcp-vespera-scriptorium    │
+                    │ 2. mcp-vespera-scriptorium-cli│
                     │    install                  │
                     │                             │
                     │ Option 2 (Source):          │
                     │ 1. git clone repository     │
-                    │ 2. cd mcp-task-orchestrator │
+                    │ 2. cd mcp-vespera-scriptorium │
                     │ 3. python run_installer.py  │
                     └─────────────┬───────────────┘
                                   │
@@ -57,7 +57,7 @@
         │                                                         │
         │ {                                                       │
         │   "mcpServers": {                                      │
-        │     "task-orchestrator": {                             │
+        │     "vespera-scriptorium": {                             │
         │       "command": "python",                             │
         │       "args": ["-m", "mcp_task_orchestrator"]          │
         │     },                                                 │

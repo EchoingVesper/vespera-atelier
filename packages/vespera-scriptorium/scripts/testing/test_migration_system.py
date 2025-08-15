@@ -15,8 +15,8 @@ from pathlib import Path
 # Add the project root to Python path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from mcp_task_orchestrator.db.auto_migration import AutoMigrationSystem, execute_startup_migration
-from mcp_task_orchestrator.db.models import Base
+from vespera_scriptorium.db.auto_migration import AutoMigrationSystem, execute_startup_migration
+from vespera_scriptorium.db.models import Base
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, DateTime
 
 

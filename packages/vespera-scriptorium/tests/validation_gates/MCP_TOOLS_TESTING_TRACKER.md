@@ -1,10 +1,10 @@
 
-# MCP Task Orchestrator Tools Testing Tracker
+# Vespera Scriptorium Tools Testing Tracker
 
 #
 # Overview
 
-Comprehensive testing tracker for all 16 MCP Task Orchestrator tools with 3x validation checkboxes per tool:
+Comprehensive testing tracker for all 16 Vespera Scriptorium tools with 3x validation checkboxes per tool:
 
 - **Basic**: Core functionality validation
 

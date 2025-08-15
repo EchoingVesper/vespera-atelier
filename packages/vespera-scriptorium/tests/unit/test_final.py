@@ -3,7 +3,7 @@
 
 import sys
 import os
-sys.path.insert(0, r"E:\My Work\Programming\MCP Task Orchestrator")
+sys.path.insert(0, r"E:\My Work\Programming\Vespera Scriptorium")
 
 import time
 
@@ -13,9 +13,9 @@ def test_performance_fix():
     
     try:
         # Point to the root database file directly
-        db_path = r"E:\My Work\Programming\MCP Task Orchestrator\task_orchestrator.db"
+        db_path = r"E:\My Work\Programming\Vespera Scriptorium\vespera_scriptorium.db"
         
-        from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
+        from vespera_scriptorium.db.persistence import DatabasePersistenceManager
         
         # Initialize with the correct database path
         db_url = f"sqlite:///{db_path}"
@@ -23,7 +23,7 @@ def test_performance_fix():
         
         # Check database contents
         with persistence.session_scope() as session:
-            from mcp_task_orchestrator.db.models import SubTaskModel
+            from vespera_scriptorium.db.models import SubTaskModel
             
             subtask_count = session.query(SubTaskModel).count()
             print(f"Found {subtask_count} subtasks in database")

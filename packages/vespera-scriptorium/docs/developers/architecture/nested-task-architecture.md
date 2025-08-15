@@ -12,7 +12,7 @@
 
 # Overview
 
-The Nested Task Architecture enhances the MCP Task Orchestrator's ability to handle complex, hierarchical task structures with recursive subtask management, sophisticated dependency handling, and improved state management for multi-level task breakdowns.
+The Nested Task Architecture enhances the Vespera Scriptorium's ability to handle complex, hierarchical task structures with recursive subtask management, sophisticated dependency handling, and improved state management for multi-level task breakdowns.
 
 #
 

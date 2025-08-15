@@ -24,25 +24,25 @@ def test_path_resolution():
             print(f"Changed working directory to: {temp_dir}")
             
             # Test 1: DatabasePersistenceManager
-            from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
+            from vespera_scriptorium.db.persistence import DatabasePersistenceManager
             db_mgr = DatabasePersistenceManager()
-            expected_persistence_dir = Path(temp_dir) / ".task_orchestrator"
+            expected_persistence_dir = Path(temp_dir) / ".vespera_scriptorium"
             
             print(f"Database manager persistence dir: {db_mgr.persistence_dir}")
             print(f"Expected persistence dir: {expected_persistence_dir}")
             assert db_mgr.persistence_dir == expected_persistence_dir, f"Database manager using wrong directory: {db_mgr.persistence_dir}"
             
             # Test 2: ArtifactManager
-            from mcp_task_orchestrator.orchestrator.artifacts import ArtifactManager
+            from vespera_scriptorium.orchestrator.artifacts import ArtifactManager
             artifact_mgr = ArtifactManager()
-            expected_artifacts_dir = Path(temp_dir) / ".task_orchestrator" / "artifacts"
+            expected_artifacts_dir = Path(temp_dir) / ".vespera_scriptorium" / "artifacts"
             
             print(f"Artifact manager artifacts dir: {artifact_mgr.artifacts_dir}")
             print(f"Expected artifacts dir: {expected_artifacts_dir}")
             assert artifact_mgr.artifacts_dir == expected_artifacts_dir, f"Artifact manager using wrong directory: {artifact_mgr.artifacts_dir}"
             
             # Test 3: StateManager
-            from mcp_task_orchestrator.orchestrator.orchestration_state_manager import StateManager
+            from vespera_scriptorium.orchestrator.orchestration_state_manager import StateManager
             state_mgr = StateManager()
             expected_state_base = Path(temp_dir)
             

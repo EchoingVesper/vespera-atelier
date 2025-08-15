@@ -12,7 +12,7 @@
 
 # Symptoms
 
-- MCP Task Orchestrator tools don't show up in your MCP client
+- Vespera Scriptorium tools don't show up in your MCP client
 
 - Client shows "No tools available" or similar message
 
@@ -30,11 +30,11 @@
 
 # Check if package is installed
 
-pip show mcp-task-orchestrator
+pip show mcp-vespera-scriptorium
 
 # Test server directly
 
-python -m mcp_task_orchestrator.server --version
+python -m vespera_scriptorium.server --version
 
 ```text
 
@@ -45,7 +45,7 @@ For Claude Desktop, verify your configuration file:
 ```text
 json
 {
-  "mcp-task-orchestrator": {
+  "mcp-vespera-scriptorium": {
     "command": "python",
     "args": ["-m", "mcp_task_orchestrator.server"],
     "env": {
@@ -101,9 +101,9 @@ bash
 
 # Verify workspace directory exists and is writable
 
-ls -la .task_orchestrator/
-touch .task_orchestrator/test_write
-rm .task_orchestrator/test_write
+ls -la .vespera_scriptorium/
+touch .vespera_scriptorium/test_write
+rm .vespera_scriptorium/test_write
 
 ```text
 
@@ -114,8 +114,8 @@ bash
 
 # Fix database permissions
 
-chmod 664 .task_orchestrator/*.db
-chown $USER:$USER .task_orchestrator/
+chmod 664 .vespera_scriptorium/*.db
+chown $USER:$USER .vespera_scriptorium/
 
 ```text
 
@@ -126,8 +126,8 @@ bash
 
 # Backup and recreate database (WARNING: loses all data)
 
-mv .task_orchestrator/workspace.db .task_orchestrator/workspace.db.bak
-python -m mcp_task_orchestrator.tools.diagnostics.init_workspace
+mv .vespera_scriptorium/workspace.db .vespera_scriptorium/workspace.db.bak
+python -m vespera_scriptorium.tools.diagnostics.init_workspace
 
 ```text
 
@@ -173,7 +173,7 @@ bash
 # Verify you're in the right environment
 
 which python
-pip list | grep mcp-task-orchestrator
+pip list | grep mcp-vespera-scriptorium
 
 ```text
 
@@ -184,12 +184,12 @@ bash
 
 # Clean reinstall
 
-pip uninstall mcp-task-orchestrator
-pip install mcp-task-orchestrator
+pip uninstall mcp-vespera-scriptorium
+pip install mcp-vespera-scriptorium
 
 # Or with development dependencies
 
-pip install mcp-task-orchestrator[dev]
+pip install mcp-vespera-scriptorium[dev]
 
 ```text
 
@@ -209,7 +209,7 @@ source fresh_env/bin/activate
 
 # Windows
 
-pip install mcp-task-orchestrator
+pip install mcp-vespera-scriptorium
 
 ```text
 
@@ -252,7 +252,7 @@ bash
 
 # Test YAML syntax online or with:
 
-python -c "import yaml; yaml.safe_load(open('.task_orchestrator/config.yaml'))"
+python -c "import yaml; yaml.safe_load(open('.vespera_scriptorium/config.yaml'))"
 
 ```text
 
@@ -263,11 +263,11 @@ bash
 
 # Backup current config
 
-cp .task_orchestrator/config.yaml .task_orchestrator/config.yaml.bak
+cp .vespera_scriptorium/config.yaml .vespera_scriptorium/config.yaml.bak
 
 # Regenerate default config
 
-python -m mcp_task_orchestrator.tools.diagnostics.reset_config
+python -m vespera_scriptorium.tools.diagnostics.reset_config
 
 ```text
 
@@ -279,7 +279,7 @@ Ensure your config has these minimum fields:
 yaml
 workspace:
   name: "default"
-  database_path: ".task_orchestrator/workspace.db"
+  database_path: ".vespera_scriptorium/workspace.db"
 
 specialists:
   default_roles:
@@ -396,7 +396,7 @@ df -h
 ```text
 yaml
 
-# In .task_orchestrator/config.yaml
+# In .vespera_scriptorium/config.yaml
 
 orchestration:
   max_concurrent_tasks: 1  
@@ -416,7 +416,7 @@ bash
 
 # Clean up old artifacts
 
-python -m mcp_task_orchestrator.tools.maintenance.cleanup_artifacts
+python -m vespera_scriptorium.tools.maintenance.cleanup_artifacts
 
 ```text
 
@@ -435,11 +435,11 @@ bash
 
 # Comprehensive health check
 
-python -m mcp_task_orchestrator.tools.diagnostics.health_check
+python -m vespera_scriptorium.tools.diagnostics.health_check
 
 # Generate diagnostic report
 
-python -m mcp_task_orchestrator.tools.diagnostics.generate_report
+python -m vespera_scriptorium.tools.diagnostics.generate_report
 
 ```text
 
@@ -467,11 +467,11 @@ python -c "import mcp_task_orchestrator; print(mcp_task_orchestrator.get_log_pat
 
 # Community Support
 
-- Check [GitHub Issues](https://github.com/your-org/mcp-task-orchestrator/issues)
+- Check [GitHub Issues](https://github.com/your-org/mcp-vespera-scriptorium/issues)
 
 - Review [FAQ](../../../troubleshooting/README.md)
 
-- Post in [Discussions](https://github.com/your-org/mcp-task-orchestrator/discussions)
+- Post in [Discussions](https://github.com/your-org/mcp-vespera-scriptorium/discussions)
 
 #
 

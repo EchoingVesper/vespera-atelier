@@ -266,7 +266,7 @@ def main():
     
     maintenance = AutomatedMaintenance(dry_run=dry_run)
     
-    print("🔧 MCP Task Orchestrator - Automated Maintenance")
+    print("🔧 Vespera Scriptorium - Automated Maintenance")
     print("=" * 50)
     
     if dry_run:

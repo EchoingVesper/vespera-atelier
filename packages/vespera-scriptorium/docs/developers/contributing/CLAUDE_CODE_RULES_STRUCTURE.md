@@ -6,7 +6,7 @@
 
 # Overview
 
-The MCP Task Orchestrator project implements a comprehensive **Claude Code Rules Structure** that provides context-aware guidance for development work across different project areas. This system enables specialized development workflows through directory-specific guidance files.
+The Vespera Scriptorium project implements a comprehensive **Claude Code Rules Structure** that provides context-aware guidance for development work across different project areas. This system enables specialized development workflows through directory-specific guidance files.
 
 #
 
@@ -43,7 +43,7 @@ The MCP Task Orchestrator project implements a comprehensive **Claude Code Rules
 # File Structure
 
 ```text
-mcp-task-orchestrator/
+mcp-vespera-scriptorium/
 ├── CLAUDE.md                           
 
 # Universal project guidance
@@ -60,7 +60,7 @@ mcp-task-orchestrator/
 
 # System utilities and diagnostics
 
-├── mcp_task_orchestrator/CLAUDE.md     
+├── vespera_scriptorium/CLAUDE.md     
 
 # Core implementation
 
@@ -227,7 +227,7 @@ text
 
 #
 
-# Core Implementation Directory (`mcp_task_orchestrator/CLAUDE.md`)
+# Core Implementation Directory (`vespera_scriptorium/CLAUDE.md`)
 
 **Focus**: Core orchestration engine development
 
@@ -248,7 +248,7 @@ bash
 
 # Run the MCP server
 
-python -m mcp_task_orchestrator.server
+python -m vespera_scriptorium.server
 
 # Database connectivity testing
 
@@ -317,7 +317,7 @@ The Claude Code Rules Structure enables context-aware development by providing s
 
 # Orchestrator Integration
 
-All directory-specific files integrate with the MCP Task Orchestrator system:
+All directory-specific files integrate with the Vespera Scriptorium system:
 
 - **Specialist Assignment**: Each directory aligns with specific orchestrator specialists
 
@@ -359,7 +359,7 @@ bash
 cd docs && python ../tests/test_example_file_creation.py
 cd tests && python simple_test_runner.py
 cd scripts && python diagnostics/check_status.py
-cd mcp_task_orchestrator && python -m mcp_task_orchestrator.server --test
+cd mcp_task_orchestrator && python -m vespera_scriptorium.server --test
 cd architecture && find . -name "*.md" -exec head -5 {} \;
 ```text
 

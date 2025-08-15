@@ -15,7 +15,7 @@
 
 # 📋 Overview
 
-The Bi-directional Persistence System enables the MCP Task Orchestrator to maintain data in both a high-performance database and human-readable markdown files. This dual approach provides the performance benefits of structured data while ensuring project information remains accessible, editable, and version-control friendly.
+The Bi-directional Persistence System enables the Vespera Scriptorium to maintain data in both a high-performance database and human-readable markdown files. This dual approach provides the performance benefits of structured data while ensuring project information remains accessible, editable, and version-control friendly.
 
 #
 
@@ -109,7 +109,7 @@ Bi-directional Persistence System
 ```text
 
 project_root/
-├── .task_orchestrator/
+├── .vespera_scriptorium/
 │   ├── sessions/
 │   │   └── [session_id]/
 │   │       ├── session.md                 
@@ -706,7 +706,7 @@ class MarkdownChangeDetector:
         """Monitor all markdown files for a session."""
         
         session = await self.session_manager.get_session(session_id)
-        session_dir = Path(session.project_root_path) / ".task_orchestrator" / "sessions" / session_id
+        session_dir = Path(session.project_root_path) / ".vespera_scriptorium" / "sessions" / session_id
         
         
 

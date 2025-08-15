@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test Runner for MCP Task Orchestrator
+Test Runner for Vespera Scriptorium
 
 This script provides a unified interface for running the test suite
 with proper organization and reporting.

@@ -1,6 +1,6 @@
 
 
-# MCP Task Orchestrator - Troubleshooting Guide
+# Vespera Scriptorium - Troubleshooting Guide
 
 *Quick solutions to common issues*
 
@@ -224,7 +224,7 @@ python scripts/diagnostics/check_status.py
 
 # Test server manually
 
-python -m mcp_task_orchestrator.server
+python -m vespera_scriptorium.server
 
 # View logs
 
@@ -238,7 +238,7 @@ ls logs/
 
 # 🆘 Getting Help
 
-1. **Search existing issues**: [GitHub Issues](https://github.com/EchoingVesper/mcp-task-orchestrator/issues)
+1. **Search existing issues**: [GitHub Issues](https://github.com/EchoingVesper/mcp-vespera-scriptorium/issues)
 
 2. **Create new issue** with:
 

@@ -10,7 +10,7 @@
 
 # 🧪 Context Continuity Recovery Test
 
-Hello! I need to test the **context continuity system** that was recently implemented for the MCP Task Orchestrator. This test will validate that work can be seamlessly recovered and continued across session boundaries.
+Hello! I need to test the **context continuity system** that was recently implemented for the Vespera Scriptorium. This test will validate that work can be seamlessly recovered and continued across session boundaries.
 
 #
 

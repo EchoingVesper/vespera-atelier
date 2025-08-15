@@ -2,7 +2,7 @@
 Integration Test for Enhanced Orchestrator
 
 This script tests the complete integration of file tracking and context continuity
-with the existing task orchestrator and work streams.
+with the existing Vespera Scriptorium and work streams.
 """
 
 import asyncio
@@ -13,12 +13,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 # Import our integration components
-from mcp_task_orchestrator.db.models import Base
-# from mcp_task_orchestrator.orchestrator.enhanced_core import create_enhanced_orchestrator  # DISABLED: Module does not exist
-# from mcp_task_orchestrator.orchestrator.work_stream_integration import  # TODO: Complete this import
-from mcp_task_orchestrator.orchestrator.orchestration_state_manager import StateManager
-from mcp_task_orchestrator.orchestrator.specialist_management_service import SpecialistManager
-from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
+from vespera_scriptorium.db.models import Base
+# from vespera_scriptorium.orchestrator.enhanced_core import create_enhanced_orchestrator  # DISABLED: Module does not exist
+# from vespera_scriptorium.orchestrator.work_stream_integration import  # TODO: Complete this import
+from vespera_scriptorium.orchestrator.orchestration_state_manager import StateManager
+from vespera_scriptorium.orchestrator.specialist_management_service import SpecialistManager
+from vespera_scriptorium.db.persistence import DatabasePersistenceManager
 
 
 @pytest.mark.skip(reason="Enhanced orchestrator module does not exist - needs implementation")

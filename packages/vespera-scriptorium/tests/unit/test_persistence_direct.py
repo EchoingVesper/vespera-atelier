@@ -3,7 +3,7 @@
 
 import sys
 import os
-sys.path.insert(0, r"E:\My Work\Programming\MCP Task Orchestrator")
+sys.path.insert(0, r"E:\My Work\Programming\Vespera Scriptorium")
 
 import time
 
@@ -13,16 +13,16 @@ def test_persistence_update_directly():
     
     try:
         # Connect to the database that has 82 tasks
-        db_path = r"E:\My Work\Programming\MCP Task Orchestrator\task_orchestrator.db"
+        db_path = r"E:\My Work\Programming\Vespera Scriptorium\vespera_scriptorium.db"
         
-        from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
+        from vespera_scriptorium.db.persistence import DatabasePersistenceManager
         
         db_url = f"sqlite:///{db_path}"
         persistence = DatabasePersistenceManager(db_url=db_url)
         
         # Get a sample task to update
         with persistence.session_scope() as session:
-            from mcp_task_orchestrator.db.models import SubTaskModel
+            from vespera_scriptorium.db.models import SubTaskModel
             sample_db_task = session.query(SubTaskModel).first()
             
             if sample_db_task:
@@ -31,9 +31,9 @@ def test_persistence_update_directly():
                 
                 # Convert to domain model
                 # Import Clean Architecture v2.0 models
-                from mcp_task_orchestrator.domain.entities.task import Task, TaskStatus, TaskType
-                from mcp_task_orchestrator.domain.value_objects.complexity_level import ComplexityLevel
-                from mcp_task_orchestrator.domain.value_objects.specialist_type import SpecialistType
+                from vespera_scriptorium.domain.entities.task import Task, TaskStatus, TaskType
+                from vespera_scriptorium.domain.value_objects.complexity_level import ComplexityLevel
+                from vespera_scriptorium.domain.value_objects.specialist_type import SpecialistType
                 from datetime import datetime
                 
                 domain_task = Task(

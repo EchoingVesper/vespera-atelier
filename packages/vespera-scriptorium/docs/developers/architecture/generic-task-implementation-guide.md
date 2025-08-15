@@ -786,7 +786,7 @@ class GitHubIntegrationPlugin:
 python
 import pytest
 from datetime import datetime
-from mcp_task_orchestrator.models import GenericTask, TaskDependency, DependencyType
+from vespera_scriptorium.models import GenericTask, TaskDependency, DependencyType
 
 class TestGenericTaskModel:
     

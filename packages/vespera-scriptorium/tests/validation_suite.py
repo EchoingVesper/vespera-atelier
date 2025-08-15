@@ -2,7 +2,7 @@
 """
 Comprehensive Test Validation Suite
 
-This module validates all the implemented solutions for the MCP Task Orchestrator
+This module validates all the implemented solutions for the Vespera Scriptorium
 test output and resource issues. It tests each component individually and then
 validates the integrated system works correctly.
 
@@ -66,7 +66,7 @@ class ResourceWarningValidator:
             
             try:
                 # Test the enhanced database persistence manager
-                from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
+                from vespera_scriptorium.db.persistence import DatabasePersistenceManager
                 
                 # Create temporary database
                 with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as tmp_file:
@@ -614,7 +614,7 @@ class HangDetectionValidator:
         start_time = time.time()
         
         try:
-#             from mcp_task_orchestrator.monitoring.hang_detection import  # TODO: Complete this import
+#             from vespera_scriptorium.monitoring.hang_detection import  # TODO: Complete this import
             
             # Test basic hang detector functionality
             detector = HangDetector(operation_timeout=5.0, warning_timeout=2.0)
@@ -694,7 +694,7 @@ class HangDetectionValidator:
             # but doesn't actually test their integration with MCP (which would require a full server)
             
             try:
-#                 from mcp_task_orchestrator.mcp_request_handlers import  # TODO: Complete this import
+#                 from vespera_scriptorium.mcp_request_handlers import  # TODO: Complete this import
                 handlers_available = True
             except ImportError:
                 handlers_available = False

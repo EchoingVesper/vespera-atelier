@@ -4,7 +4,7 @@
 DOCUMENTATION MASTER TEMPLATE
 =========================
 
-This template provides the foundational structure for all documentation types within the MCP Task Orchestrator 
+This template provides the foundational structure for all documentation types within the Vespera Scriptorium 
 project. It includes common elements that should be present in most documentation, with sections marked for 
 customization based on specific document types.
 

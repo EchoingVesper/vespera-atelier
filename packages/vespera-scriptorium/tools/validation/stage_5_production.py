@@ -961,7 +961,7 @@ class ProductionReadinessStage(ValidationStageBase):
             # Test importing the main package
             result = await self._run_tool([
                 'python', '-c',
-                'import mcp_task_orchestrator; print("Import successful")'
+                'import vespera_scriptorium; print("Import successful")'
             ])
             
             return result.success
@@ -1016,7 +1016,7 @@ class ProductionReadinessStage(ValidationStageBase):
             # Test basic startup
             result = await self._run_tool([
                 'python', '-c',
-                'from mcp_task_orchestrator.server import main; print("Startup validation successful")'
+                'from vespera_scriptorium.server import main; print("Startup validation successful")'
             ])
             
             return result.success

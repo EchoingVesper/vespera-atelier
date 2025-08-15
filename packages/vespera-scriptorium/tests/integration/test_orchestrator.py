@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Improved test script for the MCP Task Orchestrator.
+Improved test script for the Vespera Scriptorium.
 
-This script tests the task orchestrator functionality with proper error handling
+This script tests the Vespera Scriptorium functionality with proper error handling
 and timeout management.
 """
 
@@ -27,13 +27,13 @@ logger = logging.getLogger("test_orchestrator")
 
 # Import after configuring logging
 # Import Clean Architecture v2.0 models
-from mcp_task_orchestrator.domain.entities.task import Task, TaskStatus, TaskType
-from mcp_task_orchestrator.domain.value_objects.complexity_level import ComplexityLevel
-from mcp_task_orchestrator.domain.value_objects.specialist_type import SpecialistType
-from mcp_task_orchestrator.persistence import PersistenceManager
-from mcp_task_orchestrator.orchestrator.orchestration_state_manager import StateManager
-from mcp_task_orchestrator.orchestrator.specialist_management_service import SpecialistManager
-from mcp_task_orchestrator.orchestrator.task_orchestration_service import TaskOrchestrator
+from vespera_scriptorium.domain.entities.task import Task, TaskStatus, TaskType
+from vespera_scriptorium.domain.value_objects.complexity_level import ComplexityLevel
+from vespera_scriptorium.domain.value_objects.specialist_type import SpecialistType
+from vespera_scriptorium.persistence import PersistenceManager
+from vespera_scriptorium.orchestrator.orchestration_state_manager import StateManager
+from vespera_scriptorium.orchestrator.specialist_management_service import SpecialistManager
+from vespera_scriptorium.orchestrator.task_orchestration_service import TaskOrchestrator
 
 async def cleanup_stale_locks():
     """Clean up any stale lock files."""
@@ -59,7 +59,7 @@ async def cleanup_stale_locks():
     logger.info(f"Removed {count} stale lock files")
 
 async def test_task_orchestrator():
-    """Test the task orchestrator functionality."""
+    """Test the Vespera Scriptorium functionality."""
     logger.info("=== Testing Task Orchestrator ===")
     
     # Clean up stale locks first

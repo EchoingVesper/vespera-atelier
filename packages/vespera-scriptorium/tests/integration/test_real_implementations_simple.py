@@ -18,7 +18,7 @@ async def test_simple_integration():
         
         # Test basic imports without initialization
         print("1. Testing imports and class definitions...")
-#         from mcp_task_orchestrator.infrastructure.mcp.handlers.db_integration import  # TODO: Complete this import
+#         from vespera_scriptorium.infrastructure.mcp.handlers.db_integration import  # TODO: Complete this import
         print("✅ All real implementation classes imported successfully")
         
         # Test artifact service (this doesn't require database)
@@ -61,7 +61,7 @@ async def test_simple_integration():
         
         # Test factory function imports
         print("\n5. Testing factory functions...")
-#         from mcp_task_orchestrator.infrastructure.mcp.handlers.db_integration import  # TODO: Complete this import
+#         from vespera_scriptorium.infrastructure.mcp.handlers.db_integration import  # TODO: Complete this import
         print("✅ All factory functions imported successfully")
         
         print("\n=== Simple Integration Test: PASSED ===")

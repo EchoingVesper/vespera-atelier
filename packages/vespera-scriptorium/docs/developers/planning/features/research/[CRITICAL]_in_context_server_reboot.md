@@ -13,7 +13,7 @@
 
 # 📋 Overview
 
-A graceful server restart mechanism that allows the MCP Task Orchestrator to reload without closing the host application (Claude Desktop, Claude Code, Windsurf, etc.). This feature enables seamless updates, configuration changes, and error recovery without losing the working context or requiring manual client restart.
+A graceful server restart mechanism that allows the Vespera Scriptorium to reload without closing the host application (Claude Desktop, Claude Code, Windsurf, etc.). This feature enables seamless updates, configuration changes, and error recovery without losing the working context or requiring manual client restart.
 
 #
 

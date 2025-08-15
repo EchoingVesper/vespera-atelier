@@ -1,6 +1,6 @@
 
 
-# Documentation - MCP Task Orchestrator
+# Documentation - Vespera Scriptorium
 
 #
 

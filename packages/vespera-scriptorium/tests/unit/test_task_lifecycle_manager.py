@@ -12,12 +12,13 @@ from unittest.mock import Mock, AsyncMock, patch, MagicMock
 import json
 from pathlib import Path
 
-# from mcp_task_orchestrator.orchestrator.task_lifecycle import  # TODO: Complete this import
+from vespera_scriptorium.orchestrator.lifecycle.manager import TaskLifecycleManager
+from vespera_scriptorium.orchestrator.lifecycle.base import LifecycleConfig
 # Import Clean Architecture v2.0 models
-from mcp_task_orchestrator.domain.entities.task import Task, TaskStatus, TaskType
-from mcp_task_orchestrator.domain.value_objects.complexity_level import ComplexityLevel
-from mcp_task_orchestrator.domain.value_objects.specialist_type import SpecialistType
-# from mcp_task_orchestrator.db.models import  # TODO: Complete this import
+from vespera_scriptorium.domain.entities.task import Task, TaskStatus, TaskType
+from vespera_scriptorium.domain.value_objects.complexity_level import ComplexityLevel
+from vespera_scriptorium.domain.value_objects.specialist_type import SpecialistType
+# from vespera_scriptorium.db.models import  # TODO: Complete this import
 
 
 class TestTaskLifecycleManager:

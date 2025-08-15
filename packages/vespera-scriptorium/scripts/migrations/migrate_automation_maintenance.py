@@ -21,7 +21,7 @@ from sqlalchemy import create_engine, Column, Boolean, String, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 
-from mcp_task_orchestrator.db.models import Base, SubTaskModel, TaskPrerequisiteModel, MaintenanceOperationModel, ProjectHealthMetricModel
+from vespera_scriptorium.db.models import Base, SubTaskModel, TaskPrerequisiteModel, MaintenanceOperationModel, ProjectHealthMetricModel
 
 # Configure logging
 logging.basicConfig(
@@ -39,7 +39,7 @@ class AutomationMaintenanceMigration:
         if db_path is None:
             db_path = os.path.join(
                 os.path.expanduser("~"),
-                ".task_orchestrator",
+                ".vespera_scriptorium",
                 "orchestrator.db"
             )
         

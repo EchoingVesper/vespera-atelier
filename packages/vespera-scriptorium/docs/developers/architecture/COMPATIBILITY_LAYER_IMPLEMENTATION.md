@@ -20,7 +20,7 @@ This document provides a comprehensive technical overview of the Compatibility L
 
 ## Architecture Components
 
-### 1. Response Formatter (`mcp_task_orchestrator/infrastructure/compatibility/response_formatter.py`)
+### 1. Response Formatter (`vespera_scriptorium/infrastructure/compatibility/response_formatter.py`)
 
 The `ResponseFormatter` class provides unified response formatting across all operations:
 
@@ -70,7 +70,7 @@ def update_task(self, task_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
     return ResponseFormatter.format_update_response(task, updates)
 ```
 
-### 2. Serialization Validator (`mcp_task_orchestrator/infrastructure/compatibility/serialization.py`)
+### 2. Serialization Validator (`vespera_scriptorium/infrastructure/compatibility/serialization.py`)
 
 Ensures all responses are JSON-compatible:
 
@@ -102,7 +102,7 @@ class SerializationValidator:
 
 #### Issue #48: delete_task Implementation
 
-**Location**: `mcp_task_orchestrator/application/usecases/manage_tasks.py`
+**Location**: `vespera_scriptorium/application/usecases/manage_tasks.py`
 
 ```python
 async def delete_task(self, task_id: str, force: bool = False, archive_instead: bool = True) -> Dict[str, Any]:
@@ -165,7 +165,7 @@ async def delete_task(self, task_id: str, force: bool, archive_instead: bool) ->
 
 #### Issue #49: cancel_task Implementation (Partial)
 
-**Location**: `mcp_task_orchestrator/application/usecases/manage_tasks.py`
+**Location**: `vespera_scriptorium/application/usecases/manage_tasks.py`
 
 ```python
 async def cancel_task(self, task_id: str, reason: str = "", preserve_work: bool = True) -> Dict[str, Any]:
@@ -232,7 +232,7 @@ async def cancel_task(self, task_id: str, reason: str, preserve_work: bool) -> D
 **Solution**: Complete removal and replacement with direct dict responses.
 
 **Files Modified**:
-- `mcp_task_orchestrator/infrastructure/mcp/handlers/db_integration.py`
+- `vespera_scriptorium/infrastructure/mcp/handlers/db_integration.py`
 
 **Before**:
 ```python

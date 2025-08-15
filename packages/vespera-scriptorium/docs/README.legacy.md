@@ -1,6 +1,6 @@
 
 
-# MCP Task Orchestrator Documentation
+# Vespera Scriptorium Documentation
 
 #
 
@@ -13,8 +13,8 @@
 # Installation
 
 ```bash
-pip install mcp-task-orchestrator
-python -m mcp_task_orchestrator_cli.secure_installer_cli
+pip install mcp-vespera-scriptorium
+python -m vespera_scriptorium_cli.secure_installer_cli
 
 ```text
 
@@ -250,7 +250,7 @@ python scripts/diagnostics/check_status.py
 
 # Installation validation
 
-python -m mcp_task_orchestrator_cli.validation_backup_system --validate
+python -m vespera_scriptorium_cli.validation_backup_system --validate
 
 # Connection testing
 
@@ -310,6 +310,6 @@ python scripts/diagnostics/debug_mcp_connections.py
 
 ---
 
-**Welcome to the MCP Task Orchestrator!** This documentation is designed to help you quickly find what you need, whether you're installing for the first time, developing integrations, or managing deployments.
+**Welcome to the Vespera Scriptorium!** This documentation is designed to help you quickly find what you need, whether you're installing for the first time, developing integrations, or managing deployments.
 
 Choose your path above based on your role and objectives. For questions or improvements to this documentation, see our [contributing guidelines](contributing/documentation.md).

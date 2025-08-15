@@ -138,7 +138,7 @@ These features work synergistically: migrations trigger server reboots, which ap
 
 # Core components structure
 
-mcp_task_orchestrator/
+vespera_scriptorium/
 ├── db/
 │   ├── migrations/
 │   │   ├── __init__.py
@@ -395,4 +395,4 @@ async def orchestrator_restart_server(
 
 ---
 
-**Bottom Line**: These two features eliminate the most significant friction points in MCP Task Orchestrator development. Implementation in parallel allows us to deliver both within one week, dramatically improving development velocity and user experience.
+**Bottom Line**: These two features eliminate the most significant friction points in Vespera Scriptorium development. Implementation in parallel allows us to deliver both within one week, dramatically improving development velocity and user experience.

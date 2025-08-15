@@ -1,13 +1,13 @@
 # Vespera Scriptorium Implementation Roadmap
 
-**Timeline**: 8-12 weeks for complete transformation from MCP Task Orchestrator to "IDE for Ideas"  
+**Timeline**: 8-12 weeks for complete transformation from Vespera Scriptorium to "IDE for Ideas"  
 **Methodology**: Agile development with executive dysfunction-aware planning (flexible milestones, buffer zones,
 momentum preservation)  
 **Validation**: Continuous accessibility testing and user experience validation
 
 ## Executive Summary
 
-Transform MCP Task Orchestrator into Vespera Scriptorium through systematic implementation of document-centric
+Transform Vespera Scriptorium into Vespera Scriptorium through systematic implementation of document-centric
 workflows, creative writing support, knowledge management, and professional productivity tools while maintaining the
 executive dysfunction accessibility that makes the platform valuable.
 
@@ -42,13 +42,13 @@ executive dysfunction accessibility that makes the platform valuable.
 **Deliverables**:
 
 ```directory
-mcp_task_orchestrator/domain/entities/
+vespera_scriptorium/domain/entities/
 ├── document_models.py        # Core document entities
 ├── creative_models.py        # Story, Character, Scene entities  
 ├── knowledge_models.py       # Wiki, Note, Topic entities
 └── professional_models.py    # Report, Presentation entities
 
-mcp_task_orchestrator/domain/value_objects/
+vespera_scriptorium/domain/value_objects/
 ├── document_types.py         # Document type enumerations
 ├── content_types.py          # Multi-format content support
 └── collaboration_types.py    # Collaboration and review types
@@ -94,12 +94,12 @@ mcp_task_orchestrator/domain/value_objects/
 **Deliverables**:
 
 ```directory
-mcp_task_orchestrator/db/
+vespera_scriptorium/db/
 ├── document_schema.sql           # Document table definitions
 ├── document_migration.py         # Schema migration system
 └── search_indices.sql           # Full-text search setup
 
-mcp_task_orchestrator/infrastructure/database/sqlite/
+vespera_scriptorium/infrastructure/database/sqlite/
 ├── sqlite_document_repository.py    # Document CRUD operations
 ├── sqlite_creative_repository.py    # Creative workflow persistence
 ├── sqlite_knowledge_repository.py   # Knowledge management storage
@@ -146,7 +146,7 @@ mcp_task_orchestrator/infrastructure/database/sqlite/
 **Deliverables**:
 
 ```directory
-mcp_task_orchestrator/infrastructure/mcp/
+vespera_scriptorium/infrastructure/mcp/
 ├── document_tools.py             # Document management MCP tools
 ├── creative_tools.py             # Creative workflow tools
 ├── knowledge_tools.py            # Knowledge management tools
@@ -261,7 +261,7 @@ vespera_ui/creative/
 **Deliverables**:
 
 ```directory
-mcp_task_orchestrator/domain/entities/
+vespera_scriptorium/domain/entities/
 ├── worldbuilding_models.py       # World, Setting, Timeline entities
 └── research_integration.py       # Research-to-writing workflow
 
@@ -507,7 +507,7 @@ vespera_ui/research/
 **Deliverables**:
 
 ```directory
-mcp_task_orchestrator/infrastructure/ai/
+vespera_scriptorium/infrastructure/ai/
 ├── semantic_analysis.py         # Semantic analysis engine
 ├── topic_modeling.py            # Topic extraction and clustering
 ├── knowledge_graph_ai.py        # AI-powered knowledge graph
@@ -643,7 +643,7 @@ vespera_ui/professional/
 **Deliverables**:
 
 ```directory
-mcp_task_orchestrator/infrastructure/collaboration/
+vespera_scriptorium/infrastructure/collaboration/
 ├── realtime_engine.py           # Real-time collaboration engine
 ├── conflict_resolution.py       # Advanced conflict resolution
 ├── external_integrations.py     # Third-party tool integration
@@ -855,6 +855,6 @@ docs/vespera-scriptorium/
 
 ---
 
-*This roadmap transforms MCP Task Orchestrator into Vespera Scriptorium through systematic, accessibility-first
+*This roadmap transforms Vespera Scriptorium into Vespera Scriptorium through systematic, accessibility-first
 development that maintains the platform's core strength - supporting users with executive dysfunction - while expanding
 capabilities to become a comprehensive "IDE for Ideas."*

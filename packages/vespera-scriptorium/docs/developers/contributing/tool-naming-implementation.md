@@ -32,7 +32,7 @@ Implement backward-compatible naming changes through:
 
 #
 
-# 1. Server-Side Changes (`mcp_task_orchestrator/server.py`)
+# 1. Server-Side Changes (`vespera_scriptorium/server.py`)
 
 #
 
@@ -336,7 +336,7 @@ python
 # tests/test_tool_naming.py
 
 import pytest
-from mcp_task_orchestrator.server import call_tool
+from vespera_scriptorium.server import call_tool
 
 class TestToolNaming:
     """Test tool naming and backward compatibility."""

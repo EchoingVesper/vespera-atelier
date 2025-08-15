@@ -19,8 +19,8 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 try:
-    from mcp_task_orchestrator.db.workspace_migration import WorkspaceMigration, run_workspace_migration
-    from mcp_task_orchestrator.orchestrator.directory_detection import DirectoryDetector
+    from vespera_scriptorium.db.workspace_migration import WorkspaceMigration, run_workspace_migration
+    from vespera_scriptorium.orchestrator.directory_detection import DirectoryDetector
 except ImportError as e:
     print(f"Import error: {e}")
     print("Please ensure you're running from the project root directory")
@@ -299,7 +299,7 @@ def test_workspace_detection():
 
 
 if __name__ == "__main__":
-    print("MCP Task Orchestrator - Workspace Migration Test")
+    print("Vespera Scriptorium - Workspace Migration Test")
     print("=" * 50)
     
     # Test workspace detection first

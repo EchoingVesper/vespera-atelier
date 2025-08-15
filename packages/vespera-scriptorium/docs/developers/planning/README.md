@@ -1,7 +1,7 @@
 
 # Planning Documentation
 
-This directory contains active planning documents for the MCP Task Orchestrator project. These documents have been consolidated from 15 overlapping files to eliminate redundancy and resolve status conflicts while preserving all important planning decisions.
+This directory contains active planning documents for the Vespera Scriptorium project. These documents have been consolidated from 15 overlapping files to eliminate redundancy and resolve status conflicts while preserving all important planning decisions.
 
 #
 # Current Planning Documents

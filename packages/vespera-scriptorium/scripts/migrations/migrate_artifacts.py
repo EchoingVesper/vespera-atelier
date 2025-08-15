@@ -132,7 +132,7 @@ class ArtifactsMigrator:
             return False
 
 def main():
-    db_path = Path(__file__).parent / "task_orchestrator.db"
+    db_path = Path(__file__).parent / "vespera_scriptorium.db"
     if not db_path.exists():
         logger.error(f"Database file not found: {db_path}")
         return False

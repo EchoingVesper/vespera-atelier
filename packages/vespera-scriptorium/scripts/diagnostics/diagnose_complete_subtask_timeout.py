@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from .orchestrator.orchestration_state_manager import StateManager
 from .orchestrator.task_orchestration_service import TaskOrchestrator
 from .orchestrator.specialist_management_service import SpecialistManager
-from mcp_task_orchestrator.orchestrator.models import TaskStatus
+from vespera_scriptorium.orchestrator.models import TaskStatus
 
 # Configure logging
 logging.basicConfig(

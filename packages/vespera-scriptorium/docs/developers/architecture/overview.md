@@ -6,7 +6,7 @@
 
 # Design Philosophy
 
-MCP Task Orchestrator follows **Clean Architecture** and **Domain-Driven Design** principles, ensuring maintainable, testable, and scalable code through clear separation of concerns and dependency inversion.
+Vespera Scriptorium follows **Clean Architecture** and **Domain-Driven Design** principles, ensuring maintainable, testable, and scalable code through clear separation of concerns and dependency inversion.
 
 #
 

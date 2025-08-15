@@ -2,7 +2,7 @@
 
 ## Overview
 
-This migration adds the necessary database schema changes for the Automation Maintenance Enhancement feature in MCP Task Orchestrator v1.4.1.
+This migration adds the necessary database schema changes for the Automation Maintenance Enhancement feature in Vespera Scriptorium v1.4.1.
 
 ## What This Migration Does
 
@@ -56,7 +56,7 @@ python tests/test_automation_migration.py
 ## Backup and Recovery
 
 The migration automatically creates a backup before making changes:
-- Backup location: `~/.task_orchestrator/orchestrator.db.backup_YYYYMMDD_HHMMSS`
+- Backup location: `~/.vespera_scriptorium/orchestrator.db.backup_YYYYMMDD_HHMMSS`
 - To restore: Simply copy the backup file back to `orchestrator.db`
 
 ## Troubleshooting

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script for the task orchestrator task execution.
+Test script for the Vespera Scriptorium task execution.
 
 This script creates a simple task and attempts to execute a task
 to verify that the orchestrator_execute_task function works correctly.
@@ -25,13 +25,13 @@ logging.basicConfig(
 
 # Import after configuring logging
 # Import Clean Architecture v2.0 models
-from mcp_task_orchestrator.domain.entities.task import Task, TaskStatus, TaskType
-from mcp_task_orchestrator.domain.value_objects.complexity_level import ComplexityLevel
-from mcp_task_orchestrator.domain.value_objects.specialist_type import SpecialistType
-from mcp_task_orchestrator.persistence import PersistenceManager
-from mcp_task_orchestrator.orchestrator.orchestration_state_manager import StateManager
-from mcp_task_orchestrator.orchestrator.specialist_management_service import SpecialistManager
-from mcp_task_orchestrator.orchestrator.task_orchestration_service import TaskOrchestrator
+from vespera_scriptorium.domain.entities.task import Task, TaskStatus, TaskType
+from vespera_scriptorium.domain.value_objects.complexity_level import ComplexityLevel
+from vespera_scriptorium.domain.value_objects.specialist_type import SpecialistType
+from vespera_scriptorium.persistence import PersistenceManager
+from vespera_scriptorium.orchestrator.orchestration_state_manager import StateManager
+from vespera_scriptorium.orchestrator.specialist_management_service import SpecialistManager
+from vespera_scriptorium.orchestrator.task_orchestration_service import TaskOrchestrator
 
 
 async def test_task_execution():

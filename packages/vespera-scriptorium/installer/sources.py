@@ -89,7 +89,7 @@ class SourceManager:
         """Get latest version available from PyPI."""
         try:
             # Query PyPI API for latest version
-            with urllib.request.urlopen('https://pypi.org/pypi/mcp-task-orchestrator/json') as response:
+            with urllib.request.urlopen('https://pypi.org/pypi/vespera-scriptorium/json') as response:
                 data = json.loads(response.read().decode())
                 return data['info']['version']
         except (urllib.error.URLError, json.JSONDecodeError, KeyError) as e:
@@ -106,7 +106,7 @@ class SourceManager:
             self.console.print(f"[dim]  Editable: {self.config.dev_mode}[/dim]")
         elif self.config.source == InstallationSource.PYPI:
             self.console.print(f"[dim]Dry run: Would install from PyPI using {package_manager}[/dim]")
-            self.console.print("[dim]  Package: mcp-task-orchestrator[/dim]")
+            self.console.print("[dim]  Package: vespera-scriptorium[/dim]")
         elif self.config.source == InstallationSource.VERSION:
             self.console.print(f"[dim]Dry run: Would install version {self.config.version} using {package_manager}[/dim]")
         elif self.config.source == InstallationSource.GIT:
@@ -194,7 +194,7 @@ class SourceManager:
     
     def _build_pypi_install_command(self, package_manager: str) -> List[str]:
         """Build command for PyPI installation."""
-        package_spec = 'mcp-task-orchestrator'
+        package_spec = 'vespera-scriptorium'
         if self.config.dev_mode:
             package_spec += '[dev]'
         
@@ -209,9 +209,9 @@ class SourceManager:
     
     def _build_version_install_command(self, package_manager: str) -> List[str]:
         """Build command for specific version installation."""
-        package_spec = f'mcp-task-orchestrator=={self.config.version}'
+        package_spec = f'vespera-scriptorium=={self.config.version}'
         if self.config.dev_mode:
-            package_spec = f'mcp-task-orchestrator[dev]=={self.config.version}'
+            package_spec = f'vespera-scriptorium[dev]=={self.config.version}'
         
         if package_manager == 'uv':
             python_exe = self._get_python_executable()
@@ -226,7 +226,7 @@ class SourceManager:
         """Build command for git installation."""
         git_spec = self.config.git_url
         if self.config.dev_mode:
-            git_spec += '#egg=mcp-task-orchestrator[dev]'
+            git_spec += '#egg=vespera-scriptorium[dev]'
         
         if package_manager == 'uv':
             python_exe = self._get_python_executable()
@@ -239,7 +239,7 @@ class SourceManager:
     
     def _build_install_command(self, package_manager: str, force_upgrade: bool = False) -> List[str]:
         """Build generic install command."""
-        package_spec = 'mcp-task-orchestrator'
+        package_spec = 'vespera-scriptorium'
         if self.config.dev_mode:
             package_spec += '[dev]'
         
@@ -264,10 +264,10 @@ class SourceManager:
         
         if package_manager == 'uv':
             python_exe = self._get_python_executable()
-            cmd = ['uv', 'pip', 'uninstall', '--python', str(python_exe), 'mcp-task-orchestrator']
+            cmd = ['uv', 'pip', 'uninstall', '--python', str(python_exe), 'vespera-scriptorium']
         else:  # pip
             python_exe = self._get_python_executable()
-            cmd = [str(python_exe), '-m', 'pip', 'uninstall', '-y', 'mcp-task-orchestrator']
+            cmd = [str(python_exe), '-m', 'pip', 'uninstall', '-y', 'vespera-scriptorium']
         
         self._execute_package_command(cmd, "Uninstalling package")
     
@@ -393,7 +393,7 @@ class SourceManager:
             
             # Try to import the package
             result = subprocess.run(
-                [str(python_exe), '-c', 'import mcp_task_orchestrator; print("OK")'],
+                [str(python_exe), '-c', 'import vespera_scriptorium; print("OK")'],
                 capture_output=True,
                 text=True,
                 timeout=30
@@ -416,7 +416,7 @@ class SourceManager:
             
             result = subprocess.run(
                 [str(python_exe), '-c', 
-                 'import mcp_task_orchestrator; print(getattr(mcp_task_orchestrator, "__version__", "unknown"))'],
+                 'import vespera_scriptorium; print(getattr(vespera_scriptorium, "__version__", "unknown"))'],
                 capture_output=True,
                 text=True,
                 timeout=30

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Simplified MCP Task Orchestrator Server
+Simplified Vespera Scriptorium Server
 
-A simplified version of the MCP Task Orchestrator server that uses only
+A simplified version of the Vespera Scriptorium server that uses only
 the essential components to help diagnose initialization issues.
 """
 
@@ -54,7 +54,7 @@ async def main():
     """Main entry point for the MCP server."""
     try:
         # Log server initialization
-        logger.info("Starting simple MCP Task Orchestrator server...")
+        logger.info("Starting simple Vespera Scriptorium server...")
         
         # Use the original implementation pattern with async context manager
         async with stdio_server() as (read_stream, write_stream):
@@ -65,9 +65,9 @@ async def main():
             )
         
         # This line will only be reached if the server exits normally
-        logger.info("Simple MCP Task Orchestrator server shutdown gracefully")
+        logger.info("Simple Vespera Scriptorium server shutdown gracefully")
     except Exception as e:
-        logger.error(f"Error in simple MCP Task Orchestrator server: {e}", exc_info=True)
+        logger.error(f"Error in simple Vespera Scriptorium server: {e}", exc_info=True)
         raise
 
 if __name__ == "__main__":

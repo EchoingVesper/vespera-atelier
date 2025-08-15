@@ -12,13 +12,13 @@ from unittest.mock import Mock, patch
 from datetime import datetime
 from typing import Dict, Any
 
-# from mcp_task_orchestrator.infrastructure.mcp.error_codes import  # TODO: Complete this import
+# from vespera_scriptorium.infrastructure.mcp.error_codes import  # TODO: Complete this import
 
-# from mcp_task_orchestrator.infrastructure.mcp.error_handling import  # TODO: Complete this import
+# from vespera_scriptorium.infrastructure.mcp.error_handling import  # TODO: Complete this import
 
-# from mcp_task_orchestrator.infrastructure.security.error_sanitization import  # TODO: Complete this import
+# from vespera_scriptorium.infrastructure.security.error_sanitization import  # TODO: Complete this import
 
-# from mcp_task_orchestrator.domain.exceptions import  # TODO: Complete this import
+# from vespera_scriptorium.domain.exceptions import  # TODO: Complete this import
 
 
 class TestMCPErrorCodes:

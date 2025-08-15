@@ -9,9 +9,9 @@ from datetime import datetime, timedelta
 import json
 from typing import Dict, Any
 
-# from mcp_task_orchestrator.domain.entities.task import  # TODO: Complete this import
-from mcp_task_orchestrator.domain.value_objects.complexity_level import ComplexityLevel
-from mcp_task_orchestrator.domain.value_objects.specialist_type import SpecialistType
+# from vespera_scriptorium.domain.entities.task import  # TODO: Complete this import
+from vespera_scriptorium.domain.value_objects.complexity_level import ComplexityLevel
+from vespera_scriptorium.domain.value_objects.specialist_type import SpecialistType
 
 
 class TestTaskAttribute:

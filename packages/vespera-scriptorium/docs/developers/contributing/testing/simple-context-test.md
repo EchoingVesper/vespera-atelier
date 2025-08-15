@@ -4,7 +4,7 @@
 
 # 🧪 Context Continuity Test - New Session
 
-Hello! I need to test the context continuity system for the MCP Task Orchestrator. This is a completely new session and I want to validate that the enhanced orchestrator with context continuity is working properly.
+Hello! I need to test the context continuity system for the Vespera Scriptorium. This is a completely new session and I want to validate that the enhanced orchestrator with context continuity is working properly.
 
 **Please test the following:**
 

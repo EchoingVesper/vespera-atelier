@@ -24,14 +24,14 @@ def test_imports():
     print("Testing imports...")
     
     try:
-        from mcp_task_orchestrator.db.auto_migration import AutoMigrationSystem
+        from vespera_scriptorium.db.auto_migration import AutoMigrationSystem
         print("✅ AutoMigrationSystem imported successfully")
     except ImportError as e:
         print(f"❌ Failed to import AutoMigrationSystem: {e}")
         return False
     
     try:
-        from mcp_task_orchestrator.db.migration_manager import MigrationManager
+        from vespera_scriptorium.db.migration_manager import MigrationManager
         print("✅ MigrationManager imported successfully")
     except ImportError as e:
         print(f"❌ Failed to import MigrationManager: {e}")
@@ -104,7 +104,7 @@ def test_auto_migration_system(db_path):
     print("\nTesting AutoMigrationSystem...")
     
     try:
-        from mcp_task_orchestrator.db.auto_migration import AutoMigrationSystem
+        from vespera_scriptorium.db.auto_migration import AutoMigrationSystem
         
         database_url = f"sqlite:///{db_path}"
         migration_system = AutoMigrationSystem(database_url)
@@ -159,7 +159,7 @@ def test_migration_manager(db_path):
     print("\nTesting MigrationManager...")
     
     try:
-        from mcp_task_orchestrator.db.migration_manager import MigrationManager
+        from vespera_scriptorium.db.migration_manager import MigrationManager
         
         database_url = f"sqlite:///{db_path}"
         migration_manager = MigrationManager(database_url)
@@ -196,7 +196,7 @@ def test_configuration_options(db_path):
     print("\nTesting configuration options...")
     
     try:
-        from mcp_task_orchestrator.db.auto_migration import AutoMigrationSystem
+        from vespera_scriptorium.db.auto_migration import AutoMigrationSystem
         
         database_url = f"sqlite:///{db_path}"
         migration_system = AutoMigrationSystem(database_url)
@@ -233,7 +233,7 @@ def test_error_handling(db_path):
     print("\nTesting error handling...")
     
     try:
-        from mcp_task_orchestrator.db.auto_migration import AutoMigrationSystem
+        from vespera_scriptorium.db.auto_migration import AutoMigrationSystem
         
         # Test with invalid database URL
         try:
@@ -271,7 +271,7 @@ def run_performance_test(db_path):
     print("\nRunning performance tests...")
     
     try:
-        from mcp_task_orchestrator.db.auto_migration import AutoMigrationSystem
+        from vespera_scriptorium.db.auto_migration import AutoMigrationSystem
         
         database_url = f"sqlite:///{db_path}"
         

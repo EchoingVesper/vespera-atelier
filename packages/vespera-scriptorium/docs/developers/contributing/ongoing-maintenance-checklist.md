@@ -1,6 +1,6 @@
 
 
-# MCP Task Orchestrator - Ongoing Maintenance Checklist
+# Vespera Scriptorium - Ongoing Maintenance Checklist
 
 #
 
@@ -152,7 +152,7 @@ git status --porcelain | grep "^??" | head -10
 
 - [ ] **Clean build artifacts**: `rm -rf build/ dist/ *.egg-info/`
 
-- [ ] **Archive old logs**: Move old logs from `.task_orchestrator/logs/`
+- [ ] **Archive old logs**: Move old logs from `.vespera_scriptorium/logs/`
 
 #
 
@@ -275,7 +275,7 @@ def check_build_artifacts():
 
 def main():
     """Run all structure checks."""
-    print("🔍 MCP Task Orchestrator - Project Structure Check")
+    print("🔍 Vespera Scriptorium - Project Structure Check")
     print("=" * 50)
     
     all_issues = []

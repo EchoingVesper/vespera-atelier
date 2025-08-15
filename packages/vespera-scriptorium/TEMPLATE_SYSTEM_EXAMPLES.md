@@ -274,7 +274,7 @@ This document provides comprehensive usage examples of the intelligent template 
 ```python
 # Example: Using the zero-decision feature template
 
-from mcp_task_orchestrator.infrastructure.template_system import TemplateExecutor
+from vespera_scriptorium.infrastructure.template_system import TemplateExecutor
 
 async def implement_user_authentication():
     """Implement user authentication feature with zero decisions required."""
@@ -1213,7 +1213,7 @@ async def create_ai_ethics_guide():
 
 ## Next Steps for Integration
 
-1. **Integration with Existing Orchestrator**: Merge template system with current task orchestrator
+1. **Integration with Existing Orchestrator**: Merge template system with current Vespera Scriptorium
 2. **MCP Tool Integration**: Add MCP tools for template management and execution
 3. **GitHub Integration**: Connect with GitHub for real-world git operations
 4. **Vespera Platform Integration**: Full integration with Vespera Scriptorium vision

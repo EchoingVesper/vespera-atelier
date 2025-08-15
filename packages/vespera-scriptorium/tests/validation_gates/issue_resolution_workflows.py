@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Issue Resolution Workflows for MCP Task Orchestrator Testing
+Issue Resolution Workflows for Vespera Scriptorium Testing
 
 This module provides automated issue resolution workflows that can be applied
 when tests fail, enabling immediate problem resolution and continuous validation.

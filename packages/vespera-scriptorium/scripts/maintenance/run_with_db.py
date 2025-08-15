@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Run the MCP Task Orchestrator with database persistence enabled.
+Run the Vespera Scriptorium with database persistence enabled.
 
 This script sets the necessary environment variables to enable database persistence
-and then runs the MCP Task Orchestrator server.
+and then runs the Vespera Scriptorium server.
 """
 
 import os
@@ -15,10 +15,10 @@ from pathlib import Path
 os.environ["MCP_TASK_ORCHESTRATOR_USE_DB"] = "true"
 
 # Optional: Set database path if needed
-# os.environ["MCP_TASK_ORCHESTRATOR_DB_PATH"] = str(Path(__file__).parent / "task_orchestrator.db")
+# os.environ["MCP_TASK_ORCHESTRATOR_DB_PATH"] = str(Path(__file__).parent / "vespera_scriptorium.db")
 
 # Get the path to the Python executable
 python_exe = sys.executable
 
-# Run the MCP Task Orchestrator server module
+# Run the Vespera Scriptorium server module
 subprocess.run([python_exe, "-m", "mcp_task_orchestrator.server"])

@@ -13,10 +13,10 @@ def test_correct_database_path():
     
     try:
         # Use the correct database path that StateManager uses
-        correct_db_path = r"E:\My Work\Programming\MCP Task Orchestrator\.task_orchestrator\task_orchestrator.db"
+        correct_db_path = r"E:\My Work\Programming\MCP Task Orchestrator\.vespera_scriptorium\vespera_scriptorium.db"
         print(f"Database path: {correct_db_path}")
         
-        from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
+        from mcp_vespera_scriptorium.db.persistence import DatabasePersistenceManager
         
         # Initialize with the correct database path
         db_url = f"sqlite:///{correct_db_path}"
@@ -28,7 +28,7 @@ def test_correct_database_path():
         
         # Check database contents
         with persistence.session_scope() as session:
-            from mcp_task_orchestrator.db.models import TaskBreakdownModel, SubTaskModel
+            from mcp_vespera_scriptorium.db.models import TaskBreakdownModel, SubTaskModel
             
             task_count = session.query(TaskBreakdownModel).count()
             subtask_count = session.query(SubTaskModel).count()

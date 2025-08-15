@@ -32,7 +32,7 @@ The Generic Task Model (v2.0) provides a unified approach to task management wit
 
 # Creating a basic feature task with flexible attributes
 
-from mcp_task_orchestrator.models import GenericTask
+from vespera_scriptorium.models import GenericTask
 
 # Simple feature task
 
@@ -204,7 +204,7 @@ All tasks follow a standard lifecycle:
 
 ```text
 python
-from mcp_task_orchestrator.models import GenericTask
+from vespera_scriptorium.models import GenericTask
 
 ```text
 

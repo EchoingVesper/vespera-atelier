@@ -2,7 +2,7 @@
 """
 Comprehensive Server Reboot Test Suite
 
-This is a complete test suite for the MCP Task Orchestrator server reboot functionality.
+This is a complete test suite for the Vespera Scriptorium server reboot functionality.
 Tests all components including state preservation, graceful shutdown, restart coordination,
 client connection management, and error scenarios.
 
@@ -37,25 +37,25 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 try:
     # Import all reboot system components
-    from mcp_task_orchestrator.server.state_serializer import (
+    from vespera_scriptorium.server.state_serializer import (
         StateSerializer, ServerStateSnapshot, RestartReason, ClientSession, DatabaseState
     )
-    from mcp_task_orchestrator.server.shutdown_coordinator import (
+    from vespera_scriptorium.server.shutdown_coordinator import (
         ShutdownCoordinator, ShutdownPhase, ShutdownStatus, ShutdownManager
     )
-    from mcp_task_orchestrator.server.restart_manager import (
+    from vespera_scriptorium.server.restart_manager import (
         RestartCoordinator, ProcessManager, StateRestorer, RestartPhase, RestartStatus
     )
-    from mcp_task_orchestrator.server.connection_manager import (
+    from vespera_scriptorium.server.connection_manager import (
         ConnectionManager, ConnectionInfo, ConnectionState, RequestBuffer
     )
-    from mcp_task_orchestrator.server.reboot_integration import RebootManager
-    from mcp_task_orchestrator.server.reboot_tools import (
+    from vespera_scriptorium.server.reboot_integration import RebootManager
+    from vespera_scriptorium.server.reboot_tools import (
         REBOOT_TOOLS, REBOOT_TOOL_HANDLERS,
         handle_restart_server, handle_health_check, handle_shutdown_prepare,
         handle_reconnect_test, handle_restart_status
     )
-    from mcp_task_orchestrator.orchestrator.models import TaskBreakdown, SubTask, TaskStatus, SpecialistType
+    from vespera_scriptorium.orchestrator.models import TaskBreakdown, SubTask, TaskStatus, SpecialistType
     from mcp import types
     IMPORTS_AVAILABLE = True
 except ImportError as e:

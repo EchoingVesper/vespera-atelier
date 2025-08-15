@@ -203,9 +203,9 @@ class ReleaseManager:
         
         print(f"\n✨ Release {new_version} completed successfully!")
         if test:
-            print(f"   Test package: https://test.pypi.org/project/mcp-task-orchestrator/{new_version}/")
+            print(f"   Test package: https://test.pypi.org/project/vespera-scriptorium/{new_version}/")
         else:
-            print(f"   Package: https://pypi.org/project/mcp-task-orchestrator/{new_version}/")
+            print(f"   Package: https://pypi.org/project/vespera-scriptorium/{new_version}/")
 
 
 def main():

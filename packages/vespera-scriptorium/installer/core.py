@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 
 class UniversalInstaller:
-    """Universal installer for MCP Task Orchestrator."""
+    """Universal installer for Vespera Scriptorium."""
     
     def __init__(self, config: InstallerConfig, console=None):
         self.config = config
@@ -447,7 +447,7 @@ class UniversalInstaller:
     
     def _create_configuration_backup(self) -> Optional[Path]:
         """Create backup of user configuration."""
-        config_dir = Path.home() / '.task_orchestrator'
+        config_dir = Path.home() / '.vespera_scriptorium'
         if not config_dir.exists():
             return None
         
@@ -463,7 +463,7 @@ class UniversalInstaller:
     
     def _restore_configuration_backup(self, backup_path: Path) -> None:
         """Restore configuration from backup."""
-        config_dir = Path.home() / '.task_orchestrator'
+        config_dir = Path.home() / '.vespera_scriptorium'
         
         if config_dir.exists():
             shutil.rmtree(config_dir)
@@ -472,14 +472,14 @@ class UniversalInstaller:
     
     def _remove_all_configuration(self) -> None:
         """Remove all configuration and user data."""
-        config_dir = Path.home() / '.task_orchestrator'
+        config_dir = Path.home() / '.vespera_scriptorium'
         if config_dir.exists():
             shutil.rmtree(config_dir)
             self.console.print("[yellow]Removed all configuration data[/yellow]")
     
     def _remove_configuration_only(self) -> None:
         """Remove only configuration files, preserve data."""
-        config_dir = Path.home() / '.task_orchestrator'
+        config_dir = Path.home() / '.vespera_scriptorium'
         if config_dir.exists():
             # Remove config files but preserve data directories
             for item in config_dir.iterdir():
@@ -499,12 +499,12 @@ class UniversalInstaller:
                 self.console.print("     source venv/bin/activate")
         
         self.console.print("  2. Test the installation:")
-        self.console.print("     mcp-task-orchestrator --help")
+        self.console.print("     vespera-scriptorium --help")
         
         if self.config.configure_clients:
             self.console.print("  3. Restart your MCP clients to use the new configuration")
         
         self.console.print("\nFor documentation and examples, visit:")
-        self.console.print("https://github.com/EchoingVesper/mcp-task-orchestrator")
+        self.console.print("https://github.com/EchoingVesper/vespera-scriptorium")
 
 

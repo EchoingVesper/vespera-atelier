@@ -2,7 +2,7 @@
 
 ## Overview
 
-This template provides the structure for creating Claude Code hooks that integrate with the MCP Task Orchestrator's 
+This template provides the structure for creating Claude Code hooks that integrate with the Vespera Scriptorium's 
 quality and lifecycle management systems. Hooks enable automated validation, enforcement, and improvement of project 
 standards.
 
@@ -36,7 +36,7 @@ standards.
 #!/bin/bash
 
 # [Hook Name] - [Brief Description]
-# Part of MCP Task Orchestrator Documentation Ecosystem Modernization
+# Part of Vespera Scriptorium Documentation Ecosystem Modernization
 # 
 # Purpose: [Detailed purpose statement]
 # Trigger: [When this hook executes]
@@ -52,7 +52,7 @@ DRY_RUN="${DRY_RUN:-false}"
 
 # Project paths
 PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-ORCHESTRATOR_DIR="${PROJECT_ROOT}/.task_orchestrator"
+ORCHESTRATOR_DIR="${PROJECT_ROOT}/.vespera_scriptorium"
 CLAUDE_CONFIG_DIR="${PROJECT_ROOT}/.claude"
 HOOKS_DIR="${CLAUDE_CONFIG_DIR}/hooks"
 
@@ -223,7 +223,7 @@ fi
 
 """
 [Hook Name] - [Brief Description]
-Part of MCP Task Orchestrator Documentation Ecosystem Modernization
+Part of Vespera Scriptorium Documentation Ecosystem Modernization
 
 Purpose: [Detailed purpose statement]
 Trigger: [When this hook executes]  
@@ -250,7 +250,7 @@ PROJECT_ROOT = Path(subprocess.run(
     capture_output=True, text=True, check=False
 ).stdout.strip() or os.getcwd())
 
-ORCHESTRATOR_DIR = PROJECT_ROOT / ".task_orchestrator"
+ORCHESTRATOR_DIR = PROJECT_ROOT / ".vespera_scriptorium"
 CLAUDE_CONFIG_DIR = PROJECT_ROOT / ".claude"
 HOOKS_DIR = CLAUDE_CONFIG_DIR / "hooks"
 
@@ -732,4 +732,4 @@ validate_status_tags() {
 - Performance impact must be minimal
 - Security considerations must be addressed
 
-This template enables creation of robust, well-integrated hooks that enhance the MCP Task Orchestrator's automation capabilities while maintaining consistency with project standards.
+This template enables creation of robust, well-integrated hooks that enhance the Vespera Scriptorium's automation capabilities while maintaining consistency with project standards.

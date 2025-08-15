@@ -1,7 +1,7 @@
 
 # Changelog
 
-All notable changes to the MCP Task Orchestrator project will be documented in this file.
+All notable changes to the Vespera Scriptorium project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -107,7 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Resolved migration manager connection passing in auto-migration system
 
 - **Server Import Conflicts**: Resolved server.py vs server/ package naming conflicts
-  - Renamed mcp_task_orchestrator/server/ to mcp_task_orchestrator/reboot/
+  - Renamed vespera_scriptorium/server/ to vespera_scriptorium/reboot/
   - Updated all imports to use new package structure
   - Eliminated Python module import ambiguity issues
 
@@ -245,7 +245,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 🐛 Critical Bug Fixes
 
 - **CRITICAL**: Fixed artifact path resolution issue where artifacts were written to MCP server directory instead of user's current working directory
-  - Artifacts are now correctly stored in `.task_orchestrator/artifacts/` within the user's project directory
+  - Artifacts are now correctly stored in `.vespera_scriptorium/artifacts/` within the user's project directory
   - Restores accessibility to all generated artifacts for 100% of users
   - Enables proper artifact retrieval and prevents accumulation in wrong locations
   - **Impact**: This bug rendered the artifact system non-functional for practical use

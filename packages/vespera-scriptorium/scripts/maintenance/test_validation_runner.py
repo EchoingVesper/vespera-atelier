@@ -112,7 +112,7 @@ def test_database_persistence():
     print("\n=== Testing Database Persistence ===")
     
     try:
-        from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
+        from vespera_scriptorium.db.persistence import DatabasePersistenceManager
         import tempfile
         
         # Create temporary database
@@ -183,7 +183,7 @@ def main():
     
     if overall_success:
         print("\n🎉 ALL VALIDATIONS PASSED!")
-        print("The task orchestrator improvements are working correctly.")
+        print("The Vespera Scriptorium improvements are working correctly.")
     else:
         print(f"\n⚠️ {total - passed} validation(s) failed")
         print("Some improvements may need attention.")

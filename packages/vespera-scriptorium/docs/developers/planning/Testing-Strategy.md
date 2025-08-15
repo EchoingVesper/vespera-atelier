@@ -40,7 +40,7 @@ Our testing strategy emphasizes confidence, quality, and maintainability while s
 
 #
 
-# Testing Pyramid for MCP Task Orchestrator
+# Testing Pyramid for Vespera Scriptorium
 
 ```text
 Testing Pyramid:

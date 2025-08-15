@@ -14,7 +14,7 @@ from pathlib import Path
 
 from mcp_task_orchestrator.orchestrator.maintenance import MaintenanceCoordinator
 from mcp_task_orchestrator.orchestrator.models import TaskStatus, SpecialistType
-from mcp_task_orchestrator.db.models import (
+from mcp_vespera_scriptorium.db.models import (
     TaskBreakdownModel, SubTaskModel, MaintenanceOperationModel,
     TaskLifecycleModel, StaleTaskTrackingModel, TaskArchiveModel
 )

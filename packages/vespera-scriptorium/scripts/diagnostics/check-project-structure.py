@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-MCP Task Orchestrator - Project Structure Validator
+Vespera Scriptorium - Project Structure Validator
 
 Validates that the project organization follows established standards and
 identifies potential issues with file placement and structure.
@@ -274,7 +274,7 @@ def provide_setup_guidance():
 
 def main():
     """Run all structure checks and generate report."""
-    print("🔍 MCP Task Orchestrator - Project Structure Validator")
+    print("🔍 Vespera Scriptorium - Project Structure Validator")
     print("=" * 55)
     print()
     

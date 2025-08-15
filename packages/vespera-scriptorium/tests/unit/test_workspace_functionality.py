@@ -43,12 +43,12 @@ def test_project_markers():
     }
 
 def test_workspace_structure():
-    """Test that .task_orchestrator directory has proper structure"""
+    """Test that .vespera_scriptorium directory has proper structure"""
     print("\n🏗️ Testing Workspace Structure...")
-    orchestrator_dir = Path.cwd() / '.task_orchestrator'
+    orchestrator_dir = Path.cwd() / '.vespera_scriptorium'
     
     if not orchestrator_dir.exists():
-        print("  ❌ .task_orchestrator directory not found!")
+        print("  ❌ .vespera_scriptorium directory not found!")
         return {'exists': False}
     
     expected_structure = {
@@ -56,7 +56,7 @@ def test_workspace_structure():
         'logs': 'Server logs', 
         'roles': 'Role configurations',
         'server_state': 'Server state files',
-        'task_orchestrator.db': 'Main database'
+        'vespera_scriptorium.db': 'Main database'
     }
     
     structure_results = {'exists': True, 'components': {}}
@@ -79,7 +79,7 @@ def test_database_connectivity():
     print("\n💾 Testing Database Connectivity...")
     try:
         import sqlite3
-        db_path = Path.cwd() / '.task_orchestrator' / 'task_orchestrator.db'
+        db_path = Path.cwd() / '.vespera_scriptorium' / 'vespera_scriptorium.db'
         
         if not db_path.exists():
             print("  ❌ Database file not found!")
@@ -175,7 +175,7 @@ def test_workspace_paradigm_benefits():
     }
     
     # Test artifact placement
-    artifacts_dir = Path.cwd() / '.task_orchestrator' / 'artifacts'
+    artifacts_dir = Path.cwd() / '.vespera_scriptorium' / 'artifacts'
     if artifacts_dir.exists():
         artifacts = list(artifacts_dir.glob('*'))
         if artifacts:
@@ -188,21 +188,21 @@ def test_workspace_paradigm_benefits():
     
     # Test project awareness
     current_path = Path.cwd()
-    if current_path.name == 'mcp-task-orchestrator' and (current_path / 'pyproject.toml').exists():
-        print("  ✅ Project awareness: Correctly identified as MCP Task Orchestrator project")
+    if current_path.name == 'vespera-scriptorium' and (current_path / 'pyproject.toml').exists():
+        print("  ✅ Project awareness: Correctly identified as Vespera Scriptorium project")
         benefits_test['project_awareness'] = True
     else:
         print("  ⚠️ Project awareness: May not have correctly identified project type")
     
     # Test automatic detection (implicit from structure existence)
-    if (current_path / '.task_orchestrator').exists():
+    if (current_path / '.vespera_scriptorium').exists():
         print("  ✅ Automatic detection: Workspace created without manual intervention")
         benefits_test['automatic_detection'] = True
     else:
         print("  ❌ Automatic detection: Workspace not automatically created")
     
     # Test workspace isolation
-    workspace_db = current_path / '.task_orchestrator' / 'task_orchestrator.db'
+    workspace_db = current_path / '.vespera_scriptorium' / 'vespera_scriptorium.db'
     if workspace_db.exists():
         print("  ✅ Workspace isolation: Project has its own task database")
         benefits_test['workspace_isolation'] = True
@@ -288,7 +288,7 @@ if __name__ == "__main__":
     results = run_comprehensive_test()
     
     # Save results to file
-    results_file = Path.cwd() / '.task_orchestrator' / 'workspace_test_results.json'
+    results_file = Path.cwd() / '.vespera_scriptorium' / 'workspace_test_results.json'
     with open(results_file, 'w') as f:
         json.dump(results, f, indent=2, default=str)
     

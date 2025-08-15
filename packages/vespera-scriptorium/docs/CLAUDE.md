@@ -1,14 +1,14 @@
 
 # Documentation Architecture Guide
 
-**[CURRENT]** Comprehensive documentation system for MCP Task Orchestrator
+**[CURRENT]** Comprehensive documentation system for Vespera Scriptorium
 
 ⚠️ **File Size Compliant**: This file is kept under 450 lines for Claude Code stability
 
 #
 # Overview
 
-The MCP Task Orchestrator implements a sophisticated, multi-layered documentation architecture designed to serve three distinct audiences while maintaining architectural consistency and cross-referential integrity.
+The Vespera Scriptorium implements a sophisticated, multi-layered documentation architecture designed to serve three distinct audiences while maintaining architectural consistency and cross-referential integrity.
 
 #
 ## Documentation Philosophy
@@ -112,7 +112,7 @@ The project maintains 6 specialized CLAUDE.md files, each serving specific devel
 
 3. **`docs/developers/architecture/CLAUDE.md`** (186 lines) - Architecture documentation context
 
-4. **`mcp_task_orchestrator/CLAUDE.md`** (91 lines) - Core package implementation guide
+4. **`vespera_scriptorium/CLAUDE.md`** (91 lines) - Core package implementation guide
 
 5. **`tests/CLAUDE.md`** (124 lines) - Testing infrastructure and validation
 

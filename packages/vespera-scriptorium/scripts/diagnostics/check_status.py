@@ -3,7 +3,7 @@
 
 import sys
 import os
-sys.path.insert(0, r"E:\My Work\Programming\MCP Task Orchestrator")
+sys.path.insert(0, r"E:\My Work\Programming\Vespera Scriptorium")
 
 import asyncio
 import time
@@ -26,7 +26,7 @@ async def check_task_status():
             print(f"First task title: {first_task.title}")
             
             # Check if it's completed (which would trigger the archive check)
-            from mcp_task_orchestrator.orchestrator.models import TaskStatus
+            from vespera_scriptorium.orchestrator.models import TaskStatus
             
             if first_task.status == TaskStatus.COMPLETED:
                 print("Task is COMPLETED - this triggers the expensive archive check!")

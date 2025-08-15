@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 async def test_state_manager():
     """Test that StateManager initializes correctly."""
     try:
-        from mcp_task_orchestrator.orchestrator.orchestration_state_manager import StateManager
+        from vespera_scriptorium.orchestrator.orchestration_state_manager import StateManager
         
         print("Testing StateManager initialization...")
         state_manager = StateManager()
@@ -41,8 +41,8 @@ async def test_state_manager():
 async def test_reboot_manager():
     """Test that reboot manager works correctly."""
     try:
-        from mcp_task_orchestrator.reboot.reboot_integration import get_reboot_manager
-        from mcp_task_orchestrator.orchestrator.orchestration_state_manager import StateManager
+        from vespera_scriptorium.reboot.reboot_integration import get_reboot_manager
+        from vespera_scriptorium.orchestrator.orchestration_state_manager import StateManager
         
         print("Testing RebootManager initialization...")
         reboot_manager = get_reboot_manager()
@@ -72,7 +72,7 @@ async def test_reboot_manager():
 
 async def main():
     """Main test function."""
-    print("MCP Task Orchestrator Server Startup Test")
+    print("Vespera Scriptorium Server Startup Test")
     print("=" * 50)
     
     success = True

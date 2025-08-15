@@ -6,7 +6,7 @@
 
 # Overview
 
-This manual provides operational procedures for managing the MCP Task Orchestrator server reboot system in production environments. It covers routine maintenance, emergency procedures, monitoring, and best practices for reliable server operations.
+This manual provides operational procedures for managing the Vespera Scriptorium server reboot system in production environments. It covers routine maintenance, emergency procedures, monitoring, and best practices for reliable server operations.
 
 #
 
@@ -154,7 +154,7 @@ bash
 
 # Weekly state file cleanup script
 
-STATE_DIR=".task_orchestrator/server_state"
+STATE_DIR=".vespera_scriptorium/server_state"
 BACKUP_RETENTION=10  
 
 # Keep 10 most recent backups
@@ -663,17 +663,17 @@ pkill -f "$SERVICE_NAME" >> "$LOG_FILE" 2>&1
 
 # 2. Clean up lock files
 
-rm -f .task_orchestrator/*.lock >> "$LOG_FILE" 2>&1
+rm -f .vespera_scriptorium/*.lock >> "$LOG_FILE" 2>&1
 
 # 3. Backup current state
 
-cp .task_orchestrator/server_state/current_state.json \
-   .task_orchestrator/server_state/emergency_backup_$(date +%Y%m%d_%H%M%S).json \
+cp .vespera_scriptorium/server_state/current_state.json \
+   .vespera_scriptorium/server_state/emergency_backup_$(date +%Y%m%d_%H%M%S).json \
    >> "$LOG_FILE" 2>&1
 
 # 4. Restart service
 
-python -m mcp_task_orchestrator.server >> "$LOG_FILE" 2>&1 &
+python -m vespera_scriptorium.server >> "$LOG_FILE" 2>&1 &
 
 # 5. Wait for startup
 
@@ -1069,7 +1069,7 @@ bash
 
 #!/bin/bash
 
-BASE_DIR=".task_orchestrator"
+BASE_DIR=".vespera_scriptorium"
 
 # Clean old log files
 
@@ -1211,7 +1211,7 @@ class SecureStateManager:
 
 # Save to file
 
-        with open('.task_orchestrator/server_state/current_state.enc', 'wb') as f:
+        with open('.vespera_scriptorium/server_state/current_state.enc', 'wb') as f:
             f.write(encrypted_data)
     
     async def load_encrypted_state(self):
@@ -1219,7 +1219,7 @@ class SecureStateManager:
 
 # Load encrypted file
 
-        with open('.task_orchestrator/server_state/current_state.enc', 'rb') as f:
+        with open('.vespera_scriptorium/server_state/current_state.enc', 'rb') as f:
             encrypted_data = f.read()
         
         
@@ -1333,4 +1333,4 @@ class SecureStateManager:
 
 ---
 
-*This operations manual covers the production management of the MCP Task Orchestrator server reboot system. Regular updates and reviews ensure operational excellence and system reliability.*
+*This operations manual covers the production management of the Vespera Scriptorium server reboot system. Regular updates and reviews ensure operational excellence and system reliability.*

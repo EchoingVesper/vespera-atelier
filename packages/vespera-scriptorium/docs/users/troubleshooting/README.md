@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-Quick solutions to common issues with the MCP Task Orchestrator.
+Quick solutions to common issues with the Vespera Scriptorium.
 
 ## Installation Issues
 
@@ -15,7 +15,7 @@ Quick solutions to common issues with the MCP Task Orchestrator.
    // Verify your MCP client config
    {
      "mcpServers": {
-       "task-orchestrator": {
+       "vespera-scriptorium": {
          "command": "python",
          "args": ["-m", "mcp_task_orchestrator.server"],
          "env": {}
@@ -27,10 +27,10 @@ Quick solutions to common issues with the MCP Task Orchestrator.
 2. **Verify Installation**:
    ```bash
    # Test the server directly
-   python -m mcp_task_orchestrator.server
+   python -m vespera_scriptorium.server
    
    # Check if package is installed
-   pip list | grep mcp-task-orchestrator
+   pip list | grep mcp-vespera-scriptorium
    ```
 
 3. **Check Python Path**:
@@ -56,8 +56,8 @@ Quick solutions to common issues with the MCP Task Orchestrator.
 
 1. **Reinstall Package**:
    ```bash
-   pip uninstall mcp-task-orchestrator
-   pip install mcp-task-orchestrator
+   pip uninstall mcp-vespera-scriptorium
+   pip install mcp-vespera-scriptorium
    ```
 
 2. **Check Python Version**:
@@ -72,12 +72,12 @@ Quick solutions to common issues with the MCP Task Orchestrator.
    # or
    venv\Scripts\activate     # Windows
    
-   pip install mcp-task-orchestrator
+   pip install mcp-vespera-scriptorium
    ```
 
 ### Permission Errors
 
-**Symptoms**: Can't create `.task_orchestrator` directory or database files.
+**Symptoms**: Can't create `.vespera_scriptorium` directory or database files.
 
 **Solutions**:
 
@@ -105,7 +105,7 @@ Quick solutions to common issues with the MCP Task Orchestrator.
 1. **Reset Database**:
    ```bash
    # Remove corrupted database
-   rm .task_orchestrator/tasks.db
+   rm .vespera_scriptorium/tasks.db
    
    # Reinitialize
    orchestrator_initialize_session()
@@ -119,10 +119,10 @@ Quick solutions to common issues with the MCP Task Orchestrator.
 3. **Database Recovery**:
    ```bash
    # Backup current database
-   cp .task_orchestrator/tasks.db .task_orchestrator/tasks.db.backup
+   cp .vespera_scriptorium/tasks.db .vespera_scriptorium/tasks.db.backup
    
    # Try to repair
-   sqlite3 .task_orchestrator/tasks.db "PRAGMA integrity_check;"
+   sqlite3 .vespera_scriptorium/tasks.db "PRAGMA integrity_check;"
    ```
 
 ### Task Execution Failures
@@ -182,15 +182,15 @@ Quick solutions to common issues with the MCP Task Orchestrator.
 3. **Archive Completed Work**:
    ```bash
    # Move old artifacts to archive
-   mkdir .task_orchestrator/archives
-   mv .task_orchestrator/artifacts/old_* .task_orchestrator/archives/
+   mkdir .vespera_scriptorium/archives
+   mv .vespera_scriptorium/artifacts/old_* .vespera_scriptorium/archives/
    ```
 
 ## Configuration Issues
 
 ### Working Directory Detection
 
-**Symptoms**: Orchestrator creates `.task_orchestrator` in wrong location.
+**Symptoms**: Orchestrator creates `.vespera_scriptorium` in wrong location.
 
 **Solutions**:
 
@@ -389,7 +389,7 @@ When reporting issues, include:
 1. **System Information**:
    ```bash
    python --version
-   pip list | grep mcp-task-orchestrator
+   pip list | grep mcp-vespera-scriptorium
    uname -a  # Linux/Mac
    ```
 
@@ -416,7 +416,7 @@ status = orchestrator_get_status(include_completed=True)
 ### Log Files
 
 Check for log files in:
-- `.task_orchestrator/logs/`
+- `.vespera_scriptorium/logs/`
 - Your MCP client's log directory
 - System logs for Python errors
 
@@ -441,17 +441,17 @@ If automatic recovery fails:
 
 ```bash
 # Backup current state
-cp -r .task_orchestrator .task_orchestrator.backup
+cp -r .vespera_scriptorium .vespera_scriptorium.backup
 
 # Export data
-sqlite3 .task_orchestrator/tasks.db ".dump" > backup.sql
+sqlite3 .vespera_scriptorium/tasks.db ".dump" > backup.sql
 
 # Recreate database
-rm .task_orchestrator/tasks.db
+rm .vespera_scriptorium/tasks.db
 orchestrator_initialize_session()
 
 # Manual data recovery (if needed)
-sqlite3 .task_orchestrator/tasks.db < backup.sql
+sqlite3 .vespera_scriptorium/tasks.db < backup.sql
 ```
 
 ### Reset Everything
@@ -460,13 +460,13 @@ Last resort - complete reset:
 
 ```bash
 # Backup important artifacts
-cp -r .task_orchestrator/artifacts ./artifacts_backup
+cp -r .vespera_scriptorium/artifacts ./artifacts_backup
 
 # Remove orchestrator data
-rm -rf .task_orchestrator
+rm -rf .vespera_scriptorium
 
 # Reinstall and reinitialize
-pip install --upgrade mcp-task-orchestrator
+pip install --upgrade mcp-vespera-scriptorium
 orchestrator_initialize_session()
 
 # Restore important artifacts manually
@@ -491,12 +491,12 @@ orchestrator_initialize_session()
 3. **Backup Important Work**:
    ```bash
    # Backup artifacts regularly
-   cp -r .task_orchestrator/artifacts ./backups/$(date +%Y%m%d)
+   cp -r .vespera_scriptorium/artifacts ./backups/$(date +%Y%m%d)
    ```
 
 4. **Keep Software Updated**:
    ```bash
-   pip install --upgrade mcp-task-orchestrator
+   pip install --upgrade mcp-vespera-scriptorium
    ```
 
 ### Monitoring
@@ -512,5 +512,5 @@ Set up regular monitoring:
 If problems persist:
 
 1. **Check Documentation**: Review the [API Reference](../reference/api/API_REFERENCE.md)
-2. **GitHub Issues**: [Report issues](https://github.com/EchoingVesper/mcp-task-orchestrator/issues)
-3. **Community**: [GitHub Discussions](https://github.com/EchoingVesper/mcp-task-orchestrator/discussions)
+2. **GitHub Issues**: [Report issues](https://github.com/EchoingVesper/mcp-vespera-scriptorium/issues)
+3. **Community**: [GitHub Discussions](https://github.com/EchoingVesper/mcp-vespera-scriptorium/discussions)

@@ -18,11 +18,11 @@ from typing import Dict, List, Any, Generator, AsyncGenerator
 from pathlib import Path
 
 # Import security infrastructure
-from mcp_task_orchestrator.infrastructure.security.authentication import APIKeyManager
-from mcp_task_orchestrator.infrastructure.security.authorization import Permission, Role
+from vespera_scriptorium.infrastructure.security.authentication import APIKeyManager
+from vespera_scriptorium.infrastructure.security.authorization import Permission, Role
 
 # Import domain entities for testing
-from mcp_task_orchestrator.domain.entities.task import Task
+from vespera_scriptorium.domain.entities.task import Task
 
 
 # =============================================================================

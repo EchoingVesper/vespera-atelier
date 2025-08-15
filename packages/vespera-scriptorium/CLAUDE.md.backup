@@ -224,7 +224,7 @@ Keep files under 500 lines (300-400 recommended) to prevent Claude Code crashes.
 ## Project-Specific Notes
 
 - Workspace detection looks for `.git`, `package.json`, `pyproject.toml`
-- `.task_orchestrator/` directory created in project root
+- `.vespera_scriptorium/` directory created in project root
 - Custom roles can be defined per-project
 - Database stored in workspace-specific location
 - Supports multiple concurrent MCP clients

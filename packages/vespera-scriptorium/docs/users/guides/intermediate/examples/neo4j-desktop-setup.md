@@ -46,7 +46,7 @@ NEO4J_DATABASE=neo4j
 - **Current**: Single "default" database for development
 
 - **Future**: Create separate databases within the instance for:
-  - `task-orchestrator` - Your current MCP project
+  - `vespera-scriptorium` - Your current MCP project
   - `[other-submodules]` - Future monorepo components
 
 #
@@ -68,9 +68,9 @@ NEO4J_DATABASE=neo4j
 
 2. Configure mcp-crawl4ai-rag system to connect
 
-3. Run initial crawl of task orchestrator codebase
+3. Run initial crawl of Vespera Scriptorium codebase
 
-4. Create task-orchestrator specific database if desired
+4. Create vespera-scriptorium specific database if desired
 
 #
 

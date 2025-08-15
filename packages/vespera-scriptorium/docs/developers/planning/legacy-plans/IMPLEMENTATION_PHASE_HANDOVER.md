@@ -1,6 +1,6 @@
 
 
-# MCP Task Orchestrator v2.0.0 Implementation Phase Handover
+# Vespera Scriptorium v2.0.0 Implementation Phase Handover
 
 **Handover Type**: Implementation Phase Initiation  
 **From**: Planning & Architecture Phase  
@@ -12,7 +12,7 @@
 
 # Context Summary
 
-The MCP Task Orchestrator has completed a comprehensive architectural refactoring implementing Clean Architecture with Domain-Driven Design patterns. All planning documentation is complete, features are organized, and the foundation is ready for v2.0.0 implementation.
+The Vespera Scriptorium has completed a comprehensive architectural refactoring implementing Clean Architecture with Domain-Driven Design patterns. All planning documentation is complete, features are organized, and the foundation is ready for v2.0.0 implementation.
 
 #
 
@@ -45,8 +45,8 @@ The MCP Task Orchestrator has completed a comprehensive architectural refactorin
 # 📂 Project Structure
 
 ```directory-structure
-mcp-task-orchestrator/
-├── mcp_task_orchestrator/          
+mcp-vespera-scriptorium/
+├── vespera_scriptorium/          
 
 # Main package (Clean Architecture)
 
@@ -187,11 +187,11 @@ python
 
 # 2. MCP Integration Points
 
-- **`mcp_task_orchestrator/server.py`**: Add new tool definitions
+- **`vespera_scriptorium/server.py`**: Add new tool definitions
 
-- **`mcp_task_orchestrator/mcp_request_handlers.py`**: Implement tool handlers
+- **`vespera_scriptorium/mcp_request_handlers.py`**: Implement tool handlers
 
-- **`mcp_task_orchestrator/infrastructure/mcp/`**: Clean architecture MCP adapters
+- **`vespera_scriptorium/infrastructure/mcp/`**: Clean architecture MCP adapters
 
 #
 
@@ -199,7 +199,7 @@ python
 
 # 3. Database Integration
 
-- **`mcp_task_orchestrator/db/`**: Database persistence layer
+- **`vespera_scriptorium/db/`**: Database persistence layer
 
 - **Schema**: Already supports generic task storage
 
@@ -266,9 +266,9 @@ python
 
 # Use Clean Architecture patterns
 
-from mcp_task_orchestrator.domain.entities.task import Task
-from mcp_task_orchestrator.application.usecases.orchestrate_task import OrchestrateTaskUseCase
-from mcp_task_orchestrator.infrastructure.database.sqlite.sqlite_task_repository import SQLiteTaskRepository
+from vespera_scriptorium.domain.entities.task import Task
+from vespera_scriptorium.application.usecases.orchestrate_task import OrchestrateTaskUseCase
+from vespera_scriptorium.infrastructure.database.sqlite.sqlite_task_repository import SQLiteTaskRepository
 
 # Use existing Generic Task models
 
@@ -294,7 +294,7 @@ Use the comprehensive error handling with decorators:
 
 ```text
 python
-from mcp_task_orchestrator.infrastructure.error_handling.decorators import handle_errors
+from vespera_scriptorium.infrastructure.error_handling.decorators import handle_errors
 
 ```text
 
@@ -394,7 +394,7 @@ from mcp_task_orchestrator.infrastructure.error_handling.decorators import handl
 
 - `orchestrator/generic_models.py` (CRITICAL - contains all models)
 
-- `mcp_task_orchestrator/infrastructure/` (clean architecture foundation)
+- `vespera_scriptorium/infrastructure/` (clean architecture foundation)
 
 #
 
@@ -419,11 +419,11 @@ pytest
 
 # Run server (clean architecture mode)
 
-MCP_TASK_ORCHESTRATOR_USE_DI=true python -m mcp_task_orchestrator.server
+MCP_TASK_ORCHESTRATOR_USE_DI=true python -m vespera_scriptorium.server
 
 # Alternative server  
 
-python -m mcp_task_orchestrator.server_with_di
+python -m vespera_scriptorium.server_with_di
 ```text
 
 #
@@ -432,7 +432,7 @@ python -m mcp_task_orchestrator.server_with_di
 
 # Database Location
 
-- Default: `.task_orchestrator/task_orchestrator.db`
+- Default: `.vespera_scriptorium/vespera_scriptorium.db`
 
 - Automatic migration system handles schema updates
 

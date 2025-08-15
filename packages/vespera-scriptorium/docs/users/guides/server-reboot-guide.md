@@ -6,7 +6,7 @@
 
 # Overview
 
-The MCP Task Orchestrator includes an in-context server reboot system that allows seamless server restarts without disrupting client applications. This system preserves active tasks, maintains client connections, and ensures zero data loss during server updates.
+The Vespera Scriptorium includes an in-context server reboot system that allows seamless server restarts without disrupting client applications. This system preserves active tasks, maintains client connections, and ensures zero data loss during server updates.
 
 #
 
@@ -820,4 +820,4 @@ buffer_config = {
 
 ---
 
-*This documentation covers version 1.4.1 of the MCP Task Orchestrator. For the latest updates, see the project repository.*
+*This documentation covers version 1.4.1 of the Vespera Scriptorium. For the latest updates, see the project repository.*

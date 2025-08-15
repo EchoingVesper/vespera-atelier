@@ -1,6 +1,6 @@
 
 
-# 🔄 MCP Task Orchestrator: Active Development Handover
+# 🔄 Vespera Scriptorium: Active Development Handover
 
 > **🎉 MAJOR MILESTONE**: Automation Maintenance Enhancement 100% COMPLETE! Streaming system proven. Ready for next strategic priority.
 
@@ -8,8 +8,8 @@
 
 # 📋 Current Project Status (Active Development)
 
-**Project**: MCP Task Orchestrator
-**Repository**: `E:\dev\mcp-servers\mcp-task-orchestrator`
+**Project**: Vespera Scriptorium
+**Repository**: `E:\dev\mcp-servers\mcp-vespera-scriptorium`
 **Current Version**: 1.4.1 (stable)
 **Major Achievement**: ✅ **Automation Maintenance Enhancement Complete** - All 8 subtasks done (June 1, 2025)  
 **Previous Achievement**: ✅ **Streaming/Artifact System Proven** - Context limit immunity confirmed  
@@ -43,7 +43,7 @@
 
 - **Task**: `implementer_0e4289` (Task Lifecycle Management Implementation)
 
-- **Artifact**: `artifact_7cc6738a` stored in `.task_orchestrator/artifacts/`
+- **Artifact**: `artifact_7cc6738a` stored in `.vespera_scriptorium/artifacts/`
 
 - **Content Size**: 12,534 characters of detailed technical implementation
 
@@ -107,11 +107,11 @@
 
 While all development tasks are complete, the `orchestrator_maintenance_coordinator` tool returns `pending_implementation` status. This appears to be a deployment/activation issue rather than missing code. The implementation files exist:
 
-- `mcp_task_orchestrator/orchestrator/maintenance.py`
+- `vespera_scriptorium/orchestrator/maintenance.py`
 
-- `mcp_task_orchestrator/orchestrator/task_lifecycle.py`
+- `vespera_scriptorium/orchestrator/task_lifecycle.py`
 
-- Database models added to `mcp_task_orchestrator/db/models.py`
+- Database models added to `vespera_scriptorium/db/models.py`
 
 #
 
@@ -576,7 +576,7 @@ While all development tasks are complete, the `orchestrator_maintenance_coordina
 
 **The streaming/artifact system works perfectly!** This solves the critical context limit problem and enables large-scale orchestration work without data loss risk.
 
-**NEW STRATEGIC OPPORTUNITY**: Subtask isolation with Claude Code could multiply our context capacity by 5-10x, potentially making the MCP Task Orchestrator the premier platform for Large-scale AI development workflows.
+**NEW STRATEGIC OPPORTUNITY**: Subtask isolation with Claude Code could multiply our context capacity by 5-10x, potentially making the Vespera Scriptorium the premier platform for Large-scale AI development workflows.
 
 ---
 

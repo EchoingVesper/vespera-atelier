@@ -1,6 +1,6 @@
 # PyPI Release Process
 
-This directory contains automated scripts for releasing the mcp-task-orchestrator package to PyPI.
+This directory contains automated scripts for releasing the mcp-vespera-scriptorium package to PyPI.
 
 ## Initial Setup (One-time)
 

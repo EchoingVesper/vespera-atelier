@@ -45,7 +45,7 @@ def run_test():
         
         # Test AutoMigrationSystem import
         try:
-            from mcp_task_orchestrator.db.auto_migration import AutoMigrationSystem
+            from vespera_scriptorium.db.auto_migration import AutoMigrationSystem
             f.write("✅ AutoMigrationSystem imported successfully\n")
             import_results['auto_migration'] = True
         except ImportError as e:
@@ -57,7 +57,7 @@ def run_test():
         
         # Test MigrationManager import
         try:
-            from mcp_task_orchestrator.db.migration_manager import MigrationManager
+            from vespera_scriptorium.db.migration_manager import MigrationManager
             f.write("✅ MigrationManager imported successfully\n")
             import_results['migration_manager'] = True
         except ImportError as e:
@@ -69,7 +69,7 @@ def run_test():
         
         # Test models import
         try:
-            from mcp_task_orchestrator.db.models import Base
+            from vespera_scriptorium.db.models import Base
             f.write("✅ Database models imported successfully\n")
             import_results['models'] = True
         except ImportError as e:

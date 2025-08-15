@@ -431,7 +431,7 @@ class LegacyTaskCompatibilityAdapter:
 ```text
 
 project_root/
-└── .task_orchestrator/
+└── .vespera_scriptorium/
     ├── sessions/
     │   ├── session_1/
     │   │   └── session.md

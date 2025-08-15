@@ -12,7 +12,7 @@
 
 # Overview
 
-The Agent-to-Agent (A2A) Framework Integration represents a significant enhancement to the MCP Task Orchestrator, enabling seamless communication and coordination between multiple AI agents across different MCP servers and communication channels.
+The Agent-to-Agent (A2A) Framework Integration represents a significant enhancement to the Vespera Scriptorium, enabling seamless communication and coordination between multiple AI agents across different MCP servers and communication channels.
 
 #
 

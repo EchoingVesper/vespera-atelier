@@ -1,11 +1,11 @@
 
-# CLI PROMPT: Comprehensive Security Test Suite for MCP Task Orchestrator
+# CLI PROMPT: Comprehensive Security Test Suite for Vespera Scriptorium
 
 #
 
 # MISSION
 
-Build a complete security test suite for the MCP Task Orchestrator's security infrastructure, covering authentication, authorization, input validation, path traversal prevention, and audit logging. Implement rigorous testing until all components are proven to work in actual use.
+Build a complete security test suite for the Vespera Scriptorium's security infrastructure, covering authentication, authorization, input validation, path traversal prevention, and audit logging. Implement rigorous testing until all components are proven to work in actual use.
 
 #
 
@@ -15,21 +15,21 @@ Build a complete security test suite for the MCP Task Orchestrator's security in
 
 ## Architecture Overview
 
-The MCP Task Orchestrator follows Clean Architecture with these layers:
+The Vespera Scriptorium follows Clean Architecture with these layers:
 
-- **Domain**: `mcp_task_orchestrator/domain/` - Business logic and entities
+- **Domain**: `vespera_scriptorium/domain/` - Business logic and entities
 
-- **Application**: `mcp_task_orchestrator/application/` - Use cases and workflows  
+- **Application**: `vespera_scriptorium/application/` - Use cases and workflows  
 
-- **Infrastructure**: `mcp_task_orchestrator/infrastructure/` - External concerns
+- **Infrastructure**: `vespera_scriptorium/infrastructure/` - External concerns
 
-- **Presentation**: `mcp_task_orchestrator/presentation/` - MCP server and CLI
+- **Presentation**: `vespera_scriptorium/presentation/` - MCP server and CLI
 
 #
 
 ## Security Infrastructure Location
 
-All security components are in `mcp_task_orchestrator/infrastructure/security/`:
+All security components are in `vespera_scriptorium/infrastructure/security/`:
 
 1. **`authentication.py`** - API key management with SHA256 hashing
 
@@ -114,7 +114,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from mcp_task_orchestrator.infrastructure.security import (
+from vespera_scriptorium.infrastructure.security import (
     APIKeyManager, generate_api_key, validate_api_key, 
     require_auth, AuthenticationError
 )
@@ -203,7 +203,7 @@ class TestAPIKeyManager:
 ```text
 python
 import pytest
-from mcp_task_orchestrator.infrastructure.security import (
+from vespera_scriptorium.infrastructure.security import (
     Permission, Role, RoleManager, UserRoleManager,
     require_permission, require_role, has_permission,
     AuthorizationError
@@ -272,7 +272,7 @@ class TestRoleBasedAccessControl:
 ```text
 python
 import pytest
-from mcp_task_orchestrator.infrastructure.security import (
+from vespera_scriptorium.infrastructure.security import (
     validate_string_input, validate_file_path, validate_task_id,
     is_safe_input, ValidationError
 )
@@ -387,7 +387,7 @@ python
 import pytest
 import asyncio
 from unittest.mock import patch
-from mcp_task_orchestrator.infrastructure.security import (
+from vespera_scriptorium.infrastructure.security import (
     secure_mcp_handler, initialize_security, get_security_status
 )
 
@@ -460,7 +460,7 @@ python
 import pytest
 import time
 import concurrent.futures
-from mcp_task_orchestrator.infrastructure.security import validate_api_key
+from vespera_scriptorium.infrastructure.security import validate_api_key
 
 class TestSecurityPerformance:
     """Test security system performance under load."""
@@ -610,7 +610,7 @@ pytest tests/security/ -v --tb=short
 
 # Run with coverage measurement
 
-pytest tests/security/ --cov=mcp_task_orchestrator.infrastructure.security --cov-report=html
+pytest tests/security/ --cov=vespera_scriptorium.infrastructure.security --cov-report=html
 
 # Run performance tests
 
@@ -645,7 +645,7 @@ pytest tests/security/test_integration_security.py -v
 # Test error handling
 
 python -c "
-from mcp_task_orchestrator.infrastructure.security import get_security_status
+from vespera_scriptorium.infrastructure.security import get_security_status
 print('Security Status:', get_security_status())
 "
 ```text
@@ -653,7 +653,7 @@ print('Security Status:', get_security_status())
 #
 # CRITICAL IMPLEMENTATION NOTES
 
-1. **Read Security Modules First**: Start by reading all files in `mcp_task_orchestrator/infrastructure/security/` to understand the APIs and patterns.
+1. **Read Security Modules First**: Start by reading all files in `vespera_scriptorium/infrastructure/security/` to understand the APIs and patterns.
 
 2. **Use Real Components**: Do not mock security components - test the actual implementations to validate real security effectiveness.
 
@@ -701,4 +701,4 @@ Before declaring success:
 
 6. Ensure error sanitization prevents information disclosure
 
-The goal is a production-ready security test suite that proves the MCP Task Orchestrator's security infrastructure is robust, performant, and effective against real-world attacks.
+The goal is a production-ready security test suite that proves the Vespera Scriptorium's security infrastructure is robust, performant, and effective against real-world attacks.

@@ -14,7 +14,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from unittest.mock import Mock, patch, AsyncMock
 from typing import Dict, List, Any, Optional
 
-# from mcp_task_orchestrator.infrastructure.security import  # TODO: Complete this import
+# from vespera_scriptorium.infrastructure.security import  # TODO: Complete this import
 
 
 class TestDoSAttackProtection:

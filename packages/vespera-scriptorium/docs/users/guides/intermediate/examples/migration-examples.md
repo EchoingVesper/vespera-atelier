@@ -36,7 +36,7 @@ python scripts/diagnostics/diagnose_db.py
 # Verify backup status
 
 python -c "
-from mcp_task_orchestrator.db.persistence import validate_backup_integrity
+from mcp_vespera_scriptorium.db.persistence import validate_backup_integrity
 result = validate_backup_integrity()
 print(f'Backup validation: {result}')
 "
@@ -61,7 +61,7 @@ Provides insights for migration planning and validation.
 """
 
 async def analyze_pre_migration_data():
-    from mcp_task_orchestrator.db.persistence import get_db_connection
+    from mcp_vespera_scriptorium.db.persistence import get_db_connection
     
     async with get_db_connection() as conn:
         

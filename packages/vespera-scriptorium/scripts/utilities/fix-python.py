@@ -174,7 +174,7 @@ def main():
     
     if sys.argv[1] == '--all':
         # Fix all pending tasks
-        task_dir = Path(".task_orchestrator/python_fixes")
+        task_dir = Path(".vespera_scriptorium/python_fixes")
         if task_dir.exists():
             tasks = list(task_dir.glob("*.json"))
             fixed = 0

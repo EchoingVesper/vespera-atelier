@@ -3,7 +3,7 @@
 
 import sys
 import os
-sys.path.insert(0, r"E:\My Work\Programming\MCP Task Orchestrator")
+sys.path.insert(0, r"E:\My Work\Programming\Vespera Scriptorium")
 
 import time
 
@@ -13,10 +13,10 @@ def check_main_database():
     
     try:
         # Point to the root database file directly
-        db_path = r"E:\My Work\Programming\MCP Task Orchestrator\task_orchestrator.db"
+        db_path = r"E:\My Work\Programming\Vespera Scriptorium\vespera_scriptorium.db"
         print(f"Database path: {db_path}")
         
-        from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
+        from vespera_scriptorium.db.persistence import DatabasePersistenceManager
         
         # Initialize with the correct database path
         db_url = f"sqlite:///{db_path}"
@@ -30,7 +30,7 @@ def check_main_database():
             
             # Check actual table counts
             with persistence.session_scope() as session:
-                from mcp_task_orchestrator.db.models import TaskBreakdownModel, SubTaskModel
+                from vespera_scriptorium.db.models import TaskBreakdownModel, SubTaskModel
                 
                 task_count = session.query(TaskBreakdownModel).count()
                 subtask_count = session.query(SubTaskModel).count()

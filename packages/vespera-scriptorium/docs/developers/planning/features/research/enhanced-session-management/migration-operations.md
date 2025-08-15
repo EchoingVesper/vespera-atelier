@@ -100,10 +100,10 @@ This document outlines performance considerations, security measures, error hand
 
 1. **Path Validation**: Prevent directory traversal attacks
 - Validate all file paths before operations
-- Restrict access to .task_orchestrator directory tree
+- Restrict access to .vespera_scriptorium directory tree
 - Sanitize user-provided path components
 
-2. **File Permissions**: Secure .task_orchestrator directory access
+2. **File Permissions**: Secure .vespera_scriptorium directory access
 - Set restrictive permissions (user-only access)
 - Prevent unauthorized file system access
 - Implement permission validation on startup

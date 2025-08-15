@@ -264,7 +264,7 @@ toml
 [tool.release]
 version_files = [
     "setup.py",
-    "mcp_task_orchestrator/__init__.py",
+    "vespera_scriptorium/__init__.py",
     "README.md",
     "docs/installation.md"
 ]

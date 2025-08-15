@@ -2,7 +2,7 @@
 
 ## Core Insight: Documentation IS the Work
 
-The MCP Task Orchestrator embodies a radical shift in how we think about documentation. Rather than treating documentation as something we do *after* the work, this tool recognizes that **the process of doing work IS the process of creating documentation**.
+The Vespera Scriptorium embodies a radical shift in how we think about documentation. Rather than treating documentation as something we do *after* the work, this tool recognizes that **the process of doing work IS the process of creating documentation**.
 
 ## The Problem We Solve
 

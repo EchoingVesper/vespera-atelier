@@ -16,7 +16,7 @@ from mcp_task_orchestrator.orchestrator.task_lifecycle import (
     TaskLifecycleManager, TaskLifecycleState, StaleTaskReason
 )
 from mcp_task_orchestrator.orchestrator.models import TaskStatus, SpecialistType
-from mcp_task_orchestrator.db.models import (
+from mcp_vespera_scriptorium.db.models import (
     TaskBreakdownModel, SubTaskModel, TaskLifecycleModel,
     StaleTaskTrackingModel, TaskArchiveModel
 )

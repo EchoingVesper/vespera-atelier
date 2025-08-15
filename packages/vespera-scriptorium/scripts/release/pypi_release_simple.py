@@ -214,7 +214,7 @@ def main():
         print(f"Package: {'TestPyPI' if args.test else 'PyPI'}")
         if not args.test:
             print(f"Tag: v{new_version}")
-        print(f"Install: pip install mcp-task-orchestrator=={new_version}")
+        print(f"Install: pip install vespera-scriptorium=={new_version}")
         
     except Exception as e:
         print(f"ERROR: {e}")

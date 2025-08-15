@@ -22,7 +22,7 @@ Successfully implemented the **Context Continuity Enhancement System** that prov
 
 # 1. Decision Tracking Database Models
 
-**File**: `mcp_task_orchestrator/db/models.py` (Enhanced)
+**File**: `vespera_scriptorium/db/models.py` (Enhanced)
 
 - ✅ Added `ArchitecturalDecisionModel` for decision records (ADRs)
 
@@ -38,7 +38,7 @@ Successfully implemented the **Context Continuity Enhancement System** that prov
 
 # 2. Decision Documentation System
 
-**File**: `mcp_task_orchestrator/orchestrator/decision_tracking.py` (556 lines)
+**File**: `vespera_scriptorium/orchestrator/decision_tracking.py` (556 lines)
 
 - ✅ `DecisionCapture` - Captures architectural decisions during execution
 
@@ -62,7 +62,7 @@ Successfully implemented the **Context Continuity Enhancement System** that prov
 
 # 3. Integrated Context Continuity System
 
-**File**: `mcp_task_orchestrator/orchestrator/context_continuity.py` (547 lines)
+**File**: `vespera_scriptorium/orchestrator/context_continuity.py` (547 lines)
 
 - ✅ `SubtaskContextTracker` - Unified file + decision tracking
 
@@ -386,7 +386,7 @@ This implementation is **COMPLETE** and provides comprehensive context continuit
 
 **STATUS**: 🚀 **CONTEXT CONTINUITY COMPLETE - ROBUST INFRASTRUCTURE READY**
 
-The MCP Task Orchestrator now has comprehensive context continuity that ensures:
+The Vespera Scriptorium now has comprehensive context continuity that ensures:
 
 - No architectural decisions are ever lost
 

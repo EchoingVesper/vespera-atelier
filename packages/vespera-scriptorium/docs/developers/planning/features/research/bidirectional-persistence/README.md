@@ -15,7 +15,7 @@
 
 # 📋 Overview
 
-The Bi-directional Persistence System enables the MCP Task Orchestrator to maintain data in both a high-performance database and human-readable markdown files. This dual approach provides the performance benefits of structured data while ensuring project information remains accessible, editable, and version-control friendly.
+The Bi-directional Persistence System enables the Vespera Scriptorium to maintain data in both a high-performance database and human-readable markdown files. This dual approach provides the performance benefits of structured data while ensuring project information remains accessible, editable, and version-control friendly.
 
 #
 

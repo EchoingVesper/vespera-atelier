@@ -12,9 +12,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 # Import our context continuity components
-from mcp_task_orchestrator.db.models import Base
-# from mcp_task_orchestrator.orchestrator.context_continuity import  # TODO: Complete this import
-# from mcp_task_orchestrator.orchestrator.decision_tracking import  # TODO: Complete this import
+from vespera_scriptorium.db.models import Base
+# from vespera_scriptorium.orchestrator.context_continuity import  # TODO: Complete this import
+# from vespera_scriptorium.orchestrator.decision_tracking import  # TODO: Complete this import
 
 
 async def test_context_continuity_system():

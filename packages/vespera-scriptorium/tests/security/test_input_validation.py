@@ -11,9 +11,9 @@ import json
 from unittest.mock import Mock, patch
 from typing import Dict, List, Any
 
-# from mcp_task_orchestrator.infrastructure.security import  # TODO: Complete this import
+# from vespera_scriptorium.infrastructure.security import  # TODO: Complete this import
 
-from mcp_task_orchestrator.domain.entities.task import Task
+from vespera_scriptorium.domain.entities.task import Task
 
 
 class TestXSSPrevention:

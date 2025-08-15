@@ -1,5 +1,5 @@
 """
-Test utilities package for the MCP Task Orchestrator.
+Test utilities package for the Vespera Scriptorium.
 
 This package contains utility functions and classes to support testing,
 particularly for database connection management and resource cleanup.

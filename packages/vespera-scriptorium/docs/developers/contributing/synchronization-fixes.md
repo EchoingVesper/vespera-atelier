@@ -1,12 +1,12 @@
 
 
-# Synchronization Fixes - MCP Task Orchestrator
+# Synchronization Fixes - Vespera Scriptorium
 
 #
 
 # Overview
 
-This document details the synchronization work completed to resolve hanging issues and improve performance in the MCP Task Orchestrator. These fixes address critical problems with concurrent task execution and database operations.
+This document details the synchronization work completed to resolve hanging issues and improve performance in the Vespera Scriptorium. These fixes address critical problems with concurrent task execution and database operations.
 
 #
 

@@ -1,5 +1,5 @@
 """
-Test script to verify project directory detection in the MCP Task Orchestrator.
+Test script to verify project directory detection in the Vespera Scriptorium.
 
 This script creates a temporary directory with a custom roles file and verifies
 that the MCP server correctly detects and uses it.

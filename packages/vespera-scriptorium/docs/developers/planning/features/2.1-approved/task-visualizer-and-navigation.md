@@ -67,7 +67,7 @@ Develop human-readable interfaces (both GUI and CLI) for navigating and visualiz
 
 - **MCP Server Extension**: Add visualization endpoints to existing server
 
-- **Artifact Storage Layer**: Overlay navigation system on current `.task_orchestrator/artifacts/` structure
+- **Artifact Storage Layer**: Overlay navigation system on current `.vespera_scriptorium/artifacts/` structure
 
 - **CLI Integration**: Extend existing CLI tools with navigation commands
 
@@ -189,7 +189,7 @@ Develop human-readable interfaces (both GUI and CLI) for navigating and visualiz
 
 # Backward Compatibility
 
-- **Current Storage Preserved**: No changes to existing `.task_orchestrator/artifacts/` structure
+- **Current Storage Preserved**: No changes to existing `.vespera_scriptorium/artifacts/` structure
 
 - **Incremental Enhancement**: Add navigation layer without disrupting existing workflows
 

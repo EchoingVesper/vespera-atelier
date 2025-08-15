@@ -1,12 +1,12 @@
 
 
-# PRP Integration with MCP Task Orchestrator
+# PRP Integration with Vespera Scriptorium
 
 #
 
 # Overview
 
-This document outlines the integration of Product Requirement Prompts (PRPs) with the MCP Task Orchestrator, creating a powerful synergy between structured prompt engineering and intelligent task orchestration.
+This document outlines the integration of Product Requirement Prompts (PRPs) with the Vespera Scriptorium, creating a powerful synergy between structured prompt engineering and intelligent task orchestration.
 
 #
 
@@ -144,7 +144,7 @@ class PRPValidationService:
 
 1. Create PRP using `/create-base-prp` command
 
-2. Execute PRP with task orchestrator integration
+2. Execute PRP with Vespera Scriptorium integration
 
 3. Tasks are automatically created and assigned
 
@@ -262,15 +262,15 @@ bash
 
 /create-base-prp implement user authentication with JWT
 
-# Execute with task orchestrator
+# Execute with Vespera Scriptorium
 
-python -m mcp_task_orchestrator.orchestrate_prp \
+python -m vespera_scriptorium.orchestrate_prp \
     --prp PRPs/user-authentication.md \
     --auto-validate
 
 # Monitor progress
 
-python -m mcp_task_orchestrator.status --prp user-authentication
+python -m vespera_scriptorium.status --prp user-authentication
 
 ```text
 
@@ -289,13 +289,13 @@ bash
 
 # Execute with specialist assignment
 
-python -m mcp_task_orchestrator.execute_prp \
+python -m vespera_scriptorium.execute_prp \
     --prp PRPs/database-refactor.md \
     --specialist architect
 
 # Validate results
 
-python -m mcp_task_orchestrator.validate_prp \
+python -m vespera_scriptorium.validate_prp \
     --prp PRPs/database-refactor.md
 ```text
 
@@ -441,4 +441,4 @@ python -m mcp_task_orchestrator.validate_prp \
 
 # Conclusion
 
-The integration of PRPs with the MCP Task Orchestrator creates a powerful development workflow that combines the best of structured prompting with intelligent task management. This synergy enables more reliable, higher-quality AI-assisted development with built-in validation and quality assurance.
+The integration of PRPs with the Vespera Scriptorium creates a powerful development workflow that combines the best of structured prompting with intelligent task management. This synergy enables more reliable, higher-quality AI-assisted development with built-in validation and quality assurance.

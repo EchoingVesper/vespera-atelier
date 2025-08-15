@@ -22,11 +22,11 @@ This document specifies the file structure and markdown formats for the bi-direc
 #
 # Session Directory Layout
 
-The bi-directional persistence system organizes files in a structured hierarchy within the `.task_orchestrator` directory.
+The bi-directional persistence system organizes files in a structured hierarchy within the `.vespera_scriptorium` directory.
 
 ```text
 project_root/
-├── .task_orchestrator/
+├── .vespera_scriptorium/
 │   ├── sessions/
 │   │   └── [session_id]/
 │   │       ├── session.md                 
@@ -223,7 +223,7 @@ markdown
 ---
 **Last Updated**: 2025-06-01 16:45:00 (Auto-sync: ✅ Synchronized)  
 **Total Session Time**: 42h 15m  
-**Markdown File**: `/project/.task_orchestrator/sessions/session_abc123/session.md`
+**Markdown File**: `/project/.vespera_scriptorium/sessions/session_abc123/session.md`
 
 ```text
 

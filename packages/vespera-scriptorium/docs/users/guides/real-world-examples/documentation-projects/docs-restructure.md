@@ -2,7 +2,7 @@
 
 # Large-Scale Documentation Restructure
 
-*⭐ Featured Example: The exact workflow used to restructure this MCP Task Orchestrator documentation*
+*⭐ Featured Example: The exact workflow used to restructure this Vespera Scriptorium documentation*
 
 #
 
@@ -50,7 +50,7 @@ bash
 # 2. Create structured task breakdown
 
 orchestrator_plan_task({
-  "description": "Complete comprehensive documentation restructure for mcp-task-orchestrator",
+  "description": "Complete comprehensive documentation restructure for mcp-vespera-scriptorium",
   "complexity_level": "complex",
   "subtasks_json": "[{
     \"title\": \"Current State Analysis\",

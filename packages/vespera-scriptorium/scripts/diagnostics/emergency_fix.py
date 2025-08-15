@@ -10,14 +10,14 @@ from pathlib import Path
 
 def main():
     # Ensure we're in the project directory
-    project_dir = Path(r"E:\dev\mcp-servers\mcp-task-orchestrator")
+    project_dir = Path(r"E:\dev\mcp-servers\vespera-scriptorium")
     os.chdir(project_dir)
     
     print("🔧 Emergency Database Schema Repair")
     print("=" * 50)
     
     # Connect to database
-    db_path = "task_orchestrator.db"
+    db_path = "vespera_scriptorium.db"
     if not Path(db_path).exists():
         print(f"❌ Database not found: {db_path}")
         return False
@@ -64,7 +64,7 @@ def main():
         
         # Import and test the persistence manager
         sys.path.insert(0, str(project_dir))
-        from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
+        from vespera_scriptorium.db.persistence import DatabasePersistenceManager
         
         # Test creating persistence manager
         persistence = DatabasePersistenceManager()

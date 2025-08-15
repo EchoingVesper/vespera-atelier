@@ -1,7 +1,7 @@
 
 # CLAUDE.md
 
-**[CURRENT]** Claude Code guidance for Core Package in MCP Task Orchestrator
+**[CURRENT]** Claude Code guidance for Core Package in Vespera Scriptorium
 
 ⚠️ **File Size Compliant**: This file is kept under 400 lines for Claude Code stability
 
@@ -20,7 +20,7 @@
 #
 ## Package Purpose
 
-Core implementation of the MCP Task Orchestrator following Clean Architecture and Domain-Driven Design principles.
+Core implementation of the Vespera Scriptorium following Clean Architecture and Domain-Driven Design principles.
 
 #
 ## Scope
@@ -60,15 +60,15 @@ pip install -e ".[dev]"
 
 # Run dependency injection server (recommended)
 
-MCP_TASK_ORCHESTRATOR_USE_DI=true python -m mcp_task_orchestrator.server
+MCP_TASK_ORCHESTRATOR_USE_DI=true python -m vespera_scriptorium.server
 
 # Run legacy mode
 
-MCP_TASK_ORCHESTRATOR_USE_DI=false python -m mcp_task_orchestrator.server
+MCP_TASK_ORCHESTRATOR_USE_DI=false python -m vespera_scriptorium.server
 
 # Run dedicated DI-only server
 
-python -m mcp_task_orchestrator.server_with_di
+python -m vespera_scriptorium.server_with_di
 
 ```text
 
@@ -80,16 +80,16 @@ bash
 
 # Run unit tests for core package
 
-pytest mcp_task_orchestrator/tests/ -m unit
+pytest vespera_scriptorium/tests/ -m unit
 
 # Run integration tests
 
-pytest mcp_task_orchestrator/tests/ -m integration
+pytest vespera_scriptorium/tests/ -m integration
 
 # Test specific layer
 
-pytest mcp_task_orchestrator/domain/tests/
-pytest mcp_task_orchestrator/application/tests/
+pytest vespera_scriptorium/domain/tests/
+pytest vespera_scriptorium/application/tests/
 
 ```text
 
@@ -98,7 +98,7 @@ pytest mcp_task_orchestrator/application/tests/
 
 ```text
 bash
-mcp_task_orchestrator/
+vespera_scriptorium/
 ├── domain/              
 # Business logic (innermost layer)
 │   ├── entities/        

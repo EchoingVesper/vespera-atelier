@@ -6,7 +6,7 @@
 
 # Upgrading from Previous Versions
 
-If you previously installed MCP Task Orchestrator using the old methods, follow this guide to migrate to the unified installation system.
+If you previously installed Vespera Scriptorium using the old methods, follow this guide to migrate to the unified installation system.
 
 #
 
@@ -109,7 +109,7 @@ The migration automatically removes:
 
 - Restart all MCP client applications
 
-- Check that `task-orchestrator` appears in tools list
+- Check that `vespera-scriptorium` appears in tools list
 
 #
 

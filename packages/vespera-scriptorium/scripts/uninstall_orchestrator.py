@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Comprehensive uninstall script for MCP Task Orchestrator.
+Comprehensive uninstall script for Vespera Scriptorium.
 
-This script safely removes MCP Task Orchestrator from all MCP client configurations
+This script safely removes Vespera Scriptorium from all MCP client configurations
 without affecting other MCP servers or user configurations.
 """
 
@@ -138,7 +138,7 @@ class MCPClientManager:
             return False
     
     def remove_orchestrator_from_config(self, client_id: str, config_path: Path, dry_run: bool = False) -> Tuple[bool, List[str]]:
-        """Remove MCP Task Orchestrator from a client configuration."""
+        """Remove Vespera Scriptorium from a client configuration."""
         removed_entries = []
         
         try:
@@ -158,7 +158,7 @@ class MCPClientManager:
                 servers_to_remove = []
                 
                 for server_name, server_config in config["mcpServers"].items():
-                    # Check if this is a task orchestrator server
+                    # Check if this is a Vespera Scriptorium server
                     if self._is_orchestrator_server(server_name, server_config):
                         servers_to_remove.append(server_name)
                         removed_entries.append(f"mcpServers.{server_name}")
@@ -194,12 +194,12 @@ class MCPClientManager:
             return False, removed_entries
     
     def _is_orchestrator_server(self, server_name: str, server_config: Dict[str, Any]) -> bool:
-        """Check if a server configuration is for MCP Task Orchestrator."""
+        """Check if a server configuration is for Vespera Scriptorium."""
         # Check server name patterns
         orchestrator_name_patterns = [
             "task-orchestrator",
             "task_orchestrator", 
-            "mcp-task-orchestrator",
+            "vespera-scriptorium",
             "mcp_task_orchestrator",
             "orchestrator"
         ]
@@ -215,7 +215,7 @@ class MCPClientManager:
                 command_lower = command.lower()
                 if any(pattern in command_lower for pattern in orchestrator_name_patterns):
                     return True
-                if "mcp-task-orchestrator" in command_lower or "task_orchestrator" in command_lower:
+                if "vespera-scriptorium" in command_lower or "task_orchestrator" in command_lower:
                     return True
             elif isinstance(command, list) and command:
                 first_arg = command[0].lower()
@@ -281,7 +281,7 @@ class MCPClientManager:
 
 
 class OrchestatorUninstaller:
-    """Main uninstaller class for MCP Task Orchestrator."""
+    """Main uninstaller class for Vespera Scriptorium."""
     
     def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
@@ -291,7 +291,7 @@ class OrchestatorUninstaller:
     def run_uninstall(self, clients_to_process: Optional[List[str]] = None) -> Dict[str, Any]:
         """Run the complete uninstall process."""
         logger.info("=" * 60)
-        logger.info("MCP Task Orchestrator - Comprehensive Uninstall")
+        logger.info("Vespera Scriptorium - Comprehensive Uninstall")
         logger.info("=" * 60)
         
         if self.dry_run:
@@ -396,7 +396,7 @@ class OrchestatorUninstaller:
             
             # Check if package is installed
             result = subprocess.run(
-                [sys.executable, "-m", "pip", "show", "mcp-task-orchestrator"],
+                [sys.executable, "-m", "pip", "show", "vespera-scriptorium"],
                 capture_output=True,
                 text=True
             )
@@ -406,12 +406,12 @@ class OrchestatorUninstaller:
                 package_results["package_uninstall_recommended"] = True
                 
                 if not self.dry_run:
-                    logger.info("📦 Package 'mcp-task-orchestrator' is installed")
-                    logger.info("   Recommendation: Uninstall with 'pip uninstall mcp-task-orchestrator'")
+                    logger.info("📦 Package 'vespera-scriptorium' is installed")
+                    logger.info("   Recommendation: Uninstall with 'pip uninstall vespera-scriptorium'")
                 else:
                     logger.info("📦 Would check package installation status")
             else:
-                logger.info("📦 Package 'mcp-task-orchestrator' is not installed")
+                logger.info("📦 Package 'vespera-scriptorium' is not installed")
                 
         except Exception as e:
             logger.warning(f"Could not check package installation: {e}")
@@ -447,7 +447,7 @@ class OrchestatorUninstaller:
         if results["package_uninstall_recommended"]:
             logger.info("\n📦 NEXT STEPS:")
             logger.info("   1. Exit Claude Code and restart your MCP clients")
-            logger.info("   2. Uninstall the Python package: pip uninstall mcp-task-orchestrator")
+            logger.info("   2. Uninstall the Python package: pip uninstall vespera-scriptorium")
         
         success_emoji = "✅" if results["success"] else "❌"
         logger.info(f"\n{success_emoji} Uninstall {'would complete' if self.dry_run else 'completed'} {'successfully' if results['success'] else 'with errors'}")
@@ -456,7 +456,7 @@ class OrchestatorUninstaller:
 def main():
     """Main entry point for the uninstall script."""
     parser = argparse.ArgumentParser(
-        description="Comprehensive uninstaller for MCP Task Orchestrator"
+        description="Comprehensive uninstaller for Vespera Scriptorium"
     )
     parser.add_argument(
         "--dry-run",

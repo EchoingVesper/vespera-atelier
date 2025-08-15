@@ -8,9 +8,9 @@ input sanitization, and attack prevention.
 import pytest
 from unittest.mock import Mock, patch
 
-from mcp_task_orchestrator.infrastructure.template_system.template_engine import TemplateEngine, ParameterSubstitutionError
-from mcp_task_orchestrator.infrastructure.template_system.security_validator import TemplateSecurityValidator, SecurityValidationError
-# from mcp_task_orchestrator.infrastructure.template_system.template_engine import  # TODO: Complete this import
+from vespera_scriptorium.infrastructure.template_system.template_engine import TemplateEngine, ParameterSubstitutionError
+from vespera_scriptorium.infrastructure.template_system.security_validator import TemplateSecurityValidator, SecurityValidationError
+# from vespera_scriptorium.infrastructure.template_system.template_engine import  # TODO: Complete this import
 
 
 class TestTemplateSecurityValidator:

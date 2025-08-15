@@ -27,8 +27,8 @@ from dataclasses import dataclass, asdict
 from enum import Enum
 
 try:
-    from mcp_task_orchestrator.orchestrator.orchestration_state_manager import OrchestrationStateManager
-    from mcp_task_orchestrator.orchestrator.generic_models import GenericTask
+    from vespera_scriptorium.orchestrator.orchestration_state_manager import OrchestrationStateManager
+    from vespera_scriptorium.orchestrator.generic_models import GenericTask
     ORCHESTRATOR_AVAILABLE = True
 except ImportError:
     ORCHESTRATOR_AVAILABLE = False

@@ -6,7 +6,7 @@
 
 # 🎯 Integration Complete - Server Ready
 
-The automatic database migration system has been successfully integrated into the MCP Task Orchestrator server. This guide explains what was implemented and how to use it.
+The automatic database migration system has been successfully integrated into the Vespera Scriptorium server. This guide explains what was implemented and how to use it.
 
 #
 
@@ -20,7 +20,7 @@ The automatic database migration system has been successfully integrated into th
 
 ```python
 
-# Added to mcp_task_orchestrator/server.py line 24
+# Added to vespera_scriptorium/server.py line 24
 
 from .db.auto_migration import execute_startup_migration
 
@@ -142,7 +142,7 @@ text
 ```text
 bash
 
-# Database location (optional - defaults to .task_orchestrator/task_orchestrator.db)
+# Database location (optional - defaults to .vespera_scriptorium/vespera_scriptorium.db)
 
 export MCP_TASK_ORCHESTRATOR_DB_PATH="/path/to/database.db"
 
@@ -236,7 +236,7 @@ Future enhancement: Add MCP tools for migration health monitoring:
 
 ```text
 bash
-   python -m mcp_task_orchestrator.server
+   python -m vespera_scriptorium.server
    
 
 ```text
@@ -250,7 +250,7 @@ text
 ```text
 text
 bash
-   python -m mcp_task_orchestrator.server
+   python -m vespera_scriptorium.server
    
 
 ```text
@@ -259,7 +259,7 @@ text
    Expected: Quick check, "Database schema is up to date"
 
 3. **Test with existing database**:
-   Use existing `.task_orchestrator/task_orchestrator.db`
+   Use existing `.vespera_scriptorium/vespera_scriptorium.db`
    Expected: Detects and applies any needed changes
 
 #
@@ -274,7 +274,7 @@ python
 
 # Test migration system directly
 
-from mcp_task_orchestrator.db.auto_migration import execute_startup_migration
+from mcp_vespera_scriptorium.db.auto_migration import execute_startup_migration
 
 result = execute_startup_migration("sqlite:///test.db")
 print(f"Success: {result.success}")
@@ -381,7 +381,7 @@ WARNING - Large backup storage usage - consider cleanup
 
 ```text
 python
-from mcp_task_orchestrator.db.auto_migration import AutoMigrationSystem
+from mcp_vespera_scriptorium.db.auto_migration import AutoMigrationSystem
 
 # Initialize with manual control
 
@@ -408,7 +408,7 @@ result = migration_system.execute_auto_migration(force_backup=True)
 
 ```text
 python
-from mcp_task_orchestrator.db.auto_migration import AutoMigrationSystem
+from mcp_vespera_scriptorium.db.auto_migration import AutoMigrationSystem
 
 migration_system = AutoMigrationSystem("sqlite:///path/to/db")
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Example Usage of MCP Task Orchestrator Validation Framework
+Example Usage of Vespera Scriptorium Validation Framework
 
 This script demonstrates how to use the validation framework to test
-MCP Task Orchestrator tools systematically.
+Vespera Scriptorium tools systematically.
 
 Usage:
     python run_example.py
@@ -308,7 +308,7 @@ async def example_full_workflow():
 
 async def main():
     """Run all examples."""
-    print("🚀 MCP Task Orchestrator Validation Framework Examples")
+    print("🚀 Vespera Scriptorium Validation Framework Examples")
     print("=" * 60)
     
     # Run examples

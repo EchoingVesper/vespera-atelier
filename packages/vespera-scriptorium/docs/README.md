@@ -1,6 +1,6 @@
-# MCP Task Orchestrator Documentation
+# Vespera Scriptorium Documentation
 
-Welcome to the MCP Task Orchestrator documentation. This tool transforms how you work with AI by automatically documenting every decision, implementation, and test as you build.
+Welcome to the Vespera Scriptorium documentation. This tool transforms how you work with AI by automatically documenting every decision, implementation, and test as you build.
 
 ## Documentation Structure
 
@@ -37,7 +37,7 @@ Welcome to the MCP Task Orchestrator documentation. This tool transforms how you
 
 ## What is the Task Orchestrator?
 
-The MCP Task Orchestrator is a Model Context Protocol server that:
+The Vespera Scriptorium is a Model Context Protocol server that:
 
 1. **Breaks down complex tasks** into manageable subtasks
 2. **Assigns specialist AI roles** for each aspect (design, code, test, document)
@@ -81,7 +81,7 @@ Transform vague requests into clear, actionable subtasks with defined success cr
 
 # What you get:
 project/
-├── .task_orchestrator/
+├── .vespera_scriptorium/
 │   ├── tasks.db                    # Complete task history
 │   ├── artifacts/
 │   │   ├── api_design.md          # API design decisions
@@ -129,8 +129,8 @@ project/
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/EchoingVesper/mcp-task-orchestrator/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/EchoingVesper/mcp-task-orchestrator/discussions)
+- **Issues**: [GitHub Issues](https://github.com/EchoingVesper/mcp-vespera-scriptorium/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/EchoingVesper/mcp-vespera-scriptorium/discussions)
 
 ---
 

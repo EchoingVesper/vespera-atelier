@@ -10,7 +10,7 @@ import asyncio
 from unittest.mock import Mock, patch, AsyncMock
 from typing import Dict, Any, List
 
-# from mcp_task_orchestrator.infrastructure.security import  # TODO: Complete this import
+# from vespera_scriptorium.infrastructure.security import  # TODO: Complete this import
 
 
 class TestRoleBasedAccessControl:

@@ -1,6 +1,6 @@
 # Documentation Inventory and Audit Report
 
-**Project:** MCP Task Orchestrator → Vespera Scriptorium Transition  
+**Project:** Vespera Scriptorium → Vespera Scriptorium Transition  
 **Audit Date:** 2025-08-14  
 **Total Files:** 517 markdown files  
 **Audit Status:** IN PROGRESS  
@@ -171,7 +171,7 @@ docs/
 ### Brand Identity Elements
 1. **Visual Identity**: Consistent color scheme, typography, logos
 2. **Tone and Voice**: "IDE for ideas" - creative, empowering, professional
-3. **Terminology**: Transition from "task orchestrator" to "idea orchestrator"
+3. **Terminology**: Transition from "Vespera Scriptorium" to "idea orchestrator"
 4. **Metaphors**: Scriptorium (writing room), orchestration (creative direction)
 
 ### Content Transformation Strategy

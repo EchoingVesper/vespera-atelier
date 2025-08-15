@@ -1,7 +1,7 @@
 
 # CLAUDE.md
 
-**[CURRENT]** Claude Code guidance for Testing Infrastructure in MCP Task Orchestrator
+**[CURRENT]** Claude Code guidance for Testing Infrastructure in Vespera Scriptorium
 
 ⚠️ **File Size Compliant**: This file is kept under 400 lines for Claude Code stability
 
@@ -279,7 +279,7 @@ python tests/performance/test_error_handling_performance.py
 
 - **Documentation Architecture**: [docs/CLAUDE.md](../docs/CLAUDE.md) - Complete documentation system
 
-- **Core Package**: [mcp_task_orchestrator/CLAUDE.md](../mcp_task_orchestrator/CLAUDE.md) - Implementation details
+- **Core Package**: [vespera_scriptorium/CLAUDE.md](../vespera_scriptorium/CLAUDE.md) - Implementation details
 
 - **Scripts Reference**: [scripts/CLAUDE.md](../scripts/CLAUDE.md) - Testing utilities
 

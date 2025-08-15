@@ -4,7 +4,7 @@
 #
 # Overview
 
-The MCP Task Orchestrator Security Test Suite provides comprehensive validation of all security measures implemented in the system. This test suite covers authentication, authorization, input validation, path traversal protection, information disclosure prevention, and attack vector simulation.
+The Vespera Scriptorium Security Test Suite provides comprehensive validation of all security measures implemented in the system. This test suite covers authentication, authorization, input validation, path traversal protection, information disclosure prevention, and attack vector simulation.
 
 #
 # Test Structure
@@ -253,7 +253,7 @@ pytest tests/security/ -v
 
 # Run with coverage
 
-pytest tests/security/ --cov=mcp_task_orchestrator.infrastructure.security --cov-report=html
+pytest tests/security/ --cov=vespera_scriptorium.infrastructure.security --cov-report=html
 
 # Run only critical security tests
 
@@ -595,7 +595,7 @@ jobs:
           pip install -e ".[dev]"
       - name: Run security tests
         run: |
-          pytest tests/security/ -v --cov=mcp_task_orchestrator.infrastructure.security
+          pytest tests/security/ -v --cov=vespera_scriptorium.infrastructure.security
       - name: Run critical security tests
         run: |
           pytest tests/security/ -m critical -v
@@ -748,4 +748,4 @@ pytest tests/security/ -m performance
 
 **Last Updated**: 2025-07-23  
 **Version**: 1.0.0  
-**Maintainer**: MCP Task Orchestrator Security Team
+**Maintainer**: Vespera Scriptorium Security Team

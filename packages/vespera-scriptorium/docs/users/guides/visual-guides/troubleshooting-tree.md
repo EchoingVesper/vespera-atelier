@@ -45,7 +45,7 @@
     │      SOLUTION STEPS:        │     │      SOLUTION STEPS:        │
     │                             │     │                             │
     │ 1. Check MCP config has:    │     │ 1. Verify Claude Code       │
-    │    "task-orchestrator"      │     │    installation             │
+    │    "vespera-scriptorium"      │     │    installation             │
     │                             │     │                             │
     │ 2. Restart MCP client       │     │ 2. Check file permissions   │
     │                             │     │                             │

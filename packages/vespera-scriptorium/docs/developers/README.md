@@ -2,7 +2,7 @@
 
 # Developer Documentation
 
-Technical documentation for MCP Task Orchestrator development and integration.
+Technical documentation for Vespera Scriptorium development and integration.
 
 #
 

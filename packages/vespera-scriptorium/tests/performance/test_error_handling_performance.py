@@ -15,12 +15,12 @@ import psutil
 import os
 
 # Import error handling components
-# from mcp_task_orchestrator.infrastructure.error_handling.decorators import  # TODO: Complete this import
-# from mcp_task_orchestrator.infrastructure.error_handling.retry_coordinator import  # TODO: Complete this import
+# from vespera_scriptorium.infrastructure.error_handling.decorators import  # TODO: Complete this import
+# from vespera_scriptorium.infrastructure.error_handling.retry_coordinator import  # TODO: Complete this import
 
 # Import handlers for comparison
-# from mcp_task_orchestrator.infrastructure.mcp.handlers.task_handlers import  # TODO: Complete this import
-# from mcp_task_orchestrator.infrastructure.mcp.handlers.task_handlers_v2 import  # TODO: Complete this import
+# from vespera_scriptorium.infrastructure.mcp.handlers.task_handlers import  # TODO: Complete this import
+# from vespera_scriptorium.infrastructure.mcp.handlers.task_handlers_v2 import  # TODO: Complete this import
 
 
 class PerformanceBenchmark:
@@ -294,8 +294,8 @@ class TestHandlerPerformanceComparison:
             mock_old_use_case.return_value = mock_old_uc
             
             # Mock new handler response
-            from mcp_task_orchestrator.domain.entities.task import Task, TaskType, TaskStatus
-            from mcp_task_orchestrator.domain.value_objects.complexity_level import ComplexityLevel
+            from vespera_scriptorium.domain.entities.task import Task, TaskType, TaskStatus
+            from vespera_scriptorium.domain.value_objects.complexity_level import ComplexityLevel
             from datetime import datetime
             
             mock_new_task = Task(

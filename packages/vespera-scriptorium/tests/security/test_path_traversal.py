@@ -13,7 +13,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 from typing import List, Dict, Any
 
-# from mcp_task_orchestrator.infrastructure.security import  # TODO: Complete this import
+# from vespera_scriptorium.infrastructure.security import  # TODO: Complete this import
 
 
 class TestBasicPathTraversal:

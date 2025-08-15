@@ -12,7 +12,7 @@ The File-Based Test Output System solves the critical timing issue where LLM cal
 
 # The Problem
 
-In the original MCP Task Orchestrator testing setup:
+In the original Vespera Scriptorium testing setup:
 
 1. **Tests write extensive output** to stdout using `print()` statements
 
@@ -63,7 +63,7 @@ The File-Based Test Output System provides:
 Handles writing test output to files with atomic operations:
 
 ```python
-from mcp_task_orchestrator.testing import TestOutputWriter
+from vespera_scriptorium.testing import TestOutputWriter
 
 writer = TestOutputWriter("./test_outputs")
 
@@ -88,7 +88,7 @@ Safely reads completed test output files:
 
 ```text
 python
-from mcp_task_orchestrator.testing import TestOutputReader
+from vespera_scriptorium.testing import TestOutputReader
 
 reader = TestOutputReader("./test_outputs")
 
@@ -114,7 +114,7 @@ Seamless integration with existing pytest tests:
 
 ```text
 python
-from mcp_task_orchestrator.testing import file_output_test
+from vespera_scriptorium.testing import file_output_test
 
 @file_output_test("my_test_name")
 def test_example():
@@ -137,7 +137,7 @@ def test_example():
 ```text
 python
 #!/usr/bin/env python3
-from mcp_task_orchestrator.testing import TestOutputWriter, TestOutputReader
+from vespera_scriptorium.testing import TestOutputWriter, TestOutputReader
 
 # Writing test output
 
@@ -258,7 +258,7 @@ test_outputs/
 
 ```text
 python
-from mcp_task_orchestrator.testing import configure_pytest_integration
+from vespera_scriptorium.testing import configure_pytest_integration
 
 # Configure custom output location
 
@@ -402,7 +402,7 @@ text
 
 ```text
 python
-from mcp_task_orchestrator.testing import TestOutputWriter
+from vespera_scriptorium.testing import TestOutputWriter
 
 def run_test():
     writer = TestOutputWriter()
@@ -459,7 +459,7 @@ python
 
 # Check active test sessions
 
-from mcp_task_orchestrator.testing import get_pytest_output_statistics
+from vespera_scriptorium.testing import get_pytest_output_statistics
 
 stats = get_pytest_output_statistics()
 print(f"Active sessions: {stats['active_sessions']}")
@@ -505,7 +505,7 @@ with writer.write_test_output("test", "structured") as session:
 ```text
 python
 import asyncio
-from mcp_task_orchestrator.testing import TestOutputReader
+from vespera_scriptorium.testing import TestOutputReader
 
 async def monitor_tests():
     reader = TestOutputReader()
@@ -524,4 +524,4 @@ async def monitor_tests():
         await asyncio.sleep(1.0)
 ```text
 
-This system completely eliminates the timing issues that were causing test output truncation in the MCP Task Orchestrator.
+This system completely eliminates the timing issues that were causing test output truncation in the Vespera Scriptorium.

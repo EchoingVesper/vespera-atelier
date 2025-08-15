@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 # Add project to path
-project_root = Path(r"E:\My Work\Programming\MCP Task Orchestrator")
+project_root = Path(r"E:\My Work\Programming\Vespera Scriptorium")
 sys.path.insert(0, str(project_root))
 
 async def test_complete_subtask():

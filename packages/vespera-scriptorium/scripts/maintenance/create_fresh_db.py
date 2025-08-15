@@ -15,7 +15,7 @@ print("🔧 Creating fresh database with correct schema...")
 
 try:
     # Import the models to get the schema
-    from mcp_task_orchestrator.db.models import Base
+    from vespera_scriptorium.db.models import Base
     from sqlalchemy import create_engine
     
     # Create a new database file with a different name
@@ -53,8 +53,8 @@ try:
     print("\n✅ Database created successfully!")
     print("\n📋 Next steps:")
     print("1. Stop any running orchestrator processes")
-    print("2. In Windows, rename task_orchestrator.db to task_orchestrator_old.db")
-    print("3. Rename task_orchestrator_new.db to task_orchestrator.db")
+    print("2. In Windows, rename vespera_scriptorium.db to task_orchestrator_old.db")
+    print("3. Rename task_orchestrator_new.db to vespera_scriptorium.db")
     print("4. Restart the orchestrator")
     
 except Exception as e:

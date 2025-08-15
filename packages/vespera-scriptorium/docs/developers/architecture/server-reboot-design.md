@@ -6,7 +6,7 @@
 
 # Overview
 
-The in-context server reboot mechanism enables seamless MCP Task Orchestrator restarts without requiring client reconnection. This system preserves active tasks, database state, and client connections through a graceful shutdown and restart sequence.
+The in-context server reboot mechanism enables seamless Vespera Scriptorium restarts without requiring client reconnection. This system preserves active tasks, database state, and client connections through a graceful shutdown and restart sequence.
 
 #
 
@@ -19,7 +19,7 @@ The in-context server reboot mechanism enables seamless MCP Task Orchestrator re
 # 1. State Serialization Layer
 
 **Purpose**: Capture and restore complete server state across restarts
-**Location**: `mcp_task_orchestrator/server/state_serializer.py`
+**Location**: `vespera_scriptorium/server/state_serializer.py`
 
 **Responsibilities**:
 
@@ -55,7 +55,7 @@ class StateSerializer:
 # 2. Graceful Shutdown Coordinator
 
 **Purpose**: Orchestrate clean server shutdown with state preservation
-**Location**: `mcp_task_orchestrator/server/shutdown_coordinator.py`
+**Location**: `vespera_scriptorium/server/shutdown_coordinator.py`
 
 **Responsibilities**:
 
@@ -86,7 +86,7 @@ class StateSerializer:
 # 3. Restart Manager
 
 **Purpose**: Handle server process restart and state restoration
-**Location**: `mcp_task_orchestrator/server/restart_manager.py`
+**Location**: `vespera_scriptorium/server/restart_manager.py`
 
 **Responsibilities**:
 
@@ -117,7 +117,7 @@ class StateSerializer:
 # 4. Client Connection Bridge
 
 **Purpose**: Maintain client connectivity during server restart
-**Location**: `mcp_task_orchestrator/server/connection_bridge.py`
+**Location**: `vespera_scriptorium/server/connection_bridge.py`
 
 **Responsibilities**:
 
@@ -139,7 +139,7 @@ class StateSerializer:
 
 # Serialization Format
 
-**File Location**: `.task_orchestrator/server_state/`
+**File Location**: `.vespera_scriptorium/server_state/`
 **Format**: JSON with binary attachments for efficiency
 **Naming**: `server_state_{timestamp}.json`
 

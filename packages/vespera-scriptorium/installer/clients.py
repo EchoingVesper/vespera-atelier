@@ -484,7 +484,7 @@ class ClientManager:
         
         base_config = {
             "command": str(python_command),
-            "args": ["-m", "mcp_task_orchestrator"]
+            "args": ["-m", "vespera_scriptorium"]
         }
         
         # Only Claude Desktop needs the cwd property
@@ -567,7 +567,7 @@ class ClientManager:
             # Try to find the installed module
             result = subprocess.run(
                 [sys.executable, '-c', 
-                 'import mcp_task_orchestrator; print(mcp_task_orchestrator.__file__)'],
+                 'import vespera_scriptorium; print(vespera_scriptorium.__file__)'],
                 capture_output=True,
                 text=True,
                 timeout=10
@@ -584,7 +584,7 @@ class ClientManager:
         # Fallback to project directory for development installs
         if self.config.scope == InstallationScope.PROJECT or self.config.source == InstallationSource.LOCAL:
             project_root = Path.cwd()
-            server_module = project_root / 'mcp_task_orchestrator'
+            server_module = project_root / 'vespera_scriptorium'
             if server_module.exists():
                 return server_module
         

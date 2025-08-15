@@ -1,5 +1,5 @@
 """
-Testing utilities for the MCP Task Orchestrator.
+Testing utilities for the Vespera Scriptorium.
 
 This package provides comprehensive testing tools including:
 - File-based test output system with atomic writes
@@ -89,5 +89,5 @@ __all__ = [
 
 # Version info
 __version__ = "1.0.0"
-__author__ = "MCP Task Orchestrator Team"
+__author__ = "Vespera Scriptorium Team"
 __description__ = "File-based test output system preventing timing issues"

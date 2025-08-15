@@ -29,9 +29,9 @@ Based on comprehensive code review and analysis of the v1.8.0 codebase, **many f
 - **Implementation Status**: **FULLY IMPLEMENTED** as workspace paradigm in v1.8.0
 
 - **Evidence**:
-  - `mcp_task_orchestrator/orchestrator/directory_detection.py` - Smart workspace detection
-  - `mcp_task_orchestrator/db/workspace_*.py` - Workspace-aware database schema
-  - `mcp_task_orchestrator/db/workspace_schema.sql` - Workspace paradigm schema
+  - `vespera_scriptorium/orchestrator/directory_detection.py` - Smart workspace detection
+  - `vespera_scriptorium/db/workspace_*.py` - Workspace-aware database schema
+  - `vespera_scriptorium/db/workspace_schema.sql` - Workspace paradigm schema
   - **Key Features Implemented**:
     - Automatic project root detection (Git, package.json, pyproject.toml)
     - Workspace-aware task management
@@ -53,11 +53,11 @@ Based on comprehensive code review and analysis of the v1.8.0 codebase, **many f
 - **Implementation Status**: **FULLY IMPLEMENTED** in v1.8.0
 
 - **Evidence**:
-  - `mcp_task_orchestrator/db/auto_migration.py` - Automatic migration detection
-  - `mcp_task_orchestrator/db/migration_manager.py` - Migration execution engine
-  - `mcp_task_orchestrator/db/schema_comparator.py` - Schema comparison logic
-  - `mcp_task_orchestrator/db/migration_history.py` - Migration tracking
-  - `mcp_task_orchestrator/db/rollback_manager.py` - Rollback capability
+  - `vespera_scriptorium/db/auto_migration.py` - Automatic migration detection
+  - `vespera_scriptorium/db/migration_manager.py` - Migration execution engine
+  - `vespera_scriptorium/db/schema_comparator.py` - Schema comparison logic
+  - `vespera_scriptorium/db/migration_history.py` - Migration tracking
+  - `vespera_scriptorium/db/rollback_manager.py` - Rollback capability
 
 - **Features Implemented**:
   - Automatic schema detection on startup
@@ -78,11 +78,11 @@ Based on comprehensive code review and analysis of the v1.8.0 codebase, **many f
 - **Implementation Status**: **FULLY IMPLEMENTED** in v1.8.0
 
 - **Evidence**:
-  - `mcp_task_orchestrator/reboot/` - Complete reboot system directory
-  - `mcp_task_orchestrator/reboot/restart_manager.py` - Restart coordination
-  - `mcp_task_orchestrator/reboot/shutdown_coordinator.py` - Graceful shutdown
-  - `mcp_task_orchestrator/reboot/state_serializer.py` - State preservation
-  - `mcp_task_orchestrator/reboot/connection_manager.py` - Client reconnection
+  - `vespera_scriptorium/reboot/` - Complete reboot system directory
+  - `vespera_scriptorium/reboot/restart_manager.py` - Restart coordination
+  - `vespera_scriptorium/reboot/shutdown_coordinator.py` - Graceful shutdown
+  - `vespera_scriptorium/reboot/state_serializer.py` - State preservation
+  - `vespera_scriptorium/reboot/connection_manager.py` - Client reconnection
 
 - **MCP Tools**: `orchestrator_restart_server`, `orchestrator_health_check`, etc.
 
@@ -99,11 +99,11 @@ Based on comprehensive code review and analysis of the v1.8.0 codebase, **many f
 - **Implementation Status**: **CORE FEATURES IMPLEMENTED** in v1.8.0
 
 - **Evidence**:
-  - `mcp_task_orchestrator/orchestrator/generic_models.py` - Generic task classes
-  - `mcp_task_orchestrator/db/generic_repository.py` - Generic CRUD operations
-  - `mcp_task_orchestrator/db/generic_task_schema.sql` - Flexible task schema
-  - `mcp_task_orchestrator/db/generic_task_migration.py` - Migration support
-  - `mcp_task_orchestrator/db/repository/` - Repository pattern implementation
+  - `vespera_scriptorium/orchestrator/generic_models.py` - Generic task classes
+  - `vespera_scriptorium/db/generic_repository.py` - Generic CRUD operations
+  - `vespera_scriptorium/db/generic_task_schema.sql` - Flexible task schema
+  - `vespera_scriptorium/db/generic_task_migration.py` - Migration support
+  - `vespera_scriptorium/db/repository/` - Repository pattern implementation
 
 - **Implemented Features**:
   - Unified task model (no separate subtask concept)

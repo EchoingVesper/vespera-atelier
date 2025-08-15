@@ -4,7 +4,7 @@ Simple test to check tool definitions without complex imports.
 """
 
 try:
-    from mcp_task_orchestrator.infrastructure.mcp.tool_definitions import get_all_tools
+    from vespera_scriptorium.infrastructure.mcp.tool_definitions import get_all_tools
     tools = get_all_tools()
     print(f"SUCCESS: Found {len(tools)} tools")
     for i, tool in enumerate(tools, 1):

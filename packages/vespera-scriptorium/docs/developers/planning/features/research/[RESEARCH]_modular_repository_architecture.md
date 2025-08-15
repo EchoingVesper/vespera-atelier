@@ -40,7 +40,7 @@ Split the large 1,180-line generic repository into focused, modular components t
 # New Module Structure
 
 ```text
-mcp_task_orchestrator/db/
+vespera_scriptorium/db/
 ├── repositories/
 │   ├── __init__.py              
 
@@ -211,11 +211,11 @@ python
 
 # Old usage (still supported)
 
-from mcp_task_orchestrator.db.generic_repository import GenericTaskRepository
+from mcp_vespera_scriptorium.db.generic_repository import GenericTaskRepository
 
 # New modular usage (recommended)
 
-from mcp_task_orchestrator.db.repositories import RepositoryFactory
+from mcp_vespera_scriptorium.db.repositories import RepositoryFactory
 repository = RepositoryFactory.create_generic_repository(db_url)
 ```text
 

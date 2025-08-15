@@ -1008,7 +1008,7 @@ class CreativeWritingOrchestrator:
         character_service: CharacterService,
         writing_session_manager: WritingSessionManager
     ):
-        self.task_orchestrator = task_orchestrator
+        self.vespera_scriptorium = task_orchestrator
         self.story_service = story_service
         self.character_service = character_service
         self.session_manager = writing_session_manager
@@ -1021,7 +1021,7 @@ class CreativeWritingOrchestrator:
         """Orchestrate complete story development workflow."""
         
         # Create master coordination task
-        master_task = await self.task_orchestrator.create_task(
+        master_task = await self.vespera_scriptorium.create_task(
             title=f"Story Development: {story_concept.working_title}",
             description=f"Complete development of '{story_concept.premise}' from concept to finished manuscript",
             task_type=TaskType.COORDINATION,
@@ -1038,7 +1038,7 @@ class CreativeWritingOrchestrator:
         phase_tasks = []
         
         # Phase 1: Story Foundation
-        foundation_task = await self.task_orchestrator.create_task(
+        foundation_task = await self.vespera_scriptorium.create_task(
             title="Story Foundation Development",
             description="Develop premise, themes, core characters, and basic structure",
             task_type=TaskType.CREATIVE_DEVELOPMENT,
@@ -1057,7 +1057,7 @@ class CreativeWritingOrchestrator:
         phase_tasks.append(foundation_task)
         
         # Phase 2: Detailed Planning
-        planning_task = await self.task_orchestrator.create_task(
+        planning_task = await self.vespera_scriptorium.create_task(
             title="Detailed Story Planning",
             description="Create detailed plot structure, develop all characters, build world",
             task_type=TaskType.CREATIVE_PLANNING,
@@ -1077,7 +1077,7 @@ class CreativeWritingOrchestrator:
         phase_tasks.append(planning_task)
         
         # Phase 3: First Draft
-        writing_task = await self.task_orchestrator.create_task(
+        writing_task = await self.vespera_scriptorium.create_task(
             title="First Draft Writing",
             description="Write complete first draft with momentum support",
             task_type=TaskType.CREATIVE_WRITING,
@@ -1095,7 +1095,7 @@ class CreativeWritingOrchestrator:
         phase_tasks.append(writing_task)
         
         # Phase 4: Revision and Editing
-        revision_task = await self.task_orchestrator.create_task(
+        revision_task = await self.vespera_scriptorium.create_task(
             title="Revision and Editing",
             description="Comprehensive revision, editing, and polishing",
             task_type=TaskType.CREATIVE_EDITING,
@@ -1132,7 +1132,7 @@ class CreativeWritingOrchestrator:
         momentum = await self.session_manager.assess_writing_momentum(story_id)
         
         # Create daily writing task
-        daily_task = await self.task_orchestrator.create_task(
+        daily_task = await self.vespera_scriptorium.create_task(
             title=f"Daily Writing Session - {datetime.now().strftime('%Y-%m-%d')}",
             description="Today's writing session with momentum preservation",
             task_type=TaskType.WRITING_SESSION,

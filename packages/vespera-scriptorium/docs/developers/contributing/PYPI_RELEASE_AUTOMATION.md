@@ -2,7 +2,7 @@
 
 # PyPI Release Automation
 
-This document describes the comprehensive PyPI release automation system for the MCP Task Orchestrator project.
+This document describes the comprehensive PyPI release automation system for the Vespera Scriptorium project.
 
 #
 
@@ -231,7 +231,7 @@ The automation updates version numbers in:
 
 - `pyproject.toml` - Project metadata version
 
-- `mcp_task_orchestrator/__init__.py` - Module version (if present)
+- `vespera_scriptorium/__init__.py` - Module version (if present)
 
 #
 

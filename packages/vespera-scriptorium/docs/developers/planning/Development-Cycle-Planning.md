@@ -77,7 +77,7 @@ Release Cycle Structure (12 weeks total):
 
 ```text
 
-MCP Task Orchestrator Team:
+Vespera Scriptorium Team:
 ├── Technical Lead (1.0 FTE)
 │   ├── Architecture decisions and oversight
 │   ├── Code review and quality assurance

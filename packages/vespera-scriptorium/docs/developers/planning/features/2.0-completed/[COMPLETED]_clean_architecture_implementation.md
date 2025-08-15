@@ -11,7 +11,7 @@
 #
 # 📋 Overview
 
-A complete transformation of the MCP Task Orchestrator to follow Clean Architecture and Domain-Driven Design principles, creating a maintainable, testable, and extensible codebase with clear separation of concerns and dependency inversion.
+A complete transformation of the Vespera Scriptorium to follow Clean Architecture and Domain-Driven Design principles, creating a maintainable, testable, and extensible codebase with clear separation of concerns and dependency inversion.
 
 #
 # 🎯 Objectives
@@ -32,7 +32,7 @@ A complete transformation of the MCP Task Orchestrator to follow Clean Architect
 #
 ## New Architecture Layers (Implemented)
 
-**Domain Layer** (`mcp_task_orchestrator/domain/`):
+**Domain Layer** (`vespera_scriptorium/domain/`):
 
 - Entities: Core business objects (Task, Specialist, OrchestrationSession)
 
@@ -44,7 +44,7 @@ A complete transformation of the MCP Task Orchestrator to follow Clean Architect
 
 - Exceptions: Domain-specific error hierarchy
 
-**Application Layer** (`mcp_task_orchestrator/application/`):
+**Application Layer** (`vespera_scriptorium/application/`):
 
 - Use Cases: Business workflow orchestration
 
@@ -52,7 +52,7 @@ A complete transformation of the MCP Task Orchestrator to follow Clean Architect
 
 - Interfaces: External service contracts
 
-**Infrastructure Layer** (`mcp_task_orchestrator/infrastructure/`):
+**Infrastructure Layer** (`vespera_scriptorium/infrastructure/`):
 
 - Database: SQLite repository implementations
 
@@ -66,7 +66,7 @@ A complete transformation of the MCP Task Orchestrator to follow Clean Architect
 
 - Dependency Injection: Service container with lifetime management
 
-**Presentation Layer** (`mcp_task_orchestrator/presentation/`):
+**Presentation Layer** (`vespera_scriptorium/presentation/`):
 
 - MCP Server: Clean architecture entry point
 

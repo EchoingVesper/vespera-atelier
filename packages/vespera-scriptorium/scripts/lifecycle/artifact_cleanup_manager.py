@@ -2,7 +2,7 @@
 
 """
 Artifact Cleanup Manager
-Part of MCP Task Orchestrator Documentation Ecosystem Modernization
+Part of Vespera Scriptorium Documentation Ecosystem Modernization
 
 Purpose: Manage artifact lifecycle policies and automated cleanup operations
 Integration: Works with orchestrator system and Japanese development principles
@@ -71,7 +71,7 @@ class ArtifactCleanupManager:
     def __init__(self, project_root: Path, dry_run: bool = False):
         self.project_root = project_root
         self.dry_run = dry_run
-        self.orchestrator_dir = project_root / ".task_orchestrator"
+        self.orchestrator_dir = project_root / ".vespera_scriptorium"
         self.claude_config_dir = project_root / ".claude"
         
         # Set up logging

@@ -42,7 +42,7 @@ class TestRunner:
 
     async def run_all_tests(self) -> bool:
         """Run all test suites and return overall success."""
-        print("🔄 MCP Task Orchestrator - Server Reboot Test Suite")
+        print("🔄 Vespera Scriptorium - Server Reboot Test Suite")
         print("=" * 60)
         print()
         

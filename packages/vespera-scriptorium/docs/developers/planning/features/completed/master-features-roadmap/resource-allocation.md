@@ -17,7 +17,7 @@ modularized_from: "docs/developers/planning/features/completed/[COMPLETED]_maste
 
 # 📊 Resource Requirements and Allocation
 
-Comprehensive resource planning for the MCP Task Orchestrator v2.0 implementation.
+Comprehensive resource planning for the Vespera Scriptorium v2.0 implementation.
 
 #
 # 💼 Development Resources
@@ -438,4 +438,4 @@ complete_resource_allocation:
 
 4. **Quality Assurance**: Maintain testing and review standards throughout
 
-This resource allocation plan provides the foundation for successful delivery of the MCP Task Orchestrator v2.0 while optimizing for cost, timeline, and quality objectives.
+This resource allocation plan provides the foundation for successful delivery of the Vespera Scriptorium v2.0 while optimizing for cost, timeline, and quality objectives.

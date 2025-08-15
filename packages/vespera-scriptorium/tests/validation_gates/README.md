@@ -1,10 +1,10 @@
 
-# MCP Task Orchestrator Validation Gates
+# Vespera Scriptorium Validation Gates
 
 #
 # Overview
 
-This directory contains a comprehensive validation framework for systematic testing of all 16 MCP Task Orchestrator tools. The framework provides automated testing with 3x validation levels per tool, immediate issue resolution, and progress tracking.
+This directory contains a comprehensive validation framework for systematic testing of all 16 Vespera Scriptorium tools. The framework provides automated testing with 3x validation levels per tool, immediate issue resolution, and progress tracking.
 
 #
 # Components
@@ -470,4 +470,4 @@ jobs:
 #
 # License
 
-This validation framework is part of the MCP Task Orchestrator project and follows the same license terms.
+This validation framework is part of the Vespera Scriptorium project and follows the same license terms.

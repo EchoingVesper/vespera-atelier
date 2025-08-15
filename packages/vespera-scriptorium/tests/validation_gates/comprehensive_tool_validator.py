@@ -2,7 +2,7 @@
 """
 Comprehensive MCP Tools Validator
 
-This script performs real validation of all MCP Task Orchestrator tools
+This script performs real validation of all Vespera Scriptorium tools
 with systematic testing and progress tracking.
 """
 
@@ -22,7 +22,7 @@ from enum import Enum
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from mcp_task_orchestrator.infrastructure.mcp.tool_router import route_tool_call
+from vespera_scriptorium.infrastructure.mcp.tool_router import route_tool_call
 from mcp import types
 
 # Configure logging
@@ -76,7 +76,7 @@ class ToolTestConfig:
 
 
 class ComprehensiveToolValidator:
-    """Validates all MCP Task Orchestrator tools systematically."""
+    """Validates all Vespera Scriptorium tools systematically."""
     
     def __init__(self):
         self.test_workspace = None
@@ -698,7 +698,7 @@ async def main():
     """Run comprehensive validation."""
     validator = ComprehensiveToolValidator()
     
-    print("MCP Task Orchestrator - Comprehensive Tool Validation")
+    print("Vespera Scriptorium - Comprehensive Tool Validation")
     print("=" * 60)
     
     # Run validation

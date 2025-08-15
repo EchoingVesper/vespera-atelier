@@ -76,9 +76,9 @@ Comprehensive testing performed after directory reorganization revealed both suc
 
 - **Script**: `scripts/diagnostics/diagnose_db.py`
 
-- **Error**: `Database file not found: E:\My Work\Programming\MCP Task Orchestrator\scripts\diagnostics\task_orchestrator.db`
+- **Error**: `Database file not found: E:\My Work\Programming\Vespera Scriptorium\scripts\diagnostics\vespera_scriptorium.db`
 
-- **Root Cause**: Script uses `Path(__file__).parent / "task_orchestrator.db"` which now points to wrong directory
+- **Root Cause**: Script uses `Path(__file__).parent / "vespera_scriptorium.db"` which now points to wrong directory
 
 - **Impact**: HIGH - Database diagnostic tools non-functional
 
@@ -173,7 +173,7 @@ python
 
 # Current problematic code:
 
-db_path = Path(__file__).parent / "task_orchestrator.db"
+db_path = Path(__file__).parent / "vespera_scriptorium.db"
 
 # Proposed fix:
 
@@ -182,9 +182,9 @@ project_root = Path(__file__).parent.parent.parent
 
 # Go up to project root
 
-db_path = project_root / "task_orchestrator.db"  
+db_path = project_root / "vespera_scriptorium.db"  
 
-# or data/task_orchestrator.db
+# or data/vespera_scriptorium.db
 
 ```text
 text

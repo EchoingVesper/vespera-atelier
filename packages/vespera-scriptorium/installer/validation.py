@@ -142,7 +142,7 @@ class ValidationManager:
         
         # Test basic import
         result = subprocess.run(
-            [str(python_exe), '-c', 'import mcp_task_orchestrator; print("IMPORT_OK")'],
+            [str(python_exe), '-c', 'import vespera_scriptorium; print("IMPORT_OK")'],
             capture_output=True,
             text=True,
             timeout=30
@@ -154,7 +154,7 @@ class ValidationManager:
         # Test version access
         result = subprocess.run(
             [str(python_exe), '-c', 
-             'import mcp_task_orchestrator; print(getattr(mcp_task_orchestrator, "__version__", "unknown"))'],
+             'import vespera_scriptorium; print(getattr(vespera_scriptorium, "__version__", "unknown"))'],
             capture_output=True,
             text=True,
             timeout=30
@@ -173,8 +173,8 @@ class ValidationManager:
         
         # Test main entry points
         entry_points = [
-            ('mcp-task-orchestrator', 'MCP server'),
-            ('mcp-task-orchestrator-cli', 'CLI tool')
+            ('vespera-scriptorium', 'MCP server'),
+            ('vespera-scriptorium-cli', 'CLI tool')
         ]
         
         for command, description in entry_points:
@@ -211,7 +211,7 @@ class ValidationManager:
         if not any(result.get('available', False) for result in results.values()):
             # For development installs, check if we can import the modules instead
             try:
-                import mcp_task_orchestrator
+                import vespera_scriptorium
                 # If we can import, consider this acceptable for dev installs
                 results['module_import'] = {
                     'available': True,
@@ -277,7 +277,7 @@ class ValidationManager:
         # Test server module import
         result = subprocess.run(
             [str(python_exe), '-c', 
-             'from mcp_task_orchestrator.server import main; print("SERVER_OK")'],
+             'from vespera_scriptorium.server import main; print("SERVER_OK")'],
             capture_output=True,
             text=True,
             timeout=30
@@ -289,7 +289,7 @@ class ValidationManager:
         # Test CLI import
         result = subprocess.run(
             [str(python_exe), '-c', 
-             'from mcp_task_orchestrator_cli.cli import main; print("CLI_OK")'],
+             'from vespera_scriptorium_cli.cli import main; print("CLI_OK")'],
             capture_output=True,
             text=True,
             timeout=30
@@ -359,7 +359,7 @@ class ValidationManager:
         results = {}
         
         # Test write access to config directory
-        config_dir = Path.home() / '.task_orchestrator'
+        config_dir = Path.home() / '.vespera_scriptorium'
         try:
             config_dir.mkdir(parents=True, exist_ok=True)
             test_file = config_dir / 'test_write.tmp'
@@ -490,7 +490,7 @@ class ValidationManager:
         python_exe = self._get_python_executable()
         
         # Try to reinstall package with dependencies
-        cmd = [str(python_exe), '-m', 'pip', 'install', '--force-reinstall', 'mcp-task-orchestrator']
+        cmd = [str(python_exe), '-m', 'pip', 'install', '--force-reinstall', 'vespera-scriptorium']
         
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
         if result.returncode != 0:

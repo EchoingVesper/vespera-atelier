@@ -9,7 +9,7 @@
 
 # Overview
 
-Successfully organized and cleaned up the mcp-task-orchestrator repository by categorizing and relocating development artifacts, experimental scripts, and historical documentation that had accumulated in the root directory and tests folder.
+Successfully organized and cleaned up the mcp-vespera-scriptorium repository by categorizing and relocating development artifacts, experimental scripts, and historical documentation that had accumulated in the root directory and tests folder.
 
 #
 

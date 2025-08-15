@@ -4,7 +4,7 @@ Automated Cleanup Manager for Documentation Ecosystem
 Part of Phase 4 - Documentation Ecosystem Modernization
 
 This script implements automated lifecycle management and cleanup 
-prevention for the mcp-task-orchestrator project.
+prevention for the vespera-scriptorium project.
 """
 
 import os

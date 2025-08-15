@@ -289,11 +289,11 @@ python scripts/testing/run_github_issues_tests.py
 - [Testing Guide](../../../tests/integration/test_github_issues_46_50_comprehensive.py)
 
 ### Issue Tracking
-- [GitHub Issue #46](https://github.com/EchoingVesper/mcp-task-orchestrator/issues/46) - ✅ RESOLVED
-- [GitHub Issue #47](https://github.com/EchoingVesper/mcp-task-orchestrator/issues/47) - ✅ RESOLVED  
-- [GitHub Issue #48](https://github.com/EchoingVesper/mcp-task-orchestrator/issues/48) - ✅ RESOLVED
-- [GitHub Issue #49](https://github.com/EchoingVesper/mcp-task-orchestrator/issues/49) - 🔄 PARTIAL
-- [GitHub Issue #50](https://github.com/EchoingVesper/mcp-task-orchestrator/issues/50) - ✅ RESOLVED
+- [GitHub Issue #46](https://github.com/EchoingVesper/mcp-vespera-scriptorium/issues/46) - ✅ RESOLVED
+- [GitHub Issue #47](https://github.com/EchoingVesper/mcp-vespera-scriptorium/issues/47) - ✅ RESOLVED  
+- [GitHub Issue #48](https://github.com/EchoingVesper/mcp-vespera-scriptorium/issues/48) - ✅ RESOLVED
+- [GitHub Issue #49](https://github.com/EchoingVesper/mcp-vespera-scriptorium/issues/49) - 🔄 PARTIAL
+- [GitHub Issue #50](https://github.com/EchoingVesper/mcp-vespera-scriptorium/issues/50) - ✅ RESOLVED
 
 ### Contact
 For questions about this migration, please:
@@ -305,4 +305,4 @@ For questions about this migration, please:
 
 **Migration Guide Version**: 1.0
 **Last Updated**: August 15, 2025
-**Applies to**: MCP Task Orchestrator v1.8.1+
+**Applies to**: Vespera Scriptorium v1.8.1+

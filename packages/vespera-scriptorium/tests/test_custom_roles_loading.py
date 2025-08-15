@@ -1,7 +1,7 @@
 """
 Test script to verify that custom roles files are correctly loaded and used.
 
-This script tests that the MCP Task Orchestrator correctly loads and uses
+This script tests that the Vespera Scriptorium correctly loads and uses
 the custom roles file (mcp_orchestrator_roles.yaml) instead of the default roles.
 """
 

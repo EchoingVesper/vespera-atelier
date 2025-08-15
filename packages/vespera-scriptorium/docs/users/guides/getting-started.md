@@ -59,8 +59,8 @@ You'll need one of these MCP clients:
 # Option 1: From PyPI (Recommended)
 
 ```bash
-pip install mcp-task-orchestrator
-mcp-task-orchestrator-cli install
+pip install mcp-vespera-scriptorium
+mcp-vespera-scriptorium-cli install
 
 ```text
 
@@ -74,8 +74,8 @@ mcp-task-orchestrator-cli install
 
 ```text
 bash
-git clone https://github.com/EchoingVesper/mcp-task-orchestrator.git
-cd mcp-task-orchestrator
+git clone https://github.com/EchoingVesper/mcp-vespera-scriptorium.git
+cd mcp-vespera-scriptorium
 python run_installer.py
 
 ```text
@@ -92,7 +92,7 @@ Add Claude Code to your MCP configuration. In your MCP client config:
 json
 {
   "mcpServers": {
-    "task-orchestrator": {
+    "vespera-scriptorium": {
       "command": "python",
       "args": ["-m", "mcp_task_orchestrator"],
       "env": {}
@@ -120,7 +120,7 @@ text
 
 ```text
 
-**Restart your MCP client** and look for both "task-orchestrator" and "claude-code" tools.
+**Restart your MCP client** and look for both "vespera-scriptorium" and "claude-code" tools.
 
 #
 

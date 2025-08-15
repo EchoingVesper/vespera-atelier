@@ -10,7 +10,7 @@ from pathlib import Path
 import tempfile
 import json
 
-from mcp_task_orchestrator.infrastructure.template_system.json5_parser import JSON5Parser, JSON5ValidationError
+from vespera_scriptorium.infrastructure.template_system.json5_parser import JSON5Parser, JSON5ValidationError
 
 
 class TestJSON5Parser:

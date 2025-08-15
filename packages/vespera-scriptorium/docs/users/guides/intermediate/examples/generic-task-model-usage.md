@@ -9,7 +9,7 @@ This document demonstrates how to use the new Generic Task Model in practice.
 # Basic Task Creation
 
 ```python
-from mcp_task_orchestrator.orchestrator.generic_models import (
+from vespera_scriptorium.orchestrator.generic_models import (
     GenericTask, TaskType, TaskStatus, LifecycleStage,
     ComplexityLevel, SpecialistType
 )
@@ -62,7 +62,7 @@ implement_task = GenericTask(
 
 ```text
 python
-from mcp_task_orchestrator.orchestrator.generic_models import AttributeType
+from vespera_scriptorium.orchestrator.generic_models import AttributeType
 
 # Add custom attributes to tasks
 
@@ -101,7 +101,7 @@ config = implement_task.get_attribute("oauth_config")
 
 ```text
 python
-from mcp_task_orchestrator.orchestrator.generic_models import DependencyType
+from vespera_scriptorium.orchestrator.generic_models import DependencyType
 
 # Add completion dependency
 
@@ -150,7 +150,7 @@ if not can_start:
 
 ```text
 python
-from mcp_task_orchestrator.orchestrator.generic_models import EventType, EventCategory
+from vespera_scriptorium.orchestrator.generic_models import EventType, EventCategory
 
 # Check allowed transitions
 
@@ -204,7 +204,7 @@ implement_task.record_event(
 
 ```text
 python
-from mcp_task_orchestrator.orchestrator.generic_models import (
+from vespera_scriptorium.orchestrator.generic_models import (
     TaskTemplate, TemplateParameter
 )
 
@@ -283,7 +283,7 @@ for task in review_tasks:
 
 ```text
 python
-from mcp_task_orchestrator.orchestrator.generic_models import TaskArtifact, ArtifactType
+from vespera_scriptorium.orchestrator.generic_models import TaskArtifact, ArtifactType
 
 # Add artifacts to completed task
 
@@ -398,11 +398,11 @@ for attr in implement_task.attributes:
 
 ```text
 python
-from mcp_task_orchestrator.orchestrator.generic_models import (
+from vespera_scriptorium.orchestrator.generic_models import (
     create_generic_task_from_breakdown,
     create_generic_task_from_subtask
 )
-from mcp_task_orchestrator.orchestrator.models import TaskBreakdown, SubTask
+from vespera_scriptorium.orchestrator.models import TaskBreakdown, SubTask
 
 # Convert old TaskBreakdown
 

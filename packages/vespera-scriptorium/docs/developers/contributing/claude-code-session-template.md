@@ -1,6 +1,6 @@
 
 
-# Claude Code Session Template - MCP Task Orchestrator
+# Claude Code Session Template - Vespera Scriptorium
 
 #
 
@@ -13,9 +13,9 @@
 # 1. Project Structure Awareness
 
 ```text
-mcp-task-orchestrator/
+mcp-vespera-scriptorium/
 ├── 📄 [ESSENTIAL ROOT FILES ONLY]
-├── 📁 mcp_task_orchestrator/     
+├── 📁 vespera_scriptorium/     
 
 # Source code
 
@@ -139,7 +139,7 @@ bash
 
 # Navigate to project
 
-cd "/mnt/e/My Work/Programming/MCP Servers/mcp-task-orchestrator"
+cd "/mnt/e/My Work/Programming/MCP Servers/mcp-vespera-scriptorium"
 
 # Check current project state
 
@@ -249,7 +249,7 @@ touch session-notes.md
 
 # Code Changes:
 
-- **Primary code**: Modify files in `mcp_task_orchestrator/`
+- **Primary code**: Modify files in `vespera_scriptorium/`
 
 - **Test files**: Modify/create in `tests/`
 
@@ -448,7 +448,7 @@ git add [specific-files]
 
 git commit -m "feat: implement new feature
 
-- Add new functionality in mcp_task_orchestrator/
+- Add new functionality in vespera_scriptorium/
 
 - Update tests in tests/
 

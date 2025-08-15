@@ -13,7 +13,7 @@
 
 # 📋 Overview
 
-Enable the MCP Task Orchestrator to spawn isolated Claude Code instances for individual subtasks, providing context isolation, better context limit handling, and potentially allowing significantly longer development sessions without context pollution.
+Enable the Vespera Scriptorium to spawn isolated Claude Code instances for individual subtasks, providing context isolation, better context limit handling, and potentially allowing significantly longer development sessions without context pollution.
 
 #
 
@@ -216,7 +216,7 @@ CREATE TABLE context_usage_metrics (
 
 ```text
 
-.task_orchestrator/
+.vespera_scriptorium/
 ├── isolation/
 │   ├── sessions/
 │   │   └── {session_id}/
@@ -779,4 +779,4 @@ def execute_subtask_isolated_poc(task_id, enable_isolation=False):
 - Template Pattern Library (specialist context template system)
 
 **Strategic Impact**:
-This feature could fundamentally change the scale and complexity of projects manageable through AI-assisted development, potentially establishing the MCP Task Orchestrator as the premier platform for large-scale AI development workflows.
+This feature could fundamentally change the scale and complexity of projects manageable through AI-assisted development, potentially establishing the Vespera Scriptorium as the premier platform for large-scale AI development workflows.

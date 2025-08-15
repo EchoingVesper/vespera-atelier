@@ -13,7 +13,7 @@
 
 # 📋 Overview
 
-Add comprehensive automation capabilities to the MCP Task Orchestrator server to reduce manual maintenance overhead and replace complex handover prompts with streamlined tool-based workflows.
+Add comprehensive automation capabilities to the Vespera Scriptorium server to reduce manual maintenance overhead and replace complex handover prompts with streamlined tool-based workflows.
 
 #
 
@@ -426,7 +426,7 @@ orchestrator_task_dependency_manager() {
 
 **Dependencies**:
 
-- Current task orchestrator architecture
+- Current Vespera Scriptorium architecture
 
 - Database schema flexibility
 

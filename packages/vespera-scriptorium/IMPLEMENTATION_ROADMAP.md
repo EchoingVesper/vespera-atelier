@@ -1,6 +1,6 @@
 # Vespera Scriptorium Documentation Implementation Roadmap
 
-**Project:** MCP Task Orchestrator → Vespera Scriptorium Transition  
+**Project:** Vespera Scriptorium → Vespera Scriptorium Transition  
 **Phase:** Comprehensive Implementation Strategy  
 **Date:** 2025-08-14  
 **Timeline:** 4 weeks to completion  
@@ -14,7 +14,7 @@ This roadmap provides a detailed, week-by-week implementation plan for transform
 
 ### Project Scope
 - **517 markdown files** requiring analysis, archival, and transformation
-- **Complete rebrand** from MCP Task Orchestrator to Vespera Scriptorium
+- **Complete rebrand** from Vespera Scriptorium to Vespera Scriptorium
 - **Audience expansion** from developers to creators, researchers, and knowledge workers
 - **Infrastructure migration** to MkDocs + GitHub Pages
 - **Quality enhancement** with modern documentation standards

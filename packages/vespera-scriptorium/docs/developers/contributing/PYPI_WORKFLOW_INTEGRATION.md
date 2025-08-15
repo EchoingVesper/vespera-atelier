@@ -2,7 +2,7 @@
 
 # PyPI Release Workflow Integration
 
-This document explains how the PyPI release automation integrates into the overall development workflow for the MCP Task Orchestrator project.
+This document explains how the PyPI release automation integrates into the overall development workflow for the Vespera Scriptorium project.
 
 #
 
@@ -244,7 +244,7 @@ After each release, users can update with:
 
 ```text
 bash
-pip install --upgrade mcp-task-orchestrator
+pip install --upgrade mcp-vespera-scriptorium
 
 ```text
 text
@@ -264,11 +264,11 @@ bash
 
 # Check current installation
 
-python -m mcp_task_orchestrator_cli.cli status
+python -m vespera_scriptorium_cli.cli status
 
 # Update to latest version
 
-python -m mcp_task_orchestrator_cli.cli update --force
+python -m vespera_scriptorium_cli.cli update --force
 
 ```text
 text

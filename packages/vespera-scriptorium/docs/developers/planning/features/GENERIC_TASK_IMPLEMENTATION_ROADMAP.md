@@ -596,4 +596,4 @@ The Generic Task Model represents the foundational architectural change for v2.0
 
 ---
 
-This roadmap ensures the Generic Task Model implementation becomes the solid foundation for the next generation of MCP Task Orchestrator capabilities while maintaining zero disruption to existing users and workflows.
+This roadmap ensures the Generic Task Model implementation becomes the solid foundation for the next generation of Vespera Scriptorium capabilities while maintaining zero disruption to existing users and workflows.

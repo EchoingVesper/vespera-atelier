@@ -1,7 +1,7 @@
 
 # Documentation Implementation Guide
 
-Comprehensive guide for creating, maintaining, and improving documentation using the MCP Task Orchestrator documentation standards
+Comprehensive guide for creating, maintaining, and improving documentation using the Vespera Scriptorium documentation standards
 
 #
 # Purpose
@@ -203,7 +203,7 @@ bash
 bash
    
 # Use sed for quick replacements (Linux/Mac)
-   sed -i 's/{PRODUCT_NAME}/MCP Task Orchestrator/g' my-new-guide.md
+   sed -i 's/{PRODUCT_NAME}/Vespera Scriptorium/g' my-new-guide.md
    sed -i 's/{TARGET_USERS}/developers/g' my-new-guide.md
    
    
@@ -239,13 +239,13 @@ markdown
 # Always specify language
    
 ```bash
-   npm install @mcp/task-orchestrator
+   npm install @mcp/vespera-scriptorium
    ```
 
    
    
 # Include context and explanation
-   This command installs the MCP Task Orchestrator package globally.
+   This command installs the Vespera Scriptorium package globally.
    
 ```text
 
@@ -871,4 +871,4 @@ markdown
 
 ---
 
-📋 **This implementation guide provides everything you need to create high-quality documentation for the MCP Task Orchestrator project. Follow these procedures to ensure consistency, quality, and user success.**
+📋 **This implementation guide provides everything you need to create high-quality documentation for the Vespera Scriptorium project. Follow these procedures to ensure consistency, quality, and user success.**

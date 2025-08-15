@@ -13,15 +13,15 @@ from datetime import datetime
 from mcp import types
 
 # Import new Pydantic handlers
-# from mcp_task_orchestrator.infrastructure.mcp.handlers.task_handlers_v2 import  # TODO: Complete this import
+# from vespera_scriptorium.infrastructure.mcp.handlers.task_handlers_v2 import  # TODO: Complete this import
 
 # Import DTOs for validation
-# from mcp_task_orchestrator.infrastructure.mcp.dto import  # TODO: Complete this import
+# from vespera_scriptorium.infrastructure.mcp.dto import  # TODO: Complete this import
 
 # Import domain models and exceptions
-from mcp_task_orchestrator.domain.entities.task import Task, TaskType, TaskStatus
-from mcp_task_orchestrator.domain.value_objects.complexity_level import ComplexityLevel
-from mcp_task_orchestrator.domain.exceptions import ValidationError, OrchestrationError
+from vespera_scriptorium.domain.entities.task import Task, TaskType, TaskStatus
+from vespera_scriptorium.domain.value_objects.complexity_level import ComplexityLevel
+from vespera_scriptorium.domain.exceptions import ValidationError, OrchestrationError
 
 
 class TestCreateTaskHandler:
@@ -449,7 +449,7 @@ class TestPerformanceAndValidation:
     
     def test_dto_serialization_performance(self):
         """Test that DTO serialization is performant."""
-        from mcp_task_orchestrator.infrastructure.mcp.dto import CreateTaskResponse, NextStep
+        from vespera_scriptorium.infrastructure.mcp.dto import CreateTaskResponse, NextStep
         import time
         
         # Create complex response

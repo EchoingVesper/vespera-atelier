@@ -1,6 +1,6 @@
 
 
-# MCP Task Orchestrator v1.8.0: Workspace Paradigm Usage Guide
+# Vespera Scriptorium v1.8.0: Workspace Paradigm Usage Guide
 
 **Document Type**: Comprehensive User Guide  
 **Version**: v1.8.0  
@@ -14,7 +14,7 @@
 
 # 🎯 What is the Workspace Paradigm?
 
-The **Workspace Paradigm** is MCP Task Orchestrator's revolutionary approach to project-aware task management. Instead of requiring manual configuration, the system automatically detects your project structure and creates an intelligent workspace tailored to your specific development environment.
+The **Workspace Paradigm** is Vespera Scriptorium's revolutionary approach to project-aware task management. Instead of requiring manual configuration, the system automatically detects your project structure and creates an intelligent workspace tailored to your specific development environment.
 
 #
 
@@ -28,7 +28,7 @@ The **Workspace Paradigm** is MCP Task Orchestrator's revolutionary approach to 
 
 - ✅ **Smart Organization**: Artifacts placed intelligently within your project
 
-- ✅ **Easy Cleanup**: Everything contained in a single `.task_orchestrator` directory
+- ✅ **Easy Cleanup**: Everything contained in a single `.vespera_scriptorium` directory
 
 ---
 
@@ -53,7 +53,7 @@ cd /path/to/your/project
 
 # Step 2: Start Using the Orchestrator
 
-The workspace paradigm activates automatically when you use any MCP Task Orchestrator tool. No initialization required!
+The workspace paradigm activates automatically when you use any Vespera Scriptorium tool. No initialization required!
 
 #
 
@@ -61,13 +61,13 @@ The workspace paradigm activates automatically when you use any MCP Task Orchest
 
 # Step 3: Verify Workspace Creation
 
-After your first task, check for the `.task_orchestrator` directory:
+After your first task, check for the `.vespera_scriptorium` directory:
 
 ```text
 bash
 ls -la
 
-# You should see: .task_orchestrator/
+# You should see: .vespera_scriptorium/
 
 ```text
 text
@@ -182,7 +182,7 @@ my-project/
 ```text
 
 your-project/
-├── .task_orchestrator/           ← Workspace root
+├── .vespera_scriptorium/           ← Workspace root
 │   ├── artifacts/               ← Task artifacts organized by specialist
 │   │   ├── architect_a1b2c3/   ← Architecture analysis and design  
 │   │   ├── implementer_d4e5f6/ ← Code and implementation artifacts
@@ -198,7 +198,7 @@ your-project/
 │   ├── server_state/           ← Server state persistence
 │   │   ├── reboot_state.json   ← Server restart state preservation
 │   │   └── connection_state.json ← Client connection management
-│   └── task_orchestrator.db    ← Project-specific task database
+│   └── vespera_scriptorium.db    ← Project-specific task database
 ├── your-project-files...       ← Your actual project code
 └── README.md
 
@@ -278,7 +278,7 @@ bash
 # The workspace is always in your project root
 
 cd /path/to/your/project
-ls -la .task_orchestrator/
+ls -la .vespera_scriptorium/
 
 ```text
 
@@ -325,15 +325,15 @@ bash
 # Project A workspace (separate from Project B)
 
 project-a/
-└── .task_orchestrator/
-    ├── task_orchestrator.db  ← Project A tasks only
+└── .vespera_scriptorium/
+    ├── vespera_scriptorium.db  ← Project A tasks only
     └── artifacts/           ← Project A artifacts only
 
 # Project B workspace (completely independent)  
 
 project-b/
-└── .task_orchestrator/
-    ├── task_orchestrator.db  ← Project B tasks only
+└── .vespera_scriptorium/
+    ├── vespera_scriptorium.db  ← Project B tasks only
     └── artifacts/           ← Project B artifacts only
 
 ```text
@@ -394,19 +394,19 @@ Each project maintains completely separate:
 
 # List workspace contents
 
-ls -la .task_orchestrator/
+ls -la .vespera_scriptorium/
 
 # Check workspace size
 
-du -sh .task_orchestrator/
+du -sh .vespera_scriptorium/
 
 # Count artifacts by specialist type
 
-find .task_orchestrator/artifacts/ -type d -name "*_*" | wc -l
+find .vespera_scriptorium/artifacts/ -type d -name "*_*" | wc -l
 
 # Recent workspace activity
 
-ls -lt .task_orchestrator/artifacts/*/
+ls -lt .vespera_scriptorium/artifacts/*/
 
 ```text
 
@@ -427,7 +427,7 @@ Create custom specialist roles for your project type:
 ```text
 yaml
 
-# .task_orchestrator/roles/project_specific.yaml
+# .vespera_scriptorium/roles/project_specific.yaml
 
 python_implementer:
   role_definition: "You are a Python Implementation Specialist for this specific project"
@@ -455,7 +455,7 @@ Configure workspace behavior:
 ```text
 yaml
 
-# .task_orchestrator/config.yaml
+# .vespera_scriptorium/config.yaml
 
 workspace:
   project_type: "web_application"
@@ -519,19 +519,19 @@ bash
 
 # Check workspace size
 
-du -sh .task_orchestrator/
+du -sh .vespera_scriptorium/
 
 # Target: <50MB for optimal performance
 
 # Count artifact directories
 
-find .task_orchestrator/artifacts/ -type d | wc -l
+find .vespera_scriptorium/artifacts/ -type d | wc -l
 
 # Target: <100 directories for best enumeration speed
 
 # Database size
 
-ls -lh .task_orchestrator/task_orchestrator.db
+ls -lh .vespera_scriptorium/vespera_scriptorium.db
 
 # Target: <10MB for fast queries
 
@@ -555,12 +555,12 @@ ls -lh .task_orchestrator/task_orchestrator.db
 
 # Archive old artifacts (manual cleanup)
 
-mkdir .task_orchestrator/archive/
-mv .task_orchestrator/artifacts/old_specialist_* .task_orchestrator/archive/
+mkdir .vespera_scriptorium/archive/
+mv .vespera_scriptorium/artifacts/old_specialist_* .vespera_scriptorium/archive/
 
 # Clean up completed tasks older than 30 days
 
-find .task_orchestrator/artifacts/ -type d -mtime +30 -name "*_*"
+find .vespera_scriptorium/artifacts/ -type d -mtime +30 -name "*_*"
 
 ```text
 
@@ -579,11 +579,11 @@ bash
 
 # Check database performance
 
-sqlite3 .task_orchestrator/task_orchestrator.db "VACUUM; ANALYZE;"
+sqlite3 .vespera_scriptorium/vespera_scriptorium.db "VACUUM; ANALYZE;"
 
 # Monitor table sizes
 
-sqlite3 .task_orchestrator/task_orchestrator.db ".tables"
+sqlite3 .vespera_scriptorium/vespera_scriptorium.db ".tables"
 
 ```text
 text
@@ -682,7 +682,7 @@ text
 
 # Issue: Large Workspace Size Causing Slow Performance
 
-**Symptoms**: Operations taking >1 second, large .task_orchestrator directory
+**Symptoms**: Operations taking >1 second, large .vespera_scriptorium directory
 
 **Solutions**:
 
@@ -696,7 +696,7 @@ bash
 
 # Move artifacts older than 30 days
 
-   find .task_orchestrator/artifacts/ -type d -mtime +30 -exec mv {} .task_orchestrator/archive/ \;
+   find .vespera_scriptorium/artifacts/ -type d -mtime +30 -exec mv {} .vespera_scriptorium/archive/ \;
    
 
 ```text
@@ -725,7 +725,7 @@ text
 
 # Issue: Multiple Workspaces for Same Project
 
-**Symptoms**: Finding .task_orchestrator in multiple locations for one project
+**Symptoms**: Finding .vespera_scriptorium in multiple locations for one project
 
 **Solutions**:
 
@@ -735,7 +735,7 @@ text
 ```text
 text
 bash
-   find . -name ".task_orchestrator" -type d -exec ls -la {}/task_orchestrator.db \;
+   find . -name ".vespera_scriptorium" -type d -exec ls -la {}/vespera_scriptorium.db \;
    
 
 ```text
@@ -752,13 +752,13 @@ bash
 
 # Backup secondary workspace
 
-   cp -r secondary/.task_orchestrator/artifacts/* primary/.task_orchestrator/artifacts/
+   cp -r secondary/.vespera_scriptorium/artifacts/* primary/.vespera_scriptorium/artifacts/
    
    
 
 # Remove secondary workspace
 
-   rm -rf secondary/.task_orchestrator/
+   rm -rf secondary/.vespera_scriptorium/
    
 
 ```text
@@ -773,7 +773,7 @@ text
 
 # Issue: Hidden Directory Not Discoverable
 
-**Symptoms**: Can't find .task_orchestrator directory
+**Symptoms**: Can't find .vespera_scriptorium directory
 
 **Solutions**:
 
@@ -813,7 +813,7 @@ bash
 
 # Add to ~/.bashrc or ~/.zshrc
 
-   alias workspace='cd .task_orchestrator && ls -la'
+   alias workspace='cd .vespera_scriptorium && ls -la'
    
 
 ```text
@@ -840,11 +840,11 @@ bash
 
 # 1. Backup existing workspace
 
-cp -r .task_orchestrator .task_orchestrator.backup
+cp -r .vespera_scriptorium .vespera_scriptorium.backup
 
 # 2. Reset workspace (will auto-recreate)
 
-rm -rf .task_orchestrator
+rm -rf .vespera_scriptorium
 
 # 3. Use orchestrator tool to recreate
 
@@ -852,7 +852,7 @@ rm -rf .task_orchestrator
 
 # 4. Restore artifacts if needed
 
-cp -r .task_orchestrator.backup/artifacts/* .task_orchestrator/artifacts/
+cp -r .vespera_scriptorium.backup/artifacts/* .vespera_scriptorium/artifacts/
 
 ```text
 
@@ -869,15 +869,15 @@ bash
 
 # 1. Backup database
 
-cp .task_orchestrator/task_orchestrator.db .task_orchestrator/task_orchestrator.db.backup
+cp .vespera_scriptorium/vespera_scriptorium.db .vespera_scriptorium/vespera_scriptorium.db.backup
 
 # 2. Test database integrity
 
-sqlite3 .task_orchestrator/task_orchestrator.db "PRAGMA integrity_check;"
+sqlite3 .vespera_scriptorium/vespera_scriptorium.db "PRAGMA integrity_check;"
 
 # 3. If corrupted, delete and recreate
 
-rm .task_orchestrator/task_orchestrator.db
+rm .vespera_scriptorium/vespera_scriptorium.db
 
 # Database will be recreated automatically on next use
 
@@ -923,7 +923,7 @@ rm .task_orchestrator/task_orchestrator.db
 
 - **Don't manually edit database**: Use orchestrator tools for all task management
 
-- **Don't move .task_orchestrator**: Let the orchestrator manage workspace location
+- **Don't move .vespera_scriptorium**: Let the orchestrator manage workspace location
 
 - **Don't ignore performance warnings**: Address large workspace sizes promptly
 
@@ -945,21 +945,21 @@ rm .task_orchestrator/task_orchestrator.db
 
 ```bash
 
-# Add .task_orchestrator to .gitignore
+# Add .vespera_scriptorium to .gitignore
 
-echo ".task_orchestrator/" >> .gitignore
+echo ".vespera_scriptorium/" >> .gitignore
 
 # Or selectively track certain artifacts
 
 # .gitignore:
 
-.task_orchestrator/logs/
-.task_orchestrator/server_state/
-.task_orchestrator/*.db
+.vespera_scriptorium/logs/
+.vespera_scriptorium/server_state/
+.vespera_scriptorium/*.db
 
 # But allow:
 
-# .task_orchestrator/artifacts/important_design_docs/
+# .vespera_scriptorium/artifacts/important_design_docs/
 
 ```text
 
@@ -976,7 +976,7 @@ yaml
 
 # Example GitHub Actions workflow
 
-- name: Setup MCP Task Orchestrator workspace
+- name: Setup Vespera Scriptorium workspace
   run: |
     
 
@@ -994,7 +994,7 @@ yaml
 
 # Use maintenance coordinator for cleanup
 
-    mcp-task-orchestrator-cli maintenance scan_cleanup
+    mcp-vespera-scriptorium-cli maintenance scan_cleanup
 
 ```text
 
@@ -1021,7 +1021,7 @@ mkdir shared_orchestrator_artifacts/
 
 # Symbolic link to workspace for team access
 
-ln -s ../shared_orchestrator_artifacts/ .task_orchestrator/shared/
+ln -s ../shared_orchestrator_artifacts/ .vespera_scriptorium/shared/
 
 ```text
 
@@ -1036,7 +1036,7 @@ ln -s ../shared_orchestrator_artifacts/ .task_orchestrator/shared/
 ```text
 yaml
 
-# .task_orchestrator/roles/team_roles.yaml
+# .vespera_scriptorium/roles/team_roles.yaml
 
 team_lead:
   role_definition: "Team coordination and project oversight specialist"
@@ -1128,12 +1128,12 @@ bash
 
 # Save current workspace as template
 
-mcp-task-orchestrator-cli workspace save-template --name python_web_app
+mcp-vespera-scriptorium-cli workspace save-template --name python_web_app
 
 # Apply template to new project
 
 cd /new/project/
-mcp-task-orchestrator-cli workspace apply-template --template python_web_app
+mcp-vespera-scriptorium-cli workspace apply-template --template python_web_app
 
 ```text
 
@@ -1150,7 +1150,7 @@ bash
 
 # Generate workspace usage report
 
-mcp-task-orchestrator-cli workspace analytics --period 30days
+mcp-vespera-scriptorium-cli workspace analytics --period 30days
 
 # Output example:
 
@@ -1182,9 +1182,9 @@ mcp-task-orchestrator-cli workspace analytics --period 30days
 |-----------|-------------|
 | Check workspace status | `orchestrator_get_status` |
 | Run maintenance | `orchestrator_maintenance_coordinator` |
-| Find workspace location | `pwd && ls -la .task_orchestrator/` |
-| Check workspace size | `du -sh .task_orchestrator/` |
-| List artifacts | `find .task_orchestrator/artifacts/ -name "*.md"` |
+| Find workspace location | `pwd && ls -la .vespera_scriptorium/` |
+| Check workspace size | `du -sh .vespera_scriptorium/` |
+| List artifacts | `find .vespera_scriptorium/artifacts/ -name "*.md"` |
 
 #
 
@@ -1194,11 +1194,11 @@ mcp-task-orchestrator-cli workspace analytics --period 30days
 
 | Content | Location |
 |---------|----------|
-| Task database | `.task_orchestrator/task_orchestrator.db` |
-| Artifacts | `.task_orchestrator/artifacts/specialist_taskid/` |
-| Logs | `.task_orchestrator/logs/` |
-| Configuration | `.task_orchestrator/config.yaml` |
-| Custom roles | `.task_orchestrator/roles/custom_roles.yaml` |
+| Task database | `.vespera_scriptorium/vespera_scriptorium.db` |
+| Artifacts | `.vespera_scriptorium/artifacts/specialist_taskid/` |
+| Logs | `.vespera_scriptorium/logs/` |
+| Configuration | `.vespera_scriptorium/config.yaml` |
+| Custom roles | `.vespera_scriptorium/roles/custom_roles.yaml` |
 
 #
 
@@ -1265,4 +1265,4 @@ mcp-task-orchestrator-cli workspace analytics --period 30days
 
 ---
 
-**Version Note**: This guide is current for MCP Task Orchestrator v1.8.0. The workspace paradigm represents a major architectural advancement that transforms how you work with the orchestrator—from manual configuration to intelligent, automatic project management.
+**Version Note**: This guide is current for Vespera Scriptorium v1.8.0. The workspace paradigm represents a major architectural advancement that transforms how you work with the orchestrator—from manual configuration to intelligent, automatic project management.

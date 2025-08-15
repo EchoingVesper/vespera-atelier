@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Migration utility for MCP Task Orchestrator.
+Migration utility for Vespera Scriptorium.
 
-This script migrates existing configuration files to the new .task_orchestrator
+This script migrates existing configuration files to the new .vespera_scriptorium
 directory structure introduced in version 1.3.0.
 """
 
@@ -21,15 +21,15 @@ logging.basicConfig(
 logger = logging.getLogger("migration_utility")
 
 def setup_persistence_directory(base_dir: Path) -> Path:
-    """Set up the .task_orchestrator directory structure.
+    """Set up the .vespera_scriptorium directory structure.
     
     Args:
         base_dir: Base directory for the project
         
     Returns:
-        Path to the .task_orchestrator directory
+        Path to the .vespera_scriptorium directory
     """
-    persistence_dir = base_dir / ".task_orchestrator"
+    persistence_dir = base_dir / ".vespera_scriptorium"
     
     # Create main directories
     persistence_dir.mkdir(exist_ok=True)
@@ -44,11 +44,11 @@ def setup_persistence_directory(base_dir: Path) -> Path:
     return persistence_dir
 
 def migrate_config_files(base_dir: Path, persistence_dir: Path) -> None:
-    """Migrate configuration files to the .task_orchestrator directory.
+    """Migrate configuration files to the .vespera_scriptorium directory.
     
     Args:
         base_dir: Base directory for the project
-        persistence_dir: Path to the .task_orchestrator directory
+        persistence_dir: Path to the .vespera_scriptorium directory
     """
     # Source paths
     config_dir = base_dir / "config"
@@ -81,11 +81,11 @@ def migrate_config_files(base_dir: Path, persistence_dir: Path) -> None:
 def main():
     """Main entry point for the migration utility."""
     parser = argparse.ArgumentParser(
-        description="Migrate MCP Task Orchestrator configuration to the new persistence structure"
+        description="Migrate Vespera Scriptorium configuration to the new persistence structure"
     )
     parser.add_argument(
         "--base-dir", 
-        help="Base directory for the MCP Task Orchestrator project",
+        help="Base directory for the Vespera Scriptorium project",
         default=None
     )
     parser.add_argument(

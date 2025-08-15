@@ -13,8 +13,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import json
 
-from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
-from mcp_task_orchestrator.db.models import Base
+from mcp_vespera_scriptorium.db.persistence import DatabasePersistenceManager
+from mcp_vespera_scriptorium.db.models import Base
 from mcp_task_orchestrator.orchestrator.task_orchestration_service import TaskOrchestrator
 from mcp_task_orchestrator.orchestrator.maintenance import MaintenanceCoordinator
 from mcp_task_orchestrator.orchestrator.orchestration_state_manager import StateManager
@@ -161,7 +161,7 @@ class TestMaintenanceIntegration:
         # Step 3: Simulate task aging and run maintenance
         # Manually update task timestamps to simulate aging
         with Session(test_environment["engine"]) as session:
-            from mcp_task_orchestrator.db.models import SubTaskModel
+            from mcp_vespera_scriptorium.db.models import SubTaskModel
             task = session.query(SubTaskModel).filter_by(id=design_task["id"]).first()
             if task:
                 task.updated_at = datetime.utcnow() - timedelta(days=100)
@@ -250,7 +250,7 @@ class TestMaintenanceIntegration:
         
         # Manually age the stale task
         with Session(test_environment["engine"]) as session:
-            from mcp_task_orchestrator.db.models import SubTaskModel
+            from mcp_vespera_scriptorium.db.models import SubTaskModel
             task = session.query(SubTaskModel).filter_by(
                 parent_id=stale_task["task_id"]
             ).first()
@@ -430,7 +430,7 @@ class TestMaintenanceIntegration:
         
         # Age half the tasks
         with Session(test_environment["engine"]) as session:
-            from mcp_task_orchestrator.db.models import TaskBreakdownModel
+            from mcp_vespera_scriptorium.db.models import TaskBreakdownModel
             tasks = session.query(TaskBreakdownModel).all()
             for i, task in enumerate(tasks[:task_count//2]):
                 task.created_at = datetime.utcnow() - timedelta(days=60)

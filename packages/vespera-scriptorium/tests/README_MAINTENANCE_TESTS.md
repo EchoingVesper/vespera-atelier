@@ -1,6 +1,6 @@
 # Maintenance and Streaming System Test Suite
 
-This directory contains comprehensive tests for the maintenance features and streaming system of the MCP Task Orchestrator.
+This directory contains comprehensive tests for the maintenance features and streaming system of the Vespera Scriptorium.
 
 ## Test Structure
 

@@ -10,7 +10,7 @@ This is the batch processing version of the markdown fixing agent. Instead of fi
 
 1. **Discover all pending tasks**:
    ```bash
-   find .task_orchestrator/markdown_fixes -name "*.json" -exec basename {} .json \;
+   find .vespera_scriptorium/markdown_fixes -name "*.json" -exec basename {} .json \;
    ```
 
 2. **Group by complexity and type**: 
@@ -50,7 +50,7 @@ Handle files requiring careful analysis:
 
 ```bash
 # Get overview of pending tasks
-ls -la .task_orchestrator/markdown_fixes/
+ls -la .vespera_scriptorium/markdown_fixes/
 
 # Quick batch validation
 markdownlint path/to/file1.md path/to/file2.md

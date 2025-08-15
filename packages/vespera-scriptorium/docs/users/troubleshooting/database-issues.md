@@ -30,11 +30,11 @@ python scripts/diagnostics/diagnose_db.py
 
 # Verify database file permissions
 
-ls -la task_orchestrator.db*
+ls -la vespera_scriptorium.db*
 
 # Check for stale lock files
 
-ls -la .task_orchestrator/locks/
+ls -la .vespera_scriptorium/locks/
 
 ```text
 

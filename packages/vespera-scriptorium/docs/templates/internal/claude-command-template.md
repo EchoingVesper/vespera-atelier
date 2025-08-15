@@ -1,7 +1,7 @@
 
 # CLAUDE.md
 
-**[CURRENT]** Claude Code guidance for {DIRECTORY_NAME} in MCP Task Orchestrator
+**[CURRENT]** Claude Code guidance for {DIRECTORY_NAME} in Vespera Scriptorium
 
 ⚠️ **File Size Compliant**: This file is kept under 400 lines for Claude Code stability
 

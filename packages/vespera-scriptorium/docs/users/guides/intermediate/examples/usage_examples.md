@@ -1,8 +1,8 @@
 
 
-# MCP Task Orchestrator - Usage Examples
+# Vespera Scriptorium - Usage Examples
 
-This document provides practical examples of using the MCP Task Orchestrator in different scenarios.
+This document provides practical examples of using the Vespera Scriptorium in different scenarios.
 
 #
 
@@ -726,7 +726,7 @@ response = await call_tool("orchestrator_plan_task", {
 
 # Best Practices
 
-Based on these examples, here are some best practices for using the MCP Task Orchestrator:
+Based on these examples, here are some best practices for using the Vespera Scriptorium:
 
 1. **Provide Detailed Task Descriptions**: The more specific your task description, the better the task breakdown will be.
 

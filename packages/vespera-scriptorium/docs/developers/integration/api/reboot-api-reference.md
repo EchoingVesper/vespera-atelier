@@ -6,7 +6,7 @@
 
 # Overview
 
-This document provides detailed API reference for the MCP Task Orchestrator server reboot system. The reboot system exposes functionality through MCP (Model Context Protocol) tools that can be called by compatible clients.
+This document provides detailed API reference for the Vespera Scriptorium server reboot system. The reboot system exposes functionality through MCP (Model Context Protocol) tools that can be called by compatible clients.
 
 #
 
@@ -971,4 +971,4 @@ server_version = health['server_version']
 
 ---
 
-*This API reference covers version 1.4.1 of the MCP Task Orchestrator. For the latest updates and examples, see the project repository.*
+*This API reference covers version 1.4.1 of the Vespera Scriptorium. For the latest updates and examples, see the project repository.*

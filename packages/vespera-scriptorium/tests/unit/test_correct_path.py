@@ -3,7 +3,7 @@
 
 import sys
 import os
-sys.path.insert(0, r"E:\My Work\Programming\MCP Task Orchestrator")
+sys.path.insert(0, r"E:\My Work\Programming\Vespera Scriptorium")
 
 import time
 
@@ -13,22 +13,22 @@ def test_correct_database_path():
     
     try:
         # Use the correct database path that StateManager uses
-        correct_db_path = r"E:\My Work\Programming\MCP Task Orchestrator\.task_orchestrator\task_orchestrator.db"
+        correct_db_path = r"E:\My Work\Programming\Vespera Scriptorium\.vespera_scriptorium\vespera_scriptorium.db"
         print(f"Database path: {correct_db_path}")
         
-        from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
+        from vespera_scriptorium.db.persistence import DatabasePersistenceManager
         
         # Initialize with the correct database path
         db_url = f"sqlite:///{correct_db_path}"
         persistence = DatabasePersistenceManager(
-            base_dir=r"E:\My Work\Programming\MCP Task Orchestrator",
+            base_dir=r"E:\My Work\Programming\Vespera Scriptorium",
             db_url=db_url
         )
         print("DatabasePersistenceManager initialized with correct path")
         
         # Check database contents
         with persistence.session_scope() as session:
-            from mcp_task_orchestrator.db.models import TaskBreakdownModel, SubTaskModel
+            from vespera_scriptorium.db.models import TaskBreakdownModel, SubTaskModel
             
             task_count = session.query(TaskBreakdownModel).count()
             subtask_count = session.query(SubTaskModel).count()
@@ -66,9 +66,9 @@ def test_correct_database_path():
                 # a simple test case.
                 
                 # Import Clean Architecture v2.0 models
-                from mcp_task_orchestrator.domain.entities.task import Task, TaskStatus, TaskType
-                from mcp_task_orchestrator.domain.value_objects.complexity_level import ComplexityLevel
-                from mcp_task_orchestrator.domain.value_objects.specialist_type import SpecialistType
+                from vespera_scriptorium.domain.entities.task import Task, TaskStatus, TaskType
+                from vespera_scriptorium.domain.value_objects.complexity_level import ComplexityLevel
+                from vespera_scriptorium.domain.value_objects.specialist_type import SpecialistType
                 from datetime import datetime
                 
                 # Create a test task breakdown

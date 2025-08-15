@@ -12,7 +12,7 @@
 
 # 🎯 Executive Summary
 
-The MCP Task Orchestrator v1.8.0 introduces the **Workspace Paradigm**, a fundamental architectural shift from manual session management to automatic project-aware task orchestration. This guide provides complete implementation details, migration procedures, and operational guidance for maintaining and extending this system.
+The Vespera Scriptorium v1.8.0 introduces the **Workspace Paradigm**, a fundamental architectural shift from manual session management to automatic project-aware task orchestration. This guide provides complete implementation details, migration procedures, and operational guidance for maintaining and extending this system.
 
 #
 
@@ -45,17 +45,17 @@ The MCP Task Orchestrator v1.8.0 introduces the **Workspace Paradigm**, a fundam
 ```text
 User Environment
 ├── Project A (Git repo with pyproject.toml)
-│   ├── .task_orchestrator/           ← Workspace A
+│   ├── .vespera_scriptorium/           ← Workspace A
 │   │   ├── artifacts/               ← Project A artifacts
-│   │   ├── task_orchestrator.db     ← Project A tasks
+│   │   ├── vespera_scriptorium.db     ← Project A tasks
 │   │   └── roles/                   ← Project A configurations
 ├── Project B (Git repo with package.json)
-│   ├── .task_orchestrator/           ← Workspace B  
+│   ├── .vespera_scriptorium/           ← Workspace B  
 │   │   ├── artifacts/               ← Project B artifacts
-│   │   ├── task_orchestrator.db     ← Project B tasks
+│   │   ├── vespera_scriptorium.db     ← Project B tasks
 │   │   └── roles/                   ← Project B configurations
 └── Home Directory
-    └── .task_orchestrator/           ← Fallback workspace
+    └── .vespera_scriptorium/           ← Fallback workspace
         └── ...                      ← Non-project tasks
 
 ```text
@@ -74,7 +74,7 @@ User Environment
 
 # 1. Directory Detection Engine
 
-**Location**: `mcp_task_orchestrator/orchestrator/directory_detection.py`
+**Location**: `vespera_scriptorium/orchestrator/directory_detection.py`
 **Purpose**: Intelligent project root detection with fallback hierarchy
 
 ```text
@@ -133,7 +133,7 @@ class DirectoryDetector:
 
 # 2. Workspace Management System
 
-**Location**: `mcp_task_orchestrator/db/workspace_*.py`
+**Location**: `vespera_scriptorium/db/workspace_*.py`
 **Purpose**: Workspace-aware database operations and state management
 
 ```text
@@ -180,7 +180,7 @@ CREATE TABLE workspace_tasks (
 
 # 3. Artifact Management System
 
-**Location**: `mcp_task_orchestrator/orchestrator/artifacts.py`
+**Location**: `vespera_scriptorium/orchestrator/artifacts.py`
 **Purpose**: Intelligent artifact placement and organization
 
 ```text
@@ -190,7 +190,7 @@ class WorkspaceArtifactManager:
     
     def store_artifact(self, task_id: str, content: str, artifact_type: str):
         workspace_root = self.directory_detector.detect_project_root()
-        artifact_path = workspace_root.detected_path / '.task_orchestrator' / 'artifacts'
+        artifact_path = workspace_root.detected_path / '.vespera_scriptorium' / 'artifacts'
         specialist_dir = artifact_path / f"{specialist_type}_{task_id}"
         
 
@@ -202,7 +202,7 @@ class WorkspaceArtifactManager:
 
 ```text
 
-.task_orchestrator/artifacts/
+.vespera_scriptorium/artifacts/
 ├── architect_a1b2c3/          ← Specialist type + task ID
 │   ├── analysis.md
 │   ├── design.json
@@ -322,7 +322,7 @@ CREATE TABLE workspace_configurations (
 
 # Automatic Migration System
 
-**Location**: `mcp_task_orchestrator/db/auto_migration.py`
+**Location**: `vespera_scriptorium/db/auto_migration.py`
 
 ```text
 python
@@ -523,7 +523,7 @@ async def create_workspace(self, detection_result: DetectionResult) -> Workspace
 
 # 1. Create workspace directory structure
 
-    orchestrator_dir = workspace_path / '.task_orchestrator'
+    orchestrator_dir = workspace_path / '.vespera_scriptorium'
     directories = [
         orchestrator_dir,
         orchestrator_dir / 'artifacts',
@@ -539,7 +539,7 @@ async def create_workspace(self, detection_result: DetectionResult) -> Workspace
 
 # 2. Initialize database
 
-    db_path = orchestrator_dir / 'task_orchestrator.db'
+    db_path = orchestrator_dir / 'vespera_scriptorium.db'
     await self._initialize_workspace_database(db_path, workspace_id)
     
     
@@ -575,7 +575,7 @@ async def create_workspace(self, detection_result: DetectionResult) -> Workspace
 
 ```text
 
-.task_orchestrator/
+.vespera_scriptorium/
 ├── artifacts/                    ← Task artifacts organized by specialist
 │   ├── architect_<id>/
 │   ├── implementer_<id>/
@@ -589,7 +589,7 @@ async def create_workspace(self, detection_result: DetectionResult) -> Workspace
 ├── server_state/                ← Server state persistence
 │   ├── reboot_state.json
 │   └── connection_state.json
-└── task_orchestrator.db         ← SQLite database
+└── vespera_scriptorium.db         ← SQLite database
 
 ```text
 
@@ -707,11 +707,11 @@ class WorkspaceConfiguration:
 
         'workspace_config_file',        
 
-# .task_orchestrator/config.yaml
+# .vespera_scriptorium/config.yaml
 
         'project_config_file',          
 
-# pyproject.toml [tool.task-orchestrator]
+# pyproject.toml [tool.vespera-scriptorium]
 
         'environment_variables',        
 
@@ -719,7 +719,7 @@ class WorkspaceConfiguration:
 
         'global_config_file',          
 
-# ~/.task_orchestrator/config.yaml
+# ~/.vespera_scriptorium/config.yaml
 
         'system_defaults'              
 
@@ -740,7 +740,7 @@ class WorkspaceConfiguration:
 ```text
 yaml
 
-# .task_orchestrator/config.yaml
+# .vespera_scriptorium/config.yaml
 
 workspace:
   project_type: "python"
@@ -791,11 +791,11 @@ class WorkspaceRoleLoader:
     def load_roles_for_workspace(self, workspace_id: str) -> Dict[str, RoleConfig]:
         workspace = self.get_workspace(workspace_id)
         role_paths = [
-            workspace.path / '.task_orchestrator' / 'roles',  
+            workspace.path / '.vespera_scriptorium' / 'roles',  
 
 # Workspace-specific
 
-            Path.home() / '.task_orchestrator' / 'roles',     
+            Path.home() / '.vespera_scriptorium' / 'roles',     
 
 # User global
 
@@ -829,7 +829,7 @@ class WorkspaceRoleLoader:
 ```text
 yaml
 
-# .task_orchestrator/roles/python_project.yaml
+# .vespera_scriptorium/roles/python_project.yaml
 
 python_implementer:
   role_definition: "You are a Python Implementation Specialist"
@@ -1012,23 +1012,23 @@ bash
 
 # Workspace health check
 
-mcp-task-orchestrator-cli workspace health
+mcp-vespera-scriptorium-cli workspace health
 
 # Performance analysis
 
-mcp-task-orchestrator-cli workspace performance --workspace-id <id>
+mcp-vespera-scriptorium-cli workspace performance --workspace-id <id>
 
 # Cleanup recommendations
 
-mcp-task-orchestrator-cli workspace analyze-cleanup
+mcp-vespera-scriptorium-cli workspace analyze-cleanup
 
 # Migration status
 
-mcp-task-orchestrator-cli workspace migration-status
+mcp-vespera-scriptorium-cli workspace migration-status
 
 # Show workspace location
 
-mcp-task-orchestrator-cli workspace show-location
+mcp-vespera-scriptorium-cli workspace show-location
 
 ```text
 
@@ -1586,7 +1586,7 @@ async def create_task_in_current_workspace(self, title: str, description: str):
 
 async def create_task_with_hardcoded_path(self, title: str):
     """Don't hardcode workspace paths"""
-    hardcoded_workspace = "/home/user/projects/my-project/.task_orchestrator"
+    hardcoded_workspace = "/home/user/projects/my-project/.vespera_scriptorium"
     
 
 # This breaks on different systems and projects
@@ -2071,7 +2071,7 @@ class CloudWorkspaceManager:
 
 # 📖 Conclusion
 
-The Workspace Paradigm represents a fundamental architectural evolution in the MCP Task Orchestrator, transforming it from a manual configuration system to an intelligent, self-organizing project management platform. 
+The Workspace Paradigm represents a fundamental architectural evolution in the Vespera Scriptorium, transforming it from a manual configuration system to an intelligent, self-organizing project management platform. 
 
 #
 

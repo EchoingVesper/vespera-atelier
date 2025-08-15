@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive System Diagnostic Tool for MCP Task Orchestrator
+Comprehensive System Diagnostic Tool for Vespera Scriptorium
 
 This script combines functionality from multiple diagnostic tools
 and provides a unified health check and analysis system.
@@ -55,8 +55,8 @@ def check_database_status():
     project_root = get_project_root()
     
     # Check main database
-    main_db_path = project_root / "task_orchestrator.db"
-    data_db_path = project_root / "data" / "task_orchestrator.db"
+    main_db_path = project_root / "vespera_scriptorium.db"
+    data_db_path = project_root / "data" / "vespera_scriptorium.db"
     
     db_path = None
     if main_db_path.exists():

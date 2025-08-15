@@ -13,7 +13,7 @@ from pathlib import Path
 
 def get_db_path():
     """Get the path to the database file."""
-    return Path("task_orchestrator.db")
+    return Path("vespera_scriptorium.db")
 
 def check_table_schema(cursor, table_name):
     """Check the actual schema of a table."""
@@ -30,11 +30,11 @@ def analyze_schema_mismatch():
     """Analyze the schema mismatch and provide repair commands."""
     
     if not check_database_exists():
-        print("❌ Database file does not exist: task_orchestrator.db")
+        print("❌ Database file does not exist: vespera_scriptorium.db")
         return False
     
     try:
-        conn = sqlite3.connect("task_orchestrator.db")
+        conn = sqlite3.connect("vespera_scriptorium.db")
         cursor = conn.cursor()
         
         print("🔍 Analyzing database schema...")
@@ -128,7 +128,7 @@ def analyze_schema_mismatch():
 def apply_schema_fixes(repair_sql):
     """Apply the schema fixes to the database."""
     try:
-        conn = sqlite3.connect("task_orchestrator.db")
+        conn = sqlite3.connect("vespera_scriptorium.db")
         cursor = conn.cursor()
         
         print("\n🔧 Applying schema fixes...")
@@ -153,7 +153,7 @@ def test_orchestrator_tools():
         print("\n🧪 Testing orchestrator functionality...")
         
         # Try importing the core modules
-        from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
+        from vespera_scriptorium.db.persistence import DatabasePersistenceManager
         from .orchestrator.task_orchestration_service import TaskOrchestrator
         
         # Try creating a persistence manager

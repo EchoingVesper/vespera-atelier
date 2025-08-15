@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from .orchestrator.orchestration_state_manager import StateManager
-from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
+from vespera_scriptorium.db.persistence import DatabasePersistenceManager
 
 def debug_issue():
     """Debug the maintenance coordinator initialization issue."""

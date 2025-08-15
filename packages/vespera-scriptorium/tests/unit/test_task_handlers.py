@@ -11,7 +11,7 @@ from unittest.mock import Mock, AsyncMock, patch
 from mcp import types
 
 # Import the handlers to test
-# from mcp_task_orchestrator.infrastructure.mcp.handlers.task_handlers import  # TODO: Complete this import
+# from vespera_scriptorium.infrastructure.mcp.handlers.task_handlers import  # TODO: Complete this import
 
 
 class TestHandleExecuteTask:

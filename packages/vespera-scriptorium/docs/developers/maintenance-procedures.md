@@ -1,6 +1,6 @@
 # Maintenance Procedures
 
-This document outlines the ongoing maintenance procedures for the MCP Task Orchestrator project, implemented as part of the Documentation Ecosystem Modernization (Phase 4).
+This document outlines the ongoing maintenance procedures for the Vespera Scriptorium project, implemented as part of the Documentation Ecosystem Modernization (Phase 4).
 
 ## Overview
 

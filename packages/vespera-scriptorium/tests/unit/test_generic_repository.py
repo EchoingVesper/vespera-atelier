@@ -11,8 +11,8 @@ from typing import List
 import tempfile
 import os
 
-# from mcp_task_orchestrator.db.generic_repository import  # TODO: Complete this import
-# from mcp_task_orchestrator.orchestrator.generic_models import  # TODO: Complete this import
+# from vespera_scriptorium.db.generic_repository import  # TODO: Complete this import
+# from vespera_scriptorium.orchestrator.generic_models import  # TODO: Complete this import
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ async def test_db():
     repo = GenericTaskRepository(db_url)
     
     # Create schema
-    from mcp_task_orchestrator.db.models import Base
+    from vespera_scriptorium.db.models import Base
     from sqlalchemy import create_engine
     engine = create_engine(db_url)
     

@@ -10,19 +10,19 @@ Available MCP servers provide search, development, and automation capabilities. 
 
 ## Project Overview
 
-The MCP Task Orchestrator is a Model Context Protocol server that provides intelligent task orchestration, specialized AI roles, and persistent memory for AI-assisted development. It follows Clean Architecture and Domain-Driven Design principles with a complete layered structure.
+The Vespera Scriptorium is a Model Context Protocol server that provides intelligent task orchestration, specialized AI roles, and persistent memory for AI-assisted development. It follows Clean Architecture and Domain-Driven Design principles with a complete layered structure.
 
 ## Critical Directives
 
 ### ***CRITICAL***: Task Orchestrator Failure Protocol
 
-**If the MCP Task Orchestrator ever fails to function:**
+**If the Vespera Scriptorium ever fails to function:**
 
 1. **STOP** - Do not proceed with current task or "work around" the issue
 2. **DIAGNOSE** - Immediately spawn a diagnostic agent to identify the issue:
    ```bash
    # Check MCP connection
-   claude mcp list 2>/dev/null | grep task-orchestrator || echo "Not connected"
+   claude mcp list 2>/dev/null | grep vespera-scriptorium || echo "Not connected"
    
    # Run health check
    python tools/diagnostics/health_check.py
@@ -33,8 +33,8 @@ The MCP Task Orchestrator is a Model Context Protocol server that provides intel
 3. **FIX** - Spawn a dedicated fix agent with these priorities:
    - Follow detailed procedures in `PRPs/protocols/orchestrator-fix-protocol.md`
    - Fix known issues in the orchestrator code
-   - Restart the MCP server if needed: `claude mcp restart task-orchestrator`
-   - If changes were made to server code: `pip install -e . && claude mcp restart task-orchestrator`
+   - Restart the MCP server if needed: `claude mcp restart vespera-scriptorium`
+   - If changes were made to server code: `pip install -e . && claude mcp restart vespera-scriptorium`
    - Update documentation if Claude Code restart is required
 4. **VERIFY** - Test the fix with `orchestrator_health_check` tool
 5. **RESUME** - Only continue original task after verification
@@ -62,13 +62,13 @@ The MCP Task Orchestrator is a Model Context Protocol server that provides intel
 
 **When modifying orchestrator code:**
 
-1. After any change to `mcp_task_orchestrator/` files:
+1. After any change to `vespera_scriptorium/` files:
    ```bash
    # Reinstall and restart
-   pip install -e . && claude mcp restart task-orchestrator
+   pip install -e . && claude mcp restart vespera-scriptorium
    
    # Verify connection
-   claude mcp list | grep task-orchestrator
+   claude mcp list | grep vespera-scriptorium
    ```
 2. If restart fails, notify user that Claude Code restart may be needed
 3. Test with health check before proceeding
@@ -102,13 +102,13 @@ python tests/enhanced_migration_test.py
 
 ```bash
 # Format code with Black
-black mcp_task_orchestrator/
+black vespera_scriptorium/
 
 # Sort imports
-isort mcp_task_orchestrator/
+isort vespera_scriptorium/
 
 # Type checking (if mypy is configured)
-mypy mcp_task_orchestrator/
+mypy vespera_scriptorium/
 
 # Lint markdown files
 markdownlint docs/ *.md
@@ -131,13 +131,13 @@ python scripts/release/pypi_release_simple.py
 
 ```bash
 # Run server in dependency injection mode (default)
-MCP_TASK_ORCHESTRATOR_USE_DI=true python -m mcp_task_orchestrator.server
+MCP_TASK_ORCHESTRATOR_USE_DI=true python -m vespera_scriptorium.server
 
 # Run server in legacy mode
-MCP_TASK_ORCHESTRATOR_USE_DI=false python -m mcp_task_orchestrator.server
+MCP_TASK_ORCHESTRATOR_USE_DI=false python -m vespera_scriptorium.server
 
 # Use dedicated DI-only server
-python -m mcp_task_orchestrator.server_with_di
+python -m vespera_scriptorium.server_with_di
 ```
 
 ### Debugging and Diagnostics
@@ -161,23 +161,23 @@ python scripts/diagnostics/test_mcp_protocol.py
 
 ## Clean Architecture Overview
 
-The MCP Task Orchestrator follows **Clean Architecture** and **Domain-Driven Design** principles:
+The Vespera Scriptorium follows **Clean Architecture** and **Domain-Driven Design** principles:
 
 ### Architecture Layers
 
-**1. Domain Layer** (`mcp_task_orchestrator/domain/`):
+**1. Domain Layer** (`vespera_scriptorium/domain/`):
 - **Entities**: Core business objects (Task, Specialist, OrchestrationSession, WorkItem)
 - **Value Objects**: Immutable types (TaskStatus, SpecialistType, ExecutionResult, TimeWindow)
 - **Exceptions**: Domain-specific error hierarchy with severity levels and recovery strategies
 - **Services**: Domain business logic (TaskBreakdownService, SpecialistAssignmentService, etc.)
 - **Repositories**: Abstract interfaces for data access
 
-**2. Application Layer** (`mcp_task_orchestrator/application/`):
+**2. Application Layer** (`vespera_scriptorium/application/`):
 - **Use Cases**: Orchestrate business workflows (OrchestrateTask, ManageSpecialists, TrackProgress)
 - **DTOs**: Data transfer objects for clean boundaries between layers
 - **Interfaces**: External service contracts (NotificationService, ExternalApiClient)
 
-**3. Infrastructure Layer** (`mcp_task_orchestrator/infrastructure/`):
+**3. Infrastructure Layer** (`vespera_scriptorium/infrastructure/`):
 - **Database**: SQLite implementations of repository interfaces
 - **MCP Protocol**: Request/response adapters and server implementation
 - **Configuration**: Environment-aware config management and validation
@@ -185,20 +185,20 @@ The MCP Task Orchestrator follows **Clean Architecture** and **Domain-Driven Des
 - **Error Handling**: Centralized error processing, retry logic, and recovery strategies
 - **Dependency Injection**: Service container with lifetime management
 
-**4. Presentation Layer** (`mcp_task_orchestrator/presentation/`):
+**4. Presentation Layer** (`vespera_scriptorium/presentation/`):
 - **MCP Server**: Clean architecture entry point with DI integration
 - **CLI Interface**: Command-line tools with health checks and configuration management
 
 ### Key Architectural Components
 
-**Task Orchestration System** (`mcp_task_orchestrator/orchestrator/`):
+**Task Orchestration System** (`vespera_scriptorium/orchestrator/`):
 - `task_orchestration_service.py`: Core orchestration logic
 - `specialist_management_service.py`: Role-based specialist implementations
 - `orchestration_state_manager.py`: State management
 - `maintenance.py`: Automated cleanup and optimization features
 - `generic_models.py`: Flexible task model supporting any task type
 
-**Database Layer** (`mcp_task_orchestrator/db/` + `infrastructure/database/`):
+**Database Layer** (`vespera_scriptorium/db/` + `infrastructure/database/`):
 - Repository pattern with abstract interfaces and SQLite implementations
 - Automatic migrations with rollback capabilities
 - Connection management with resource cleanup
@@ -285,7 +285,7 @@ Keep files under 500 lines (300-400 recommended) to prevent Claude Code crashes.
 ## Project-Specific Notes
 
 - Workspace detection looks for `.git`, `package.json`, `pyproject.toml`
-- `.task_orchestrator/` directory created in project root
+- `.vespera_scriptorium/` directory created in project root
 - Custom roles can be defined per-project
 - Database stored in workspace-specific location
 - Supports multiple concurrent MCP clients

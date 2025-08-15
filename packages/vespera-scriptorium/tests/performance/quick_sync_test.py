@@ -3,7 +3,7 @@
 
 import sys
 import os
-sys.path.insert(0, r"E:\My Work\Programming\MCP Task Orchestrator")
+sys.path.insert(0, r"E:\My Work\Programming\Vespera Scriptorium")
 
 import asyncio
 import time
@@ -13,7 +13,7 @@ async def test_quick_operations():
     print("Testing key operations...")
     
     try:
-        from mcp_task_orchestrator.orchestrator.orchestration_state_manager import StateManager
+        from vespera_scriptorium.orchestrator.orchestration_state_manager import StateManager
         
         # Test StateManager operations
         state_manager = StateManager()

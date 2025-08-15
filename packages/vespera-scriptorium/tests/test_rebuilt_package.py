@@ -6,11 +6,11 @@ Test the rebuilt package to ensure all 17 tools are available.
 import asyncio
 
 async def test_rebuilt_package():
-    """Test the rebuilt MCP Task Orchestrator package."""
+    """Test the rebuilt Vespera Scriptorium package."""
     try:
         # Test importing from installed package
-        from mcp_task_orchestrator.server import DIEnabledMCPServer
-        from mcp_task_orchestrator.infrastructure.mcp.tool_definitions import get_all_tools
+        from vespera_scriptorium.server import DIEnabledMCPServer
+        from vespera_scriptorium.infrastructure.mcp.tool_definitions import get_all_tools
         
         print("✓ Successfully imported from rebuilt package")
         
@@ -41,7 +41,7 @@ async def test_rebuilt_package():
         return False
 
 if __name__ == "__main__":
-    print("Testing Rebuilt MCP Task Orchestrator Package...")
+    print("Testing Rebuilt Vespera Scriptorium Package...")
     print("=" * 55)
     
     success = asyncio.run(test_rebuilt_package())

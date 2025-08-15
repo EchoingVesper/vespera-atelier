@@ -1,12 +1,12 @@
 
 
-# Test Suite Guide - MCP Task Orchestrator
+# Test Suite Guide - Vespera Scriptorium
 
 #
 
 # Overview
 
-This guide explains how to run and maintain the test suite for the MCP Task Orchestrator. The tests are organized into categories for different testing purposes and deployment scenarios.
+This guide explains how to run and maintain the test suite for the Vespera Scriptorium. The tests are organized into categories for different testing purposes and deployment scenarios.
 
 #
 

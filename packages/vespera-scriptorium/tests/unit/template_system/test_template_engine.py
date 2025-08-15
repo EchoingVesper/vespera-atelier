@@ -11,8 +11,8 @@ from typing import Dict, Any
 import tempfile
 from pathlib import Path
 
-from mcp_task_orchestrator.infrastructure.template_system.template_engine import TemplateEngine, ParameterSubstitutionError, TemplateValidationError
-from mcp_task_orchestrator.infrastructure.template_system.storage_manager import TemplateStorageError
+from vespera_scriptorium.infrastructure.template_system.template_engine import TemplateEngine, ParameterSubstitutionError, TemplateValidationError
+from vespera_scriptorium.infrastructure.template_system.storage_manager import TemplateStorageError
 
 
 class TestTemplateEngine:

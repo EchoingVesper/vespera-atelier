@@ -9,8 +9,8 @@ from datetime import datetime, timedelta
 # Add project to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
-from mcp_task_orchestrator.db.models import LockTrackingModel
+from vespera_scriptorium.db.persistence import DatabasePersistenceManager
+from vespera_scriptorium.db.models import LockTrackingModel
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("test_cleanup_locks")
@@ -19,7 +19,7 @@ def test_cleanup_stale_locks():
     """Test the cleanup_stale_locks method implementation."""
     try:
         # Create persistence manager
-        db_path = Path(__file__).parent / "task_orchestrator.db"
+        db_path = Path(__file__).parent / "vespera_scriptorium.db"
         db_url = f"sqlite:///{db_path}"
         persistence = DatabasePersistenceManager(base_dir=str(Path(__file__).parent), db_url=db_url)
         

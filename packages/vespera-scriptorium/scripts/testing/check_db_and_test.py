@@ -3,7 +3,7 @@
 
 import sys
 import os
-sys.path.insert(0, r"E:\My Work\Programming\MCP Task Orchestrator")
+sys.path.insert(0, r"E:\My Work\Programming\Vespera Scriptorium")
 
 import time
 
@@ -12,7 +12,7 @@ def check_database_contents():
     print("Checking database contents...")
     
     try:
-        from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
+        from vespera_scriptorium.db.persistence import DatabasePersistenceManager
         
         # Initialize the persistence manager
         persistence = DatabasePersistenceManager()
@@ -27,7 +27,7 @@ def check_database_contents():
         
         # Try to inspect the database directly
         with persistence.session_scope() as session:
-            from mcp_task_orchestrator.db.models import TaskBreakdownModel, SubTaskModel
+            from vespera_scriptorium.db.models import TaskBreakdownModel, SubTaskModel
             
             task_count = session.query(TaskBreakdownModel).count()
             subtask_count = session.query(SubTaskModel).count()

@@ -3,7 +3,7 @@
 
 import sys
 import os
-sys.path.insert(0, r"E:\My Work\Programming\MCP Task Orchestrator")
+sys.path.insert(0, r"E:\My Work\Programming\Vespera Scriptorium")
 
 import asyncio
 import time
@@ -14,13 +14,13 @@ async def test_state_manager_with_correct_db():
     
     try:
         # Set environment variables to point to the correct database
-        db_path = r"E:\My Work\Programming\MCP Task Orchestrator\task_orchestrator.db"
-        base_dir = r"E:\My Work\Programming\MCP Task Orchestrator"
+        db_path = r"E:\My Work\Programming\Vespera Scriptorium\vespera_scriptorium.db"
+        base_dir = r"E:\My Work\Programming\Vespera Scriptorium"
         
         os.environ["MCP_TASK_ORCHESTRATOR_DB_PATH"] = db_path
         os.environ["MCP_TASK_ORCHESTRATOR_BASE_DIR"] = base_dir
         
-        from mcp_task_orchestrator.orchestrator.orchestration_state_manager import StateManager
+        from vespera_scriptorium.orchestrator.orchestration_state_manager import StateManager
         
         # Initialize StateManager with explicit paths
         state_manager = StateManager(db_path=db_path, base_dir=base_dir)

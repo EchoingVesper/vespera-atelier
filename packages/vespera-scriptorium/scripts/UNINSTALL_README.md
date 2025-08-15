@@ -1,6 +1,6 @@
-# MCP Task Orchestrator - Uninstall Guide
+# Vespera Scriptorium - Uninstall Guide
 
-This directory contains comprehensive uninstall scripts to safely remove MCP Task Orchestrator from all MCP client configurations without affecting other servers.
+This directory contains comprehensive uninstall scripts to safely remove Vespera Scriptorium from all MCP client configurations without affecting other servers.
 
 ## Quick Start
 
@@ -59,7 +59,7 @@ python uninstall_orchestrator.py --quiet
 - **Detailed logging** with backup location information
 
 ### 🎯 Target Configurations
-The scripts will remove MCP Task Orchestrator from these client configurations:
+The scripts will remove Vespera Scriptorium from these client configurations:
 
 **Claude Desktop**
 - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
@@ -104,7 +104,7 @@ Restart any MCP clients that were configured:
 
 ### 4. Remove Python Package
 ```bash
-pip uninstall mcp-task-orchestrator
+pip uninstall mcp-vespera-scriptorium
 ```
 
 ## Recovery
@@ -119,8 +119,8 @@ cp mcp_config_backups/claude_desktop_config_backup.json "path/to/claude/config.j
 
 ### Reinstall Package
 ```bash
-pip install mcp-task-orchestrator
-# Then reconfigure with: mcp-task-orchestrator setup
+pip install mcp-vespera-scriptorium
+# Then reconfigure with: mcp-vespera-scriptorium setup
 ```
 
 ## Troubleshooting
@@ -128,7 +128,7 @@ pip install mcp-task-orchestrator
 ### Script Not Found
 Ensure you're in the correct directory:
 ```bash
-cd /path/to/mcp-task-orchestrator/scripts
+cd /path/to/mcp-vespera-scriptorium/scripts
 ```
 
 ### Permission Issues

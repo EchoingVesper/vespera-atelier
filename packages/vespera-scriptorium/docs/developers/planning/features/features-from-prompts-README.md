@@ -2,7 +2,7 @@
 
 # 🚀 Features Directory Organization
 
-This directory manages feature specifications and implementation tracking for the MCP Task Orchestrator project.
+This directory manages feature specifications and implementation tracking for the Vespera Scriptorium project.
 
 #
 

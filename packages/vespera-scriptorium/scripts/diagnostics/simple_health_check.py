@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-System Health Check - MCP Task Orchestrator
+System Health Check - Vespera Scriptorium
 
 A simplified diagnostic tool for checking system health and project status.
 """
@@ -22,8 +22,8 @@ def check_database():
     
     project_root = get_project_root()
     db_paths = [
-        project_root / "task_orchestrator.db",
-        project_root / "data" / "task_orchestrator.db"
+        project_root / "vespera_scriptorium.db",
+        project_root / "data" / "vespera_scriptorium.db"
     ]
     
     for db_path in db_paths:
@@ -73,7 +73,7 @@ def check_structure():
 
 def main():
     """Main health check."""
-    print("MCP Task Orchestrator - System Health Check")
+    print("Vespera Scriptorium - System Health Check")
     print("=" * 50)
     print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"Python: {sys.version_info.major}.{sys.version_info.minor}")

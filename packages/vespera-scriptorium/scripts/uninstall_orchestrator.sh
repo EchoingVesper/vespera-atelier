@@ -44,8 +44,8 @@ if "$PYTHON_CMD" "$PYTHON_SCRIPT" "$@"; then
     echo "IMPORTANT NEXT STEPS:"
     echo "1. Exit Claude Code completely"
     echo "2. Restart your MCP clients (Claude Desktop, Cursor, etc.)"
-    echo "3. Run: pip uninstall mcp-task-orchestrator"
-    echo "   or: pip3 uninstall mcp-task-orchestrator"
+    echo "3. Run: pip uninstall vespera-scriptorium"
+    echo "   or: pip3 uninstall vespera-scriptorium"
     echo
 else
     echo

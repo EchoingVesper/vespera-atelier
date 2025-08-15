@@ -6,7 +6,7 @@
 
 # Overview
 
-This document describes the major improvements made to the MCP Task Orchestrator testing infrastructure to resolve critical issues with output truncation, resource warnings, and test hanging.
+This document describes the major improvements made to the Vespera Scriptorium testing infrastructure to resolve critical issues with output truncation, resource warnings, and test hanging.
 
 #
 
@@ -65,7 +65,7 @@ This document describes the major improvements made to the MCP Task Orchestrator
 The core improvement is a robust file-based output system that prevents timing issues:
 
 ```python
-from mcp_task_orchestrator.testing import TestOutputWriter, TestOutputReader
+from vespera_scriptorium.testing import TestOutputWriter, TestOutputReader
 
 # Writing test output
 
@@ -106,7 +106,7 @@ Multiple specialized test runners are available:
 
 ```text
 python
-from mcp_task_orchestrator.testing import DirectFunctionRunner
+from vespera_scriptorium.testing import DirectFunctionRunner
 
 runner = DirectFunctionRunner(output_dir=Path("test_outputs"))
 result = runner.execute_test(my_test_function, "test_name")
@@ -123,7 +123,7 @@ result = runner.execute_test(my_test_function, "test_name")
 
 ```text
 python
-from mcp_task_orchestrator.testing import MigrationTestRunner
+from vespera_scriptorium.testing import MigrationTestRunner
 
 runner = MigrationTestRunner(output_dir=Path("migration_outputs"))
 result = runner.run_migration_test()
@@ -140,7 +140,7 @@ result = runner.run_migration_test()
 
 ```text
 python
-from mcp_task_orchestrator.testing import ComprehensiveTestRunner, TestRunnerConfig
+from vespera_scriptorium.testing import ComprehensiveTestRunner, TestRunnerConfig
 
 config = TestRunnerConfig(
     output_dir=Path("outputs"),
@@ -162,7 +162,7 @@ Automatic hang detection and prevention:
 
 ```text
 python
-from mcp_task_orchestrator.monitoring.hang_detection import with_hang_detection
+from vespera_scriptorium.monitoring.hang_detection import with_hang_detection
 
 @with_hang_detection("my_operation", timeout=30.0)
 async def my_async_operation():
@@ -194,7 +194,7 @@ Enhanced database persistence with proper cleanup:
 
 ```text
 python
-from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
+from mcp_vespera_scriptorium.db.persistence import DatabasePersistenceManager
 from tests.utils.db_test_utils import managed_sqlite_connection
 
 # Context manager approach (recommended)
@@ -238,7 +238,7 @@ text
 
 ```text
 python
-from mcp_task_orchestrator.testing import DirectFunctionRunner
+from vespera_scriptorium.testing import DirectFunctionRunner
 runner = DirectFunctionRunner(output_dir=Path("outputs"))
 result = runner.execute_test(test_function, "test_name")
 
@@ -515,7 +515,7 @@ Configure hang detection timeouts:
 
 ```text
 python
-from mcp_task_orchestrator.monitoring.hang_detection import configure_hang_detection
+from vespera_scriptorium.monitoring.hang_detection import configure_hang_detection
 
 configure_hang_detection(
     default_timeout=60.0,
@@ -535,7 +535,7 @@ Configure test output locations:
 
 ```text
 python
-from mcp_task_orchestrator.testing import TestRunnerConfig
+from vespera_scriptorium.testing import TestRunnerConfig
 
 config = TestRunnerConfig(
     output_dir=Path("custom_test_outputs"),

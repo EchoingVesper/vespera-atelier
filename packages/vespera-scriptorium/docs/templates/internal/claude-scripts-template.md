@@ -1,7 +1,7 @@
 
 # CLAUDE.md
 
-**[CURRENT]** Claude Code guidance for Scripts and Utilities in MCP Task Orchestrator
+**[CURRENT]** Claude Code guidance for Scripts and Utilities in Vespera Scriptorium
 
 ⚠️ **File Size Compliant**: This file is kept under 400 lines for Claude Code stability
 
@@ -219,7 +219,7 @@ scripts/
 #
 ## MCP Tool Integration
 
-- Scripts can use MCP Task Orchestrator tools for automation
+- Scripts can use Vespera Scriptorium tools for automation
 
 - Diagnostic scripts validate MCP protocol implementation
 
@@ -309,7 +309,7 @@ python scripts/validation/check_dependencies.py
 
 - **Documentation Architecture**: [docs/CLAUDE.md](../docs/CLAUDE.md) - Complete documentation system
 
-- **Core Package**: [mcp_task_orchestrator/CLAUDE.md](../mcp_task_orchestrator/CLAUDE.md) - Implementation details
+- **Core Package**: [vespera_scriptorium/CLAUDE.md](../vespera_scriptorium/CLAUDE.md) - Implementation details
 
 - **Testing Guide**: [tests/CLAUDE.md](../tests/CLAUDE.md) - Testing infrastructure
 

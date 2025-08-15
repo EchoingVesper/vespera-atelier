@@ -63,7 +63,7 @@ This release introduces comprehensive testing infrastructure improvements that r
 # **File-Based Test Output System**
 
 ```python
-from mcp_task_orchestrator.testing import TestOutputWriter, TestOutputReader
+from vespera_scriptorium.testing import TestOutputWriter, TestOutputReader
 
 # Atomic file writes prevent timing issues
 
@@ -89,7 +89,7 @@ if reader.wait_for_completion(output_file, timeout=30.0):
 
 ```text
 python
-from mcp_task_orchestrator.testing import DirectFunctionRunner, MigrationTestRunner
+from vespera_scriptorium.testing import DirectFunctionRunner, MigrationTestRunner
 
 # Direct function execution (no pytest)
 
@@ -113,7 +113,7 @@ result = migration_runner.run_migration_test()
 
 ```text
 python
-from mcp_task_orchestrator.monitoring.hang_detection import with_hang_detection
+from vespera_scriptorium.monitoring.hang_detection import with_hang_detection
 
 # Automatic timeout protection
 
@@ -142,7 +142,7 @@ async with hang_protected_operation("context_op", timeout=60.0):
 
 ```text
 python
-from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
+from mcp_vespera_scriptorium.db.persistence import DatabasePersistenceManager
 from tests.utils.db_test_utils import managed_sqlite_connection
 
 # Context manager approach (eliminates ResourceWarnings)
@@ -278,7 +278,7 @@ result = subprocess.run(["python", "-m", "pytest", "test_file.py"])
 
 # NEW (reliable output)
 
-from mcp_task_orchestrator.testing import DirectFunctionRunner
+from vespera_scriptorium.testing import DirectFunctionRunner
 runner = DirectFunctionRunner(output_dir=Path("outputs"))
 result = runner.execute_test(test_function, "test_name")
 

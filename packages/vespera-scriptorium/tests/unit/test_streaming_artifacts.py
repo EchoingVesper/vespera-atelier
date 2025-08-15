@@ -16,7 +16,7 @@ from pathlib import Path
 from unittest.mock import Mock, AsyncMock, patch, mock_open
 import aiofiles
 
-# from mcp_task_orchestrator.orchestrator.streaming_artifacts import  # TODO: Complete this import
+from vespera_scriptorium.orchestrator.streaming_artifacts import StreamingArtifactManager, StreamingSession
 
 
 class TestStreamingArtifactManager:

@@ -12,7 +12,7 @@ print("🔍 Checking database access...")
 
 # Try to copy the database file first
 try:
-    shutil.copy2("task_orchestrator.db", "task_orchestrator_backup.db")
+    shutil.copy2("vespera_scriptorium.db", "task_orchestrator_backup.db")
     print("✅ Created backup: task_orchestrator_backup.db")
 except Exception as e:
     print(f"❌ Failed to create backup: {e}")
@@ -29,7 +29,7 @@ except Exception as e:
 
 # Try to open the database in read-only mode
 try:
-    conn = sqlite3.connect("file:task_orchestrator.db?mode=ro", uri=True)
+    conn = sqlite3.connect("file:vespera_scriptorium.db?mode=ro", uri=True)
     cursor = conn.cursor()
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
     tables = cursor.fetchall()
@@ -43,15 +43,15 @@ print("\n💡 Attempting to recreate database with schema...")
 # If we can't access the original, create a fresh one
 try:
     # Move the old one out of the way
-    if os.path.exists("task_orchestrator.db"):
-        os.rename("task_orchestrator.db", "task_orchestrator_old.db")
+    if os.path.exists("vespera_scriptorium.db"):
+        os.rename("vespera_scriptorium.db", "task_orchestrator_old.db")
         print("📦 Moved old database to task_orchestrator_old.db")
     
     # Create new database with proper schema
-    from mcp_task_orchestrator.db.models import Base
+    from vespera_scriptorium.db.models import Base
     from sqlalchemy import create_engine
     
-    engine = create_engine('sqlite:///task_orchestrator.db')
+    engine = create_engine('sqlite:///vespera_scriptorium.db')
     Base.metadata.create_all(engine)
     engine.dispose()
     

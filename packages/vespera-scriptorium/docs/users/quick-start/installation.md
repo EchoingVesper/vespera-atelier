@@ -48,11 +48,11 @@ Ensure you have a compatible MCP client installed:
 
 # Install from PyPI
 
-pip install mcp-task-orchestrator
+pip install mcp-vespera-scriptorium
 
 # Install with development tools
 
-pip install mcp-task-orchestrator[dev]
+pip install mcp-vespera-scriptorium[dev]
 
 ```text
 
@@ -67,8 +67,8 @@ bash
 
 # Clone repository
 
-git clone https://github.com/your-org/mcp-task-orchestrator.git
-cd mcp-task-orchestrator
+git clone https://github.com/your-org/mcp-vespera-scriptorium.git
+cd mcp-vespera-scriptorium
 
 # Install in development mode
 
@@ -90,12 +90,12 @@ pip install -e ".[dev]"
 
 2. Navigate to MCP servers configuration
 
-3. Add MCP Task Orchestrator:
+3. Add Vespera Scriptorium:
 
 ```text
 json
 {
-  "mcp-task-orchestrator": {
+  "mcp-vespera-scriptorium": {
     "command": "python",
     "args": ["-m", "mcp_task_orchestrator.server"],
     "env": {
@@ -117,7 +117,7 @@ Add to your MCP configuration file:
 ```text
 yaml
 servers:
-  mcp-task-orchestrator:
+  mcp-vespera-scriptorium:
     command: python
     args: ["-m", "mcp_task_orchestrator.server"]
     env:
@@ -145,7 +145,7 @@ Install the MCP extension and configure the server in your workspace settings.
 
 1. Restart your MCP client
 
-2. Look for "mcp-task-orchestrator" in available tools
+2. Look for "mcp-vespera-scriptorium" in available tools
 
 3. Try the health check:
 
@@ -154,7 +154,7 @@ bash
 
 # Command line verification
 
-python -m mcp_task_orchestrator.tools.diagnostics.health_check
+python -m vespera_scriptorium.tools.diagnostics.health_check
 ```text
 
 #

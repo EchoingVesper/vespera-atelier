@@ -19,7 +19,7 @@ async def test_comprehensive_integration():
         print("=== Comprehensive Real Implementation Integration Test ===\n")
         
         # Import real implementations
-#         from mcp_task_orchestrator.infrastructure.mcp.handlers.db_integration import  # TODO: Complete this import
+#         from vespera_scriptorium.infrastructure.mcp.handlers.db_integration import  # TODO: Complete this import
         
         print("1. Testing health check...")
         health_result = health_check()
@@ -133,7 +133,7 @@ async def test_comprehensive_integration():
         
         print("\n6. Testing artifact storage...")
         # Test artifact service directly
-        from mcp_task_orchestrator.infrastructure.mcp.handlers.db_integration import ArtifactService
+        from vespera_scriptorium.infrastructure.mcp.handlers.db_integration import ArtifactService
         artifact_service = ArtifactService()
         
         test_artifact = await artifact_service.store_artifact(

@@ -42,7 +42,7 @@ navigation, making it difficult for users to understand what tasks exist, their 
 ### Integration Points
 
 - **MCP Server Extension**: Add visualization endpoints to existing server
-- **Artifact Storage Layer**: Overlay navigation system on current `.task_orchestrator/artifacts/` structure
+- **Artifact Storage Layer**: Overlay navigation system on current `.vespera_scriptorium/artifacts/` structure
 - **CLI Integration**: Extend existing CLI tools with navigation commands
 - **Web Framework**: Integrate with potential future web dashboard
 
@@ -104,7 +104,7 @@ navigation, making it difficult for users to understand what tasks exist, their 
 
 ### Backward Compatibility
 
-- **Current Storage Preserved**: No changes to existing `.task_orchestrator/artifacts/` structure
+- **Current Storage Preserved**: No changes to existing `.vespera_scriptorium/artifacts/` structure
 - **Incremental Enhancement**: Add navigation layer without disrupting existing workflows
 - **Legacy Access**: Direct file access remains available for power users and scripts
 

@@ -35,9 +35,9 @@ The combination of systematic task orchestration with intelligent code execution
 ```json
 {
   "mcpServers": {
-    "task-orchestrator": {
+    "vespera-scriptorium": {
       "command": "python",
-      "args": ["path/to/mcp-task-orchestrator/launch_orchestrator.py"]
+      "args": ["path/to/mcp-vespera-scriptorium/launch_orchestrator.py"]
     },
     "claude-code": {
       "command": "claude-code", 

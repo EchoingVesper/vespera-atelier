@@ -18,7 +18,7 @@ This template provides a step-by-step guide for creating and managing new git wo
 
 # From the main repository directory
 
-cd /mnt/e/My\ Work/Programming/MCP\ Servers/mcp-task-orchestrator
+cd /mnt/e/My\ Work/Programming/MCP\ Servers/mcp-vespera-scriptorium
 
 # Create new worktree with feature branch
 
@@ -280,7 +280,7 @@ bash
 
 # From main repository
 
-cd /mnt/e/My\ Work/Programming/MCP\ Servers/mcp-task-orchestrator
+cd /mnt/e/My\ Work/Programming/MCP\ Servers/mcp-vespera-scriptorium
 
 # Update main branch
 

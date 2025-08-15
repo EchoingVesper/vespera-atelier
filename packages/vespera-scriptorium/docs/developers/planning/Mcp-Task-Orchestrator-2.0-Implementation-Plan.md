@@ -1,6 +1,6 @@
 
 
-# MCP Task Orchestrator 2.0.0 Implementation Plan
+# Vespera Scriptorium 2.0.0 Implementation Plan
 
 **Document Type**: Release Implementation Plan  
 **Version**: 2.0.0  
@@ -12,7 +12,7 @@
 
 # Executive Summary
 
-MCP Task Orchestrator 2.0.0 represents a major architectural evolution, building on the completed Clean Architecture refactoring to deliver the Generic Task Model foundation. This release focuses on breaking changes that establish a unified task system while maintaining backward compatibility through migration layers.
+Vespera Scriptorium 2.0.0 represents a major architectural evolution, building on the completed Clean Architecture refactoring to deliver the Generic Task Model foundation. This release focuses on breaking changes that establish a unified task system while maintaining backward compatibility through migration layers.
 
 #
 
@@ -194,7 +194,7 @@ text
 
 - [ ] Improved project root detection algorithms
 
-- [ ] Enhanced `.task_orchestrator` directory management
+- [ ] Enhanced `.vespera_scriptorium` directory management
 
 - [ ] Workspace-aware template storage
 
@@ -435,4 +435,4 @@ text
 **Migration Tools**: Available 2 weeks before release
 **Documentation**: Complete at release time
 
-This release establishes MCP Task Orchestrator as a mature, scalable orchestration platform ready for advanced features and team adoption.
+This release establishes Vespera Scriptorium as a mature, scalable orchestration platform ready for advanced features and team adoption.

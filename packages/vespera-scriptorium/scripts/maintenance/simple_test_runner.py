@@ -19,7 +19,7 @@ try:
     from testing_utils import TestOutputWriter, TestOutputReader
     print("✅ Successfully imported TestOutputWriter and TestOutputReader")
     
-    from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
+    from vespera_scriptorium.db.persistence import DatabasePersistenceManager
     print("✅ Successfully imported DatabasePersistenceManager")
     
     print("✅ All core modules imported successfully")
@@ -75,4 +75,4 @@ except Exception as e:
     print(f"❌ Database test failed: {str(e)}")
 
 print("\n🎉 Core functionality validation complete!")
-print("The task orchestrator infrastructure appears to be working correctly.")
+print("The Vespera Scriptorium infrastructure appears to be working correctly.")

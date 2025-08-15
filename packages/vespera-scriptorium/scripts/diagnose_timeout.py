@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Diagnostic script to identify and fix timeout issues in the MCP Task Orchestrator.
+Diagnostic script to identify and fix timeout issues in the Vespera Scriptorium.
 
 This script:
 1. Analyzes the lock acquisition patterns
@@ -21,8 +21,8 @@ from typing import Dict, List, Any, Optional
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from mcp_task_orchestrator.orchestrator import TaskOrchestrator, StateManager, SpecialistManager
-from mcp_task_orchestrator.orchestrator.models import TaskBreakdown, SubTask, TaskStatus, SpecialistType, ComplexityLevel
+from vespera_scriptorium.orchestrator import TaskOrchestrator, StateManager, SpecialistManager
+from vespera_scriptorium.orchestrator.models import TaskBreakdown, SubTask, TaskStatus, SpecialistType, ComplexityLevel
 
 # Configure logging
 logging.basicConfig(
@@ -151,7 +151,7 @@ async def analyze_lock_patterns():
     state_manager = StateManager(base_dir=base_dir)
     
     # Count lock files
-    locks_dir = Path(base_dir) / ".task_orchestrator" / "locks"
+    locks_dir = Path(base_dir) / ".vespera_scriptorium" / "locks"
     lock_files = list(locks_dir.glob("*.lock"))
     logger.info(f"Found {len(lock_files)} lock files")
     
@@ -167,7 +167,7 @@ async def analyze_lock_patterns():
     # Test lock cleanup
     if stale_locks > 0:
         logger.info("Testing lock cleanup")
-        from mcp_task_orchestrator.persistence import PersistenceManager
+        from vespera_scriptorium.persistence import PersistenceManager
         persistence = PersistenceManager(base_dir=base_dir)
         cleaned = persistence.cleanup_stale_locks(max_age_seconds=300)
         logger.info(f"Cleaned up {cleaned} stale locks")

@@ -6,7 +6,7 @@ import sys
 
 def check_database():
     """Check if database has correct schema"""
-    db_path = '.task_orchestrator/task_orchestrator.db'
+    db_path = '.vespera_scriptorium/vespera_scriptorium.db'
     
     if not os.path.exists(db_path):
         print("❌ Database not found at", db_path)
@@ -46,7 +46,7 @@ def check_orchestrator():
     """Check if orchestrator can be imported"""
     print("\n🔧 Orchestrator Import Check:")
     try:
-        from mcp_task_orchestrator.server import serve
+        from vespera_scriptorium.server import serve
         print("  ✅ Can import server module")
         return True
     except ImportError as e:
@@ -57,7 +57,7 @@ def check_orchestrator():
         return False
 
 if __name__ == "__main__":
-    print("🚀 MCP Task Orchestrator Verification")
+    print("🚀 Vespera Scriptorium Verification")
     print("=" * 40)
     
     db_ok = check_database()

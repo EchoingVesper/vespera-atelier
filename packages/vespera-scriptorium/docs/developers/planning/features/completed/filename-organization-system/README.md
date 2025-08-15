@@ -31,7 +31,7 @@ modularized_from: "docs/developers/planning/features/completed/[COMPLETED]_filen
 #
 # 🎯 Overview
 
-This document defines the comprehensive filename key and organization system for the MCP Task Orchestrator project documentation. It establishes status tags, priority indicators, and maintenance procedures for systematic documentation management.
+This document defines the comprehensive filename key and organization system for the Vespera Scriptorium project documentation. It establishes status tags, priority indicators, and maintenance procedures for systematic documentation management.
 
 #
 # System Components
@@ -270,4 +270,4 @@ text
 
 - **Archive Cleanliness**: 100% obsolete documents properly archived
 
-This organization system provides the foundation for scalable, maintainable, and efficient documentation management throughout the MCP Task Orchestrator project lifecycle.
+This organization system provides the foundation for scalable, maintainable, and efficient documentation management throughout the Vespera Scriptorium project lifecycle.

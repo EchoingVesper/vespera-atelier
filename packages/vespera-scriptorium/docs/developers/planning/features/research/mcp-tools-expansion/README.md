@@ -15,7 +15,7 @@
 
 # 📋 Overview
 
-Expand the MCP Task Orchestrator's tool suite from 6 basic tools to 25+ comprehensive tools for session management, task organization, backup/recovery, search, and maintenance. This expansion transforms the orchestrator into a complete project management platform.
+Expand the Vespera Scriptorium's tool suite from 6 basic tools to 25+ comprehensive tools for session management, task organization, backup/recovery, search, and maintenance. This expansion transforms the orchestrator into a complete project management platform.
 
 #
 

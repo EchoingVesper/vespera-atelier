@@ -1,7 +1,7 @@
 
 # Documentation Templates
 
-Industry-standard templates for creating consistent, high-quality documentation across the MCP Task Orchestrator project.
+Industry-standard templates for creating consistent, high-quality documentation across the Vespera Scriptorium project.
 
 #
 # Overview
@@ -580,4 +580,4 @@ python scripts/validate_accessibility.py --directory docs/
 
 ---
 
-📋 **This template collection provides the foundation for consistent, high-quality documentation across the MCP Task Orchestrator project. Follow the style guide and validation requirements to ensure professional, accessible documentation.**
+📋 **This template collection provides the foundation for consistent, high-quality documentation across the Vespera Scriptorium project. Follow the style guide and validation requirements to ensure professional, accessible documentation.**

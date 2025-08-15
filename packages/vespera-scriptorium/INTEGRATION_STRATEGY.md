@@ -6,13 +6,13 @@
 
 ## Executive Summary
 
-This document outlines the comprehensive integration strategy for the intelligent template system with hook-based agent spawning into the existing MCP Task Orchestrator and the broader Vespera Scriptorium platform vision. The integration maintains executive dysfunction-aware principles while providing seamless backward compatibility.
+This document outlines the comprehensive integration strategy for the intelligent template system with hook-based agent spawning into the existing Vespera Scriptorium and the broader Vespera Scriptorium platform vision. The integration maintains executive dysfunction-aware principles while providing seamless backward compatibility.
 
 ## Integration Overview
 
 ### Current State Analysis
 
-**Existing MCP Task Orchestrator Capabilities:**
+**Existing Vespera Scriptorium Capabilities:**
 - Clean Architecture foundation with domain/application/infrastructure layers
 - Generic task models with orchestrator support
 - Database persistence with SQLite repositories
@@ -161,7 +161,7 @@ CREATE TABLE execution_checkpoints (
 
 **Migration Strategy:**
 ```python
-# mcp_task_orchestrator/infrastructure/database/migrations/add_template_system.py
+# vespera_scriptorium/infrastructure/database/migrations/add_template_system.py
 
 class AddTemplateSystemMigration:
     """Add template system tables to existing database."""
@@ -185,7 +185,7 @@ class AddTemplateSystemMigration:
 **Enhanced Task Models:**
 
 ```python
-# mcp_task_orchestrator/domain/entities/task_models.py
+# vespera_scriptorium/domain/entities/task_models.py
 
 class TemplateExecutionTask(Task):
     """Task that represents template execution."""
@@ -231,7 +231,7 @@ class AgentTask(Task):
 **Enhanced Use Cases:**
 
 ```python
-# mcp_task_orchestrator/application/usecases/template_execution.py
+# vespera_scriptorium/application/usecases/template_execution.py
 
 class ExecuteTemplateUseCase:
     """Execute template with full orchestrator integration."""
@@ -358,7 +358,7 @@ class ExecuteTemplateUseCase:
 **Template Management Tools:**
 
 ```python
-# mcp_task_orchestrator/infrastructure/mcp/template_tools.py
+# vespera_scriptorium/infrastructure/mcp/template_tools.py
 
 @mcp_tool
 async def template_execute(
@@ -525,7 +525,7 @@ async def hook_list(
 ) -> Dict[str, Any]:
     """List available hooks with filtering."""
     
-    from mcp_task_orchestrator.infrastructure.template_system.hooks import list_hooks
+    from vespera_scriptorium.infrastructure.template_system.hooks import list_hooks
     
     hooks = list_hooks(include_details=True)
     
@@ -546,7 +546,7 @@ async def hook_execute_single(
 ) -> Dict[str, Any]:
     """Execute a single hook for testing or manual triggering."""
     
-    from mcp_task_orchestrator.infrastructure.template_system.hooks import get_hook
+    from vespera_scriptorium.infrastructure.template_system.hooks import get_hook
     
     hook = get_hook(hook_id)
     if not hook:
@@ -583,7 +583,7 @@ async def hook_execute_single(
 **Vespera Document Association:**
 
 ```python
-# mcp_task_orchestrator/infrastructure/vespera/document_integration.py
+# vespera_scriptorium/infrastructure/vespera/document_integration.py
 
 class VesperaDocumentManager:
     """Integration with Vespera document management system."""
@@ -668,7 +668,7 @@ class VesperaDocumentManager:
 **Template Execution Knowledge Tracking:**
 
 ```python
-# mcp_task_orchestrator/infrastructure/vespera/knowledge_integration.py
+# vespera_scriptorium/infrastructure/vespera/knowledge_integration.py
 
 class VesperaKnowledgeIntegrator:
     """Integrates template executions with Vespera knowledge graph."""
@@ -760,7 +760,7 @@ class VesperaKnowledgeIntegrator:
 **Multi-Modal Content Generation:**
 
 ```python
-# mcp_task_orchestrator/infrastructure/vespera/creative_integration.py
+# vespera_scriptorium/infrastructure/vespera/creative_integration.py
 
 class VesperaCreativeToolsIntegrator:
     """Integrates template system with Vespera creative tools."""
@@ -860,7 +860,7 @@ class VesperaCreativeToolsIntegrator:
 **Intelligent Agent Assignment:**
 
 ```python
-# mcp_task_orchestrator/infrastructure/ml/agent_assignment.py
+# vespera_scriptorium/infrastructure/ml/agent_assignment.py
 
 class MLAgentAssignmentEngine:
     """Machine learning-powered agent assignment for optimal performance."""
@@ -945,7 +945,7 @@ class MLAgentAssignmentEngine:
 **Adaptive Complexity Management:**
 
 ```python
-# mcp_task_orchestrator/infrastructure/ed_support/adaptive_complexity.py
+# vespera_scriptorium/infrastructure/ed_support/adaptive_complexity.py
 
 class AdaptiveComplexityManager:
     """Manages template complexity based on user's current executive function capacity."""
@@ -1081,7 +1081,7 @@ class BiometricOverwhelmDetector:
 **Community Template Registry:**
 
 ```python
-# mcp_task_orchestrator/infrastructure/community/template_sharing.py
+# vespera_scriptorium/infrastructure/community/template_sharing.py
 
 class CommunityTemplateRegistry:
     """Registry for sharing and discovering community templates."""
@@ -1312,7 +1312,7 @@ TEMPLATE_SYSTEM_METRICS = {
 
 ## Conclusion
 
-The template system integration strategy provides a comprehensive roadmap for transforming the MCP Task Orchestrator into an executive dysfunction-aware platform that eliminates decision paralysis, preserves momentum, delegates cognitive pressure, and prevents overwhelm. The phased approach ensures smooth integration while maintaining backward compatibility and providing immediate value to users.
+The template system integration strategy provides a comprehensive roadmap for transforming the Vespera Scriptorium into an executive dysfunction-aware platform that eliminates decision paralysis, preserves momentum, delegates cognitive pressure, and prevents overwhelm. The phased approach ensures smooth integration while maintaining backward compatibility and providing immediate value to users.
 
 The system successfully demonstrates how thoughtful architecture design focused on executive dysfunction can create technology that genuinely serves users with diverse cognitive needs, while also benefiting neurotypical users through reduced cognitive overhead and improved workflow automation.
 

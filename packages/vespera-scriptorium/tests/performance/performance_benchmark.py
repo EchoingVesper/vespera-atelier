@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Performance Test for MCP Task Orchestrator
+Performance Test for Vespera Scriptorium
 """
 
 import asyncio
@@ -9,11 +9,11 @@ import sys
 import os
 
 # Add project path
-sys.path.insert(0, r"E:\My Work\Programming\MCP Task Orchestrator")
+sys.path.insert(0, r"E:\My Work\Programming\Vespera Scriptorium")
 
 async def test_orchestrator_performance():
     """Run performance tests."""
-    print("MCP Task Orchestrator Performance Benchmark")
+    print("Vespera Scriptorium Performance Benchmark")
     print("=" * 50)
     
     results = {}
@@ -23,8 +23,8 @@ async def test_orchestrator_performance():
         print("Testing StateManager initialization...")
         start = time.time()
         
-        from mcp_task_orchestrator.orchestrator.orchestration_state_manager import StateManager
-        db_path = r"E:\My Work\Programming\MCP Task Orchestrator\task_orchestrator.db"
+        from vespera_scriptorium.orchestrator.orchestration_state_manager import StateManager
+        db_path = r"E:\My Work\Programming\Vespera Scriptorium\vespera_scriptorium.db"
         state_manager = StateManager(db_path=db_path)
         
         init_time = time.time() - start

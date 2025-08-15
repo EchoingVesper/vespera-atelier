@@ -4,7 +4,7 @@ Branch Protection Verification Script
 =====================================
 
 This script helps verify that branch protection is working correctly
-for the MCP Task Orchestrator repository.
+for the Vespera Scriptorium repository.
 
 Usage:
     python verify_branch_protection.py
@@ -57,12 +57,12 @@ def check_remote_setup():
     result = run_command("git remote -v")
     if result.returncode == 0:
         remotes = result.stdout.strip()
-        if "EchoingVesper/mcp-task-orchestrator" in remotes:
+        if "EchoingVesper/vespera-scriptorium" in remotes:
             print("✅ Remote repository correctly configured")
             print(f"   {remotes}")
             return True
         else:
-            print("❌ Remote repository not pointing to EchoingVesper/mcp-task-orchestrator")
+            print("❌ Remote repository not pointing to EchoingVesper/vespera-scriptorium")
             print(f"   Current remotes: {remotes}")
             return False
     else:
@@ -151,7 +151,7 @@ def display_next_steps():
     """Display next steps for setting up branch protection."""
     print("\\n🎯 Next Steps for Branch Protection Setup:")
     print("="*50)
-    print("1. 🌐 Go to: https://github.com/EchoingVesper/mcp-task-orchestrator/settings/branches")
+    print("1. 🌐 Go to: https://github.com/EchoingVesper/vespera-scriptorium/settings/branches")
     print("2. 🔧 Click 'Add classic rule'")
     print("3. 📝 Enter branch name pattern: main")
     print("4. ✅ Enable these settings:")
@@ -172,7 +172,7 @@ def display_next_steps():
 
 def main():
     """Main verification function."""
-    print("🔐 MCP Task Orchestrator - Branch Protection Verification")
+    print("🔐 Vespera Scriptorium - Branch Protection Verification")
     print("="*60)
     
     all_checks_passed = True

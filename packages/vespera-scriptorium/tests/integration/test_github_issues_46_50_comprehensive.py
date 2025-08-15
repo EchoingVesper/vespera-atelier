@@ -29,12 +29,12 @@ import os
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from mcp_task_orchestrator.application.usecases.manage_tasks import TaskUseCase
-from mcp_task_orchestrator.infrastructure.mcp.handlers.compatibility.response_formatter import ResponseFormatter
-from mcp_task_orchestrator.infrastructure.mcp.handlers.compatibility.serialization import SerializationValidator
-from mcp_task_orchestrator.db.generic_repository import GenericTaskRepository
-from mcp_task_orchestrator.infrastructure.mcp.handlers.task_handlers import TaskHandlers
-from mcp_task_orchestrator.domain.repositories.task_repository import TaskRepository
+from vespera_scriptorium.application.usecases.manage_tasks import TaskUseCase
+from vespera_scriptorium.infrastructure.mcp.handlers.compatibility.response_formatter import ResponseFormatter
+from vespera_scriptorium.infrastructure.mcp.handlers.compatibility.serialization import SerializationValidator
+from vespera_scriptorium.db.generic_repository import GenericTaskRepository
+from vespera_scriptorium.infrastructure.mcp.handlers.task_handlers import TaskHandlers
+from vespera_scriptorium.domain.repositories.task_repository import TaskRepository
 
 
 class TestGitHubIssue46MockTaskSerialization:

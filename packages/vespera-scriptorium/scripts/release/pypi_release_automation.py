@@ -310,10 +310,10 @@ def create_github_release(version: str) -> bool:
 
 **Installation:**
 ```bash
-pip install mcp-task-orchestrator=={version}
+pip install vespera-scriptorium=={version}
 ```
 
-**Full Changelog:** https://github.com/EchoingVesper/mcp-task-orchestrator/compare/v{version}...v{version}
+**Full Changelog:** https://github.com/EchoingVesper/vespera-scriptorium/compare/v{version}...v{version}
 
 ---
 🤖 Generated with PyPI Release Automation
@@ -445,7 +445,7 @@ def main():
             f"🏷️  Git tag created: v{new_version}\n"
             f"📋 GitHub release: {'Created' if not args.test else 'Skipped (test mode)'}\n\n"
             f"[bold]Installation command:[/bold]\n"
-            f"pip install mcp-task-orchestrator=={new_version}",
+            f"pip install vespera-scriptorium=={new_version}",
             title="🚀 Release Complete"
         ))
         

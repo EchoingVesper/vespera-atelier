@@ -1,6 +1,6 @@
 
 
-# Clean Architecture Guide for MCP Task Orchestrator
+# Clean Architecture Guide for Vespera Scriptorium
 
 This guide explains the clean architecture implementation and how to work with the new layered structure.
 
@@ -8,7 +8,7 @@ This guide explains the clean architecture implementation and how to work with t
 
 # Architecture Overview
 
-The MCP Task Orchestrator follows **Clean Architecture** principles with strict separation of concerns across four main layers:
+The Vespera Scriptorium follows **Clean Architecture** principles with strict separation of concerns across four main layers:
 
 ```text
 ┌─────────────────────────────────────────┐
@@ -765,4 +765,4 @@ bash
 python tools/architecture/validate_dependencies.py
 ```text
 
-This clean architecture provides a solid foundation for maintainable, testable, and scalable code while preserving the domain knowledge and business rules of the MCP Task Orchestrator.
+This clean architecture provides a solid foundation for maintainable, testable, and scalable code while preserving the domain knowledge and business rules of the Vespera Scriptorium.

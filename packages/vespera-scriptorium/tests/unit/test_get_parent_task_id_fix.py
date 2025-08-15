@@ -3,7 +3,7 @@
 
 import sys
 import os
-sys.path.insert(0, r"E:\My Work\Programming\MCP Task Orchestrator")
+sys.path.insert(0, r"E:\My Work\Programming\Vespera Scriptorium")
 
 import asyncio
 import time
@@ -16,17 +16,17 @@ async def test_get_parent_task_id_fix():
     
     try:
         # Set environment variables to point to the correct database
-        db_path = r"E:\My Work\Programming\MCP Task Orchestrator\task_orchestrator.db"
-        base_dir = r"E:\My Work\Programming\MCP Task Orchestrator"
+        db_path = r"E:\My Work\Programming\Vespera Scriptorium\vespera_scriptorium.db"
+        base_dir = r"E:\My Work\Programming\Vespera Scriptorium"
         
         os.environ["MCP_TASK_ORCHESTRATOR_DB_PATH"] = db_path
         os.environ["MCP_TASK_ORCHESTRATOR_BASE_DIR"] = base_dir
         
-        from mcp_task_orchestrator.orchestrator.orchestration_state_manager import StateManager
+        from vespera_scriptorium.orchestrator.orchestration_state_manager import StateManager
         # Import Clean Architecture v2.0 models
-        from mcp_task_orchestrator.domain.entities.task import Task, TaskStatus, TaskType
-        from mcp_task_orchestrator.domain.value_objects.complexity_level import ComplexityLevel
-        from mcp_task_orchestrator.domain.value_objects.specialist_type import SpecialistType
+        from vespera_scriptorium.domain.entities.task import Task, TaskStatus, TaskType
+        from vespera_scriptorium.domain.value_objects.complexity_level import ComplexityLevel
+        from vespera_scriptorium.domain.value_objects.specialist_type import SpecialistType
         
         # Initialize StateManager with explicit paths
         state_manager = StateManager(db_path=db_path, base_dir=base_dir)
@@ -124,15 +124,15 @@ async def test_integration_with_core():
     
     try:
         # Set environment variables
-        db_path = r"E:\My Work\Programming\MCP Task Orchestrator\task_orchestrator.db"
-        base_dir = r"E:\My Work\Programming\MCP Task Orchestrator"
+        db_path = r"E:\My Work\Programming\Vespera Scriptorium\vespera_scriptorium.db"
+        base_dir = r"E:\My Work\Programming\Vespera Scriptorium"
         
         os.environ["MCP_TASK_ORCHESTRATOR_DB_PATH"] = db_path
         os.environ["MCP_TASK_ORCHESTRATOR_BASE_DIR"] = base_dir
         
-        from mcp_task_orchestrator.orchestrator.orchestration_state_manager import StateManager
-        from mcp_task_orchestrator.orchestrator.task_orchestration_service import TaskOrchestrator
-        from mcp_task_orchestrator.orchestrator.specialist_management_service import SpecialistManager
+        from vespera_scriptorium.orchestrator.orchestration_state_manager import StateManager
+        from vespera_scriptorium.orchestrator.task_orchestration_service import TaskOrchestrator
+        from vespera_scriptorium.orchestrator.specialist_management_service import SpecialistManager
         
         # Initialize components
         state_manager = StateManager(db_path=db_path, base_dir=base_dir)

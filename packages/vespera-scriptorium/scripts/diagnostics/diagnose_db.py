@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Diagnose database issues in the MCP Task Orchestrator.
+Diagnose database issues in the Vespera Scriptorium.
 """
 
 import sqlite3
@@ -8,14 +8,14 @@ import json
 from pathlib import Path
 
 def diagnose_database():
-    """Diagnose issues in the task orchestrator database."""
+    """Diagnose issues in the Vespera Scriptorium database."""
     # Get project root (go up from scripts/diagnostics/ to project root)
     project_root = Path(__file__).parent.parent.parent
     
     # Try multiple possible database locations
     possible_paths = [
-        project_root / "task_orchestrator.db",  # Main location
-        project_root / "data" / "task_orchestrator.db",  # New organized location
+        project_root / "vespera_scriptorium.db",  # Main location
+        project_root / "data" / "vespera_scriptorium.db",  # New organized location
     ]
     
     db_path = None

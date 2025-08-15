@@ -15,8 +15,8 @@ from pathlib import Path
 # Add the package to the path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from mcp_task_orchestrator.server.reboot_tools import REBOOT_TOOL_HANDLERS, REBOOT_TOOLS
-from mcp_task_orchestrator.server.reboot_integration import get_reboot_manager
+from vespera_scriptorium.server.reboot_tools import REBOOT_TOOL_HANDLERS, REBOOT_TOOLS
+from vespera_scriptorium.server.reboot_integration import get_reboot_manager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")

@@ -184,7 +184,7 @@ Structure Validation:
 
 1. Proceed with PyPI upload using existing 1.5.1 build
 
-2. Verify installation after upload: `pip install mcp-task-orchestrator`
+2. Verify installation after upload: `pip install mcp-vespera-scriptorium`
 
 3. Test basic functionality post-installation
 

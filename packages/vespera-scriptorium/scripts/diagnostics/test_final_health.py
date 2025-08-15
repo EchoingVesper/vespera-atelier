@@ -15,9 +15,9 @@ sys.path.insert(0, str(project_root))
 async def test_orchestrator_restart():
     """Test that the orchestrator can restart properly."""
     try:
-        from mcp_task_orchestrator.reboot.reboot_integration import get_reboot_manager
-        from mcp_task_orchestrator.orchestrator.orchestration_state_manager import StateManager
-        from mcp_task_orchestrator.reboot.state_serializer import RestartReason
+        from vespera_scriptorium.reboot.reboot_integration import get_reboot_manager
+        from vespera_scriptorium.orchestrator.orchestration_state_manager import StateManager
+        from vespera_scriptorium.reboot.state_serializer import RestartReason
         
         print("Testing complete orchestrator restart sequence...")
         
@@ -52,9 +52,9 @@ async def test_orchestrator_restart():
 async def test_basic_task_operations():
     """Test basic task operations."""
     try:
-        from mcp_task_orchestrator.orchestrator.orchestration_state_manager import StateManager
-        from mcp_task_orchestrator.domain.entities.task import Task, TaskStatus
-        from mcp_task_orchestrator.domain.value_objects.specialist_type import SpecialistType
+        from vespera_scriptorium.orchestrator.orchestration_state_manager import StateManager
+        from vespera_scriptorium.domain.entities.task import Task, TaskStatus
+        from vespera_scriptorium.domain.value_objects.specialist_type import SpecialistType
         import uuid
         
         print("Testing basic task operations...")
@@ -103,7 +103,7 @@ async def test_basic_task_operations():
 
 async def main():
     """Main test function."""
-    print("MCP Task Orchestrator Final Health Check")
+    print("Vespera Scriptorium Final Health Check")
     print("=" * 50)
     
     success = True
@@ -121,7 +121,7 @@ async def main():
     # Summary
     print("\n" + "=" * 50)
     if success:
-        print("🎉 SUCCESS: MCP Task Orchestrator is fully functional!")
+        print("🎉 SUCCESS: Vespera Scriptorium is fully functional!")
         print("")
         print("✅ Maintenance mode issue resolved")
         print("✅ Async/await issues fixed") 

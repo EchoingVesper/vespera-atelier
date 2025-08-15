@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Database Cleanup Utility for MCP Task Orchestrator
+Database Cleanup Utility for Vespera Scriptorium
 
 This script provides safe database cleanup operations including:
 - Removing completed tasks older than specified days
@@ -24,8 +24,8 @@ def find_database():
     """Find the database file in possible locations."""
     project_root = get_project_root()
     possible_paths = [
-        project_root / "task_orchestrator.db",
-        project_root / "data" / "task_orchestrator.db",
+        project_root / "vespera_scriptorium.db",
+        project_root / "data" / "vespera_scriptorium.db",
     ]
     
     for path in possible_paths:
@@ -251,7 +251,7 @@ def optimize_database(db_path):
 
 def main():
     """Main cleanup function."""
-    parser = argparse.ArgumentParser(description="MCP Task Orchestrator Database Cleanup")
+    parser = argparse.ArgumentParser(description="Vespera Scriptorium Database Cleanup")
     parser.add_argument("--old-completed", type=int, metavar="DAYS", 
                        help="Remove completed tasks older than DAYS (default: 7)")
     parser.add_argument("--test-tasks", action="store_true",

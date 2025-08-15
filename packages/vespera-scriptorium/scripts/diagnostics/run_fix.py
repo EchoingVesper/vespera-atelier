@@ -2,12 +2,12 @@ import sqlite3
 import os
 
 # Change to project directory
-os.chdir(r"E:\dev\mcp-servers\mcp-task-orchestrator")
+os.chdir(r"E:\dev\mcp-servers\vespera-scriptorium")
 
 print("🔧 Applying emergency database schema fix...")
 
 # Connect to database
-conn = sqlite3.connect("task_orchestrator.db")
+conn = sqlite3.connect("vespera_scriptorium.db")
 cursor = conn.cursor()
 
 # Add missing columns (ignore if they already exist)

@@ -87,7 +87,7 @@ def analyze_stale_tasks():
     return stale_tasks
 
 if __name__ == "__main__":
-    print("MCP Task Orchestrator - Stale Task Analysis")
+    print("Vespera Scriptorium - Stale Task Analysis")
     print("=" * 80)
     print("Note: This script analyzes tasks without modifying the database.")
     print("      It's safe to run even when the orchestrator is active.\n")

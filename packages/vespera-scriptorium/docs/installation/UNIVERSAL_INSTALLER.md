@@ -1,7 +1,7 @@
 
 # Universal Installer Guide
 
-The MCP Task Orchestrator Universal Installer provides a comprehensive, industry-standard installation experience that matches the quality and user experience of modern Python tools like pipx, poetry, and uv.
+The Vespera Scriptorium Universal Installer provides a comprehensive, industry-standard installation experience that matches the quality and user experience of modern Python tools like pipx, poetry, and uv.
 
 #
 # Overview
@@ -27,20 +27,20 @@ The universal installer is a single Python script (`install.py`) that handles th
 **Unix/Linux/macOS:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/EchoingVesper/mcp-task-orchestrator/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/EchoingVesper/mcp-vespera-scriptorium/main/install.sh | bash
 ```text
 
 **Windows PowerShell:**
 ```text
 powershell
-iex (iwr https://raw.githubusercontent.com/EchoingVesper/mcp-task-orchestrator/main/install.ps1)
+iex (iwr https://raw.githubusercontent.com/EchoingVesper/mcp-vespera-scriptorium/main/install.ps1)
 
 ```text
 
 **Direct Python:**
 ```text
 bash
-wget https://raw.githubusercontent.com/EchoingVesper/mcp-task-orchestrator/main/install.py
+wget https://raw.githubusercontent.com/EchoingVesper/mcp-vespera-scriptorium/main/install.py
 python install.py
 
 ```text
@@ -53,8 +53,8 @@ bash
 
 # Clone or download the repository
 
-git clone https://github.com/EchoingVesper/mcp-task-orchestrator.git
-cd mcp-task-orchestrator
+git clone https://github.com/EchoingVesper/mcp-vespera-scriptorium.git
+cd mcp-vespera-scriptorium
 
 # Run installer (auto-detects environment)
 
@@ -219,7 +219,7 @@ python install.py --version 2.0.0
 Install directly from git:
 
 ```bash
-python install.py --git https://github.com/EchoingVesper/mcp-task-orchestrator.git
+python install.py --git https://github.com/EchoingVesper/mcp-vespera-scriptorium.git
 
 # Installs latest from main branch
 
@@ -446,7 +446,7 @@ python install.py --verbose
 
 # Download and run
 
-iwr https://raw.githubusercontent.com/EchoingVesper/mcp-task-orchestrator/main/install.ps1 | iex
+iwr https://raw.githubusercontent.com/EchoingVesper/mcp-vespera-scriptorium/main/install.ps1 | iex
 
 # Or locally
 
@@ -658,7 +658,7 @@ bash
 
 # Check for backups
 
-ls ~/.task_orchestrator.backup.*
+ls ~/.vespera_scriptorium.backup.*
 
 # Reinstall with clean configuration
 
@@ -680,7 +680,7 @@ bash
 git clone https://github.com/your-org/your-project.git
 cd your-project
 
-# 2. Install MCP Task Orchestrator for development
+# 2. Install Vespera Scriptorium for development
 
 python /path/to/install.py --dev --clients claude
 
@@ -698,7 +698,7 @@ bash
 
 # Automated installation in CI
 
-curl -fsSL https://raw.githubusercontent.com/EchoingVesper/mcp-task-orchestrator/main/install.py | python - --user --no-clients --force
+curl -fsSL https://raw.githubusercontent.com/EchoingVesper/mcp-vespera-scriptorium/main/install.py | python - --user --no-clients --force
 
 ```text
 
@@ -772,8 +772,8 @@ The universal installer follows clean architecture principles:
 
 For issues, questions, or feature requests:
 
-- **GitHub Issues**: [Report problems](https://github.com/EchoingVesper/mcp-task-orchestrator/issues)
+- **GitHub Issues**: [Report problems](https://github.com/EchoingVesper/mcp-vespera-scriptorium/issues)
 
 - **Documentation**: [Full documentation](../README.md)
 
-- **Repository**: [Source code](https://github.com/EchoingVesper/mcp-task-orchestrator)
+- **Repository**: [Source code](https://github.com/EchoingVesper/mcp-vespera-scriptorium)

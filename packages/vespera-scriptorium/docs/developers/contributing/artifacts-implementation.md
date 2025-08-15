@@ -6,7 +6,7 @@
 
 # Overview
 
-Successfully implemented comprehensive fixes for artifacts data validation issues in the MCP Task Orchestrator database persistence layer.
+Successfully implemented comprehensive fixes for artifacts data validation issues in the Vespera Scriptorium database persistence layer.
 
 #
 
@@ -180,7 +180,7 @@ def _sanitize_artifacts(self, artifacts_data: Any) -> List[str]:
 
 **Modified:**
 
-- `mcp_task_orchestrator/db/persistence.py` - Enhanced with sanitization logic
+- `vespera_scriptorium/db/persistence.py` - Enhanced with sanitization logic
 
 **Created:**
 

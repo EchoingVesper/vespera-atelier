@@ -43,9 +43,9 @@ Tested Modules:
 
 - ✅ mcp_task_orchestrator.server (MCP server components) 
 
-- ✅ mcp_task_orchestrator.db.models (database models)
+- ✅ mcp_vespera_scriptorium.db.models (database models)
 
-- ✅ mcp_task_orchestrator.db.persistence (data persistence)
+- ✅ mcp_vespera_scriptorium.db.persistence (data persistence)
 
 - ✅ mcp_task_orchestrator_cli.cli (CLI interface)
 

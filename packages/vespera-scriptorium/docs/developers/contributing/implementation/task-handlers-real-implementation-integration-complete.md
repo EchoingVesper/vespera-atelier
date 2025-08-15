@@ -64,7 +64,7 @@ Successfully implemented real integrations to replace mock implementations in ta
 
 # 4. Artifact Storage System (ArtifactService)
 
-- **Implementation**: File-based artifact storage in `.task_orchestrator/artifacts/`
+- **Implementation**: File-based artifact storage in `.vespera_scriptorium/artifacts/`
 
 - **Features**: Content chunking, metadata storage, path management
 
@@ -128,7 +128,7 @@ Successfully implemented real integrations to replace mock implementations in ta
 
 # New Files Created:
 
-- `mcp_task_orchestrator/domain/value_objects/artifact_reference.py` - Artifact reference value object
+- `vespera_scriptorium/domain/value_objects/artifact_reference.py` - Artifact reference value object
 
 - `PRPs/simple_integration_test.py` - Structural validation test
 
@@ -142,11 +142,11 @@ Successfully implemented real integrations to replace mock implementations in ta
 
 # Major Files Modified:
 
-- `mcp_task_orchestrator/infrastructure/mcp/handlers/db_integration.py` - Complete replacement of mock implementations with real ones
+- `vespera_scriptorium/infrastructure/mcp/handlers/db_integration.py` - Complete replacement of mock implementations with real ones
 
-- `mcp_task_orchestrator/domain/value_objects/__init__.py` - Fixed imports for new artifact reference
+- `vespera_scriptorium/domain/value_objects/__init__.py` - Fixed imports for new artifact reference
 
-- `mcp_task_orchestrator/domain/__init__.py` - Fixed imports for new artifact reference
+- `vespera_scriptorium/domain/__init__.py` - Fixed imports for new artifact reference
 
 #
 
@@ -290,7 +290,7 @@ Successfully implemented real integrations to replace mock implementations in ta
 
 # Prerequisites
 
-1. Full MCP Task Orchestrator environment setup
+1. Full Vespera Scriptorium environment setup
 
 2. Database schema initialized with persistence system
 
@@ -326,13 +326,13 @@ Successfully implemented real integrations to replace mock implementations in ta
 
 # In proper development environment with venv activated:
 
-cd /path/to/mcp-task-orchestrator
+cd /path/to/mcp-vespera-scriptorium
 python PRPs/simple_integration_test.py
 python PRPs/comprehensive_integration_test.py
 
 # Test actual handlers (requires MCP server setup):
 
-python -m mcp_task_orchestrator.server
+python -m vespera_scriptorium.server
 ```text
 
 #

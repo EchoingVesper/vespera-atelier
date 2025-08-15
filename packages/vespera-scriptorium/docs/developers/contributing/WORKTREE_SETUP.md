@@ -185,7 +185,7 @@ git worktree remove worktrees/feature-name
 
 2. **Execute Architect Tasks**: Both `architect_f74a18` and `architect_9e06a9` can run in parallel
 
-3. **Coordinate Implementation**: Use shared task orchestrator to track progress
+3. **Coordinate Implementation**: Use shared Vespera Scriptorium to track progress
 
 4. **Merge Completed Features**: Each worktree creates independent branches for merging
 

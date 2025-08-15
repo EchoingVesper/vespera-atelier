@@ -4,12 +4,12 @@ from pathlib import Path
 
 # Change to project directory
 import os
-os.chdir(r"E:\dev\mcp-servers\mcp-task-orchestrator")
+os.chdir(r"E:\dev\mcp-servers\vespera-scriptorium")
 
 print("🔍 Checking database schema...")
 
 # Connect to database
-conn = sqlite3.connect("task_orchestrator.db")
+conn = sqlite3.connect("vespera_scriptorium.db")
 cursor = conn.cursor()
 
 # Check if subtasks table exists
@@ -69,7 +69,7 @@ conn.close()
 print("\n🧪 Testing orchestrator import...")
 
 try:
-    from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
+    from vespera_scriptorium.db.persistence import DatabasePersistenceManager
     persistence = DatabasePersistenceManager()
     tasks = persistence.get_all_active_tasks()
     print(f"✅ Successfully imported and got {len(tasks)} active tasks")

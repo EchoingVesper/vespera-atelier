@@ -2,7 +2,7 @@
 """
 Test script for client detection functionality.
 
-This script tests the client detection capabilities of the MCP Task Orchestrator
+This script tests the client detection capabilities of the Vespera Scriptorium
 installer without making any configuration changes.
 """
 
@@ -12,11 +12,11 @@ from pathlib import Path
 # Add installer directory to path
 sys.path.insert(0, str(Path(__file__).parent / "installer"))
 
-from mcp_task_orchestrator_cli.client_detector import ClientDetector
+from vespera_scriptorium_cli.client_detector import ClientDetector
 
 def main():
     """Test client detection and print results."""
-    print("\nMCP Task Orchestrator - Client Detection Test")
+    print("\nVespera Scriptorium - Client Detection Test")
     print("=" * 50)
     
     # Initialize detector

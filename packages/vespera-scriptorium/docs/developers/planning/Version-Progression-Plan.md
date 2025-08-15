@@ -156,11 +156,11 @@ bash
 
 # Automatic migration for existing installations
 
-mcp-task-orchestrator migrate --from 1.4.x --to 1.5.0
+mcp-vespera-scriptorium migrate --from 1.4.x --to 1.5.0
 
 # New optional configuration for A2A features
 
-mcp-task-orchestrator config --enable-a2a --agent-id "primary_orchestrator"
+mcp-vespera-scriptorium config --enable-a2a --agent-id "primary_orchestrator"
 
 ```text
 
@@ -265,11 +265,11 @@ bash
 
 # Seamless upgrade from 1.5.x
 
-mcp-task-orchestrator upgrade --to 1.6.0
+mcp-vespera-scriptorium upgrade --to 1.6.0
 
 # Optional multi-server configuration
 
-mcp-task-orchestrator cluster --join <federation-endpoint>
+mcp-vespera-scriptorium cluster --join <federation-endpoint>
 
 ```text
 
@@ -505,7 +505,7 @@ bash
 
 # Automatic migration on server startup
 
-mcp-task-orchestrator upgrade --to 2.0.0
+mcp-vespera-scriptorium upgrade --to 2.0.0
 
 # ✅ Analyzes existing data structure
 
@@ -867,7 +867,7 @@ main (stable release branch)
 
 # Conclusion
 
-This version progression plan provides a clear roadmap for the evolution of the MCP Task Orchestrator while maintaining stability, backward compatibility, and community trust. The structured approach ensures:
+This version progression plan provides a clear roadmap for the evolution of the Vespera Scriptorium while maintaining stability, backward compatibility, and community trust. The structured approach ensures:
 
 - **Predictable Release Cycles**: Users can plan upgrades and feature adoption
 

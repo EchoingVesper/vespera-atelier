@@ -11,7 +11,7 @@
 
 # Overview
 
-The MCP Task Orchestrator is designed as both a standalone MCP server and the core orchestration engine for Vespera Atelier, a comprehensive creative assistant suite. This dual-purpose architecture enables broader adoption while supporting specialized creative workflows.
+The Vespera Scriptorium is designed as both a standalone MCP server and the core orchestration engine for Vespera Atelier, a comprehensive creative assistant suite. This dual-purpose architecture enables broader adoption while supporting specialized creative workflows.
 
 #
 
@@ -47,7 +47,7 @@ The MCP Task Orchestrator is designed as both a standalone MCP server and the co
 
 # Clean Architecture Enablement
 
-The Clean Architecture implementation in MCP Task Orchestrator makes dual-purpose operation seamless:
+The Clean Architecture implementation in Vespera Scriptorium makes dual-purpose operation seamless:
 
 ```text
 Domain Layer (Shared)
@@ -226,11 +226,11 @@ text
 
 # Standalone Deployment
 
-- **Package**: `mcp-task-orchestrator` PyPI package
+- **Package**: `mcp-vespera-scriptorium` PyPI package
 
 - **Installation**: Universal installer for all MCP clients  
 
-- **Configuration**: Project-specific `.task_orchestrator/` directory
+- **Configuration**: Project-specific `.vespera_scriptorium/` directory
 
 - **Documentation**: Comprehensive user guides and API references
 
@@ -258,7 +258,7 @@ text
 
 # Shared Development Process
 
-1. **Core Features**: Developed in MCP Task Orchestrator repo
+1. **Core Features**: Developed in Vespera Scriptorium repo
 
 2. **Testing**: Validated in both standalone and integrated modes
 
@@ -440,6 +440,6 @@ tasks:
 
 # Conclusion
 
-The dual-purpose architecture positions MCP Task Orchestrator for both immediate standalone adoption and long-term creative ecosystem integration. The Clean Architecture foundation ensures both use cases are well-served while maintaining code quality and development efficiency.
+The dual-purpose architecture positions Vespera Scriptorium for both immediate standalone adoption and long-term creative ecosystem integration. The Clean Architecture foundation ensures both use cases are well-served while maintaining code quality and development efficiency.
 
 This strategy maximizes the value and adoption potential while building toward the comprehensive creative assistant vision of Vespera Atelier.

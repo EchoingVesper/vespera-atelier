@@ -2,7 +2,7 @@
 
 """
 Temporary File Lifecycle Manager
-Part of MCP Task Orchestrator Documentation Ecosystem Modernization
+Part of Vespera Scriptorium Documentation Ecosystem Modernization
 
 Purpose: Specialized management of temporary files and transient artifacts
 Integration: Works with orchestrator and enforces Japanese cleanliness principles
@@ -57,7 +57,7 @@ class TemporaryFileLifecycleManager:
     def __init__(self, project_root: Path, dry_run: bool = False):
         self.project_root = project_root
         self.dry_run = dry_run
-        self.orchestrator_dir = project_root / ".task_orchestrator"
+        self.orchestrator_dir = project_root / ".vespera_scriptorium"
         
         # Set up logging
         log_level = os.environ.get("LOG_LEVEL", "INFO").upper()

@@ -100,7 +100,7 @@ SESSION_TABLES = [
 
 - Dynamic mode selection with 4 new MCP tools
 
-- Automatic role copying (config → .task_orchestrator/roles)
+- Automatic role copying (config → .vespera_scriptorium/roles)
 
 - Session-mode binding with validation
 
@@ -137,7 +137,7 @@ mode_tools:
 ```text
 text
 project_root/
-├── .task_orchestrator/
+├── .vespera_scriptorium/
 │   ├── roles/              
 # Mode configurations
 │   │   ├── project_roles.yaml

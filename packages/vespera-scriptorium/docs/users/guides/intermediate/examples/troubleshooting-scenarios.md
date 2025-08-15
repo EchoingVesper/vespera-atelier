@@ -116,15 +116,15 @@ bash
 
 # Check for lock files
 
-ls -la .task_orchestrator/database/*.lock
+ls -la .vespera_scriptorium/database/*.lock
 
 # Check database integrity
 
-sqlite3 .task_orchestrator/database/tasks.db "PRAGMA integrity_check;"
+sqlite3 .vespera_scriptorium/database/tasks.db "PRAGMA integrity_check;"
 
 # Check for zombie processes
 
-ps aux | grep mcp-task-orchestrator
+ps aux | grep mcp-vespera-scriptorium
 
 ```text
 text
@@ -146,8 +146,8 @@ graceful_steps = [
 # Step 2: If graceful fails - force resolution  
 
 force_resolution = [
-    "Kill any hanging mcp-task-orchestrator processes",
-    "Remove database lock files: rm .task_orchestrator/database/*.lock",
+    "Kill any hanging mcp-vespera-scriptorium processes",
+    "Remove database lock files: rm .vespera_scriptorium/database/*.lock",
     "Run database repair: sqlite3 tasks.db 'PRAGMA integrity_check;'",
     "If corruption found, restore from backup or reset database"
 ]
@@ -332,8 +332,8 @@ manual_recovery = [
 # Option 3: Fresh start (when corruption is extensive)
 
 fresh_start = [
-    "Backup existing artifacts: cp -r .task_orchestrator/artifacts/ backup/",
-    "Reset database: rm -rf .task_orchestrator/database/",
+    "Backup existing artifacts: cp -r .vespera_scriptorium/artifacts/ backup/",
+    "Reset database: rm -rf .vespera_scriptorium/database/",
     "Restart MCP server to recreate clean database",
     "Begin new workflow with lessons learned"
 ]
@@ -525,9 +525,9 @@ json
 // Correct configuration should look like:
 {
   "mcpServers": {
-    "task-orchestrator": {
+    "vespera-scriptorium": {
       "command": "python",
-      "args": ["/absolute/path/to/mcp-task-orchestrator/mcp_task_orchestrator/server.py"],
+      "args": ["/absolute/path/to/mcp-vespera-scriptorium/vespera_scriptorium/server.py"],
       "env": {}
     }
   }
@@ -546,7 +546,7 @@ python
 installation_check = [
     "Run: python run_installer.py --verify",
     "Check that virtual environment exists: ls venv_mcp/",
-    "Verify server can start: python mcp_task_orchestrator/server.py --test",
+    "Verify server can start: python vespera_scriptorium/server.py --test",
     "Check for any import errors or missing dependencies"
 ]
 
@@ -562,7 +562,7 @@ configuration_fixes = [
 # Step 3: Test functionality
 
 functionality_test = [
-    "Look for 'task-orchestrator' in available tools",
+    "Look for 'vespera-scriptorium' in available tools",
     "Try simple command: 'Initialize orchestration session'",
     "Verify response includes specialist roles",
     "Test maintenance: 'Use maintenance coordinator to scan session'"
@@ -595,7 +595,7 @@ python
 system_diagnostics = [
     "Monitor CPU and memory usage during operations",
     "Check disk space: df -h",
-    "Verify database accessibility: sqlite3 .task_orchestrator/database/tasks.db '.tables'",
+    "Verify database accessibility: sqlite3 .vespera_scriptorium/database/tasks.db '.tables'",
     "Check for competing processes"
 ]
 
@@ -717,7 +717,7 @@ python
 # Approach 1: Workspace separation
 
 workspace_separation = [
-    "Create separate .task_orchestrator directories for each team member",
+    "Create separate .vespera_scriptorium directories for each team member",
     "Use environment variables to point to different databases",
     "Establish naming conventions for shared artifacts",
     "Set up clear handoff procedures"

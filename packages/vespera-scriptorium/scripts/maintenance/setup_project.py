@@ -115,7 +115,7 @@ def run_quick_validation():
     # Test that we can import the main package
     try:
         sys.path.insert(0, str(project_root))
-        import mcp_task_orchestrator
+        import vespera_scriptorium
         print("✅ Main package import successful")
     except ImportError as e:
         print(f"❌ Main package import failed: {e}")
@@ -142,7 +142,7 @@ def run_quick_validation():
 
 def main():
     """Main setup and validation function."""
-    print("🚀 MCP Task Orchestrator - Project Setup & Validation")
+    print("🚀 Vespera Scriptorium - Project Setup & Validation")
     print("=" * 60)
     
     success = True

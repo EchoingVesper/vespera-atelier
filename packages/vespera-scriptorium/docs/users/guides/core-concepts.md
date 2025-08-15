@@ -233,7 +233,7 @@ If no → Direct implementation might be faster
 
 Your work doesn't disappear when you close your MCP client:
 
-- **SQLite Database**: All tasks stored locally in `.task_orchestrator/database/`
+- **SQLite Database**: All tasks stored locally in `.vespera_scriptorium/database/`
 
 - **Artifact Management**: Large content stored as files to prevent context limits
 

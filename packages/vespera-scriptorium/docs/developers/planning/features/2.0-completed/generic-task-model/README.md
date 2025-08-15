@@ -30,12 +30,12 @@ modularized_from: "docs/developers/planning/features/2.0-completed/[COMPLETED]_g
 #
 # 📋 Overview
 
-This document outlines a comprehensive redesign of the MCP Task Orchestrator's task model to create a more generic, flexible, and extensible system. The new design eliminates the artificial distinction between tasks and subtasks, introducing a unified, nestable task structure with support for chaining, templates, prerequisites, and advanced lifecycle management.
+This document outlines a comprehensive redesign of the Vespera Scriptorium's task model to create a more generic, flexible, and extensible system. The new design eliminates the artificial distinction between tasks and subtasks, introducing a unified, nestable task structure with support for chaining, templates, prerequisites, and advanced lifecycle management.
 
 #
 # Problem Statement
 
-The current task orchestrator has several limitations:
+The current Vespera Scriptorium has several limitations:
 
 - Fixed task model with hardcoded fields
 
@@ -185,4 +185,4 @@ This specification is organized into focused modules:
 #
 # Implementation Status
 
-✅ **Completed** - This feature has been successfully implemented and deployed. The unified task model is now the foundation of the MCP Task Orchestrator, providing the flexibility and extensibility envisioned in this specification.
+✅ **Completed** - This feature has been successfully implemented and deployed. The unified task model is now the foundation of the Vespera Scriptorium, providing the flexibility and extensibility envisioned in this specification.

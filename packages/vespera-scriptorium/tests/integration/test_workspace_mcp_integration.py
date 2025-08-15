@@ -15,7 +15,7 @@ def test_current_working_directory():
     print("📍 Testing Current Working Directory Detection...")
     
     current_dir = Path.cwd()
-    expected_project = "mcp-task-orchestrator"
+    expected_project = "vespera-scriptorium"
     
     results = {
         'current_directory': str(current_dir),
@@ -28,7 +28,7 @@ def test_current_working_directory():
     markers = {
         '.git': current_dir / '.git',
         'pyproject.toml': current_dir / 'pyproject.toml',
-        '.task_orchestrator': current_dir / '.task_orchestrator',
+        '.vespera_scriptorium': current_dir / '.vespera_scriptorium',
         'mcp_task_orchestrator': current_dir / 'mcp_task_orchestrator'
     }
     
@@ -57,7 +57,7 @@ def test_workspace_paradigm_vs_manual():
     print("\n🔄 Testing Workspace Paradigm vs Manual Directory Control...")
     
     current_dir = Path.cwd()
-    orchestrator_dir = current_dir / '.task_orchestrator'
+    orchestrator_dir = current_dir / '.vespera_scriptorium'
     
     comparison = {
         'automatic_detection': {
@@ -71,7 +71,7 @@ def test_workspace_paradigm_vs_manual():
     
     # Test automatic detection (current state)
     if orchestrator_dir.exists():
-        print("  ✅ Automatic: Workspace detected and .task_orchestrator created automatically")
+        print("  ✅ Automatic: Workspace detected and .vespera_scriptorium created automatically")
         comparison['automatic_detection']['status'] = 'success'
         
         # Check if artifacts are correctly placed
@@ -81,13 +81,13 @@ def test_workspace_paradigm_vs_manual():
             print(f"  📦 Automatic: {artifact_count} specialist artifact directories found")
             comparison['automatic_detection']['artifact_dirs'] = artifact_count
     else:
-        print("  ❌ Automatic: No .task_orchestrator directory found")
+        print("  ❌ Automatic: No .vespera_scriptorium directory found")
         comparison['automatic_detection']['status'] = 'failed'
     
     # Test potential manual override scenarios
     manual_locations = [
-        current_dir.parent / '.task_orchestrator',  # Parent directory
-        Path.home() / '.task_orchestrator',         # Home directory  
+        current_dir.parent / '.vespera_scriptorium',  # Parent directory
+        Path.home() / '.vespera_scriptorium',         # Home directory  
         current_dir / 'custom_orchestrator'        # Custom location
     ]
     
@@ -135,7 +135,7 @@ def test_artifact_placement_intelligence():
     print("\n🧠 Testing Artifact Placement Intelligence...")
     
     current_dir = Path.cwd()
-    artifacts_dir = current_dir / '.task_orchestrator' / 'artifacts'
+    artifacts_dir = current_dir / '.vespera_scriptorium' / 'artifacts'
     
     if not artifacts_dir.exists():
         return {'status': 'no_artifacts', 'message': 'No artifacts directory found'}
@@ -228,7 +228,7 @@ def test_workspace_paradigm_pitfalls():
     print("\n⚠️ Testing for Workspace Paradigm Pitfalls...")
     
     current_dir = Path.cwd()
-    orchestrator_dir = current_dir / '.task_orchestrator'
+    orchestrator_dir = current_dir / '.vespera_scriptorium'
     
     pitfalls = {
         'identified_issues': [],
@@ -264,7 +264,7 @@ def test_workspace_paradigm_pitfalls():
             print(f"  ✅ Organization acceptable: {len(artifact_dirs)} artifact directories")
     
     # Pitfall 3: Database file size
-    db_file = orchestrator_dir / 'task_orchestrator.db'
+    db_file = orchestrator_dir / 'vespera_scriptorium.db'
     if db_file.exists():
         db_size_mb = db_file.stat().st_size / (1024 * 1024)
         if db_size_mb > 10:
@@ -276,7 +276,7 @@ def test_workspace_paradigm_pitfalls():
     # Pitfall 4: Hidden directory discoverability
     if orchestrator_dir.name.startswith('.'):
         pitfalls['usability_concerns'].append("Hidden directory may be hard to discover")
-        print("  ⚠️ Usability: .task_orchestrator is hidden (may be hard to find)")
+        print("  ⚠️ Usability: .vespera_scriptorium is hidden (may be hard to find)")
     
     # Pitfall 5: No cleanup mechanism obvious
     if not (current_dir / 'CLEANUP_INSTRUCTIONS.md').exists():
@@ -361,7 +361,7 @@ if __name__ == "__main__":
     results = run_mcp_integration_tests()
     
     # Save results
-    results_file = Path.cwd() / '.task_orchestrator' / 'mcp_integration_test_results.json'
+    results_file = Path.cwd() / '.vespera_scriptorium' / 'mcp_integration_test_results.json'
     with open(results_file, 'w') as f:
         json.dump(results, f, indent=2, default=str)
     

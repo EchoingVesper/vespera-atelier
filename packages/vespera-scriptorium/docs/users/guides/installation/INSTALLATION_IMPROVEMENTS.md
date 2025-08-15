@@ -6,7 +6,7 @@
 
 # New CLI Installation System
 
-The MCP Task Orchestrator now features a modern CLI installer with comprehensive support for all major MCP clients and flexible installation options.
+The Vespera Scriptorium now features a modern CLI installer with comprehensive support for all major MCP clients and flexible installation options.
 
 #
 
@@ -54,7 +54,7 @@ The MCP Task Orchestrator now features a modern CLI installer with comprehensive
 
 - **No Hardcoded Paths**: Avoids locking installations to specific directories
 
-- **Module-Based Execution**: Uses `python -m mcp_task_orchestrator.server` for reliability
+- **Module-Based Execution**: Uses `python -m vespera_scriptorium.server` for reliability
 
 - **Working Directory Support**: Optional default directories without hardcoding
 
@@ -76,8 +76,8 @@ The MCP Task Orchestrator now features a modern CLI installer with comprehensive
 
 # Install and auto-configure all detected clients
 
-pip install mcp-task-orchestrator
-python -m mcp_task_orchestrator_cli install
+pip install mcp-vespera-scriptorium
+python -m vespera_scriptorium_cli install
 
 ```text
 
@@ -94,19 +94,19 @@ bash
 
 # Claude Desktop (global, multi-project)
 
-python -m mcp_task_orchestrator_cli install --client claude_desktop
+python -m vespera_scriptorium_cli install --client claude_desktop
 
 # Claude Code (project-specific)
 
-python -m mcp_task_orchestrator_cli install --client claude_code --scope project
+python -m vespera_scriptorium_cli install --client claude_code --scope project
 
 # Windsurf and Cursor (project-aware)
 
-python -m mcp_task_orchestrator_cli install --client windsurf,cursor
+python -m vespera_scriptorium_cli install --client windsurf,cursor
 
 # Multiple clients at once
 
-python -m mcp_task_orchestrator_cli install --client claude_desktop,windsurf,cursor
+python -m vespera_scriptorium_cli install --client claude_desktop,windsurf,cursor
 
 ```text
 
@@ -123,15 +123,15 @@ bash
 
 # Set default working directory (optional)
 
-python -m mcp_task_orchestrator_cli install --client claude_desktop --working-dir "/path/to/project"
+python -m vespera_scriptorium_cli install --client claude_desktop --working-dir "/path/to/project"
 
 # Force reconfiguration
 
-python -m mcp_task_orchestrator_cli install --force
+python -m vespera_scriptorium_cli install --force
 
 # Custom server name
 
-python -m mcp_task_orchestrator_cli install --name "my-orchestrator"
+python -m vespera_scriptorium_cli install --name "my-orchestrator"
 
 ```text
 
@@ -149,11 +149,11 @@ python -m mcp_task_orchestrator_cli install --name "my-orchestrator"
 
 # For Claude Desktop Users (Recommended)
 
-1. **Install once**: `python -m mcp_task_orchestrator_cli install --client claude_desktop`
+1. **Install once**: `python -m vespera_scriptorium_cli install --client claude_desktop`
 
 2. **Use everywhere**: Works automatically across all projects
 
-3. **Project isolation**: Each project gets its own `.task_orchestrator` directory
+3. **Project isolation**: Each project gets its own `.vespera_scriptorium` directory
 
 4. **Dynamic detection**: Automatically finds project roots and context
 
@@ -206,11 +206,11 @@ bash
 
 # Remove old configurations if needed
 
-python -m mcp_task_orchestrator_cli install --force
+python -m vespera_scriptorium_cli install --force
 
 # Use new installation method
 
-python -m mcp_task_orchestrator_cli install
+python -m vespera_scriptorium_cli install
 
 ```text
 
@@ -263,7 +263,7 @@ claude --version
 
 # Already configured
 
-python -m mcp_task_orchestrator_cli install --force
+python -m vespera_scriptorium_cli install --force
 
 ```text
 
@@ -280,11 +280,11 @@ bash
 
 # View all options
 
-python -m mcp_task_orchestrator_cli install --help
+python -m vespera_scriptorium_cli install --help
 
 # Check client detection
 
-python -m mcp_task_orchestrator_cli install --no-auto-detect --client claude_desktop
+python -m vespera_scriptorium_cli install --no-auto-detect --client claude_desktop
 ```text
 
 #
@@ -305,4 +305,4 @@ python -m mcp_task_orchestrator_cli install --no-auto-detect --client claude_des
 
 6. **Comprehensive Support**: All major MCP clients supported
 
-This new installation system makes the MCP Task Orchestrator much more accessible and suitable for real-world multi-project development workflows.
+This new installation system makes the Vespera Scriptorium much more accessible and suitable for real-world multi-project development workflows.

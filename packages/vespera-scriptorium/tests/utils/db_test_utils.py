@@ -68,7 +68,7 @@ def managed_persistence_manager(base_dir: Optional[str] = None, db_url: Optional
             tasks = persistence.get_all_active_tasks()
             # Database connections are automatically cleaned up
     """
-    from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
+    from vespera_scriptorium.db.persistence import DatabasePersistenceManager
     
     persistence = None
     try:
@@ -126,7 +126,7 @@ class DatabaseTestCase:
         Returns:
             DatabasePersistenceManager: The persistence manager
         """
-        from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
+        from vespera_scriptorium.db.persistence import DatabasePersistenceManager
         
         persistence = DatabasePersistenceManager(base_dir=base_dir, db_url=db_url)
         self._persistence_managers.append(persistence)

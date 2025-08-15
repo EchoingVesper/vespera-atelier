@@ -69,7 +69,7 @@ config/default_roles.yaml → Hardcoded role definitions
 ```text
 text
 Dynamic Mode System:
-config/default_roles.yaml → Project .task_orchestrator/roles/ → Session Mode Binding
+config/default_roles.yaml → Project .vespera_scriptorium/roles/ → Session Mode Binding
                                     ↓                                ↓
                             User customizations              Active session uses
                             Multiple .yaml files             selected mode configuration
@@ -164,7 +164,7 @@ class RoleConfigurationManager:
     
     def __init__(self, project_root: Path):
         self.project_root = project_root
-        self.roles_dir = project_root / ".task_orchestrator" / "roles"
+        self.roles_dir = project_root / ".vespera_scriptorium" / "roles"
     
     async def copy_default_roles(self):
         """Copy system defaults to project directory."""
@@ -195,7 +195,7 @@ class RoleConfigurationManager:
 1. **Initialization**
 - Detect projects without mode system
 - Offer automatic initialization with default modes
-- Create `.task_orchestrator/roles/` directory structure
+- Create `.vespera_scriptorium/roles/` directory structure
 - Copy system defaults as starting templates
 
 2. **Session Migration**
@@ -295,4 +295,4 @@ class RoleConfigurationManager:
 
 - **Usage Analytics**: Understand how modes are being used
 
-This architectural evolution transforms the MCP Task Orchestrator from a static, single-configuration system into a flexible, session-aware platform that adapts to diverse project needs while maintaining reliability and performance.
+This architectural evolution transforms the Vespera Scriptorium from a static, single-configuration system into a flexible, session-aware platform that adapts to diverse project needs while maintaining reliability and performance.

@@ -6,7 +6,7 @@
 
 # Architecture Overview
 
-The MCP Task Orchestrator consists of two main components:
+The Vespera Scriptorium consists of two main components:
 
 1. **Unified Installation System**: A modular plugin architecture for client configuration
 
@@ -24,7 +24,7 @@ The Generic Task Model provides a unified, flexible approach to task management:
 
 # Unified task model replaces TaskBreakdown + SubTask
 
-from mcp_task_orchestrator.models import GenericTask, TaskDependency
+from vespera_scriptorium.models import GenericTask, TaskDependency
 
 # Create any type of task with flexible attributes
 
@@ -56,7 +56,7 @@ task.dependencies.append(dependency)
 
 # Installation Architecture
 
-The unified MCP Task Orchestrator uses a modular plugin architecture for client configuration:
+The unified Vespera Scriptorium uses a modular plugin architecture for client configuration:
 
 ```text
 bash
@@ -171,7 +171,7 @@ Each MCP client requires different configuration formats:
 json
 {
   "mcpServers": {
-    "task-orchestrator": {
+    "vespera-scriptorium": {
       "command": "path/to/python.exe",
       "args": ["-m", "mcp_task_orchestrator.server"],
       "cwd": "path/to/project"
@@ -191,7 +191,7 @@ json
 json
 {
   "mcpServers": {
-    "task-orchestrator": {
+    "vespera-scriptorium": {
       "command": "path/to/python.exe", 
       "args": ["-m", "mcp_task_orchestrator.server"],
       "env": {}
@@ -227,7 +227,7 @@ The Task Orchestration system uses an LLM-powered approach to break down complex
 
 ```text
 bash
-mcp_task_orchestrator/
+vespera_scriptorium/
 ├── orchestrator/              
 
 # Core orchestration components

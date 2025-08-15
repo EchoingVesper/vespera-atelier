@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Setup script for MCP Task Orchestrator
+Setup script for Vespera Scriptorium
 """
 
 import os
@@ -15,27 +15,27 @@ with open("requirements.txt", "r", encoding="utf-8") as f:
     requirements = [line.strip() for line in f.readlines() if line.strip() and not line.startswith("#")]
 
 setup(
-    name="mcp-task-orchestrator",
+    name="vespera-scriptorium",
     version="2.0.0",
     author="Echoing Vesper",
     author_email="noreply@github.com",
-    description="A Model Context Protocol server for task orchestration",
+    description="Vespera Scriptorium - An intelligent platform for document-centric orchestration, task management, and creative workflows",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/EchoingVesper/mcp-task-orchestrator",
+    url="https://github.com/EchoingVesper/vespera-atelier",
     project_urls={
-        "Homepage": "https://github.com/EchoingVesper/mcp-task-orchestrator",
-        "Documentation": "https://github.com/EchoingVesper/mcp-task-orchestrator/blob/main/README.md",
-        "Issues": "https://github.com/EchoingVesper/mcp-task-orchestrator/issues",
-        "Releases": "https://github.com/EchoingVesper/mcp-task-orchestrator/releases",
-        "Repository": "https://github.com/EchoingVesper/mcp-task-orchestrator",
+        "Homepage": "https://github.com/EchoingVesper/vespera-atelier",
+        "Documentation": "https://github.com/EchoingVesper/vespera-atelier/blob/main/packages/vespera-scriptorium/README.md",
+        "Issues": "https://github.com/EchoingVesper/vespera-atelier/issues",
+        "Releases": "https://github.com/EchoingVesper/vespera-atelier/releases",
+        "Repository": "https://github.com/EchoingVesper/vespera-atelier",
     },
-    keywords=["mcp", "ai", "task-orchestration", "claude", "automation", "llm", "workflow"],
+    keywords=["mcp", "ai", "vespera", "scriptorium", "claude", "automation", "llm", "workflow", "creative-tools"],
     packages=find_packages(),
     include_package_data=True,
     package_data={
-        "mcp_task_orchestrator": ["config/*.yaml"],
-        "mcp_task_orchestrator_cli": ["config/*.yaml"],
+        "vespera_scriptorium": ["config/*.yaml"],
+        "vespera_scriptorium_cli": ["config/*.yaml"],
         "": ["config/*.yaml"],  # Include config files from root
     },
     classifiers=[
@@ -60,8 +60,8 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "mcp-task-orchestrator=mcp_task_orchestrator.__main__:main_sync",
-            "mcp-task-orchestrator-cli=mcp_task_orchestrator_cli.__main__:main",
+            "vespera-scriptorium=vespera_scriptorium.__main__:main_sync",
+            "vespera-scriptorium-cli=vespera_scriptorium_cli.__main__:main",
         ],
     },
 )

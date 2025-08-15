@@ -15,7 +15,7 @@
 **Do this:**
 
 ```python
-from mcp_task_orchestrator.testing import TestOutputWriter
+from vespera_scriptorium.testing import TestOutputWriter
 
 writer = TestOutputWriter(output_dir)
 with writer.write_test_output("my_test", "text") as session:
@@ -45,7 +45,7 @@ text
 
 ```text
 python
-from mcp_task_orchestrator.testing import DirectFunctionRunner
+from vespera_scriptorium.testing import DirectFunctionRunner
 
 runner = DirectFunctionRunner(output_dir=Path("outputs"))
 result = runner.execute_test(my_test_function, "test_name")
@@ -114,7 +114,7 @@ text
 
 ```text
 python
-from mcp_task_orchestrator.monitoring.hang_detection import with_hang_detection
+from vespera_scriptorium.monitoring.hang_detection import with_hang_detection
 
 @with_hang_detection("my_operation", timeout=30.0)
 async def my_operation():
@@ -177,8 +177,8 @@ class MyTest(DatabaseTestCase):
 
 ```text
 python
-from mcp_task_orchestrator.testing import TestOutputWriter
-from mcp_task_orchestrator.monitoring.hang_detection import with_hang_detection
+from vespera_scriptorium.testing import TestOutputWriter
+from vespera_scriptorium.monitoring.hang_detection import with_hang_detection
 
 @with_hang_detection("long_test", timeout=60.0)
 async def test_long_operation():
@@ -201,7 +201,7 @@ async def test_long_operation():
 
 ```text
 python
-from mcp_task_orchestrator.testing import TestOutputReader
+from vespera_scriptorium.testing import TestOutputReader
 
 reader = TestOutputReader(output_dir)
 output_file = find_latest_output_file("test_name")

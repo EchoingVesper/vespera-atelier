@@ -1,15 +1,15 @@
 
-# MCP Task Orchestrator
+# Vespera Scriptorium
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![Version 2.0.0](https://img.shields.io/badge/version-2.0.0-green.svg)](https://github.com/EchoingVesper/mcp-task-orchestrator/releases/tag/v2.0.0)
+[![Version 2.0.0](https://img.shields.io/badge/version-2.0.0-green.svg)](https://github.com/EchoingVesper/mcp-vespera-scriptorium/releases/tag/v2.0.0)
 
 A Model Context Protocol server that transforms how you work with AI by automatically documenting every decision, implementation, and test as you build. Think of it as the memory layer for AI-assisted development that ensures no context is ever lost.
 
 ## Overview
 
-The MCP Task Orchestrator provides intelligent task orchestration, specialized AI roles, and persistent memory for AI-assisted development. Built with Clean Architecture principles, it automatically detects project structure and saves artifacts appropriately.
+The Vespera Scriptorium provides intelligent task orchestration, specialized AI roles, and persistent memory for AI-assisted development. Built with Clean Architecture principles, it automatically detects project structure and saves artifacts appropriately.
 
 **Document Type**: Project Overview & User Guide  
 **Target Audience**: Developers using MCP clients (Claude Desktop, Cursor, VS Code, etc.)  
@@ -33,9 +33,9 @@ The MCP Task Orchestrator provides intelligent task orchestration, specialized A
 - One or more MCP clients (Claude Desktop, Cursor IDE, Windsurf, or VS Code with extensions)
 
 ### Installation
-1. **Install**: `pip install mcp-task-orchestrator`
+1. **Install**: `pip install mcp-vespera-scriptorium`
 2. **Configure**: Add to your MCP client configuration
-3. **Use**: "Initialize task orchestrator session and help me build a REST API"
+3. **Use**: "Initialize Vespera Scriptorium session and help me build a REST API"
 
 ### Verification
 Try this in your MCP client:
@@ -95,7 +95,7 @@ Each step provides specialist context and expertise rather than generic response
 - **Task persistence**: SQLite database with automatic recovery and archival
 - **Artifact management**: Prevents context limits with intelligent file storage
 - **Workspace intelligence**: Automatically detects Git repositories, project files, and saves artifacts appropriately
-- **Customizable roles**: Edit `.task_orchestrator/roles/project_roles.yaml` to adapt roles for your project
+- **Customizable roles**: Edit `.vespera_scriptorium/roles/project_roles.yaml` to adapt roles for your project
 - **Single-session completion**: Finish complex projects in one conversation
 - **Smart artifact placement**: Files are saved relative to your project root, not random locations
 
@@ -108,8 +108,8 @@ The universal installer provides comprehensive support for all major MCP clients
 **Quick Install - Auto-detect all clients:**
 ```bash
 # Download and run the universal installer
-git clone https://github.com/EchoingVesper/mcp-task-orchestrator.git
-cd mcp-task-orchestrator
+git clone https://github.com/EchoingVesper/mcp-vespera-scriptorium.git
+cd mcp-vespera-scriptorium
 python install.py
 
 # Auto-detects and configures all compatible MCP clients
@@ -119,7 +119,7 @@ python install.py
 **PyPI Installation with Manual Configuration:**
 ```bash
 # Install from PyPI
-pip install mcp-task-orchestrator
+pip install mcp-vespera-scriptorium
 
 # Then configure your MCP client manually (see configuration section below)
 ```
@@ -148,7 +148,7 @@ python install.py --source pypi
 python install.py --version 2.0.0
 
 # Install from git repository
-python install.py --git https://github.com/EchoingVesper/mcp-task-orchestrator.git
+python install.py --git https://github.com/EchoingVesper/mcp-vespera-scriptorium.git
 
 # Install in custom virtual environment
 python install.py --venv /path/to/venv
@@ -165,15 +165,15 @@ source mcp-orchestrator-env/bin/activate  # Linux/WSL/macOS
 # OR: mcp-orchestrator-env\Scripts\activate  # Windows
 
 # Clone and install
-git clone https://github.com/EchoingVesper/mcp-task-orchestrator.git
-cd mcp-task-orchestrator
+git clone https://github.com/EchoingVesper/mcp-vespera-scriptorium.git
+cd mcp-vespera-scriptorium
 python install.py --venv ../mcp-orchestrator-env
 ```
 
 **Alternative with pipx:**
 ```bash
 # Install via pipx for isolation
-pipx install mcp-task-orchestrator
+pipx install mcp-vespera-scriptorium
 
 # Manual MCP configuration required (see configuration section)
 ```
@@ -287,7 +287,7 @@ The universal installer handles all MCP client configuration automatically with 
 
 ### Custom Specialist Roles
 
-Create project-specific specialists by editing `.task_orchestrator/roles/project_roles.yaml`:
+Create project-specific specialists by editing `.vespera_scriptorium/roles/project_roles.yaml`:
 ```yaml
 security_auditor:
   role_definition: "You are a Security Analysis Specialist"
@@ -321,7 +321,7 @@ The file is automatically created when you start a new orchestration session in 
 
 **"Module not found errors"** - Try reinstalling in a fresh virtual environment:
 ```bash
-python -m venv fresh_env && source fresh_env/bin/activate && pip install mcp-task-orchestrator
+python -m venv fresh_env && source fresh_env/bin/activate && pip install mcp-vespera-scriptorium
 ```
 
 ### Diagnostic Tools
@@ -342,7 +342,7 @@ For comprehensive troubleshooting, see the [Troubleshooting Guide](docs/users/tr
 
 ### Enhanced Testing Infrastructure
 
-The MCP Task Orchestrator includes robust testing improvements that eliminate common issues:
+The Vespera Scriptorium includes robust testing improvements that eliminate common issues:
 - **✅ No Output Truncation**: File-based output system prevents test output truncation
 - **✅ No Resource Warnings**: Proper database connection management eliminates ResourceWarnings
 - **✅ No Test Hanging**: Comprehensive hang detection and timeout mechanisms
@@ -372,13 +372,13 @@ python -m pytest tests/ -v
 For reliable test execution, use the new testing infrastructure:
 ```python
 # File-based output (prevents truncation)
-from mcp_task_orchestrator.testing import TestOutputWriter
+from vespera_scriptorium.testing import TestOutputWriter
 writer = TestOutputWriter(output_dir)
 with writer.write_test_output("my_test", "text") as session:
     session.write_line("Test output here...")
 
 # Alternative test runners (more reliable than pytest)
-from mcp_task_orchestrator.testing import DirectFunctionRunner
+from vespera_scriptorium.testing import DirectFunctionRunner
 runner = DirectFunctionRunner(output_dir=Path("outputs"))
 result = runner.execute_test(my_test_function, "test_name")
 
@@ -408,8 +408,8 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for contribution guidelines and [`docs/
 This project is licensed under the MIT License - see the [`LICENSE`](LICENSE) file for details.
 
 ### Links
-- **Repository**: [https://github.com/EchoingVesper/mcp-task-orchestrator](https://github.com/EchoingVesper/mcp-task-orchestrator)
-- **Issues**: [Report problems or request features](https://github.com/EchoingVesper/mcp-task-orchestrator/issues)
+- **Repository**: [https://github.com/EchoingVesper/mcp-vespera-scriptorium](https://github.com/EchoingVesper/mcp-vespera-scriptorium)
+- **Issues**: [Report problems or request features](https://github.com/EchoingVesper/mcp-vespera-scriptorium/issues)
 - **Documentation**: [Documentation Portal](docs/README.md) | [Installation Guide](docs/installation/UNIVERSAL_INSTALLER.md) | [API Reference](docs/users/reference/api/API_REFERENCE.md)
 
 Copyright (c) 2025 Echoing Vesper

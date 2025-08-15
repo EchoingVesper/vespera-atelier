@@ -28,7 +28,7 @@ def test_directory_logic():
                     # This is the FIXED logic - use current working directory
                     base_dir = os.getcwd()
             
-            persistence_dir = Path(base_dir) / ".task_orchestrator"
+            persistence_dir = Path(base_dir) / ".vespera_scriptorium"
             artifacts_dir = persistence_dir / "artifacts"
             
             print(f"Base directory: {base_dir}")
@@ -37,8 +37,8 @@ def test_directory_logic():
             
             # Verify the directories are in the temp directory, not package directory
             assert str(base_dir) == temp_dir, f"Base directory should be {temp_dir}, got {base_dir}"
-            assert str(persistence_dir) == str(Path(temp_dir) / ".task_orchestrator"), f"Wrong persistence dir: {persistence_dir}"
-            assert str(artifacts_dir) == str(Path(temp_dir) / ".task_orchestrator" / "artifacts"), f"Wrong artifacts dir: {artifacts_dir}"
+            assert str(persistence_dir) == str(Path(temp_dir) / ".vespera_scriptorium"), f"Wrong persistence dir: {persistence_dir}"
+            assert str(artifacts_dir) == str(Path(temp_dir) / ".vespera_scriptorium" / "artifacts"), f"Wrong artifacts dir: {artifacts_dir}"
             
             print("✅ Directory resolution logic is correct!")
             

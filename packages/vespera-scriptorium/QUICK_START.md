@@ -1,14 +1,14 @@
 
-# MCP Task Orchestrator - Quick Start Guide
+# Vespera Scriptorium - Quick Start Guide
 
 Get up and running with AI-powered task orchestration in under 10 minutes.
 
 ## Overview
 
-This quick start guide provides the fastest path to getting the MCP Task Orchestrator working with your MCP client. You'll install the package, configure your client, and run your first orchestrated task.
+This quick start guide provides the fastest path to getting the Vespera Scriptorium working with your MCP client. You'll install the package, configure your client, and run your first orchestrated task.
 
 **Document Type**: Quick Start Guide  
-**Target Audience**: Developers new to MCP Task Orchestrator  
+**Target Audience**: Developers new to Vespera Scriptorium  
 **Prerequisites**: Python 3.8+, MCP-compatible client installed  
 **Last Updated**: 2025-01-13  
 **Estimated Time**: 5-10 minutes
@@ -30,14 +30,14 @@ node --version    # Should be 16+ (for some MCP clients)
 
 ### From PyPI (Recommended)
 ```bash
-pip install mcp-task-orchestrator
-mcp-task-orchestrator-cli setup
+pip install mcp-vespera-scriptorium
+mcp-vespera-scriptorium-cli setup
 ```
 
 ### From Source
 ```bash
-git clone https://github.com/EchoingVesper/mcp-task-orchestrator.git
-cd mcp-task-orchestrator
+git clone https://github.com/EchoingVesper/mcp-vespera-scriptorium.git
+cd mcp-vespera-scriptorium
 python install.py
 ```
 
@@ -49,7 +49,7 @@ python install.py
 - **Windsurf**: Reload window
 ## Step 4: Verify It's Working
 
-Open your MCP client and look for `task-orchestrator` in tools/servers. Try saying:
+Open your MCP client and look for `vespera-scriptorium` in tools/servers. Try saying:
 ```
 "Create a task to add a simple hello world function to this project"
 ```
@@ -87,7 +87,7 @@ This should show you the detected project root and explain why it chose that loc
    ```json
    {
      "mcpServers": {
-       "task-orchestrator": {
+       "vespera-scriptorium": {
          "command": "/full/path/to/python",  // ✅ Good
          "args": ["-m", "mcp_task_orchestrator.server"]
        }
@@ -107,9 +107,9 @@ This should show you the detected project root and explain why it chose that loc
    ```
 
 ### Database/Maintenance Issues
-1. **Database errors**: Delete `.task_orchestrator/` folder and restart
+1. **Database errors**: Delete `.vespera_scriptorium/` folder and restart
 2. **Maintenance coordinator not responding**: Check if database was properly initialized
-3. **Task persistence not working**: Verify `.task_orchestrator/database/` directory exists
+3. **Task persistence not working**: Verify `.vespera_scriptorium/database/` directory exists
 
 ### Windows-Specific Issues
 1. Run Command Prompt as Administrator (not PowerShell)
@@ -129,8 +129,8 @@ Once you have it working:
 ## Still Need Help
 
 1. **Run diagnostics**: `python scripts/diagnostics/verify_tools.py`
-2. **Check logs**: Look for `mcp-server-task-orchestrator.log` files
-3. **GitHub Issues**: [Report a problem](https://github.com/EchoingVesper/mcp-task-orchestrator/issues)
+2. **Check logs**: Look for `mcp-server-vespera-scriptorium.log` files
+3. **GitHub Issues**: [Report a problem](https://github.com/EchoingVesper/mcp-vespera-scriptorium/issues)
 
 ---
 

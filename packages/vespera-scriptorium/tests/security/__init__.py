@@ -1,7 +1,7 @@
 """
-Security Test Suite for MCP Task Orchestrator
+Security Test Suite for Vespera Scriptorium
 
-This package contains comprehensive security tests for the MCP Task Orchestrator,
+This package contains comprehensive security tests for the Vespera Scriptorium,
 validating all security measures including authentication, authorization, input
 validation, path traversal protection, information disclosure prevention, and
 attack vector simulation.
@@ -38,7 +38,7 @@ Security Test Markers:
 """
 
 __version__ = "1.0.0"
-__author__ = "MCP Task Orchestrator Security Team"
+__author__ = "Vespera Scriptorium Security Team"
 
 # Security test categories
 SECURITY_TEST_CATEGORIES = {

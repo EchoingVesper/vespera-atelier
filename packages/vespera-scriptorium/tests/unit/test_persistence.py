@@ -3,7 +3,7 @@
 Test script for the task persistence mechanism.
 
 This script creates a simple task and verifies that it's properly persisted
-to the .task_orchestrator directory.
+to the .vespera_scriptorium directory.
 """
 
 import asyncio
@@ -12,11 +12,11 @@ import uuid
 from pathlib import Path
 
 # Import Clean Architecture v2.0 models
-from mcp_task_orchestrator.domain.entities.task import Task, TaskStatus, TaskType
-from mcp_task_orchestrator.domain.value_objects.complexity_level import ComplexityLevel
-from mcp_task_orchestrator.domain.value_objects.specialist_type import SpecialistType
-from mcp_task_orchestrator.persistence import PersistenceManager
-from mcp_task_orchestrator.orchestrator.orchestration_state_manager import StateManager
+from vespera_scriptorium.domain.entities.task import Task, TaskStatus, TaskType
+from vespera_scriptorium.domain.value_objects.complexity_level import ComplexityLevel
+from vespera_scriptorium.domain.value_objects.specialist_type import SpecialistType
+from vespera_scriptorium.persistence import PersistenceManager
+from vespera_scriptorium.orchestrator.orchestration_state_manager import StateManager
 
 
 async def test_persistence():
@@ -62,7 +62,7 @@ async def test_persistence():
     # Create task breakdown
     breakdown = Task(
         parent_task_id=parent_task_id,
-        description="Implement task persistence for MCP Task Orchestrator",
+        description="Implement task persistence for Vespera Scriptorium",
         complexity=ComplexityLevel.MODERATE,
         subtasks=subtasks,
         context="Testing the persistence mechanism"

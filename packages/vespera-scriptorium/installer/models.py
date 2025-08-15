@@ -166,7 +166,7 @@ class InstallerConfig:
             'pyproject.toml',
             'setup.py',
             'requirements.txt',
-            'mcp_task_orchestrator',
+            'vespera_scriptorium',
             '.git'
         ]
         return any((cwd / indicator).exists() for indicator in dev_indicators)
@@ -306,18 +306,18 @@ class InstallationStatus:
         
         # Try to import the package to check if it's installed
         try:
-            import mcp_task_orchestrator
+            import vespera_scriptorium
             status.is_installed = True
-            status.version = getattr(mcp_task_orchestrator, '__version__', 'unknown')
+            status.version = getattr(vespera_scriptorium, '__version__', 'unknown')
             
             # Try to find installation location
             import importlib.util
-            spec = importlib.util.find_spec('mcp_task_orchestrator')
+            spec = importlib.util.find_spec('vespera_scriptorium')
             if spec and spec.origin:
                 status.location = Path(spec.origin).parent
                 
                 # Check if it's an editable install
-                if status.location and status.location.name == 'mcp_task_orchestrator':
+                if status.location and status.location.name == 'vespera_scriptorium':
                     # Likely editable install
                     status.installation_method = 'editable'
                 else:
@@ -330,12 +330,12 @@ class InstallationStatus:
         venv_path = Path.cwd() / 'venv'
         if venv_path.exists():
             env = InstallationEnvironment.detect(venv_path)
-            if env.is_valid and env.has_package('mcp-task-orchestrator'):
+            if env.is_valid and env.has_package('vespera-scriptorium'):
                 status.is_installed = True
                 status.environment = env
                 status.installation_method = 'venv'
                 if not status.version:
-                    status.version = env.get_package_version('mcp-task-orchestrator')
+                    status.version = env.get_package_version('vespera-scriptorium')
         
         # TODO: Detect MCP client configurations
         status.clients_configured = cls._detect_configured_clients()

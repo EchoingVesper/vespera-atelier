@@ -9,7 +9,7 @@
 
 ## 📋 Bundle Overview
 
-Five synergistic features that transform the MCP Task Orchestrator from a basic coordination tool into an intelligent,
+Five synergistic features that transform the Vespera Scriptorium from a basic coordination tool into an intelligent,
 self-managing, highly optimized, and optionally team-integrated project automation system.
 
 ## 🔗 Included Features

@@ -70,8 +70,8 @@ This guide provides step-by-step instructions for migrating from the base TaskOr
 
 # Verify required modules are available
 
-python -c "from mcp_task_orchestrator.orchestrator.enhanced_core import EnhancedTaskOrchestrator"
-python -c "from mcp_task_orchestrator.orchestrator.context_continuity import initialize_context_continuity"
+python -c "from vespera_scriptorium.orchestrator.enhanced_core import EnhancedTaskOrchestrator"
+python -c "from vespera_scriptorium.orchestrator.context_continuity import initialize_context_continuity"
 
 ```text
 
@@ -102,7 +102,7 @@ python
 
 # Run database migration for context continuity tables
 
-from mcp_task_orchestrator.orchestrator.context_continuity import migrate_context_continuity_schema
+from vespera_scriptorium.orchestrator.context_continuity import migrate_context_continuity_schema
 
 # Migrate schema (automatic table creation)
 
@@ -128,9 +128,9 @@ if not success:
 
 ```text
 python
-from mcp_task_orchestrator.orchestrator.core import TaskOrchestrator
-from mcp_task_orchestrator.orchestrator.state import StateManager
-from mcp_task_orchestrator.orchestrator.specialists import SpecialistManager
+from vespera_scriptorium.orchestrator.core import TaskOrchestrator
+from vespera_scriptorium.orchestrator.state import StateManager
+from vespera_scriptorium.orchestrator.specialists import SpecialistManager
 
 # Create base orchestrator
 
@@ -150,9 +150,9 @@ orchestrator = TaskOrchestrator(state_manager, specialist_manager)
 
 ```text
 python
-from mcp_task_orchestrator.orchestrator.enhanced_core import create_enhanced_orchestrator
-from mcp_task_orchestrator.orchestrator.state import StateManager
-from mcp_task_orchestrator.orchestrator.specialists import SpecialistManager
+from vespera_scriptorium.orchestrator.enhanced_core import create_enhanced_orchestrator
+from vespera_scriptorium.orchestrator.state import StateManager
+from vespera_scriptorium.orchestrator.specialists import SpecialistManager
 
 # Create enhanced orchestrator with context continuity
 
@@ -165,7 +165,7 @@ orchestrator = await create_enhanced_orchestrator(
 
 # Optional
 
-    db_url="sqlite:///task_orchestrator.db"  
+    db_url="sqlite:///vespera_scriptorium.db"  
 
 # Optional
 
@@ -211,7 +211,7 @@ result = await orchestrator.complete_subtask(
 
 ```text
 python
-from mcp_task_orchestrator.orchestrator.work_stream_integration import EnhancedWorkStreamHandler
+from vespera_scriptorium.orchestrator.work_stream_integration import EnhancedWorkStreamHandler
 
 # Enhanced subtask completion with context tracking
 
@@ -340,7 +340,7 @@ print(f"Current session: {status['session_id']}")
 
 ```text
 python
-from mcp_task_orchestrator.orchestrator.work_stream_integration import prepare_documentation_work_stream
+from vespera_scriptorium.orchestrator.work_stream_integration import prepare_documentation_work_stream
 
 # Prepare documentation work stream with context protection
 
@@ -360,7 +360,7 @@ print(f"Context protection enabled: {preparation['context_protection_enabled']}"
 
 ```text
 python
-from mcp_task_orchestrator.orchestrator.work_stream_integration import prepare_testing_work_stream
+from vespera_scriptorium.orchestrator.work_stream_integration import prepare_testing_work_stream
 
 # Prepare testing work stream with context protection
 
@@ -384,7 +384,7 @@ print(f"Context protection enabled: {preparation['context_protection_enabled']}"
 
 ```text
 bash
-cd /path/to/mcp-task-orchestrator
+cd /path/to/mcp-vespera-scriptorium
 python test_enhanced_integration.py
 
 ```text
@@ -453,7 +453,7 @@ python
 
 # Test work stream readiness
 
-from mcp_task_orchestrator.orchestrator.work_stream_integration import EnhancedWorkStreamHandler
+from vespera_scriptorium.orchestrator.work_stream_integration import EnhancedWorkStreamHandler
 
 handler = EnhancedWorkStreamHandler(orchestrator)
 test_tasks = ["example_task_001"]
@@ -558,7 +558,7 @@ python
 
 # Run manual table creation:
 
-from mcp_task_orchestrator.db.models import Base
+from mcp_vespera_scriptorium.db.models import Base
 Base.metadata.create_all(bind=engine, checkfirst=True)
 
 ```text

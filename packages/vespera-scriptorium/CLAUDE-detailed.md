@@ -1,7 +1,7 @@
 
 # CLAUDE-detailed.md
 
-**[CURRENT]** Comprehensive Clean Architecture & Development Guide for MCP Task Orchestrator
+**[CURRENT]** Comprehensive Clean Architecture & Development Guide for Vespera Scriptorium
 
 📋 **Quick Reference**: See [CLAUDE.md](./CLAUDE.md) for essential commands and quick navigation
 
@@ -9,13 +9,13 @@
 
 # Clean Architecture Overview
 
-The MCP Task Orchestrator follows **Clean Architecture** and **Domain-Driven Design** principles with a complete layered structure:
+The Vespera Scriptorium follows **Clean Architecture** and **Domain-Driven Design** principles with a complete layered structure:
 
 #
 
 ## Architecture Layers
 
-**1. Domain Layer** (`mcp_task_orchestrator/domain/`):
+**1. Domain Layer** (`vespera_scriptorium/domain/`):
 
 - **Entities**: Core business objects (Task, Specialist, OrchestrationSession, WorkItem)
 
@@ -27,7 +27,7 @@ The MCP Task Orchestrator follows **Clean Architecture** and **Domain-Driven Des
 
 - **Repositories**: Abstract interfaces for data access (TaskRepository, StateRepository, SpecialistRepository)
 
-**2. Application Layer** (`mcp_task_orchestrator/application/`):
+**2. Application Layer** (`vespera_scriptorium/application/`):
 
 - **Use Cases**: Orchestrate business workflows (OrchestrateTask, ManageSpecialists, TrackProgress)
 
@@ -35,7 +35,7 @@ The MCP Task Orchestrator follows **Clean Architecture** and **Domain-Driven Des
 
 - **Interfaces**: External service contracts (NotificationService, ExternalApiClient)
 
-**3. Infrastructure Layer** (`mcp_task_orchestrator/infrastructure/`):
+**3. Infrastructure Layer** (`vespera_scriptorium/infrastructure/`):
 
 - **Database**: SQLite implementations of repository interfaces
 
@@ -49,7 +49,7 @@ The MCP Task Orchestrator follows **Clean Architecture** and **Domain-Driven Des
 
 - **Dependency Injection**: Service container with lifetime management
 
-**4. Presentation Layer** (`mcp_task_orchestrator/presentation/`):
+**4. Presentation Layer** (`vespera_scriptorium/presentation/`):
 
 - **MCP Server**: Clean architecture entry point with DI integration
 
@@ -87,7 +87,7 @@ The MCP Task Orchestrator follows **Clean Architecture** and **Domain-Driven Des
 
 - Diagnostic tools with automated recommendations
 
-**4. Task Orchestration System** (`mcp_task_orchestrator/orchestrator/`):
+**4. Task Orchestration System** (`vespera_scriptorium/orchestrator/`):
 
 - `task_orchestration_service.py`: Core orchestration logic (renamed from core.py)
 
@@ -99,7 +99,7 @@ The MCP Task Orchestrator follows **Clean Architecture** and **Domain-Driven Des
 
 - `generic_models.py`: Flexible task model supporting any task type
 
-**5. Database Layer** (`mcp_task_orchestrator/db/` + `infrastructure/database/`):
+**5. Database Layer** (`vespera_scriptorium/db/` + `infrastructure/database/`):
 
 - Repository pattern with abstract interfaces and SQLite implementations
 
@@ -460,7 +460,7 @@ markdownlint filename.md
 
 - Workspace detection looks for `.git`, `package.json`, `pyproject.toml`
 
-- `.task_orchestrator/` directory created in project root
+- `.vespera_scriptorium/` directory created in project root
 
 - Custom roles can be defined per-project
 
@@ -544,7 +544,7 @@ tools/
 
 ```text
 bash
-mcp_task_orchestrator/  
+vespera_scriptorium/  
 # Source code only
 archives/               
 # Legacy code and historical artifacts

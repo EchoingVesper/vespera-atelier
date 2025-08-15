@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Tool-Specific Test Cases for MCP Task Orchestrator
+Tool-Specific Test Cases for Vespera Scriptorium
 
 This module contains concrete test implementations for each of the 16 MCP Task
 Orchestrator tools, organized by category and validation level.
@@ -30,7 +30,7 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 # Import MCP tool router for real tool calls
-from mcp_task_orchestrator.infrastructure.mcp.tool_router import route_tool_call
+from vespera_scriptorium.infrastructure.mcp.tool_router import route_tool_call
 from mcp import types
 
 # Test infrastructure
@@ -875,7 +875,7 @@ class RebootToolTests(BaseToolTest):
             )
 
 
-class TestCaseRegistry:
+class ValidationCaseRegistry:
     """Registry for organizing and accessing test cases."""
     
     def __init__(self):

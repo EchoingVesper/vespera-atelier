@@ -36,7 +36,7 @@ echo -e "\033[0;32mPackage installed successfully!\033[0m"
 
 # Run the CLI installer
 echo -e "\033[0;33mConfiguring MCP clients...\033[0m"
-$PYTHON_CMD -m mcp_task_orchestrator_cli.cli install "$PROJECT_ROOT/mcp_task_orchestrator/server.py" --name "Task Orchestrator" || {
+$PYTHON_CMD -m vespera_scriptorium_cli.cli install "$PROJECT_ROOT/vespera_scriptorium/server.py" --name "Task Orchestrator" || {
     echo -e "\033[0;31mConfiguration failed\033[0m"
     echo -e "\033[0;33mYou may need to manually configure your MCP clients.\033[0m"
 }
@@ -48,6 +48,6 @@ echo -e "\033[0;32m================================================\033[0m"
 echo -e "\033[0;32mMCP Task Orchestrator installation complete!\033[0m"
 echo "You can now use the Task Orchestrator in your MCP-compatible clients."
 echo "To update your configuration in the future, run:"
-echo "mcp-task-orchestrator-cli update <server_path>"
+echo "vespera-scriptorium-cli update <server_path>"
 echo ""
 echo -e "\033[0;32mThank you for installing MCP Task Orchestrator!\033[0m"

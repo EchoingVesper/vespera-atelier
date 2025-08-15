@@ -11,8 +11,8 @@ from unittest.mock import patch, Mock, AsyncMock
 from typing import Dict, Any
 
 # Import migration components
-# from mcp_task_orchestrator.infrastructure.mcp.handlers.migration_config import  # TODO: Complete this import
-# from mcp_task_orchestrator.infrastructure.mcp.tool_router import  # TODO: Complete this import
+# from vespera_scriptorium.infrastructure.mcp.handlers.migration_config import  # TODO: Complete this import
+# from vespera_scriptorium.infrastructure.mcp.tool_router import  # TODO: Complete this import
 
 
 class TestHandlerMigrationManager:
@@ -231,8 +231,8 @@ class TestToolRouterIntegration:
             mock_get_use_case.return_value = mock_use_case
             
             # Mock successful task creation
-            from mcp_task_orchestrator.domain.entities.task import Task, TaskType, TaskStatus
-            from mcp_task_orchestrator.domain.value_objects.complexity_level import ComplexityLevel
+            from vespera_scriptorium.domain.entities.task import Task, TaskType, TaskStatus
+            from vespera_scriptorium.domain.value_objects.complexity_level import ComplexityLevel
             from datetime import datetime
             
             mock_task = Task(
@@ -356,8 +356,8 @@ class TestBackwardCompatibility:
             mock_use_case = AsyncMock()
             mock_get_use_case.return_value = mock_use_case
             
-            from mcp_task_orchestrator.domain.entities.task import Task, TaskType, TaskStatus
-            from mcp_task_orchestrator.domain.value_objects.complexity_level import ComplexityLevel
+            from vespera_scriptorium.domain.entities.task import Task, TaskType, TaskStatus
+            from vespera_scriptorium.domain.value_objects.complexity_level import ComplexityLevel
             from datetime import datetime
             
             mock_task = Task(

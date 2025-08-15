@@ -1,7 +1,7 @@
 """
 Multi-Stage Validation Pipeline
 
-A comprehensive validation framework for the MCP Task Orchestrator that executes
+A comprehensive validation framework for the Vespera Scriptorium that executes
 5 sequential validation stages:
 
 1. Syntax & Static Analysis

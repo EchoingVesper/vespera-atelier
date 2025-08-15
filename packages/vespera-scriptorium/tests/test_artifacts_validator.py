@@ -12,10 +12,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import Clean Architecture v2.0 models
-from mcp_task_orchestrator.domain.entities.task import Task, TaskStatus, TaskType, TaskArtifact, ArtifactType
-from mcp_task_orchestrator.domain.value_objects.complexity_level import ComplexityLevel
-from mcp_task_orchestrator.domain.value_objects.specialist_type import SpecialistType
-from mcp_task_orchestrator.domain.value_objects.execution_result import ExecutionResult, ExecutionStatus
+from vespera_scriptorium.domain.entities.task import Task, TaskStatus, TaskType, TaskArtifact, ArtifactType
+from vespera_scriptorium.domain.value_objects.complexity_level import ComplexityLevel
+from vespera_scriptorium.domain.value_objects.specialist_type import SpecialistType
+from vespera_scriptorium.domain.value_objects.execution_result import ExecutionResult, ExecutionStatus
 from datetime import datetime
 
 

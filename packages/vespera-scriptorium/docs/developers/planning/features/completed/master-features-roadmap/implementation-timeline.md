@@ -238,7 +238,7 @@ week_16:
 ```text
 mermaid
 gantt
-    title MCP Task Orchestrator v2.0 Implementation Timeline
+    title Vespera Scriptorium v2.0 Implementation Timeline
     dateFormat  YYYY-MM-DD
     section Foundation
     Session Management    :crit, session, 2025-07-08, 4w
@@ -380,4 +380,4 @@ gantt
 **Phase 3 Success**: Intelligent routing, markdown sync, template library operational
 **Phase 4 Success**: Git integration, complete intelligence suite bundle
 
-This timeline provides structured implementation with clear milestones, risk mitigation, and flexibility options to ensure successful delivery of the MCP Task Orchestrator v2.0.
+This timeline provides structured implementation with clear milestones, risk mitigation, and flexibility options to ensure successful delivery of the Vespera Scriptorium v2.0.

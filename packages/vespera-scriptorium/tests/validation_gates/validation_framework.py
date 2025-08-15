@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-MCP Task Orchestrator Validation Framework
+Vespera Scriptorium Validation Framework
 
-A comprehensive validation framework for testing all 16 MCP Task Orchestrator tools
+A comprehensive validation framework for testing all 16 Vespera Scriptorium tools
 with systematic validation gates, automated testing, and progress tracking.
 
 Usage:
@@ -31,7 +31,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class TestLevel(Enum):
+class ValidationLevel(Enum):
     """Test validation levels."""
     BASIC = "basic"
     EDGE_CASES = "edge_cases"
@@ -39,7 +39,7 @@ class TestLevel(Enum):
     ALL = "all"
 
 
-class TestStatus(Enum):
+class ValidationStatus(Enum):
     """Test execution status."""
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
@@ -66,7 +66,7 @@ class Complexity(Enum):
 
 
 @dataclass
-class TestResult:
+class ValidationResult:
     """Individual test result."""
     name: str
     status: TestStatus
@@ -114,7 +114,7 @@ class ToolSpec:
 
 
 class ValidationFramework:
-    """Main validation framework for MCP Task Orchestrator tools."""
+    """Main validation framework for Vespera Scriptorium tools."""
     
     def __init__(self, output_dir: Path = None):
         self.output_dir = output_dir or Path("tests/validation_results")
@@ -800,7 +800,7 @@ class ValidationFramework:
 
 async def main():
     """Main entry point for the validation framework."""
-    parser = argparse.ArgumentParser(description="MCP Task Orchestrator Validation Framework")
+    parser = argparse.ArgumentParser(description="Vespera Scriptorium Validation Framework")
     parser.add_argument("--tool", type=str, help="Specific tool to test")
     parser.add_argument("--level", type=str, choices=["basic", "edge_cases", "integration", "all"], 
                        default="basic", help="Test level to run")

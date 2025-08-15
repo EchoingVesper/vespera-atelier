@@ -375,16 +375,16 @@ def main():
         epilog="""
 Examples:
   # Run all tests in a directory
-  python -m mcp_task_orchestrator.testing.comprehensive_runner tests/
+  python -m vespera_scriptorium.testing.comprehensive_runner tests/
   
   # Run specific test types
-  python -m mcp_task_orchestrator.testing.comprehensive_runner tests/ --runners direct integration
+  python -m vespera_scriptorium.testing.comprehensive_runner tests/ --runners direct integration
   
   # Run the migration test specifically
-  python -m mcp_task_orchestrator.testing.comprehensive_runner --test migration
+  python -m vespera_scriptorium.testing.comprehensive_runner --test migration
   
   # Run with custom timeout and output directory
-  python -m mcp_task_orchestrator.testing.comprehensive_runner tests/ --timeout 300 --output-dir ./my_test_outputs
+  python -m vespera_scriptorium.testing.comprehensive_runner tests/ --timeout 300 --output-dir ./my_test_outputs
         """
     )
     

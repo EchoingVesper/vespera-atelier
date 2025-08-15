@@ -36,7 +36,7 @@ class MarkdownChangeDetector:
         """Monitor all markdown files for a session."""
         
         session = await self.session_manager.get_session(session_id)
-        session_dir = Path(session.project_root_path) / ".task_orchestrator" / "sessions" / session_id
+        session_dir = Path(session.project_root_path) / ".vespera_scriptorium" / "sessions" / session_id
         
         
 # Set up file system watcher

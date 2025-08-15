@@ -32,7 +32,7 @@ modularized_from: "docs/developers/planning/features/2.2-planned/[PLANNED]_bidir
 #
 # 📋 Overview
 
-The Bi-directional Persistence System enables the MCP Task Orchestrator to maintain data in both a high-performance database and human-readable markdown files. This dual approach provides the performance benefits of structured data while ensuring project information remains accessible, editable, and version-control friendly.
+The Bi-directional Persistence System enables the Vespera Scriptorium to maintain data in both a high-performance database and human-readable markdown files. This dual approach provides the performance benefits of structured data while ensuring project information remains accessible, editable, and version-control friendly.
 
 #
 # 🎯 Key Benefits
@@ -148,7 +148,7 @@ This specification is organized into focused modules for Claude Code compatibili
 
 - **Task Orchestration**: Integrates with unified task model
 
-- **File System**: Monitors and manages .task_orchestrator directories
+- **File System**: Monitors and manages .vespera_scriptorium directories
 
 - **Version Control**: Git-aware operations and conflict resolution
 
@@ -180,4 +180,4 @@ This specification is organized into focused modules for Claude Code compatibili
 
 - **Accessibility**: Project information accessible without running orchestrator
 
-This bi-directional persistence system transforms the MCP Task Orchestrator from a black-box database system into a transparent, collaborative project management tool that works equally well for humans and systems.
+This bi-directional persistence system transforms the Vespera Scriptorium from a black-box database system into a transparent, collaborative project management tool that works equally well for humans and systems.

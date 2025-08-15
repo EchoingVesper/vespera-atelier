@@ -12,7 +12,7 @@
 
 # Executive Summary
 
-This document outlines the comprehensive feature specifications for the MCP Task Orchestrator's next development cycle, focusing on A2A framework integration, nested task architecture, enhanced database capabilities, and improved testing infrastructure.
+This document outlines the comprehensive feature specifications for the Vespera Scriptorium's next development cycle, focusing on A2A framework integration, nested task architecture, enhanced database capabilities, and improved testing infrastructure.
 
 #
 
@@ -805,6 +805,6 @@ Release v1.5.0 Team:
 
 # Conclusion
 
-This feature specification provides a comprehensive roadmap for the next three major releases of the MCP Task Orchestrator. The planned features will transform the system from a single-agent task manager into a sophisticated multi-agent coordination platform while maintaining the simplicity and reliability that users expect.
+This feature specification provides a comprehensive roadmap for the next three major releases of the Vespera Scriptorium. The planned features will transform the system from a single-agent task manager into a sophisticated multi-agent coordination platform while maintaining the simplicity and reliability that users expect.
 
 The phased approach ensures manageable complexity and provides value delivery at each milestone, while the comprehensive testing and migration strategies ensure stability and backward compatibility throughout the evolution.

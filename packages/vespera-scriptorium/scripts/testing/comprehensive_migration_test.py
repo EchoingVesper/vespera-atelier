@@ -23,13 +23,13 @@ from dataclasses import asdict
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 sys.path.insert(0, project_root)
 
-from mcp_task_orchestrator.db.auto_migration import AutoMigrationSystem, MigrationResult, execute_startup_migration
-from mcp_task_orchestrator.db.migration_manager import MigrationManager, SchemaDifference, MigrationOperation
-from mcp_task_orchestrator.db.schema_comparator import SchemaComparator
-from mcp_task_orchestrator.db.migration_history import MigrationHistoryManager
-from mcp_task_orchestrator.db.backup_manager import BackupManager
-from mcp_task_orchestrator.db.rollback_manager import RollbackManager
-from mcp_task_orchestrator.db.models import Base
+from vespera_scriptorium.db.auto_migration import AutoMigrationSystem, MigrationResult, execute_startup_migration
+from vespera_scriptorium.db.migration_manager import MigrationManager, SchemaDifference, MigrationOperation
+from vespera_scriptorium.db.schema_comparator import SchemaComparator
+from vespera_scriptorium.db.migration_history import MigrationHistoryManager
+from vespera_scriptorium.db.backup_manager import BackupManager
+from vespera_scriptorium.db.rollback_manager import RollbackManager
+from vespera_scriptorium.db.models import Base
 from testing_utils.file_output_system import TestOutputWriter, AtomicFileWriter
 
 import logging

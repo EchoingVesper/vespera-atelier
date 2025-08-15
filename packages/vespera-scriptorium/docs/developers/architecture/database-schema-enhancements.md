@@ -12,7 +12,7 @@
 
 # Overview
 
-This document outlines comprehensive database schema enhancements to support the next generation of MCP Task Orchestrator features, including A2A framework integration, nested task hierarchies, performance optimizations, and enhanced state management.
+This document outlines comprehensive database schema enhancements to support the next generation of Vespera Scriptorium features, including A2A framework integration, nested task hierarchies, performance optimizations, and enhanced state management.
 
 #
 
@@ -917,4 +917,4 @@ WHERE updated_at > (
 
 ---
 
-*This schema enhancement plan provides a robust foundation for the next generation of MCP Task Orchestrator capabilities while maintaining backward compatibility and providing clear migration paths.*
+*This schema enhancement plan provides a robust foundation for the next generation of Vespera Scriptorium capabilities while maintaining backward compatibility and providing clear migration paths.*

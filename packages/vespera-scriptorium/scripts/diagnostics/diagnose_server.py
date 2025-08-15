@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Diagnostic script for the MCP Task Orchestrator server.
+Diagnostic script for the Vespera Scriptorium server.
 
 This script traces the execution flow of the server initialization process
 to identify where it's hanging.
@@ -51,13 +51,13 @@ def main():
         
         # Step 3: Import and initialize database models
         t = log_step("Importing database models")
-        from mcp_task_orchestrator.db.models import Base
+        from vespera_scriptorium.db.models import Base
         from sqlalchemy import create_engine
         log_time(t, "Importing database models")
         
         # Step 4: Initialize database
         t = log_step("Initializing database")
-        db_path = project_dir / "task_orchestrator.db"
+        db_path = project_dir / "vespera_scriptorium.db"
         db_url = f"sqlite:///{db_path}"
         engine = create_engine(db_url)
         Base.metadata.create_all(engine)
@@ -65,7 +65,7 @@ def main():
         
         # Step 5: Import persistence factory
         t = log_step("Importing persistence factory")
-        from mcp_task_orchestrator.persistence_factory import create_persistence_manager
+        from vespera_scriptorium.persistence_factory import create_persistence_manager
         log_time(t, "Importing persistence factory")
         
         # Step 6: Create persistence manager
@@ -93,15 +93,15 @@ def main():
         specialist_manager = SpecialistManager()
         log_time(t, "Creating specialist manager")
         
-        # Step 11: Import task orchestrator
-        t = log_step("Importing task orchestrator")
+        # Step 11: Import Vespera Scriptorium
+        t = log_step("Importing Vespera Scriptorium")
         from .orchestrator.task_orchestration_service import TaskOrchestrator
-        log_time(t, "Importing task orchestrator")
+        log_time(t, "Importing Vespera Scriptorium")
         
-        # Step 12: Create task orchestrator
-        t = log_step("Creating task orchestrator")
+        # Step 12: Create Vespera Scriptorium
+        t = log_step("Creating Vespera Scriptorium")
         orchestrator = TaskOrchestrator(state_manager, specialist_manager)
-        log_time(t, "Creating task orchestrator")
+        log_time(t, "Creating Vespera Scriptorium")
         
         # Step 13: Import MCP server components
         t = log_step("Importing MCP server components")
@@ -117,7 +117,7 @@ def main():
         
         # Step 15: Import server module
         t = log_step("Importing server module")
-        import mcp_task_orchestrator.server
+        import vespera_scriptorium.server
         log_time(t, "Importing server module")
         
         logger.info("All components initialized successfully!")

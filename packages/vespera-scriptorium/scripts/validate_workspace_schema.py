@@ -133,7 +133,7 @@ def validate_directory_structure():
 
 def main():
     """Main validation function."""
-    print("MCP Task Orchestrator - Workspace Schema Validation")
+    print("Vespera Scriptorium - Workspace Schema Validation")
     print("=" * 55)
     
     project_root = Path(__file__).parent.parent

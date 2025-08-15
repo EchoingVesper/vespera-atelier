@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """
-Quick verification that all MCP Task Orchestrator tools are available.
+Quick verification that all Vespera Scriptorium tools are available.
 """
 
 import asyncio
-from mcp_task_orchestrator.server import app
+from vespera_scriptorium.server import app
 
 async def verify_tools():
     """Verify that all expected tools are available."""
-    print("Verifying MCP Task Orchestrator tools...")
+    print("Verifying Vespera Scriptorium tools...")
     print("=" * 50)
     
     try:
         # Import the list_tools function directly from server module
-        from mcp_task_orchestrator.server import list_tools
+        from vespera_scriptorium.server import list_tools
         
         # Call the async function directly
         tools = await list_tools()
@@ -52,7 +52,7 @@ def main():
     success = asyncio.run(verify_tools())
     
     if success:
-        print("\n[READY] MCP Task Orchestrator is fully functional!")
+        print("\n[READY] Vespera Scriptorium is fully functional!")
     else:
         print("\n[ERROR] There are issues with the tool setup.")
     

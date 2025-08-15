@@ -1,11 +1,11 @@
 
-# CLI PROMPT: Multi-Stage Validation Pipeline for MCP Task Orchestrator
+# CLI PROMPT: Multi-Stage Validation Pipeline for Vespera Scriptorium
 
 #
 
 # MISSION
 
-Create a comprehensive 5-stage validation pipeline for the MCP Task Orchestrator that ensures security, reliability, and performance through systematic testing stages. Implement the complete framework and integrate it with existing testing infrastructure.
+Create a comprehensive 5-stage validation pipeline for the Vespera Scriptorium that ensures security, reliability, and performance through systematic testing stages. Implement the complete framework and integrate it with existing testing infrastructure.
 
 #
 
@@ -15,13 +15,13 @@ Create a comprehensive 5-stage validation pipeline for the MCP Task Orchestrator
 
 ## Architecture Overview
 
-The MCP Task Orchestrator follows Clean Architecture:
+The Vespera Scriptorium follows Clean Architecture:
 
-- **Domain**: `mcp_task_orchestrator/domain/` - Business logic and entities
+- **Domain**: `vespera_scriptorium/domain/` - Business logic and entities
 
-- **Application**: `mcp_task_orchestrator/application/` - Use cases and workflows
+- **Application**: `vespera_scriptorium/application/` - Use cases and workflows
 
-- **Infrastructure**: `mcp_task_orchestrator/infrastructure/` - External concerns (MCP, database, security)
+- **Infrastructure**: `vespera_scriptorium/infrastructure/` - External concerns (MCP, database, security)
 
 - **Presentation**: MCP server and CLI interfaces
 
@@ -49,7 +49,7 @@ tests/
 #
 ## Security Infrastructure (Critical for Validation)
 
-Security components in `mcp_task_orchestrator/infrastructure/security/`:
+Security components in `vespera_scriptorium/infrastructure/security/`:
 
 - Authentication, Authorization, Input Validation, Audit Logging, Error Sanitization
 
@@ -922,7 +922,7 @@ class PipelineConfig:
 
 - [ ] Pipeline integrates with existing test infrastructure
 
-- [ ] Uses the task orchestrator itself for pipeline management
+- [ ] Uses the Vespera Scriptorium itself for pipeline management
 
 - [ ] Generates actionable remediation guidance for failures
 
@@ -989,7 +989,7 @@ python -m tests.validation_pipeline.reports.pipeline_reporter --generate-report
 
 2. **Performance Validation**: All performance targets must be met under realistic load conditions.
 
-3. **Real Integration**: Use the actual task orchestrator for pipeline management to validate it works in practice.
+3. **Real Integration**: Use the actual Vespera Scriptorium for pipeline management to validate it works in practice.
 
 4. **Comprehensive Reporting**: Each stage failure must provide specific, actionable remediation steps.
 
@@ -1029,7 +1029,7 @@ Before declaring success:
 
 5. Validate remediation guidance helps fix real issues
 
-6. Ensure pipeline integrates with task orchestrator properly
+6. Ensure pipeline integrates with Vespera Scriptorium properly
 
 7. Generate comprehensive report demonstrating system readiness
 

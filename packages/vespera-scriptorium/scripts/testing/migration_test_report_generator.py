@@ -73,13 +73,13 @@ class MigrationTestReportGenerator:
         self.write_report_line("=" * 50)
         
         components = [
-            ("AutoMigrationSystem", "mcp_task_orchestrator.db.auto_migration"),
-            ("MigrationManager", "mcp_task_orchestrator.db.migration_manager"),
-            ("SchemaComparator", "mcp_task_orchestrator.db.schema_comparator"),
-            ("MigrationHistoryManager", "mcp_task_orchestrator.db.migration_history"),
-            ("BackupManager", "mcp_task_orchestrator.db.backup_manager"),
-            ("RollbackManager", "mcp_task_orchestrator.db.rollback_manager"),
-            ("Base (SQLAlchemy Models)", "mcp_task_orchestrator.db.models"),
+            ("AutoMigrationSystem", "mcp_vespera_scriptorium.db.auto_migration"),
+            ("MigrationManager", "mcp_vespera_scriptorium.db.migration_manager"),
+            ("SchemaComparator", "mcp_vespera_scriptorium.db.schema_comparator"),
+            ("MigrationHistoryManager", "mcp_vespera_scriptorium.db.migration_history"),
+            ("BackupManager", "mcp_vespera_scriptorium.db.backup_manager"),
+            ("RollbackManager", "mcp_vespera_scriptorium.db.rollback_manager"),
+            ("Base (SQLAlchemy Models)", "mcp_vespera_scriptorium.db.models"),
         ]
         
         import_results = {}
@@ -123,7 +123,7 @@ class MigrationTestReportGenerator:
         self.write_report_line("-" * 30)
         
         try:
-            from mcp_task_orchestrator.db.auto_migration import AutoMigrationSystem, MigrationResult
+            from vespera_scriptorium.db.auto_migration import AutoMigrationSystem, MigrationResult
             
             # Analyze class methods
             methods = [method for method in dir(AutoMigrationSystem) if not method.startswith('_')]
@@ -158,7 +158,7 @@ class MigrationTestReportGenerator:
         self.write_report_line("-" * 30)
         
         try:
-            from mcp_task_orchestrator.db.migration_manager import MigrationManager, SchemaDifference
+            from vespera_scriptorium.db.migration_manager import MigrationManager, SchemaDifference
             
             methods = [method for method in dir(MigrationManager) if not method.startswith('_')]
             self.write_report_line(f"Available methods: {len(methods)}")
@@ -185,7 +185,7 @@ class MigrationTestReportGenerator:
         self.write_report_line("-" * 30)
         
         try:
-            from mcp_task_orchestrator.db.backup_manager import BackupManager, BackupInfo
+            from vespera_scriptorium.db.backup_manager import BackupManager, BackupInfo
             
             methods = [method for method in dir(BackupManager) if not method.startswith('_')]
             self.write_report_line(f"Available methods: {len(methods)}")
@@ -275,7 +275,7 @@ class MigrationTestReportGenerator:
         self.write_report_line("=" * 50)
         
         try:
-            from mcp_task_orchestrator.db.auto_migration import AutoMigrationSystem
+            from vespera_scriptorium.db.auto_migration import AutoMigrationSystem
             
             # Create test database
             with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as tmp_file:
@@ -284,7 +284,7 @@ class MigrationTestReportGenerator:
             # Initialize with current schema using SQLAlchemy
             try:
                 from sqlalchemy import create_engine
-                from mcp_task_orchestrator.db.models import Base
+                from vespera_scriptorium.db.models import Base
                 
                 engine = create_engine(f"sqlite:///{db_path}")
                 Base.metadata.create_all(engine)
@@ -369,7 +369,7 @@ class MigrationTestReportGenerator:
         self.write_report_line("=" * 50)
         
         try:
-            from mcp_task_orchestrator.db.migration_manager import MigrationManager
+            from vespera_scriptorium.db.migration_manager import MigrationManager
             
             # Create test database
             with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as tmp_file:
@@ -414,7 +414,7 @@ class MigrationTestReportGenerator:
         self.write_report_line("=" * 50)
         
         try:
-            from mcp_task_orchestrator.db.schema_comparator import SchemaComparator
+            from vespera_scriptorium.db.schema_comparator import SchemaComparator
             from sqlalchemy import create_engine, MetaData, Table, Column, String, Integer
             
             # Create test database and engine
@@ -458,7 +458,7 @@ class MigrationTestReportGenerator:
         self.write_report_line("=" * 50)
         
         try:
-            from mcp_task_orchestrator.db.backup_manager import BackupManager
+            from vespera_scriptorium.db.backup_manager import BackupManager
             
             # Create test database
             with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as tmp_file:
@@ -509,7 +509,7 @@ class MigrationTestReportGenerator:
         self.write_report_line("=" * 50)
         
         try:
-            from mcp_task_orchestrator.db.migration_history import MigrationHistoryManager, MigrationRecord
+            from vespera_scriptorium.db.migration_history import MigrationHistoryManager, MigrationRecord
             from sqlalchemy import create_engine
             
             # Create test database
@@ -568,7 +568,7 @@ class MigrationTestReportGenerator:
         
         # Test invalid database URL
         try:
-            from mcp_task_orchestrator.db.auto_migration import AutoMigrationSystem
+            from vespera_scriptorium.db.auto_migration import AutoMigrationSystem
             
             invalid_url = "invalid://database/url"
             migration_system = AutoMigrationSystem(invalid_url)
@@ -613,7 +613,7 @@ class MigrationTestReportGenerator:
         self.write_report_line("=" * 50)
         
         try:
-            from mcp_task_orchestrator.db.auto_migration import AutoMigrationSystem
+            from vespera_scriptorium.db.auto_migration import AutoMigrationSystem
             
             # Create database with test data
             with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as tmp_file:

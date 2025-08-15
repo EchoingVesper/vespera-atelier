@@ -50,7 +50,7 @@ These examples demonstrate how to orchestrate complex documentation projects usi
 
 - **⭐ Featured**: Complete documentation reorganization project
 
-- Demonstrates the exact workflow used for this MCP Task Orchestrator documentation
+- Demonstrates the exact workflow used for this Vespera Scriptorium documentation
 
 - Shows real orchestrator + Claude Code coordination patterns
 

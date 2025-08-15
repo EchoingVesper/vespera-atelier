@@ -15,7 +15,7 @@
 
 # 📋 Overview
 
-Enhance the MCP Task Orchestrator's role system to support dynamic mode selection, automatic role configuration management, and session-mode binding. This system transforms the static role configuration into a flexible, session-aware specialization framework.
+Enhance the Vespera Scriptorium's role system to support dynamic mode selection, automatic role configuration management, and session-mode binding. This system transforms the static role configuration into a flexible, session-aware specialization framework.
 
 #
 
@@ -59,7 +59,7 @@ config/default_roles.yaml → Hardcoded role definitions
 ```text
 
 Dynamic Mode System:
-config/default_roles.yaml → Project .task_orchestrator/roles/ → Session Mode Binding
+config/default_roles.yaml → Project .vespera_scriptorium/roles/ → Session Mode Binding
                                     ↓                                ↓
                             User customizations              Active session uses
                             Multiple .yaml files             selected mode configuration
@@ -94,7 +94,7 @@ json
       "custom_development_mode.yaml",
       "/absolute/path/to/custom_roles.yaml"
     ],
-    "validation": "Must exist in .task_orchestrator/roles/ directory"
+    "validation": "Must exist in .vespera_scriptorium/roles/ directory"
   },
   "validate_first": {
     "type": "boolean", 
@@ -145,7 +145,7 @@ json
     "auto_task_routing": true
   },
   "previous_mode": "default_roles.yaml",
-  "backup_location": ".task_orchestrator/backups/mode_backup_20250601_143022.yaml"
+  "backup_location": ".vespera_scriptorium/backups/mode_backup_20250601_143022.yaml"
 }
 
 ```text
@@ -299,7 +299,7 @@ text
 ```text
 
 project_root/
-├── .task_orchestrator/
+├── .vespera_scriptorium/
 │   ├── roles/                          
 
 # Mode configurations
@@ -500,8 +500,8 @@ class RoleManagementSystem:
     def __init__(self, project_root: Path, config_dir: Path):
         self.project_root = project_root
         self.config_dir = config_dir
-        self.roles_dir = project_root / ".task_orchestrator" / "roles"
-        self.modes_dir = project_root / ".task_orchestrator" / "modes"
+        self.roles_dir = project_root / ".vespera_scriptorium" / "roles"
+        self.modes_dir = project_root / ".vespera_scriptorium" / "modes"
         
     async def initialize_project_roles(self):
         """Initialize role directory for new project."""

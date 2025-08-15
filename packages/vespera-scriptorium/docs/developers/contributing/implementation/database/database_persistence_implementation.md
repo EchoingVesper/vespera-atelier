@@ -1,12 +1,12 @@
 
 
-# MCP Task Orchestrator: Database-Backed Persistence Implementation
+# Vespera Scriptorium: Database-Backed Persistence Implementation
 
 #
 
 # Overview
 
-Implement a robust database-backed persistence mechanism for the MCP Task Orchestrator to replace the current file-based system. This will eliminate lock contention issues and provide proper transaction support.
+Implement a robust database-backed persistence mechanism for the Vespera Scriptorium to replace the current file-based system. This will eliminate lock contention issues and provide proper transaction support.
 
 #
 
@@ -160,7 +160,7 @@ from contextlib import contextmanager
 class DatabasePersistenceManager:
     def __init__(self, db_url=None):
         if db_url is None:
-            db_url = "sqlite:///task_orchestrator.db"
+            db_url = "sqlite:///vespera_scriptorium.db"
         
         self.engine = create_engine(db_url)
         self.Session = scoped_session(sessionmaker(bind=self.engine))

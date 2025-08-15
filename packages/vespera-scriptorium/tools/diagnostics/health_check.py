@@ -1,5 +1,5 @@
 """
-Comprehensive health check tool for the MCP Task Orchestrator.
+Comprehensive health check tool for the Vespera Scriptorium.
 
 This tool provides a unified interface for running health checks,
 diagnostics, and generating system reports.
@@ -15,12 +15,12 @@ from datetime import datetime
 # Add project root to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from mcp_task_orchestrator.infrastructure.monitoring import (
+from vespera_scriptorium.infrastructure.monitoring import (
     HealthChecker, SystemMonitor, DiagnosticRunner,
     get_metrics_collector, get_system_monitor
 )
-from mcp_task_orchestrator.infrastructure.di import get_container
-from mcp_task_orchestrator.domain import TaskRepository, StateRepository
+from vespera_scriptorium.infrastructure.di import get_container
+from vespera_scriptorium.domain import TaskRepository, StateRepository
 
 
 async def run_health_checks():
@@ -33,7 +33,7 @@ async def run_health_checks():
     
     try:
         # Initialize DI container first
-        from mcp_task_orchestrator.infrastructure.mcp.handlers.core_handlers import enable_dependency_injection
+        from vespera_scriptorium.infrastructure.mcp.handlers.core_handlers import enable_dependency_injection
         await enable_dependency_injection()
         
         container = get_container()
@@ -199,7 +199,7 @@ async def generate_full_report(output_file: str = None):
 
 async def main():
     """Main entry point for the health check tool."""
-    parser = argparse.ArgumentParser(description="MCP Task Orchestrator Health Check Tool")
+    parser = argparse.ArgumentParser(description="Vespera Scriptorium Health Check Tool")
     parser.add_argument("--health", action="store_true", help="Run health checks only")
     parser.add_argument("--diagnostics", action="store_true", help="Run diagnostics only")
     parser.add_argument("--monitoring", action="store_true", help="Show monitoring status only")
@@ -208,7 +208,7 @@ async def main():
     
     args = parser.parse_args()
     
-    print("🚀 MCP Task Orchestrator Health Check Tool")
+    print("🚀 Vespera Scriptorium Health Check Tool")
     print("=" * 50)
     
     overall_healthy = True

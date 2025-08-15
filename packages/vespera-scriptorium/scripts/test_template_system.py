@@ -119,11 +119,11 @@ class TemplateSystemTestRunner:
             # Test 1: Import all template system modules
             print("  Testing module imports...")
             try:
-                from mcp_task_orchestrator.infrastructure.template_system.json5_parser import JSON5Parser
-                from mcp_task_orchestrator.infrastructure.template_system.template_engine import TemplateEngine
-                from mcp_task_orchestrator.infrastructure.template_system.security_validator import TemplateSecurityValidator
-                from mcp_task_orchestrator.infrastructure.template_system.storage_manager import TemplateStorageManager
-                from mcp_task_orchestrator.infrastructure.template_system.template_installer import TemplateInstaller
+                from vespera_scriptorium.infrastructure.template_system.json5_parser import JSON5Parser
+                from vespera_scriptorium.infrastructure.template_system.template_engine import TemplateEngine
+                from vespera_scriptorium.infrastructure.template_system.security_validator import TemplateSecurityValidator
+                from vespera_scriptorium.infrastructure.template_system.storage_manager import TemplateStorageManager
+                from vespera_scriptorium.infrastructure.template_system.template_installer import TemplateInstaller
                 print("    ✅ All modules imported successfully")
             except Exception as e:
                 errors.append(f"Module import failed: {e}")
@@ -224,12 +224,12 @@ class TemplateSystemTestRunner:
             try:
                 # Copy template from user category to root template directory for testing
                 import shutil
-                template_source = temp_dir / ".task_orchestrator" / "templates" / "user" / "test_template.json5"
-                template_dest = temp_dir / ".task_orchestrator" / "templates" / "test_template.json5"
+                template_source = temp_dir / ".vespera_scriptorium" / "templates" / "user" / "test_template.json5"
+                template_dest = temp_dir / ".vespera_scriptorium" / "templates" / "test_template.json5"
                 shutil.copy(template_source, template_dest)
                 
                 # Create TemplateEngine with template directory
-                engine = TemplateEngine(template_dir=temp_dir / ".task_orchestrator" / "templates")
+                engine = TemplateEngine(template_dir=temp_dir / ".vespera_scriptorium" / "templates")
                 parameters = {"param": "TestValue"}
                 
                 instantiated = engine.instantiate_template("test_template", parameters)

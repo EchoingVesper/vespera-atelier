@@ -1,6 +1,6 @@
 
 
-# Complete MCP Task Orchestrator 2.0.0 Roadmap
+# Complete Vespera Scriptorium 2.0.0 Roadmap
 
 **Document Type**: Master Implementation Plan  
 **Version**: 2.0.0  
@@ -12,7 +12,7 @@
 
 # Executive Summary
 
-MCP Task Orchestrator 2.0.0 represents a comprehensive evolution combining architectural maturity with organizational excellence. This release delivers the Generic Task Model foundation while establishing a clean, maintainable codebase and documentation structure ready for team scaling and advanced features.
+Vespera Scriptorium 2.0.0 represents a comprehensive evolution combining architectural maturity with organizational excellence. This release delivers the Generic Task Model foundation while establishing a clean, maintainable codebase and documentation structure ready for team scaling and advanced features.
 
 #
 
@@ -221,7 +221,7 @@ MCP Task Orchestrator 2.0.0 represents a comprehensive evolution combining archi
 
 - [ ] **Workspace Paradigm Completion**
   - Complete workspace detection and artifact placement
-  - Enhanced `.task_orchestrator` directory management
+  - Enhanced `.vespera_scriptorium` directory management
   - Workspace-aware template storage
 
 #
@@ -585,6 +585,6 @@ Test files scattered          →      Organized in tests/
 
 # Conclusion
 
-MCP Task Orchestrator 2.0.0 combines technical excellence with organizational maturity. By delivering the Generic Task Model foundation alongside comprehensive cleanup and organization, this release establishes a solid platform ready for advanced features, team scaling, and long-term growth.
+Vespera Scriptorium 2.0.0 combines technical excellence with organizational maturity. By delivering the Generic Task Model foundation alongside comprehensive cleanup and organization, this release establishes a solid platform ready for advanced features, team scaling, and long-term growth.
 
 The 6-week timeline balances ambition with practicality, ensuring both technical debt is addressed and future capabilities are enabled. This foundation will support the project's evolution through 2025 and beyond.

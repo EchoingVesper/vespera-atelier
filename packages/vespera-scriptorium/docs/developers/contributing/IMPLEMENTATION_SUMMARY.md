@@ -6,7 +6,7 @@
 
 # Overview
 
-This document summarizes the complete implementation of the in-context server reboot system for the MCP Task Orchestrator. This critical infrastructure feature enables seamless server restarts without disrupting MCP client connections.
+This document summarizes the complete implementation of the in-context server reboot system for the Vespera Scriptorium. This critical infrastructure feature enables seamless server restarts without disrupting MCP client connections.
 
 **Implementation Date**: June 6, 2025  
 **Branch**: `feature/in-context-server-reboot`  
@@ -49,7 +49,7 @@ This document summarizes the complete implementation of the in-context server re
 
 # Core Implementation (6 files)
 
-1. **`mcp_task_orchestrator/server/state_serializer.py`** (447 lines)
+1. **`vespera_scriptorium/server/state_serializer.py`** (447 lines)
 
 - Atomic state snapshots with integrity validation
 
@@ -57,7 +57,7 @@ This document summarizes the complete implementation of the in-context server re
 
 - Backup management and state validation
 
-2. **`mcp_task_orchestrator/server/shutdown_coordinator.py`** (398 lines)
+2. **`vespera_scriptorium/server/shutdown_coordinator.py`** (398 lines)
 
 - 5-phase graceful shutdown orchestration
 
@@ -65,7 +65,7 @@ This document summarizes the complete implementation of the in-context server re
 
 - Database connection cleanup
 
-3. **`mcp_task_orchestrator/server/restart_manager.py`** (498 lines)
+3. **`vespera_scriptorium/server/restart_manager.py`** (498 lines)
 
 - Process lifecycle management
 
@@ -73,7 +73,7 @@ This document summarizes the complete implementation of the in-context server re
 
 - Restart coordination and monitoring
 
-4. **`mcp_task_orchestrator/server/connection_manager.py`** (468 lines)
+4. **`vespera_scriptorium/server/connection_manager.py`** (468 lines)
 
 - Client connection preservation
 
@@ -81,7 +81,7 @@ This document summarizes the complete implementation of the in-context server re
 
 - Automatic reconnection handling
 
-5. **`mcp_task_orchestrator/server/reboot_tools.py`** (455 lines)
+5. **`vespera_scriptorium/server/reboot_tools.py`** (455 lines)
 
 - 5 MCP tools for restart control
 
@@ -89,7 +89,7 @@ This document summarizes the complete implementation of the in-context server re
 
 - Integration with existing MCP protocol
 
-6. **`mcp_task_orchestrator/server.py`** (modified)
+6. **`vespera_scriptorium/server.py`** (modified)
 
 - Added reboot tool imports and integration
 
@@ -278,7 +278,7 @@ class ConnectionManager:
 
 # Tool Integration
 
-- Added to `mcp_task_orchestrator/server.py`
+- Added to `vespera_scriptorium/server.py`
 
 - Integrated with existing MCP protocol
 

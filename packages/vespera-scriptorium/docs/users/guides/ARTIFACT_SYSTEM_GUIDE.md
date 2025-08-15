@@ -1,12 +1,12 @@
 
 
-# Artifact System Usage Guide for MCP Task Orchestrator
+# Artifact System Usage Guide for Vespera Scriptorium
 
 #
 
 # Overview
 
-The MCP Task Orchestrator now includes an advanced artifact management system designed to solve context limit issues by storing detailed work in accessible files rather than streaming everything into the conversation context.
+The Vespera Scriptorium now includes an advanced artifact management system designed to solve context limit issues by storing detailed work in accessible files rather than streaming everything into the conversation context.
 
 #
 
@@ -34,7 +34,7 @@ Previously, all specialist work was streamed directly into the chat context, cau
 
 The new system:
 
-- **Stores detailed work** in `.task_orchestrator/artifacts/` directory
+- **Stores detailed work** in `.vespera_scriptorium/artifacts/` directory
 
 - **Mirrors file structure** to maintain organization
 
@@ -248,7 +248,7 @@ json
 
 ```text
 
-.task_orchestrator/
+.vespera_scriptorium/
 └── artifacts/
     ├── task_abc123/
     │   ├── artifact_12345abc.md       
@@ -391,7 +391,7 @@ If artifact creation fails, the system:
 
 # Recovery Options
 
-- Check `.task_orchestrator/logs/` for error details
+- Check `.vespera_scriptorium/logs/` for error details
 
 - Retry with different artifact parameters
 

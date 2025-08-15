@@ -24,7 +24,7 @@ def test_workspace_in_different_directories():
         'directory': str(original_dir),
         'has_git': (original_dir / '.git').exists(),
         'has_pyproject': (original_dir / 'pyproject.toml').exists(),
-        'has_orchestrator': (original_dir / '.task_orchestrator').exists(),
+        'has_orchestrator': (original_dir / '.vespera_scriptorium').exists(),
         'expected_detection': True
     }
     print(f"    - Git repo: {current_test['has_git']}")
@@ -39,7 +39,7 @@ def test_workspace_in_different_directories():
         'directory': str(parent_dir),
         'has_git': (parent_dir / '.git').exists(),
         'has_pyproject': (parent_dir / 'pyproject.toml').exists(),
-        'has_orchestrator': (parent_dir / '.task_orchestrator').exists(),
+        'has_orchestrator': (parent_dir / '.vespera_scriptorium').exists(),
         'expected_detection': False
     }
     print(f"    - Git repo: {parent_test['has_git']}")
@@ -54,7 +54,7 @@ def test_workspace_in_different_directories():
         'directory': str(home_dir),
         'has_git': (home_dir / '.git').exists(),
         'has_pyproject': (home_dir / 'pyproject.toml').exists(),
-        'has_orchestrator': (home_dir / '.task_orchestrator').exists(),
+        'has_orchestrator': (home_dir / '.vespera_scriptorium').exists(),
         'expected_detection': False  # Should fall back to home
     }
     print(f"    - Git repo: {home_test['has_git']}")
@@ -68,7 +68,7 @@ def test_artifact_organization():
     """Test how artifacts are organized in the workspace"""
     print("\n📦 Testing Artifact Organization...")
     
-    artifacts_dir = Path.cwd() / '.task_orchestrator' / 'artifacts'
+    artifacts_dir = Path.cwd() / '.vespera_scriptorium' / 'artifacts'
     if not artifacts_dir.exists():
         return {'test_status': 'skipped', 'reason': 'No artifacts directory'}
     
@@ -120,15 +120,15 @@ def test_workspace_isolation():
         'log_isolation': False
     }
     
-    workspace_dir = Path.cwd() / '.task_orchestrator'
+    workspace_dir = Path.cwd() / '.vespera_scriptorium'
     
     # Test database isolation
-    db_file = workspace_dir / 'task_orchestrator.db'
+    db_file = workspace_dir / 'vespera_scriptorium.db'
     if db_file.exists():
         # Check that database is within workspace
         try:
             db_relative_path = db_file.relative_to(Path.cwd())
-            if str(db_relative_path).startswith('.task_orchestrator'):
+            if str(db_relative_path).startswith('.vespera_scriptorium'):
                 isolation_tests['database_isolation'] = True
                 print("  ✅ Database isolation: Database stored within workspace")
             else:
@@ -184,7 +184,7 @@ def test_workspace_performance():
     
     # Test 1: Directory structure access time
     start_time = time.time()
-    workspace_dir = Path.cwd() / '.task_orchestrator'
+    workspace_dir = Path.cwd() / '.vespera_scriptorium'
     contents = list(workspace_dir.iterdir()) if workspace_dir.exists() else []
     directory_access_time = (time.time() - start_time) * 1000
     performance_metrics['directory_access_ms'] = directory_access_time
@@ -194,7 +194,7 @@ def test_workspace_performance():
     start_time = time.time()
     try:
         import sqlite3
-        db_path = workspace_dir / 'task_orchestrator.db'
+        db_path = workspace_dir / 'vespera_scriptorium.db'
         if db_path.exists():
             conn = sqlite3.connect(str(db_path))
             conn.close()
@@ -242,13 +242,13 @@ def test_workspace_paradigm_vs_legacy():
     current_dir = Path.cwd()
     
     # Benefit 1: Automatic project detection
-    if (current_dir / '.git').exists() and (current_dir / '.task_orchestrator').exists():
+    if (current_dir / '.git').exists() and (current_dir / '.vespera_scriptorium').exists():
         comparison['workspace_benefits'].append("Automatic project root detection working")
         comparison['legacy_issues_resolved'].append("No manual directory specification needed")
         print("  ✅ Auto-detection: Project root detected automatically")
     
     # Benefit 2: Smart artifact placement
-    artifacts_dir = current_dir / '.task_orchestrator' / 'artifacts'
+    artifacts_dir = current_dir / '.vespera_scriptorium' / 'artifacts'
     if artifacts_dir.exists():
         relative_path = artifacts_dir.relative_to(current_dir)
         comparison['workspace_benefits'].append(f"Smart artifact placement at {relative_path}")
@@ -256,7 +256,7 @@ def test_workspace_paradigm_vs_legacy():
         print(f"  ✅ Smart placement: Artifacts in {relative_path}")
     
     # Benefit 3: Project-specific database
-    db_file = current_dir / '.task_orchestrator' / 'task_orchestrator.db'
+    db_file = current_dir / '.vespera_scriptorium' / 'vespera_scriptorium.db'
     if db_file.exists():
         comparison['workspace_benefits'].append("Project-specific task database")
         comparison['legacy_issues_resolved'].append("No task mixing between different projects")
@@ -264,8 +264,8 @@ def test_workspace_paradigm_vs_legacy():
     
     # Potential concerns
     workspace_size = 0
-    if (current_dir / '.task_orchestrator').exists():
-        for file_path in (current_dir / '.task_orchestrator').rglob('*'):
+    if (current_dir / '.vespera_scriptorium').exists():
+        for file_path in (current_dir / '.vespera_scriptorium').rglob('*'):
             if file_path.is_file():
                 workspace_size += file_path.stat().st_size
         
@@ -328,7 +328,7 @@ if __name__ == "__main__":
     results = run_edge_case_tests()
     
     # Save results
-    results_file = Path.cwd() / '.task_orchestrator' / 'workspace_edge_case_results.json'
+    results_file = Path.cwd() / '.vespera_scriptorium' / 'workspace_edge_case_results.json'
     import json
     with open(results_file, 'w') as f:
         json.dump(results, f, indent=2, default=str)

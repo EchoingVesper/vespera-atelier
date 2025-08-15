@@ -6,7 +6,7 @@
 
 # ✅ Integration Status: COMPLETE
 
-The automatic database migration system has been successfully implemented and integrated into the MCP Task Orchestrator server. All components are in place and ready for use.
+The automatic database migration system has been successfully implemented and integrated into the Vespera Scriptorium server. All components are in place and ready for use.
 
 #
 
@@ -167,7 +167,7 @@ text
 ```text
 text
 bash
-   python -m mcp_task_orchestrator.server
+   python -m vespera_scriptorium.server
    
 
 ```text
@@ -221,7 +221,7 @@ export MCP_TASK_ORCHESTRATOR_BASE_DIR="/path/to/base"
 
 # Default Behavior
 
-- **Database Location**: `.task_orchestrator/task_orchestrator.db`
+- **Database Location**: `.vespera_scriptorium/vespera_scriptorium.db`
 
 - **Backup Directory**: `backups/migrations/`
 

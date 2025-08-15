@@ -64,7 +64,7 @@ json
 // After: Single aggregator configuration
 {
   "mcpServers": {
-    "task-orchestrator": {
+    "vespera-scriptorium": {
       "command": "python", 
       "args": ["-m", "mcp_task_orchestrator"]
     },

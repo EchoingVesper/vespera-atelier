@@ -1,8 +1,8 @@
-# Hooks System Design for MCP Task Orchestrator
+# Hooks System Design for Vespera Scriptorium
 
 ## Overview
 
-This document outlines the design for a hooks system in the MCP Task Orchestrator that is compatible with Claude Code's hooks format, enabling shared hook configurations and intelligent deduplication.
+This document outlines the design for a hooks system in the Vespera Scriptorium that is compatible with Claude Code's hooks format, enabling shared hook configurations and intelligent deduplication.
 
 ## Architecture Goals
 
@@ -77,7 +77,7 @@ This document outlines the design for a hooks system in the MCP Task Orchestrato
 
 ### Phase 1: Core Hook System
 ```python
-# mcp_task_orchestrator/infrastructure/hooks/
+# vespera_scriptorium/infrastructure/hooks/
 
 class HookManager:
     """Manages hook execution for orchestrator events."""
@@ -113,7 +113,7 @@ class HookManager:
 
 ### Phase 2: Event Integration
 ```python
-# mcp_task_orchestrator/orchestrator/task_lifecycle.py
+# vespera_scriptorium/orchestrator/task_lifecycle.py
 
 class TaskLifecycleManager:
     def __init__(self, hook_manager: HookManager):
@@ -136,7 +136,7 @@ class TaskLifecycleManager:
 ### Phase 3: Deduplication Protocol
 
 ```python
-# Shared state file: .task_orchestrator/.hooks_state.json
+# Shared state file: .vespera_scriptorium/.hooks_state.json
 {
   "active_processor": "claude_code|task_orchestrator",
   "last_event": {
@@ -182,7 +182,7 @@ class SharedHooksConfig:
             configs.append(json.loads(claude_hooks.read_text()))
         
         # Load Task Orchestrator hooks
-        orchestrator_hooks = Path('.task_orchestrator/hooks.json')
+        orchestrator_hooks = Path('.vespera_scriptorium/hooks.json')
         if orchestrator_hooks.exists():
             configs.append(json.loads(orchestrator_hooks.read_text()))
         

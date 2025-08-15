@@ -28,7 +28,7 @@ import statistics
 from collections import deque, defaultdict
 
 try:
-    from mcp_task_orchestrator.orchestrator.orchestration_state_manager import OrchestrationStateManager
+    from vespera_scriptorium.orchestrator.orchestration_state_manager import OrchestrationStateManager
     ORCHESTRATOR_AVAILABLE = True
 except ImportError:
     ORCHESTRATOR_AVAILABLE = False

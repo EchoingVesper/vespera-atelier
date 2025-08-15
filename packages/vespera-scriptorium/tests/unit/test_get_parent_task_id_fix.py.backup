@@ -16,7 +16,7 @@ async def test_get_parent_task_id_fix():
     
     try:
         # Set environment variables to point to the correct database
-        db_path = r"E:\My Work\Programming\MCP Task Orchestrator\task_orchestrator.db"
+        db_path = r"E:\My Work\Programming\MCP Task Orchestrator\vespera_scriptorium.db"
         base_dir = r"E:\My Work\Programming\MCP Task Orchestrator"
         
         os.environ["MCP_TASK_ORCHESTRATOR_DB_PATH"] = db_path
@@ -123,7 +123,7 @@ async def test_integration_with_core():
     
     try:
         # Set environment variables
-        db_path = r"E:\My Work\Programming\MCP Task Orchestrator\task_orchestrator.db"
+        db_path = r"E:\My Work\Programming\MCP Task Orchestrator\vespera_scriptorium.db"
         base_dir = r"E:\My Work\Programming\MCP Task Orchestrator"
         
         os.environ["MCP_TASK_ORCHESTRATOR_DB_PATH"] = db_path

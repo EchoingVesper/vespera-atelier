@@ -28,7 +28,7 @@ All documentation has been updated to reflect the new PyPI installation method:
 
 - Kept source installation as secondary option
 
-- Updated to show: `pip install mcp-task-orchestrator`
+- Updated to show: `pip install mcp-vespera-scriptorium`
 
 2. **QUICK_START.md**
 
@@ -96,7 +96,7 @@ All documentation has been updated to reflect the new PyPI installation method:
 
 # Pre-Merge Checklist
 
-- [ ] All documentation reflects `pip install mcp-task-orchestrator`
+- [ ] All documentation reflects `pip install mcp-vespera-scriptorium`
 
 - [ ] Installation instructions are consistent across all files
 
@@ -141,7 +141,7 @@ All documentation has been updated to reflect the new PyPI installation method:
 
 - **Merge this PR before PyPI upload** to ensure documentation is current
 
-- The package name `mcp-task-orchestrator` is available on PyPI
+- The package name `mcp-vespera-scriptorium` is available on PyPI
 
 - All installation instructions now show the pip method first
 
@@ -159,4 +159,4 @@ All documentation has been updated to reflect the new PyPI installation method:
 
 3. Upload package to PyPI using `python scripts/release/upload.py`
 
-4. Verify installation with `pip install mcp-task-orchestrator`
+4. Verify installation with `pip install mcp-vespera-scriptorium`

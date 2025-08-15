@@ -229,7 +229,7 @@ class IntegrationTestStage(ValidationStageBase):
             # Test server startup by attempting to import and initialize
             cmd = [
                 'python', '-c',
-                'from mcp_task_orchestrator.server import main; '
+                'from vespera_scriptorium.server import main; '
                 'import asyncio; '
                 'print("MCP server import successful")'
             ]
@@ -725,10 +725,10 @@ class IntegrationTestStage(ValidationStageBase):
             
             # Domain should not import from infrastructure or presentation
             forbidden_imports = [
-                'from mcp_task_orchestrator.infrastructure',
-                'from mcp_task_orchestrator.presentation',
-                'import mcp_task_orchestrator.infrastructure',
-                'import mcp_task_orchestrator.presentation'
+                'from vespera_scriptorium.infrastructure',
+                'from vespera_scriptorium.presentation',
+                'import vespera_scriptorium.infrastructure',
+                'import vespera_scriptorium.presentation'
             ]
             
             for forbidden in forbidden_imports:
@@ -753,8 +753,8 @@ class IntegrationTestStage(ValidationStageBase):
             
             # Application should not import from presentation (but can import infrastructure interfaces)
             forbidden_imports = [
-                'from mcp_task_orchestrator.presentation',
-                'import mcp_task_orchestrator.presentation'
+                'from vespera_scriptorium.presentation',
+                'import vespera_scriptorium.presentation'
             ]
             
             for forbidden in forbidden_imports:

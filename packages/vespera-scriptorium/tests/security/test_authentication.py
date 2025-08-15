@@ -12,7 +12,7 @@ from unittest.mock import Mock, patch, AsyncMock
 from datetime import datetime, timedelta
 from typing import Dict, Any
 
-# from mcp_task_orchestrator.infrastructure.security import  # TODO: Complete this import
+# from vespera_scriptorium.infrastructure.security import  # TODO: Complete this import
 
 
 class TestAPIKeyValidation:

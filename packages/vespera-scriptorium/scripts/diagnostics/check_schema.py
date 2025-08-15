@@ -1,6 +1,6 @@
 import sqlite3
 
-conn = sqlite3.connect('task_orchestrator.db')
+conn = sqlite3.connect('vespera_scriptorium.db')
 cursor = conn.cursor()
 
 # Get table schema

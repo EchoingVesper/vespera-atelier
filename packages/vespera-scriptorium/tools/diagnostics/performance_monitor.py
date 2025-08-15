@@ -1,5 +1,5 @@
 """
-Performance monitoring tool for the MCP Task Orchestrator.
+Performance monitoring tool for the Vespera Scriptorium.
 
 This tool provides real-time performance monitoring and analysis.
 """
@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 # Add project root to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from mcp_task_orchestrator.infrastructure.monitoring import (
+from vespera_scriptorium.infrastructure.monitoring import (
     SystemMonitor, get_system_monitor, get_metrics_collector,
     track_performance, record_metric
 )
@@ -232,7 +232,7 @@ class PerformanceMonitorTool:
 
 async def main():
     """Main entry point for the performance monitoring tool."""
-    parser = argparse.ArgumentParser(description="MCP Task Orchestrator Performance Monitor")
+    parser = argparse.ArgumentParser(description="Vespera Scriptorium Performance Monitor")
     parser.add_argument("--monitor", action="store_true", help="Start real-time monitoring")
     parser.add_argument("--analyze", action="store_true", help="Analyze recent metrics")
     parser.add_argument("--test", action="store_true", help="Run performance test")
@@ -244,7 +244,7 @@ async def main():
     
     tool = PerformanceMonitorTool()
     
-    print("📊 MCP Task Orchestrator Performance Monitor")
+    print("📊 Vespera Scriptorium Performance Monitor")
     print("=" * 50)
     
     try:

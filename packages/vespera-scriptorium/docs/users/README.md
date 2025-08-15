@@ -8,9 +8,9 @@ End-user focused documentation with progressive complexity paths.
 
 # Quick Start
 
-Get started with MCP Task Orchestrator in 5 minutes:
+Get started with Vespera Scriptorium in 5 minutes:
 
-- [Core Concepts](quick-start/concepts.md) - What is MCP Task Orchestrator and why use it
+- [Core Concepts](quick-start/concepts.md) - What is Vespera Scriptorium and why use it
 
 - [Installation](quick-start/installation.md) - Step-by-step setup guide
 

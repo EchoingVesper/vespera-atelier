@@ -161,10 +161,10 @@ archives/task_cleanup/ → docs/archives/historical/
 
 ```text
 ROOT LEVEL          vs    CLEAN ARCHITECTURE
-orchestrator/       vs    mcp_task_orchestrator/orchestrator/
-reboot/            vs    mcp_task_orchestrator/reboot/
-staging/           vs    mcp_task_orchestrator/staging/
-monitoring/        vs    mcp_task_orchestrator/monitoring/
+orchestrator/       vs    vespera_scriptorium/orchestrator/
+reboot/            vs    vespera_scriptorium/reboot/
+staging/           vs    vespera_scriptorium/staging/
+monitoring/        vs    vespera_scriptorium/monitoring/
 
 ```text
 
@@ -176,7 +176,7 @@ monitoring/        vs    mcp_task_orchestrator/monitoring/
 
 # Resolution Strategy
 
-1. **Verify Clean Architecture is Complete**: Ensure all functionality moved to mcp_task_orchestrator/
+1. **Verify Clean Architecture is Complete**: Ensure all functionality moved to vespera_scriptorium/
 
 2. **Check for Active References**: Scan codebase for imports/references to root-level directories
 
@@ -200,27 +200,27 @@ monitoring/        vs    mcp_task_orchestrator/monitoring/
 bash
 __init__.py                    
 
-# Likely legacy, should be in mcp_task_orchestrator/
+# Likely legacy, should be in vespera_scriptorium/
 
 __main__.py                    
 
-# Likely legacy, should be in mcp_task_orchestrator/
+# Likely legacy, should be in vespera_scriptorium/
 
 server.py                      
 
-# Likely legacy, clean version in mcp_task_orchestrator/
+# Likely legacy, clean version in vespera_scriptorium/
 
 persistence.py                 
 
-# Likely legacy, clean version in mcp_task_orchestrator/
+# Likely legacy, clean version in vespera_scriptorium/
 
 persistence_factory.py        
 
-# Likely legacy, clean version in mcp_task_orchestrator/
+# Likely legacy, clean version in vespera_scriptorium/
 
 mcp_request_handlers.py        
 
-# Likely legacy, clean version in mcp_task_orchestrator/
+# Likely legacy, clean version in vespera_scriptorium/
 
 launch_cli.py                  
 
@@ -377,7 +377,7 @@ grep -r "from orchestrator" . --exclude-dir=.git
 
 # Test that clean architecture versions work
 
-python -m mcp_task_orchestrator.server  
+python -m vespera_scriptorium.server  
 
 # Should work
 
@@ -449,19 +449,19 @@ bash
 
 rm -rf orchestrator/     
 
-# If functionality in mcp_task_orchestrator/orchestrator/
+# If functionality in vespera_scriptorium/orchestrator/
 
 rm -rf reboot/          
 
-# If functionality in mcp_task_orchestrator/reboot/
+# If functionality in vespera_scriptorium/reboot/
 
 rm -rf staging/         
 
-# If functionality in mcp_task_orchestrator/staging/
+# If functionality in vespera_scriptorium/staging/
 
 rm -rf monitoring/      
 
-# If functionality in mcp_task_orchestrator/monitoring/
+# If functionality in vespera_scriptorium/monitoring/
 
 # Remove legacy Python files (after verification)
 
@@ -471,23 +471,23 @@ rm __init__.py
 
 rm __main__.py                    
 
-# If functionality in mcp_task_orchestrator/
+# If functionality in vespera_scriptorium/
 
 rm server.py                      
 
-# If functionality in mcp_task_orchestrator/
+# If functionality in vespera_scriptorium/
 
 rm persistence.py                 
 
-# If functionality in mcp_task_orchestrator/
+# If functionality in vespera_scriptorium/
 
 rm persistence_factory.py         
 
-# If functionality in mcp_task_orchestrator/
+# If functionality in vespera_scriptorium/
 
 rm mcp_request_handlers.py        
 
-# If functionality in mcp_task_orchestrator/
+# If functionality in vespera_scriptorium/
 
 ```text
 
@@ -510,7 +510,7 @@ rm launch_cli.py
 
 rm launch_orchestrator.py 
 
-# If mcp_task_orchestrator/server.py handles this
+# If vespera_scriptorium/server.py handles this
 
 ```text
 
@@ -608,7 +608,7 @@ bash
 
 # Package setup
 
-├── mcp_task_orchestrator/      
+├── vespera_scriptorium/      
 
 # Main package (clean architecture)
 
@@ -660,7 +660,7 @@ bash
 
 # Benefits of Clean Root
 
-1. **Clear Package Structure**: Main functionality clearly in mcp_task_orchestrator/
+1. **Clear Package Structure**: Main functionality clearly in vespera_scriptorium/
 
 2. **No Duplication**: Single source of truth for each component
 

@@ -1,6 +1,6 @@
 
 
-# MCP Task Orchestrator - Migration Guide
+# Vespera Scriptorium - Migration Guide
 
 *Smooth transition from legacy installation methods to the optimized approach*
 
@@ -110,12 +110,12 @@ yaml
 
 # OLD
 
-- name: Install MCP Task Orchestrator
+- name: Install Vespera Scriptorium
   run: python install.py
 
 # NEW
 
-- name: Install MCP Task Orchestrator
+- name: Install Vespera Scriptorium
   run: python run_installer.py
 
 ```text
@@ -245,7 +245,7 @@ text
 
 # Getting Support
 
-- **GitHub Issues**: [Report problems](https://github.com/EchoingVesper/mcp-task-orchestrator/issues)
+- **GitHub Issues**: [Report problems](https://github.com/EchoingVesper/mcp-vespera-scriptorium/issues)
 
 - **Diagnostics**: Run `python scripts/diagnostics/verify_tools.py`
 

@@ -52,9 +52,9 @@ def upload_to_pypi(test: bool = False):
         if result.returncode == 0:
             print(f"✅ Successfully uploaded to {repo_name}!")
             if test:
-                print("   View at: https://test.pypi.org/project/mcp-task-orchestrator/")
+                print("   View at: https://test.pypi.org/project/vespera-scriptorium/")
             else:
-                print("   View at: https://pypi.org/project/mcp-task-orchestrator/")
+                print("   View at: https://pypi.org/project/vespera-scriptorium/")
         else:
             print("❌ Upload failed!")
             # Don't print stderr as it might contain the token

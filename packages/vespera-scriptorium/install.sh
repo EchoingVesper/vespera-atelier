@@ -7,8 +7,8 @@
 #
 # Usage:
 #   ./install.sh [options]
-#   curl -fsSL https://raw.githubusercontent.com/EchoingVesper/mcp-task-orchestrator/main/install.sh | bash
-#   wget -qO- https://raw.githubusercontent.com/EchoingVesper/mcp-task-orchestrator/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/EchoingVesper/vespera-scriptorium/main/install.sh | bash
+#   wget -qO- https://raw.githubusercontent.com/EchoingVesper/vespera-scriptorium/main/install.sh | bash
 #
 
 set -euo pipefail
@@ -16,8 +16,8 @@ set -euo pipefail
 # Configuration
 SCRIPT_NAME="install.sh"
 PROJECT_NAME="MCP Task Orchestrator"
-REPO_URL="https://github.com/EchoingVesper/mcp-task-orchestrator"
-INSTALLER_URL="https://raw.githubusercontent.com/EchoingVesper/mcp-task-orchestrator/main/install.py"
+REPO_URL="https://github.com/EchoingVesper/vespera-scriptorium"
+INSTALLER_URL="https://raw.githubusercontent.com/EchoingVesper/vespera-scriptorium/main/install.py"
 
 # Colors for output
 RED='\033[0;31m'

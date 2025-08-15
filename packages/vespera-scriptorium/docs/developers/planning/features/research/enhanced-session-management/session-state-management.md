@@ -243,9 +243,9 @@ Automated file system structure creation for session isolation.
 ```text
 python
 async def setup_session_directory(self, session: Session):
-    """Create .task_orchestrator directory structure for session."""
+    """Create .vespera_scriptorium directory structure for session."""
     
-    session_dir = Path(session.project_root_path) / ".task_orchestrator"
+    session_dir = Path(session.project_root_path) / ".vespera_scriptorium"
     
     
 # Create directory structure

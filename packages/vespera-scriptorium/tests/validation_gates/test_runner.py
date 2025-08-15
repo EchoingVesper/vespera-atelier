@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Automated Test Runner for MCP Task Orchestrator Tools
+Automated Test Runner for Vespera Scriptorium Tools
 
 This module provides automated test execution with continuous validation,
 immediate issue resolution workflows, and comprehensive reporting.
@@ -29,7 +29,7 @@ from tool_test_cases import TestCaseRegistry
 logger = logging.getLogger(__name__)
 
 
-class TestRunner:
+class ValidationRunner:
     """Automated test runner with systematic validation and issue resolution."""
     
     def __init__(self, 
@@ -403,7 +403,7 @@ class TestRunner:
 
 async def main():
     """Main entry point for the test runner."""
-    parser = argparse.ArgumentParser(description="Automated Test Runner for MCP Task Orchestrator")
+    parser = argparse.ArgumentParser(description="Automated Test Runner for Vespera Scriptorium")
     
     # Test execution options
     parser.add_argument("--tool", type=str, help="Specific tool to test")

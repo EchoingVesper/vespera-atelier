@@ -12,10 +12,10 @@ from pathlib import Path
 from datetime import datetime
 
 # Import Clean Architecture v2.0 models
-from mcp_task_orchestrator.domain.entities.task import Task, TaskStatus, TaskType, TaskArtifact, ArtifactType
-from mcp_task_orchestrator.domain.value_objects.complexity_level import ComplexityLevel
-from mcp_task_orchestrator.domain.value_objects.specialist_type import SpecialistType
-from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
+from vespera_scriptorium.domain.entities.task import Task, TaskStatus, TaskType, TaskArtifact, ArtifactType
+from vespera_scriptorium.domain.value_objects.complexity_level import ComplexityLevel
+from vespera_scriptorium.domain.value_objects.specialist_type import SpecialistType
+from vespera_scriptorium.db.persistence import DatabasePersistenceManager
 
 
 class TestDatabasePersistenceManager(unittest.TestCase):
@@ -40,7 +40,7 @@ class TestDatabasePersistenceManager(unittest.TestCase):
         
         # Remove any file handlers to close log files
         import logging
-        for handler in logging.getLogger("mcp_task_orchestrator.db.persistence").handlers:
+        for handler in logging.getLogger("mcp_vespera_scriptorium.db.persistence").handlers:
             if isinstance(handler, logging.FileHandler):
                 handler.close()
         

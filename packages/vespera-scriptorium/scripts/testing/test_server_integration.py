@@ -20,11 +20,11 @@ def test_migration_function_availability():
     
     try:
         # Test import of migration function
-        from mcp_task_orchestrator.db.auto_migration import execute_startup_migration
+        from vespera_scriptorium.db.auto_migration import execute_startup_migration
         print("✓ execute_startup_migration import successful")
         
         # Test import of server migration function
-        from mcp_task_orchestrator.server import initialize_database_with_migration
+        from vespera_scriptorium.server import initialize_database_with_migration
         print("✓ initialize_database_with_migration import successful")
         
         return True
@@ -47,7 +47,7 @@ def test_migration_integration_logic():
             temp_db_path = Path(temp_dir) / "test.db"
             
             # Import the migration function
-            from mcp_task_orchestrator.server import initialize_database_with_migration
+            from vespera_scriptorium.server import initialize_database_with_migration
             
             # Test database path resolution logic
             print("Testing database path resolution...")
@@ -79,7 +79,7 @@ def test_server_import_integration():
     
     try:
         # Test server module import
-        import mcp_task_orchestrator.server as server_module
+        import vespera_scriptorium.server as server_module
         print("✓ Server module import successful")
         
         # Check that migration function is available
@@ -112,27 +112,27 @@ def test_migration_system_structure():
     
     try:
         # Test migration manager
-        from mcp_task_orchestrator.db.migration_manager import MigrationManager
+        from vespera_scriptorium.db.migration_manager import MigrationManager
         print("✓ MigrationManager import successful")
         
         # Test schema comparator
-        from mcp_task_orchestrator.db.schema_comparator import SchemaComparator
+        from vespera_scriptorium.db.schema_comparator import SchemaComparator
         print("✓ SchemaComparator import successful")
         
         # Test migration history
-        from mcp_task_orchestrator.db.migration_history import MigrationHistoryManager
+        from vespera_scriptorium.db.migration_history import MigrationHistoryManager
         print("✓ MigrationHistoryManager import successful")
         
         # Test backup manager
-        from mcp_task_orchestrator.db.backup_manager import BackupManager
+        from vespera_scriptorium.db.backup_manager import BackupManager
         print("✓ BackupManager import successful")
         
         # Test rollback manager
-        from mcp_task_orchestrator.db.rollback_manager import RollbackManager
+        from vespera_scriptorium.db.rollback_manager import RollbackManager
         print("✓ RollbackManager import successful")
         
         # Test auto migration system
-        from mcp_task_orchestrator.db.auto_migration import AutoMigrationSystem
+        from vespera_scriptorium.db.auto_migration import AutoMigrationSystem
         print("✓ AutoMigrationSystem import successful")
         
         return True
@@ -162,7 +162,7 @@ def test_environment_variable_handling():
         os.environ["MCP_TASK_ORCHESTRATOR_BASE_DIR"] = test_base_dir
         
         # Import and test the migration function
-        from mcp_task_orchestrator.server import initialize_database_with_migration
+        from vespera_scriptorium.server import initialize_database_with_migration
         
         # Test that it uses environment variables correctly
         # (This will fail due to SQLAlchemy but we can check the path logic)

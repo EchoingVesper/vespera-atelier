@@ -11,7 +11,7 @@ from pathlib import Path
 # Add the project root to Python path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from mcp_task_orchestrator.server import app
+from vespera_scriptorium.server import app
 
 
 async def test_mcp_protocol():

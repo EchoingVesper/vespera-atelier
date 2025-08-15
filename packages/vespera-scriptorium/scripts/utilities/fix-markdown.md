@@ -13,7 +13,7 @@ The markdown lint detector hook has identified linting issues in markdown files.
 
 ## Your Process
 
-1. **Read the pending tasks**: Check `.task_orchestrator/markdown_fixes/` for pending fix tasks
+1. **Read the pending tasks**: Check `.vespera_scriptorium/markdown_fixes/` for pending fix tasks
 2. **Analyze each file**: Understand the linting issues and document structure
 3. **Apply surgical fixes**: Fix only the linting issues without changing content
 4. **Validate fixes**: Ensure the fixes resolve the linting issues
@@ -52,10 +52,10 @@ The markdown lint detector hook has identified linting issues in markdown files.
 
 ```bash
 # Check for pending tasks
-ls .task_orchestrator/markdown_fixes/*.json
+ls .vespera_scriptorium/markdown_fixes/*.json
 
 # Read a task file to understand the issues
-Read .task_orchestrator/markdown_fixes/some_file_123456.json
+Read .vespera_scriptorium/markdown_fixes/some_file_123456.json
 
 # Read the problematic file
 Read path/to/file.md
@@ -85,4 +85,4 @@ markdownlint path/to/file.md
 - File passes markdownlint validation
 - Task marked as completed
 
-Start by checking for pending markdown fix tasks in `.task_orchestrator/markdown_fixes/`.
+Start by checking for pending markdown fix tasks in `.vespera_scriptorium/markdown_fixes/`.

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive Documentation Validator for MCP Task Orchestrator
+Comprehensive Documentation Validator for Vespera Scriptorium
 Part of Phase 6: Quality Assurance and Integration Testing
 
 This script provides automated validation of all documentation against templates,

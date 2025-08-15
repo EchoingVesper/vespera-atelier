@@ -7,7 +7,7 @@ This guide provides the complete implementation roadmap for the coder agent to b
 ## File Structure
 
 ```
-mcp_task_orchestrator/infrastructure/mcp/handlers/
+vespera_scriptorium/infrastructure/mcp/handlers/
 ├── compatibility/
 │   ├── __init__.py
 │   ├── response_formatter.py      # ResponseFormatter class
@@ -286,7 +286,7 @@ Integration tests for the unified compatibility layer.
 
 import pytest
 import json
-from mcp_task_orchestrator.infrastructure.mcp.handlers.di_integration import CleanArchTaskUseCase
+from vespera_scriptorium.infrastructure.mcp.handlers.di_integration import CleanArchTaskUseCase
 
 class TestCompatibilityLayer:
     """Test unified compatibility layer functionality."""
@@ -334,7 +334,7 @@ Unit tests for ResponseFormatter.
 import pytest
 import json
 from datetime import datetime
-from mcp_task_orchestrator.infrastructure.mcp.handlers.compatibility.response_formatter import ResponseFormatter
+from vespera_scriptorium.infrastructure.mcp.handlers.compatibility.response_formatter import ResponseFormatter
 
 class TestResponseFormatter:
     """Test ResponseFormatter functionality."""

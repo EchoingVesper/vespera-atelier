@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This research analyzes testing and validation approaches for Agent-to-Agent (A2A) architecture and multi-LLM provider systems, building on the existing testing infrastructure in the MCP Task Orchestrator codebase. The findings establish comprehensive testing strategies that cover current patterns relevant to A2A, A2A-specific testing approaches, multi-LLM provider testing, performance validation, integration testing, and recommended tools and frameworks.
+This research analyzes testing and validation approaches for Agent-to-Agent (A2A) architecture and multi-LLM provider systems, building on the existing testing infrastructure in the Vespera Scriptorium codebase. The findings establish comprehensive testing strategies that cover current patterns relevant to A2A, A2A-specific testing approaches, multi-LLM provider testing, performance validation, integration testing, and recommended tools and frameworks.
 
 ## 1. Current Testing Patterns in Codebase Relevant to A2A
 

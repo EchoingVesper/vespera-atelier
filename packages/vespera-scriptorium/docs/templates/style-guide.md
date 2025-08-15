@@ -1,7 +1,7 @@
 
 # Documentation Style Guide
 
-Industry-standard documentation practices for the MCP Task Orchestrator project
+Industry-standard documentation practices for the Vespera Scriptorium project
 
 #
 # Purpose
@@ -811,4 +811,4 @@ python scripts/validate_accessibility.py --directory docs/
 
 ---
 
-📋 **This style guide provides the foundation for all MCP Task Orchestrator documentation. Follow these standards to ensure consistent, accessible, and maintainable documentation across the project.**
+📋 **This style guide provides the foundation for all Vespera Scriptorium documentation. Follow these standards to ensure consistent, accessible, and maintainable documentation across the project.**

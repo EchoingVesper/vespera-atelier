@@ -1,6 +1,6 @@
 # Documentation Archive Strategy
 
-**Project:** MCP Task Orchestrator → Vespera Scriptorium Transition  
+**Project:** Vespera Scriptorium → Vespera Scriptorium Transition  
 **Phase:** Systematic Documentation Preservation  
 **Date:** 2025-08-14  
 **Orchestrator Task ID:** task_191ee97d

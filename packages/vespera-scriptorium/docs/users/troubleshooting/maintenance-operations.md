@@ -151,15 +151,15 @@ bash
 
 # Check database file permissions
 
-ls -la .task_orchestrator/database/
+ls -la .vespera_scriptorium/database/
 
 # Check for lock files
 
-ls -la .task_orchestrator/database/*.lock
+ls -la .vespera_scriptorium/database/*.lock
 
 # Test database connectivity
 
-sqlite3 .task_orchestrator/database/tasks.db ".schema"
+sqlite3 .vespera_scriptorium/database/tasks.db ".schema"
 
 ```text
 
@@ -427,7 +427,7 @@ top
 
 # Optimize database
 
-sqlite3 .task_orchestrator/database/tasks.db "VACUUM;"
+sqlite3 .vespera_scriptorium/database/tasks.db "VACUUM;"
 
 ```text
 
@@ -607,7 +607,7 @@ bash
 
 # CAUTION: This will lose all task data
 
-rm -rf .task_orchestrator/database/
+rm -rf .vespera_scriptorium/database/
 
 # Restart MCP server to recreate database
 
@@ -623,12 +623,12 @@ rm -rf .task_orchestrator/database/
 
 # Create backup first
 
-cp .task_orchestrator/database/tasks.db tasks.db.backup
+cp .vespera_scriptorium/database/tasks.db tasks.db.backup
 
 # Repair database
 
-sqlite3 .task_orchestrator/database/tasks.db "PRAGMA integrity_check;"
-sqlite3 .task_orchestrator/database/tasks.db "VACUUM;"
+sqlite3 .vespera_scriptorium/database/tasks.db "PRAGMA integrity_check;"
+sqlite3 .vespera_scriptorium/database/tasks.db "VACUUM;"
 
 ```text
 
@@ -643,11 +643,11 @@ bash
 
 # Check recent maintenance operations
 
-tail -n 100 .task_orchestrator/logs/maintenance.log
+tail -n 100 .vespera_scriptorium/logs/maintenance.log
 
 # Search for specific errors
 
-grep -i "error" .task_orchestrator/logs/maintenance.log
+grep -i "error" .vespera_scriptorium/logs/maintenance.log
 ```text
 
 #

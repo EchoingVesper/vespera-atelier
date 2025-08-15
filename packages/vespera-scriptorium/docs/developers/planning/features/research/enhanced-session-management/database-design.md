@@ -53,7 +53,7 @@ CREATE TABLE sessions (
     status TEXT DEFAULT 'active',  -- active, paused, completed, archived
     
     -- Organizational metadata
-    project_root_path TEXT,  -- Base directory for .task_orchestrator files
+    project_root_path TEXT,  -- Base directory for .vespera_scriptorium files
     markdown_file_path TEXT,  -- Path to human-readable session.md
     priority_level INTEGER DEFAULT 3,  -- 1=urgent, 2=high, 3=medium, 4=low, 5=someday
     

@@ -60,7 +60,7 @@
 
 - **Status**: ✅ **FULLY IMPLEMENTED** in v1.8.0
 
-- **Evidence**: Complete `mcp_task_orchestrator/reboot/` system with MCP tools
+- **Evidence**: Complete `vespera_scriptorium/reboot/` system with MCP tools
 
 - **Implementation**: Graceful shutdown, state preservation, auto-reconnection, restart coordination
 

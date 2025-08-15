@@ -7,7 +7,7 @@
 
 ## Overview
 
-This document outlines the phased approach for modernizing the MCP Task Orchestrator documentation ecosystem. The modernization covers 60+ documentation files across multiple categories, with built-in safeguards, validation gates, and rollback capabilities.
+This document outlines the phased approach for modernizing the Vespera Scriptorium documentation ecosystem. The modernization covers 60+ documentation files across multiple categories, with built-in safeguards, validation gates, and rollback capabilities.
 
 ## Phase Structure
 

@@ -23,7 +23,7 @@ Task dependencies define relationships between tasks that affect execution order
 Tasks that must finish before another can start:
 
 ```python
-from mcp_task_orchestrator.models import TaskDependency, DependencyType
+from vespera_scriptorium.models import TaskDependency, DependencyType
 
 # Architecture must complete before implementation
 

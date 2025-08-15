@@ -1,7 +1,7 @@
 
-# Contributing to MCP Task Orchestrator
+# Contributing to Vespera Scriptorium
 
-Thank you for your interest in contributing to the MCP Task Orchestrator! This document provides guidelines and
+Thank you for your interest in contributing to the Vespera Scriptorium! This document provides guidelines and
 instructions for contributing to this project.
 
 #
@@ -15,7 +15,7 @@ and welcoming community.
 
 # How to Contribute
 
-There are many ways to contribute to the MCP Task Orchestrator:
+There are many ways to contribute to the Vespera Scriptorium:
 
 1. **Reporting Bugs**: If you find a bug, please create an issue with detailed information about how to reproduce it.
 
@@ -36,8 +36,8 @@ There are many ways to contribute to the MCP Task Orchestrator:
 1. Clone your fork:
 
 ```bash
-   git clone https://github.com/your-username/mcp-task-orchestrator.git
-   cd mcp-task-orchestrator
+   git clone https://github.com/your-username/mcp-vespera-scriptorium.git
+   cd mcp-vespera-scriptorium
    
 ```text
 
@@ -52,7 +52,7 @@ pip install -e ".[dev]"
 
 # Or if working from PyPI release
 
-pip install mcp-task-orchestrator[dev]
+pip install mcp-vespera-scriptorium[dev]
 
 ```text
 
@@ -122,4 +122,4 @@ pytest
 
 By contributing to this project, you agree that your contributions will be licensed under the project's MIT License.
 
-Thank you for contributing to the MCP Task Orchestrator!
+Thank you for contributing to the Vespera Scriptorium!

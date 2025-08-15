@@ -8,7 +8,7 @@ from datetime import datetime
 def cleanup_duplicate_tasks():
     """Remove duplicate task plans, keeping only the enhanced version."""
     
-    db_path = os.path.join(".task_orchestrator", "orchestrator_state.db")
+    db_path = os.path.join(".vespera_scriptorium", "orchestrator_state.db")
     
     if not os.path.exists(db_path):
         print("❌ Database not found")

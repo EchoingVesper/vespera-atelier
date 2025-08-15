@@ -15,7 +15,7 @@
 
 # 🎯 Overview
 
-This document defines the comprehensive filename key and organization system for the MCP Task Orchestrator project documentation. It establishes status tags, priority indicators, and maintenance procedures for systematic documentation management.
+This document defines the comprehensive filename key and organization system for the Vespera Scriptorium project documentation. It establishes status tags, priority indicators, and maintenance procedures for systematic documentation management.
 
 ---
 

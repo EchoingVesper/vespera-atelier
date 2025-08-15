@@ -6,7 +6,7 @@
 
 # Overview
 
-This guide provides solutions for common issues with the MCP Task Orchestrator server reboot system. Follow the diagnostic steps and solutions to resolve restart-related problems.
+This guide provides solutions for common issues with the Vespera Scriptorium server reboot system. Follow the diagnostic steps and solutions to resolve restart-related problems.
 
 #
 
@@ -293,7 +293,7 @@ if status['current_status']['errors']:
 # Check state file status
 
 import os
-state_dir = ".task_orchestrator/server_state"
+state_dir = ".vespera_scriptorium/server_state"
 if os.path.exists(f"{state_dir}/current_state.json"):
     print("State file exists")
     
@@ -340,7 +340,7 @@ bash
 
 # Check disk space for state files
 
-   df -h .task_orchestrator/server_state/
+   df -h .vespera_scriptorium/server_state/
    
 
 ```text
@@ -358,7 +358,7 @@ python
 # List available state backups
 
    import glob
-   backups = glob.glob(".task_orchestrator/server_state/backup_state_*.json")
+   backups = glob.glob(".vespera_scriptorium/server_state/backup_state_*.json")
    print("Available backups:", backups)
    
    
@@ -588,7 +588,7 @@ bash
 
 # Check SQLite database integrity
 
-   sqlite3 .task_orchestrator/task_orchestrator.db "PRAGMA integrity_check;"
+   sqlite3 .vespera_scriptorium/vespera_scriptorium.db "PRAGMA integrity_check;"
    
 
 ```text
@@ -797,7 +797,7 @@ import json
 
 # Load and inspect state file
 
-with open('.task_orchestrator/server_state/current_state.json', 'r') as f:
+with open('.vespera_scriptorium/server_state/current_state.json', 'r') as f:
     state = json.load(f)
 
 print("State metadata:")
@@ -887,7 +887,7 @@ text
 ```text
 text
 bash
-   rm -f .task_orchestrator/*.lock
+   rm -f .vespera_scriptorium/*.lock
    
 
 ```text
@@ -900,8 +900,8 @@ text
 ```text
 text
 bash
-   cp .task_orchestrator/server_state/current_state.json \
-      .task_orchestrator/server_state/recovery_backup.json
+   cp .vespera_scriptorium/server_state/current_state.json \
+      .vespera_scriptorium/server_state/recovery_backup.json
    
 
 ```text
@@ -914,7 +914,7 @@ text
 ```text
 text
 bash
-   python -m mcp_task_orchestrator.server
+   python -m vespera_scriptorium.server
    
 
 ```text
@@ -949,7 +949,7 @@ If state file is corrupted:
 ```text
 text
 bash
-   ls -la .task_orchestrator/server_state/backup_state_*.json
+   ls -la .vespera_scriptorium/server_state/backup_state_*.json
    
 
 ```text
@@ -966,8 +966,8 @@ bash
 
 # Stop server first
 
-   cp .task_orchestrator/server_state/backup_state_<timestamp>.json \
-      .task_orchestrator/server_state/current_state.json
+   cp .vespera_scriptorium/server_state/backup_state_<timestamp>.json \
+      .vespera_scriptorium/server_state/current_state.json
    
 
 ```text
@@ -1035,7 +1035,7 @@ bash
 
 # Weekly cleanup of old backups (keep last 10)
 
-   cd .task_orchestrator/server_state/
+   cd .vespera_scriptorium/server_state/
    ls -t backup_state_*.json | tail -n +11 | xargs rm -f
    
 
@@ -1166,7 +1166,7 @@ bash
 
 # State file information
 
-   ls -la .task_orchestrator/server_state/
+   ls -la .vespera_scriptorium/server_state/
    ```
 
 #

@@ -1,6 +1,6 @@
 
 
-# MCP Task Orchestrator - Project Organization Cleanup Plan
+# Vespera Scriptorium - Project Organization Cleanup Plan
 
 #
 
@@ -184,7 +184,7 @@ launch_orchestrator.py                     ✓ Server launcher
 
 ```text
 
-mcp-task-orchestrator/
+mcp-vespera-scriptorium/
 ├── 📄 README.md                          
 
 # Primary documentation
@@ -241,7 +241,7 @@ mcp-task-orchestrator/
 
 # Environment template
 
-├── 📁 mcp_task_orchestrator/             
+├── 📁 vespera_scriptorium/             
 
 # Source code
 
@@ -313,7 +313,7 @@ mcp-task-orchestrator/
 
 # Historical artifacts
 
-├── 📁 .task_orchestrator/               
+├── 📁 .vespera_scriptorium/               
 
 # Runtime state
 
@@ -416,7 +416,7 @@ text
 text
 markdown
 
-# Claude Code Session Setup - MCP Task Orchestrator
+# Claude Code Session Setup - Vespera Scriptorium
 
 #
 

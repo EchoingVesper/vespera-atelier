@@ -27,7 +27,7 @@ logging.basicConfig(
 from mcp_task_orchestrator.orchestrator.models import (
     TaskBreakdown, SubTask, TaskStatus, SpecialistType, ComplexityLevel
 )
-from mcp_task_orchestrator.persistence import PersistenceManager
+from vespera_scriptorium.persistence import PersistenceManager
 from .orchestrator.orchestration_state_manager import StateManager
 from .orchestrator.specialist_management_service import SpecialistManager
 from .orchestrator.task_orchestration_service import TaskOrchestrator

@@ -6,7 +6,7 @@
 
 # Getting Started
 
-After installation, restart your MCP clients and look for "task-orchestrator" in the available tools.
+After installation, restart your MCP clients and look for "vespera-scriptorium" in the available tools.
 
 #
 
@@ -18,7 +18,7 @@ After installation, restart your MCP clients and look for "task-orchestrator" in
 
 # Automatic Workspace Detection
 
-The MCP Task Orchestrator v1.8.0 introduces **workspace-aware task management**. Instead of manual session setup, the orchestrator automatically:
+The Vespera Scriptorium v1.8.0 introduces **workspace-aware task management**. Instead of manual session setup, the orchestrator automatically:
 
 - **Detects your project workspace** by finding Git repositories, package.json, pyproject.toml, and other project markers
 
@@ -63,7 +63,7 @@ The response will include:
 
 - `working_directory`: The workspace directory being used  
 
-- `orchestrator_path`: Full path to the `.task_orchestrator` folder
+- `orchestrator_path`: Full path to the `.vespera_scriptorium` folder
 
 - `detection_method`: How the workspace was detected (git_root, project_marker, etc.)
 

@@ -9,7 +9,7 @@ os.chdir(Path(__file__).parent)
 print("🔧 Applying emergency database schema fix...")
 
 # Connect to database
-conn = sqlite3.connect("task_orchestrator.db")
+conn = sqlite3.connect("vespera_scriptorium.db")
 cursor = conn.cursor()
 
 # Check current schema
@@ -45,7 +45,7 @@ print(f"\n✅ Applied {len(applied_fixes)} schema fixes!")
 print("\n🧪 Testing orchestrator functionality...")
 
 try:
-    from mcp_task_orchestrator.db.persistence import DatabasePersistenceManager
+    from vespera_scriptorium.db.persistence import DatabasePersistenceManager
     persistence = DatabasePersistenceManager()
     tasks = persistence.get_all_active_tasks()
     print(f"✅ Successfully imported and got {len(tasks)} active tasks")

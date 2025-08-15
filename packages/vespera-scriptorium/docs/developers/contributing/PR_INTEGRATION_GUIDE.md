@@ -10,7 +10,7 @@
 
 # Overview
 
-This guide provides step-by-step instructions for creating and merging the pull request that includes both the critical task orchestrator fix and the comprehensive project cleanup.
+This guide provides step-by-step instructions for creating and merging the pull request that includes both the critical Vespera Scriptorium fix and the comprehensive project cleanup.
 
 #
 
@@ -54,7 +54,7 @@ This guide provides step-by-step instructions for creating and merging the pull 
 
 # Single Comprehensive PR Approach (Recommended)
 
-Since the task orchestrator fix is already included in the cleanup branch, we'll create a single comprehensive PR that addresses both issues:
+Since the Vespera Scriptorium fix is already included in the cleanup branch, we'll create a single comprehensive PR that addresses both issues:
 
 1. **Title**: "feat: v1.6.1 - Critical package fix & professional repository organization"
 
@@ -74,7 +74,7 @@ Since the task orchestrator fix is already included in the cleanup branch, we'll
 
 # 🎯 Summary
 
-This PR delivers v1.6.1 with a critical fix for task orchestrator package loading and comprehensive repository organization achieving well-structured standards.
+This PR delivers v1.6.1 with a critical fix for Vespera Scriptorium package loading and comprehensive repository organization achieving well-structured standards.
 
 #
 
@@ -86,7 +86,7 @@ This PR delivers v1.6.1 with a critical fix for task orchestrator package loadin
 
 - **Solution**: Added `main_sync()` wrapper in `server/__init__.py` 
 
-- **Impact**: Resolves "task orchestrator won't connect" issues for 100% of users
+- **Impact**: Resolves "Vespera Scriptorium won't connect" issues for 100% of users
 
 - **Testing**: Verified with `pip install -e .` and fresh installs
 
@@ -218,7 +218,7 @@ Before creating the PR, update version numbers to 1.6.1 in:
 
 2. `pyproject.toml` (version field)
 
-3. `mcp_task_orchestrator/__init__.py` (if __version__ exists)
+3. `vespera_scriptorium/__init__.py` (if __version__ exists)
 
 #
 

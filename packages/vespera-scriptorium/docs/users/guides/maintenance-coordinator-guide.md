@@ -8,7 +8,7 @@
 
 # Overview
 
-The Maintenance Coordinator is an automated system that helps keep your MCP Task Orchestrator environment clean, organized, and performing optimally. It provides intelligent task cleanup, structure validation, documentation synchronization, and handover preparation capabilities.
+The Maintenance Coordinator is an automated system that helps keep your Vespera Scriptorium environment clean, organized, and performing optimally. It provides intelligent task cleanup, structure validation, documentation synchronization, and handover preparation capabilities.
 
 #
 

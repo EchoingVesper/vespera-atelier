@@ -287,7 +287,7 @@
 
 ```text
 
-"If you're experiencing database issues, restart your MCP client and delete the .task_orchestrator folder"
+"If you're experiencing database issues, restart your MCP client and delete the .vespera_scriptorium folder"
 
 ```text
 
@@ -471,7 +471,7 @@
 
 ```text
 
-"Start the task orchestrator and help me break down this complex project into manageable steps"
+"Start the Vespera Scriptorium and help me break down this complex project into manageable steps"
 
 ```text
 

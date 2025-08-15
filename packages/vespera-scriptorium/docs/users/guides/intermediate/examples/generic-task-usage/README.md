@@ -81,7 +81,7 @@ This guide provides practical examples of using the Generic Task Model (v2.0) wi
 # Quick Start Example
 
 ```python
-from mcp_task_orchestrator.models import GenericTask
+from vespera_scriptorium.models import GenericTask
 
 # Create a simple feature task
 
@@ -119,7 +119,7 @@ task = GenericTask(
 
 - **Current Version**: 2.0
 
-- **Compatibility**: MCP Task Orchestrator v1.4.1+
+- **Compatibility**: Vespera Scriptorium v1.4.1+
 
 - **API Version**: Generic Tasks API v2.0
 

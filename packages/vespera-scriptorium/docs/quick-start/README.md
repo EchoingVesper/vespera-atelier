@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get up and running with MCP Task Orchestrator in 5 minutes.
+Get up and running with Vespera Scriptorium in 5 minutes.
 
 ## Prerequisites
 
@@ -12,7 +12,7 @@ Get up and running with MCP Task Orchestrator in 5 minutes.
 ### 1. Install the Package
 
 ```bash
-pip install mcp-task-orchestrator
+pip install mcp-vespera-scriptorium
 ```
 
 ### 2. Configure Your MCP Client
@@ -27,7 +27,7 @@ Edit your Claude configuration file:
 ```json
 {
   "mcpServers": {
-    "task-orchestrator": {
+    "vespera-scriptorium": {
       "command": "python",
       "args": ["-m", "mcp_task_orchestrator.server"],
       "env": {}
@@ -43,7 +43,7 @@ Add to your workspace `.mcp/config.json`:
 ```json
 {
   "servers": {
-    "task-orchestrator": {
+    "vespera-scriptorium": {
       "command": "python",
       "args": ["-m", "mcp_task_orchestrator.server"]
     }
@@ -62,7 +62,7 @@ The Task Orchestrator tools should now be available in your MCP client.
 Ask your AI assistant to use the Task Orchestrator:
 
 ```
-Use the task orchestrator to help me create a Python script that 
+Use the Vespera Scriptorium to help me create a Python script that 
 downloads weather data and sends email alerts for severe weather.
 ```
 
@@ -72,7 +72,7 @@ The orchestrator will:
 2. **Break down the task** into manageable subtasks
 3. **Assign specialists** (Architect, Implementer, Tester, etc.)
 4. **Execute each subtask** with the appropriate specialist
-5. **Save all artifacts** to `.task_orchestrator/` in your project
+5. **Save all artifacts** to `.vespera_scriptorium/` in your project
 
 ### What You Get
 
@@ -80,7 +80,7 @@ After execution, you'll have:
 
 ```
 your-project/
-├── .task_orchestrator/
+├── .vespera_scriptorium/
 │   ├── tasks.db           # All task history and decisions
 │   ├── artifacts/         # Generated code and documents
 │   │   ├── weather_client.py
@@ -147,7 +147,7 @@ The system remembers everything:
 
 ### Initialize a New Session
 ```
-Initialize a task orchestrator session for my project
+Initialize a Vespera Scriptorium session for my project
 ```
 
 ### Plan a Complex Task
@@ -198,21 +198,21 @@ Previous tasks inform future work. Reference earlier decisions when building rel
 
 1. Check your MCP client configuration
 2. Ensure Python is in your PATH
-3. Verify installation: `python -m mcp_task_orchestrator.server`
+3. Verify installation: `python -m vespera_scriptorium.server`
 
 ### Database Errors
 
-The orchestrator creates a SQLite database in `.task_orchestrator/`. If you see database errors:
+The orchestrator creates a SQLite database in `.vespera_scriptorium/`. If you see database errors:
 
 1. Check write permissions in your project directory
-2. Remove `.task_orchestrator/tasks.db` to start fresh
+2. Remove `.vespera_scriptorium/tasks.db` to start fresh
 
 ### Import Errors
 
 Ensure you have Python 3.8+ and all dependencies:
 
 ```bash
-pip install --upgrade mcp-task-orchestrator
+pip install --upgrade mcp-vespera-scriptorium
 ```
 
 ## Next Steps
@@ -225,4 +225,4 @@ pip install --upgrade mcp-task-orchestrator
 
 - Check the [Troubleshooting Guide](../users/troubleshooting/README.md)
 - Review [Common Issues](../users/troubleshooting/common-issues/)
-- Report bugs at our [GitHub repository](https://github.com/EchoingVesper/mcp-task-orchestrator/issues)
+- Report bugs at our [GitHub repository](https://github.com/EchoingVesper/mcp-vespera-scriptorium/issues)

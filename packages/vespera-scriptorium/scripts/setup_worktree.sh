@@ -57,7 +57,7 @@ $PYTHON_CMD -c "
 import sys
 sys.path.append('.')
 try:
-    from mcp_task_orchestrator.server import app
+    from vespera_scriptorium.server import app
     print('✅ Orchestrator import successful')
 except Exception as e:
     print(f'❌ Orchestrator import failed: {e}')
@@ -70,8 +70,8 @@ import sys, json
 sys.path.append('.')
 try:
     import asyncio
-    from mcp_task_orchestrator.orchestrator.core import TaskOrchestrator
-    from mcp_task_orchestrator.orchestrator.state import StateManager
+    from vespera_scriptorium.orchestrator.core import TaskOrchestrator
+    from vespera_scriptorium.orchestrator.state import StateManager
     
     # This is a simplified check - full status requires async context
     print('✅ Core orchestrator components accessible')

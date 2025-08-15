@@ -729,7 +729,7 @@ class VesperaIntegrationEngine:
 
 **Key Implementation:**
 ```python
-# mcp_task_orchestrator/infrastructure/template_system/hooks/
+# vespera_scriptorium/infrastructure/template_system/hooks/
 ├── __init__.py
 ├── base.py              # Hook base classes
 ├── executor.py          # Hook execution engine  
@@ -749,7 +749,7 @@ class VesperaIntegrationEngine:
 
 **Key Implementation:**
 ```python
-# mcp_task_orchestrator/infrastructure/template_system/agents/
+# vespera_scriptorium/infrastructure/template_system/agents/
 ├── __init__.py
 ├── spawner.py           # Agent spawning logic
 ├── coordinator.py       # Multi-agent coordination
@@ -769,7 +769,7 @@ class VesperaIntegrationEngine:
 
 **Key Implementation:**
 ```python
-# mcp_task_orchestrator/infrastructure/template_system/documents/
+# vespera_scriptorium/infrastructure/template_system/documents/
 ├── __init__.py
 ├── association.py       # Document association logic
 ├── tracker.py          # Modification tracking
@@ -789,7 +789,7 @@ class VesperaIntegrationEngine:
 
 **Key Implementation:**
 ```python
-# mcp_task_orchestrator/infrastructure/template_system/patterns/
+# vespera_scriptorium/infrastructure/template_system/patterns/
 ├── __init__.py
 ├── ed_patterns.py       # Executive dysfunction patterns
 ├── zero_decision.py     # Zero-decision templates

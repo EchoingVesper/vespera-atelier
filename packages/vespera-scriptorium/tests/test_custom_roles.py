@@ -9,9 +9,9 @@ from pathlib import Path
 import yaml
 import asyncio
 
-from mcp_task_orchestrator.orchestrator.task_orchestration_service import TaskOrchestrator
-from mcp_task_orchestrator.orchestrator.specialist_management_service import SpecialistManager
-from mcp_task_orchestrator.orchestrator.orchestration_state_manager import StateManager
+from vespera_scriptorium.orchestrator.task_orchestration_service import TaskOrchestrator
+from vespera_scriptorium.orchestrator.specialist_management_service import SpecialistManager
+from vespera_scriptorium.orchestrator.orchestration_state_manager import StateManager
 
 
 class TestCustomRoles(unittest.TestCase):
@@ -72,7 +72,7 @@ class TestCustomRoles(unittest.TestCase):
         # Run the initialize_session method and check the result
         result = asyncio.run(self.orchestrator.initialize_session())
         
-        # Verify that the result contains the project-specific task orchestrator role
+        # Verify that the result contains the project-specific Vespera Scriptorium role
         self.assertEqual(result["role"], "Task Orchestrator")
         self.assertIn("Test expertise 1", result["capabilities"])
         self.assertIn("Test expertise 2", result["capabilities"])

@@ -69,7 +69,7 @@ def test_workspace_detection_dependency():
         return False
 
 if __name__ == "__main__":
-    print("🔍 MCP Task Orchestrator Dependency Analysis")
+    print("🔍 Vespera Scriptorium Dependency Analysis")
     print("=" * 50)
     
     deps_ok = test_dependency_logic()

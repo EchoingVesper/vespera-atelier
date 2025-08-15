@@ -6,7 +6,7 @@
 
 # Configuration Files
 
-MCP Task Orchestrator uses YAML configuration files stored in your project's `.task_orchestrator/` directory.
+Vespera Scriptorium uses YAML configuration files stored in your project's `.vespera_scriptorium/` directory.
 
 #
 
@@ -16,11 +16,11 @@ When you first initialize a project, a default configuration is created:
 
 ```yaml
 
-# .task_orchestrator/config.yaml
+# .vespera_scriptorium/config.yaml
 
 workspace:
   name: "default"
-  database_path: ".task_orchestrator/workspace.db"
+  database_path: ".vespera_scriptorium/workspace.db"
   
 specialists:
   default_roles:
@@ -259,7 +259,7 @@ bash
 
 # Test configuration
 
-python -m mcp_task_orchestrator.tools.diagnostics.validate_config
+python -m vespera_scriptorium.tools.diagnostics.validate_config
 
 # Expected output: All configuration valid
 
@@ -274,7 +274,7 @@ python -m mcp_task_orchestrator.tools.diagnostics.validate_config
 **Invalid specialist roles**: Check spelling of role names
 **Timeout too low**: Increase for complex tasks
 **Database permission errors**: Check file permissions
-**Missing workspace directory**: Ensure `.task_orchestrator/` exists
+**Missing workspace directory**: Ensure `.vespera_scriptorium/` exists
 
 #
 
@@ -337,7 +337,7 @@ quality:
 
 - Verify file permissions are readable
 
-- Ensure `.task_orchestrator/` directory exists
+- Ensure `.vespera_scriptorium/` directory exists
 
 #
 

@@ -52,7 +52,7 @@ def validate_imports(output_file):
         # Test AutoMigrationSystem
         total_imports += 1
         try:
-            from mcp_task_orchestrator.db.auto_migration import AutoMigrationSystem, MigrationResult
+            from vespera_scriptorium.db.auto_migration import AutoMigrationSystem, MigrationResult
             f.write("✅ AutoMigrationSystem imported successfully\n")
             imports_successful += 1
             
@@ -67,11 +67,11 @@ def validate_imports(output_file):
         
         # Test other components
         components = [
-            ("MigrationManager", "mcp_task_orchestrator.db.migration_manager", "MigrationManager"),
-            ("SchemaComparator", "mcp_task_orchestrator.db.schema_comparator", "SchemaComparator"),
-            ("MigrationHistoryManager", "mcp_task_orchestrator.db.migration_history", "MigrationHistoryManager"),
-            ("BackupManager", "mcp_task_orchestrator.db.backup_manager", "BackupManager"),
-            ("Database Models", "mcp_task_orchestrator.db.models", "Base"),
+            ("MigrationManager", "mcp_vespera_scriptorium.db.migration_manager", "MigrationManager"),
+            ("SchemaComparator", "mcp_vespera_scriptorium.db.schema_comparator", "SchemaComparator"),
+            ("MigrationHistoryManager", "mcp_vespera_scriptorium.db.migration_history", "MigrationHistoryManager"),
+            ("BackupManager", "mcp_vespera_scriptorium.db.backup_manager", "BackupManager"),
+            ("Database Models", "mcp_vespera_scriptorium.db.models", "Base"),
         ]
         
         for name, module_path, class_name in components:
@@ -128,7 +128,7 @@ def validate_functionality(output_file):
         # Test AutoMigrationSystem functionality
         functionality_tests += 1
         try:
-            from mcp_task_orchestrator.db.auto_migration import AutoMigrationSystem
+            from vespera_scriptorium.db.auto_migration import AutoMigrationSystem
             
             with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as tmp_file:
                 db_path = tmp_file.name
@@ -159,7 +159,7 @@ def validate_functionality(output_file):
         # Test configuration
         functionality_tests += 1
         try:
-            from mcp_task_orchestrator.db.auto_migration import AutoMigrationSystem
+            from vespera_scriptorium.db.auto_migration import AutoMigrationSystem
             
             with tempfile.NamedTemporaryFile(suffix='.db') as tmp_file:
                 db_url = f"sqlite:///{tmp_file.name}"
@@ -194,7 +194,7 @@ def validate_integration(output_file):
         # Test execute_startup_migration function
         integration_tests += 1
         try:
-            from mcp_task_orchestrator.db.auto_migration import execute_startup_migration
+            from vespera_scriptorium.db.auto_migration import execute_startup_migration
             
             with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as tmp_file:
                 db_path = tmp_file.name
@@ -223,7 +223,7 @@ def validate_integration(output_file):
         # Test backup integration
         integration_tests += 1
         try:
-            from mcp_task_orchestrator.db.backup_manager import BackupManager
+            from vespera_scriptorium.db.backup_manager import BackupManager
             
             with tempfile.TemporaryDirectory() as temp_dir:
                 backup_manager = BackupManager(Path(temp_dir))

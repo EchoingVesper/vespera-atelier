@@ -1,6 +1,6 @@
 # Vespera Scriptorium Platform Architecture Design
 
-**Document Purpose**: Detailed technical architecture for transforming MCP Task Orchestrator into Vespera Scriptorium - "An IDE for Ideas" - maintaining clean architecture principles while adding comprehensive document-centric, creative, and knowledge management capabilities.
+**Document Purpose**: Detailed technical architecture for transforming Vespera Scriptorium into Vespera Scriptorium - "An IDE for Ideas" - maintaining clean architecture principles while adding comprehensive document-centric, creative, and knowledge management capabilities.
 
 ## Architecture Overview
 
@@ -599,7 +599,7 @@ class UnifiedWorkflowOrchestrator:
         creative_service: CreativeWorkflowService,
         knowledge_service: KnowledgeManagementService
     ):
-        self.task_orchestrator = task_orchestrator
+        self.vespera_scriptorium = task_orchestrator
         self.document_service = document_service
         self.creative_service = creative_service
         self.knowledge_service = knowledge_service
@@ -612,7 +612,7 @@ class UnifiedWorkflowOrchestrator:
         """Orchestrate document-centric workflows using existing task system."""
         
         # Create master coordination task
-        master_task = await self.task_orchestrator.create_task(
+        master_task = await self.vespera_scriptorium.create_task(
             title=f"{workflow_type} Coordination",
             task_type=TaskType.COORDINATION,
             specialist_type=SpecialistType.COORDINATOR
@@ -624,7 +624,7 @@ class UnifiedWorkflowOrchestrator:
         )
         
         # Execute using existing orchestration system
-        results = await self.task_orchestrator.execute_coordinated_workflow(
+        results = await self.vespera_scriptorium.execute_coordinated_workflow(
             master_task.task_id, subtasks
         )
         

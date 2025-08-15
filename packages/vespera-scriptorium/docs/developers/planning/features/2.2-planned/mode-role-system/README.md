@@ -33,7 +33,7 @@ modularized_from: "docs/developers/planning/features/2.2-planned/[PLANNED]_mode_
 #
 # 📋 Overview
 
-Enhance the MCP Task Orchestrator's role system to support dynamic mode selection, automatic role configuration management, and session-mode binding. This system transforms the static role configuration into a flexible, session-aware specialization framework.
+Enhance the Vespera Scriptorium's role system to support dynamic mode selection, automatic role configuration management, and session-mode binding. This system transforms the static role configuration into a flexible, session-aware specialization framework.
 
 #
 # 🎯 Objectives
@@ -69,7 +69,7 @@ config/default_roles.yaml → Hardcoded role definitions
 ```text
 text
 Dynamic Mode System:
-config/default_roles.yaml → Project .task_orchestrator/roles/ → Session Mode Binding
+config/default_roles.yaml → Project .vespera_scriptorium/roles/ → Session Mode Binding
                                     ↓                                ↓
                             User customizations              Active session uses
                             Multiple .yaml files             selected mode configuration
@@ -203,4 +203,4 @@ This specification is organized into focused modules for Claude Code compatibili
 
 - **Monitoring**: Integration with system monitoring and alerting
 
-This mode/role system enhancement transforms the MCP Task Orchestrator from a static role system into a dynamic, session-aware specialization framework that adapts to project needs while maintaining reliability and ease of use.
+This mode/role system enhancement transforms the Vespera Scriptorium from a static role system into a dynamic, session-aware specialization framework that adapts to project needs while maintaining reliability and ease of use.

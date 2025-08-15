@@ -19,16 +19,16 @@
 
 ```text
 Task task_159abae8:
-  - implementer_768479: "e:\My Work\Programming\MCP Task Orchestrator\mcp_orchestrator_roles.yaml"
-  - tester_6e160c: "e:\My Work\Programming\MCP Task Orchestrator\tests\test_custom_roles_loading.py"
-  - tester_da40c2: "e:\My Work\Programming\MCP Task Orchestrator\tests\test_example_file_recreation.py"
+  - implementer_768479: "e:\My Work\Programming\Vespera Scriptorium\mcp_orchestrator_roles.yaml"
+  - tester_6e160c: "e:\My Work\Programming\Vespera Scriptorium\tests\test_custom_roles_loading.py"
+  - tester_da40c2: "e:\My Work\Programming\Vespera Scriptorium\tests\test_example_file_recreation.py"
 
 Task task_56e556bb:
   - researcher_3d0cad: "specialists.yaml file structure analysis"
-  - implementer_a7eb56: "e:\My Work\Programming\MCP Task Orchestrator\config\default_roles.yaml"
+  - implementer_a7eb56: "e:\My Work\Programming\Vespera Scriptorium\config\default_roles.yaml"
   - implementer_452485: "Modified core.py file"
-  - implementer_937a58: "e:\My Work\Programming\MCP Task Orchestrator\mcp_task_orchestrator\orchestrator\role_loader.py"
-  - documenter_d2df66: "Updated e:\My Work\Programming\MCP Task Orchestrator\docs\configuration.md"
+  - implementer_937a58: "e:\My Work\Programming\Vespera Scriptorium\mcp_task_orchestrator\orchestrator\role_loader.py"
+  - documenter_d2df66: "Updated e:\My Work\Programming\Vespera Scriptorium\docs\configuration.md"
   - tester_ebe6f2: Complex multi-line string (should be array)
 ```text
 

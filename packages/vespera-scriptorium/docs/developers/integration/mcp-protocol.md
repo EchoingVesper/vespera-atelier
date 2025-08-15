@@ -163,7 +163,7 @@ await mcp_github_api.create_pull_request({
 
 **Security Constraints**:
 
-- Restricted to `/mnt/e/dev/mcp-servers/mcp-task-orchestrator` only
+- Restricted to `/mnt/e/dev/mcp-servers/mcp-vespera-scriptorium` only
 
 - No access to sensitive system directories
 

@@ -9,15 +9,15 @@
 
 ## Issue #35: Auto-Configuration Fix
 
-- **Problem**: `mcp-task-orchestrator-cli install` required manual server path
+- **Problem**: `mcp-vespera-scriptorium-cli install` required manual server path
 
-- **Solution**: Added `mcp-task-orchestrator-cli setup` command that auto-detects everything
+- **Solution**: Added `mcp-vespera-scriptorium-cli setup` command that auto-detects everything
 
 #
 
 ## Issue #36: Working Directory Fix  
 
-- **Problem**: `.task_orchestrator` folder created in wrong location
+- **Problem**: `.vespera_scriptorium` folder created in wrong location
 
 - **Solution**: Added `working_directory` parameter to `orchestrator_initialize_session`
 
@@ -44,12 +44,12 @@ Since you're in Windows and we're in WSL, here's how to test the auto-configurat
    ```
 
 bash
-   mcp-task-orchestrator-cli setup
+   mcp-vespera-scriptorium-cli setup
    **Expected output**:
 
 ```text
 
-   MCP Task Orchestrator - Quick Setup
+   Vespera Scriptorium - Quick Setup
    Auto-detecting server module...
    ✓ Found server module: C:\path\to\site-packages\mcp_task_orchestrator\server\__init__.py
    Detecting installed MCP clients...
@@ -66,7 +66,7 @@ text
 
 - Restart Claude Desktop/Windsurf
 
-- Look for "task-orchestrator" in available tools
+- Look for "vespera-scriptorium" in available tools
 
 #
 
@@ -87,7 +87,7 @@ json
    {
      "session_initialized": true,
      "working_directory": "C:\\Test-Projects\\my-project",
-     "orchestrator_path": "C:\\Test-Projects\\my-project\\.task_orchestrator",
+     "orchestrator_path": "C:\\Test-Projects\\my-project\\.vespera_scriptorium",
      ...
    }
 ```text
@@ -102,9 +102,9 @@ python
 text
    **Expected**: Should still work and show where files are created
 
-3. **Verify .task_orchestrator location**:
+3. **Verify .vespera_scriptorium location**:
 
-- Check that `.task_orchestrator` folder is created in the specified directory
+- Check that `.vespera_scriptorium` folder is created in the specified directory
 
 - Not in some random system location
 
@@ -152,7 +152,7 @@ text
 
 #
 
-## Server Changes (mcp_task_orchestrator/server.py):
+## Server Changes (vespera_scriptorium/server.py):
 
 1. **Added `working_directory` parameter** to orchestrator_initialize_session tool schema  
 
@@ -170,8 +170,8 @@ text
 
 ```text
 bash
-pip install mcp-task-orchestrator
-mcp-task-orchestrator-cli install  
+pip install mcp-vespera-scriptorium
+mcp-vespera-scriptorium-cli install  
 
 # ERROR: requires unknown server path
 
@@ -183,8 +183,8 @@ mcp-task-orchestrator-cli install
 
 ```text
 bash
-pip install mcp-task-orchestrator  
-mcp-task-orchestrator-cli setup 
+pip install mcp-vespera-scriptorium  
+mcp-vespera-scriptorium-cli setup 
 # ✅ Works automatically
 
 ```text

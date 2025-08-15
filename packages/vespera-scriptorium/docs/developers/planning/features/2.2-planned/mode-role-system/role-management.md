@@ -27,8 +27,8 @@ class RoleManagementSystem:
     def __init__(self, project_root: Path, config_dir: Path):
         self.project_root = project_root
         self.config_dir = config_dir
-        self.roles_dir = project_root / ".task_orchestrator" / "roles"
-        self.modes_dir = project_root / ".task_orchestrator" / "modes"
+        self.roles_dir = project_root / ".vespera_scriptorium" / "roles"
+        self.modes_dir = project_root / ".vespera_scriptorium" / "modes"
         
     async def initialize_project_roles(self):
         """Initialize role directory for new project."""

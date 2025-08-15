@@ -3,7 +3,7 @@
 Template Compliance Validation Script
 
 This script validates that documentation files follow the established templates
-and style guidelines for the MCP Task Orchestrator project.
+and style guidelines for the Vespera Scriptorium project.
 """
 
 import argparse

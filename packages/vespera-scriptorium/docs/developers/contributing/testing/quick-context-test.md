@@ -1,6 +1,6 @@
 🧪 **Context Continuity Quick Test**
 
-I need to test the context continuity system for the MCP Task Orchestrator in this new session.
+I need to test the context continuity system for the Vespera Scriptorium in this new session.
 
 **Test requests:**
 

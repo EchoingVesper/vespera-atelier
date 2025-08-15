@@ -17,7 +17,7 @@ This document integrates all planned features from `docs/prompts/features/` with
 
 # Vespera Atelier Integration Context
 
-**Important Context**: The MCP Task Orchestrator is designed for dual-purpose use:
+**Important Context**: The Vespera Scriptorium is designed for dual-purpose use:
 
 1. **Standalone MCP Server**: Independent operation for any development team
 
@@ -644,6 +644,6 @@ Based on comprehensive gap analysis, **40+ critical tools** are missing from the
 
 # Conclusion
 
-This integrated roadmap combines core 2.0.0 requirements with valuable approved features, creating a comprehensive release that establishes MCP Task Orchestrator as both a standalone tool and the foundation for Vespera Atelier. The phased approach ensures quality while maximizing value delivery.
+This integrated roadmap combines core 2.0.0 requirements with valuable approved features, creating a comprehensive release that establishes Vespera Scriptorium as both a standalone tool and the foundation for Vespera Atelier. The phased approach ensures quality while maximizing value delivery.
 
 The dual-purpose architecture enables broader adoption while maintaining the specialized capabilities needed for creative workflow automation in the larger Vespera Atelier ecosystem.

@@ -4,9 +4,9 @@
 
 #
 
-# What is MCP Task Orchestrator?
+# What is Vespera Scriptorium?
 
-MCP Task Orchestrator is an intelligent task management system that coordinates AI specialists to handle complex workflows. It breaks down large tasks into manageable pieces and assigns the right specialist for each job.
+Vespera Scriptorium is an intelligent task management system that coordinates AI specialists to handle complex workflows. It breaks down large tasks into manageable pieces and assigns the right specialist for each job.
 
 #
 
@@ -66,7 +66,7 @@ Enhanced storage system that:
 
 #
 
-# Why Use MCP Task Orchestrator?
+# Why Use Vespera Scriptorium?
 
 #
 
@@ -114,7 +114,7 @@ Enhanced storage system that:
 
 # Next Steps
 
-- [Installation Guide](installation.md) - Set up MCP Task Orchestrator
+- [Installation Guide](installation.md) - Set up Vespera Scriptorium
 
 - [First Task Tutorial](first-task.md) - Complete your first orchestration
 

@@ -1,0 +1,12 @@
+{
+  "MD013": {
+    "line_length": 100,
+    "tables": false,
+    "code_blocks": false
+  },
+  "MD024": false,
+  "MD033": {
+    "allowed_elements": ["br", "img", "details", "summary"]
+  },
+  "MD041": false
+}

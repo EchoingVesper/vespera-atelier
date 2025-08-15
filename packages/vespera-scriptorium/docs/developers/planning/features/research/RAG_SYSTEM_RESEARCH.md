@@ -12,7 +12,7 @@
 
 # Executive Summary
 
-This document outlines research requirements for implementing RAG (Retrieval-Augmented Generation) capabilities in the MCP Task Orchestrator. The goal is to transform the orchestrator from a workflow tool into an intelligent knowledge management system that learns from past tasks, artifacts, and solutions.
+This document outlines research requirements for implementing RAG (Retrieval-Augmented Generation) capabilities in the Vespera Scriptorium. The goal is to transform the orchestrator from a workflow tool into an intelligent knowledge management system that learns from past tasks, artifacts, and solutions.
 
 #
 

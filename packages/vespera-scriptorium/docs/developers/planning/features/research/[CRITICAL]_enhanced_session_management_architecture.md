@@ -20,7 +20,7 @@
 
 - **Issue #36**: Orchestrator files created in wrong directory
 
-- **User Impact**: Users cannot control where .task_orchestrator folder is created
+- **User Impact**: Users cannot control where .vespera_scriptorium folder is created
 
 - **Required Fix**: Session-directory association with persistent session management
 
@@ -36,7 +36,7 @@ The `working_directory` parameter has been added to `orchestrator_initialize_ses
 
 # Architectural Vision
 
-Transform the MCP Task Orchestrator from a task-focused system into a **session-aware organizational framework** where:
+Transform the Vespera Scriptorium from a task-focused system into a **session-aware organizational framework** where:
 
 - **Sessions** represent large, cohesive project units (comparable to GitHub repositories or project workspaces)
 
@@ -155,7 +155,7 @@ CREATE TABLE sessions (
     status TEXT DEFAULT 'active',  -- active, paused, completed, archived
     
     -- Organizational metadata
-    project_root_path TEXT,  -- Base directory for .task_orchestrator files
+    project_root_path TEXT,  -- Base directory for .vespera_scriptorium files
     markdown_file_path TEXT,  -- Path to human-readable session.md
     priority_level INTEGER DEFAULT 3,  -- 1=urgent, 2=high, 3=medium, 4=low, 5=someday
     
@@ -569,9 +569,9 @@ class SessionManager:
         return session
     
     async def setup_session_directory(self, session: Session):
-        """Create .task_orchestrator directory structure for session."""
+        """Create .vespera_scriptorium directory structure for session."""
         
-        session_dir = Path(session.project_root_path) / ".task_orchestrator"
+        session_dir = Path(session.project_root_path) / ".vespera_scriptorium"
         
         
 
@@ -1168,7 +1168,7 @@ class LegacyTaskCompatibilityAdapter:
 
 1. **Path Validation**: Prevent directory traversal attacks
 
-2. **File Permissions**: Secure .task_orchestrator directory access
+2. **File Permissions**: Secure .vespera_scriptorium directory access
 
 3. **Session Isolation**: Prevent cross-session data access
 

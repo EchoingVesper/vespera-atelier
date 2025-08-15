@@ -12,10 +12,10 @@ from pathlib import Path
 from unittest.mock import Mock, patch, AsyncMock
 import asyncio
 
-# from mcp_task_orchestrator.infrastructure.template_system.storage_manager import  # TODO: Complete this import
-# from mcp_task_orchestrator.infrastructure.template_system.template_engine import  # TODO: Complete this import
-# from mcp_task_orchestrator.infrastructure.template_system.template_installer import  # TODO: Complete this import
-# from mcp_task_orchestrator.infrastructure.template_system.mcp_tools import  # TODO: Complete this import
+# from vespera_scriptorium.infrastructure.template_system.storage_manager import  # TODO: Complete this import
+# from vespera_scriptorium.infrastructure.template_system.template_engine import  # TODO: Complete this import
+# from vespera_scriptorium.infrastructure.template_system.template_installer import  # TODO: Complete this import
+# from vespera_scriptorium.infrastructure.template_system.mcp_tools import  # TODO: Complete this import
 
 
 class TestTemplateSystemIntegration:

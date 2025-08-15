@@ -6,7 +6,7 @@
 
 # Overview
 
-The MCP Task Orchestrator includes comprehensive diagnostic tools to help troubleshoot issues, monitor performance, and maintain system health.
+The Vespera Scriptorium includes comprehensive diagnostic tools to help troubleshoot issues, monitor performance, and maintain system health.
 
 #
 
