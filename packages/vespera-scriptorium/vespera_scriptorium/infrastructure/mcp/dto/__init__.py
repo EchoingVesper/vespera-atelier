@@ -6,52 +6,35 @@ in the MCP protocol layer. These DTOs ensure proper validation and serialization
 between the MCP protocol and the application layer.
 """
 
-from .task_dtos import (
-    # Task creation/planning
-    CreateTaskRequest,
-    CreateTaskResponse,
-    
-    # Task updates
-    UpdateTaskRequest,
-    UpdateTaskResponse,
-    
-    # Task deletion
-    DeleteTaskRequest,
-    DeleteTaskResponse,
-    
-    # Task cancellation
+from .task_dtos import (  # Task creation/planning; Task updates; Task deletion; Task cancellation; Task queries; Task execution; Task completion; Status checking; Common response components
     CancelTaskRequest,
     CancelTaskResponse,
-    
-    # Task queries
-    QueryTasksRequest,
-    QueryTasksResponse,
-    TaskQueryResult,
-    
-    # Task execution
-    ExecuteTaskRequest,
-    ExecuteTaskResponse,
-    
-    # Task completion
     CompleteTaskRequest,
     CompleteTaskResponse,
-    
-    # Status checking
+    CreateTaskRequest,
+    CreateTaskResponse,
+    DeleteTaskRequest,
+    DeleteTaskResponse,
+    ErrorDetail,
+    ExecuteTaskRequest,
+    ExecuteTaskResponse,
     GetStatusRequest,
     GetStatusResponse,
-    StatusSummary,
-    
-    # Common response components
-    ErrorDetail,
+    MCPErrorResponse,
     NextStep,
-    MCPErrorResponse
+    QueryTasksRequest,
+    QueryTasksResponse,
+    StatusSummary,
+    TaskQueryResult,
+    UpdateTaskRequest,
+    UpdateTaskResponse,
 )
 
 __all__ = [
     # Task operations
     "CreateTaskRequest",
     "CreateTaskResponse",
-    "UpdateTaskRequest", 
+    "UpdateTaskRequest",
     "UpdateTaskResponse",
     "DeleteTaskRequest",
     "DeleteTaskResponse",
@@ -64,14 +47,12 @@ __all__ = [
     "ExecuteTaskResponse",
     "CompleteTaskRequest",
     "CompleteTaskResponse",
-    
     # Status operations
     "GetStatusRequest",
     "GetStatusResponse",
     "StatusSummary",
-    
     # Common components
     "ErrorDetail",
     "NextStep",
-    "MCPErrorResponse"
+    "MCPErrorResponse",
 ]

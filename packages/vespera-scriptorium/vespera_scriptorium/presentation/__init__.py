@@ -10,10 +10,7 @@ The presentation layer coordinates application use cases but contains
 no business logic itself.
 """
 
-from .mcp_server import MCPServerEntryPoint
 from .cli import CLIInterface
+from .mcp_server import MCPServerEntryPoint
 
-__all__ = [
-    'MCPServerEntryPoint',
-    'CLIInterface'
-]
+__all__ = ["MCPServerEntryPoint", "CLIInterface"]

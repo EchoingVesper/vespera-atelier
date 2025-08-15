@@ -10,17 +10,18 @@ from enum import Enum
 class ComplexityLevel(str, Enum):
     """
     Enumeration for task complexity levels.
-    
+
     Used to categorize tasks based on their estimated difficulty
     and resource requirements.
     """
+
     SIMPLE = "simple"
-    MODERATE = "moderate"  
+    MODERATE = "moderate"
     COMPLEX = "complex"
-    
+
     def __str__(self) -> str:
         return self.value
-    
+
     @classmethod
     def from_string(cls, value: str) -> "ComplexityLevel":
         """Create ComplexityLevel from string value."""

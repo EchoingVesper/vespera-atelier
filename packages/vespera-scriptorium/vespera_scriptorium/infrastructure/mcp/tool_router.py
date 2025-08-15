@@ -5,9 +5,10 @@ Handles routing of MCP tool calls to appropriate handler functions.
 Supports gradual migration from dictionary-based to Pydantic DTO-based handlers.
 """
 
-import logging
 import json
-from typing import Dict, List, Any
+import logging
+from typing import Any, Dict, List
+
 from mcp import types
 
 # Import reboot tool handlers
@@ -19,42 +20,46 @@ from .handlers.migration_config import get_handler_for_tool, get_migration_statu
 logger = logging.getLogger(__name__)
 
 
-async def route_tool_call(name: str, arguments: Dict[str, Any]) -> List[types.TextContent]:
+async def route_tool_call(
+    name: str, arguments: Dict[str, Any]
+) -> List[types.TextContent]:
     """
     Route tool calls to appropriate handler functions with migration support.
-    
+
     This router uses the migration manager to determine whether to use old
     dictionary-based handlers or new Pydantic DTO-based handlers based on
     environment configuration.
-    
+
     Args:
         name: Tool name to route
         arguments: Tool arguments from MCP client
-        
+
     Returns:
         List of TextContent responses
-        
+
     Raises:
         ValueError: If tool name is not recognized
     """
     # Import core handlers (not migrated yet)
     from .handlers.core_handlers import (
-        handle_initialize_session,
-        handle_synthesize_results,
-        handle_get_status,
-        handle_maintenance_coordinator,
-        handle_list_sessions,
-        handle_resume_session,
         handle_cleanup_sessions,
-        handle_session_status
+        handle_get_status,
+        handle_initialize_session,
+        handle_list_sessions,
+        handle_maintenance_coordinator,
+        handle_resume_session,
+        handle_session_status,
+        handle_synthesize_results,
     )
-    
+
     # Log handler selection for debugging
     migration_status = get_migration_status()
     if name in migration_status:
         handler_info = migration_status[name]
-        logger.debug(f"Tool {name}: using {'new' if handler_info['using_new_handler'] else 'old'} handler")
-    
+        logger.debug(
+            f"Tool {name}: using {'new' if handler_info['using_new_handler'] else 'old'} handler"
+        )
+
     # Core orchestration tools (not migrated yet)
     if name == "orchestrator_initialize_session":
         return await handle_initialize_session(arguments)
@@ -64,7 +69,7 @@ async def route_tool_call(name: str, arguments: Dict[str, Any]) -> List[types.Te
         return await handle_get_status(arguments)
     elif name == "orchestrator_maintenance_coordinator":
         return await handle_maintenance_coordinator(arguments)
-    
+
     # Session management tools
     elif name == "orchestrator_list_sessions":
         return await handle_list_sessions(arguments)
@@ -74,24 +79,27 @@ async def route_tool_call(name: str, arguments: Dict[str, Any]) -> List[types.Te
         return await handle_cleanup_sessions(arguments)
     elif name == "orchestrator_session_status":
         return await handle_session_status(arguments)
-    
+
     # orchestrator_plan_task routes to Clean Architecture handler
     elif name == "orchestrator_plan_task":
         from .handlers.di_integration import CleanArchTaskUseCase
+
         use_case = CleanArchTaskUseCase()
         result = await use_case.create_task(arguments)
-        
+
         # Result is now a dict, so we can serialize it directly
-        return [types.TextContent(
-            type="text", 
-            text=json.dumps(result, indent=2)
-        )]
+        return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
 
     # Other task management tools (use migration manager)
-    elif name in ["orchestrator_create_generic_task", 
-                  "orchestrator_execute_task", "orchestrator_complete_task",
-                  "orchestrator_update_task", "orchestrator_delete_task",
-                  "orchestrator_cancel_task", "orchestrator_query_tasks"]:
+    elif name in [
+        "orchestrator_create_generic_task",
+        "orchestrator_execute_task",
+        "orchestrator_complete_task",
+        "orchestrator_update_task",
+        "orchestrator_delete_task",
+        "orchestrator_cancel_task",
+        "orchestrator_query_tasks",
+    ]:
         try:
             # Get appropriate handler from migration manager
             handler = get_handler_for_tool(name)
@@ -103,25 +111,23 @@ async def route_tool_call(name: str, arguments: Dict[str, Any]) -> List[types.Te
                 "status": "error",
                 "error": f"Handler error: {str(e)}",
                 "tool": name,
-                "error_type": type(e).__name__
+                "error_type": type(e).__name__,
             }
-            return [types.TextContent(
-                type="text",
-                text=str(error_response)
-            )]
-    
+            return [types.TextContent(type="text", text=str(error_response))]
+
     # Template system tools
     elif name.startswith("template_"):
         from ..template_system.mcp_tools import TEMPLATE_TOOL_HANDLERS
+
         if name in TEMPLATE_TOOL_HANDLERS:
             return await TEMPLATE_TOOL_HANDLERS[name](arguments)
         else:
             raise ValueError(f"Unknown template tool: {name}")
-    
+
     # Reboot tools from existing system
     elif name in REBOOT_TOOL_HANDLERS:
         return await REBOOT_TOOL_HANDLERS[name](arguments)
-    
+
     # Unknown tool
     else:
         raise ValueError(f"Unknown tool: {name}")
@@ -136,12 +142,12 @@ def get_handler_migration_info() -> Dict[str, Any]:
             "global_flag": "MCP_USE_PYDANTIC_HANDLERS",
             "individual_flags": [
                 "MCP_USE_PYDANTIC_CREATE_TASK",
-                "MCP_USE_PYDANTIC_UPDATE_TASK", 
+                "MCP_USE_PYDANTIC_UPDATE_TASK",
                 "MCP_USE_PYDANTIC_DELETE_TASK",
                 "MCP_USE_PYDANTIC_CANCEL_TASK",
                 "MCP_USE_PYDANTIC_QUERY_TASKS",
                 "MCP_USE_PYDANTIC_EXECUTE_TASK",
-                "MCP_USE_PYDANTIC_COMPLETE_TASK"
-            ]
-        }
+                "MCP_USE_PYDANTIC_COMPLETE_TASK",
+            ],
+        },
     }

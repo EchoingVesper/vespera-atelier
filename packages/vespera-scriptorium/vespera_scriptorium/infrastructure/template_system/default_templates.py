@@ -3,14 +3,14 @@ Default Template Library
 
 Comprehensive collection of templates for common workflows:
 - Software development workflows
-- Research and analysis processes  
+- Research and analysis processes
 - Creative and content workflows
 - Task orchestrator self-development
 - Business process templates
 """
 
 import logging
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -820,23 +820,16 @@ def get_all_default_templates() -> Dict[str, str]:
         "software_project_setup": SOFTWARE_PROJECT_SETUP,
         "feature_development_workflow": FEATURE_DEVELOPMENT_WORKFLOW,
         "market_research_analysis": MARKET_RESEARCH_TEMPLATE,
-        "orchestrator_feature_development": ORCHESTRATOR_FEATURE_DEVELOPMENT
+        "orchestrator_feature_development": ORCHESTRATOR_FEATURE_DEVELOPMENT,
     }
 
 
 def get_template_categories() -> Dict[str, List[str]]:
     """Get templates organized by category."""
     return {
-        "development": [
-            "software_project_setup",
-            "feature_development_workflow"
-        ],
-        "research": [
-            "market_research_analysis"
-        ],
-        "self_development": [
-            "orchestrator_feature_development"
-        ]
+        "development": ["software_project_setup", "feature_development_workflow"],
+        "research": ["market_research_analysis"],
+        "self_development": ["orchestrator_feature_development"],
     }
 
 
@@ -845,15 +838,15 @@ def get_template_metadata(template_id: str) -> Dict[str, Any]:
     templates = get_all_default_templates()
     if template_id not in templates:
         return {}
-    
+
     # Parse the JSON5 content to extract metadata
     # This is a simplified extraction - in practice, you'd use the JSON5 parser
     template_content = templates[template_id]
-    
+
     # Extract basic metadata (simplified)
     metadata = {}
     if "metadata" in template_content:
         # This would use the actual JSON5 parser in practice
         pass
-    
+
     return metadata

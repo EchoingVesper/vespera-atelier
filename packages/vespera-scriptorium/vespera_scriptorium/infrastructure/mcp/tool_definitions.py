@@ -6,6 +6,7 @@ for better organization and maintainability.
 """
 
 from typing import List
+
 from mcp import types
 
 # Import reboot tools from existing system
@@ -23,24 +24,24 @@ def get_core_orchestration_tools() -> List[types.Tool]:
                 "properties": {
                     "working_directory": {
                         "type": "string",
-                        "description": "Path where .vespera_scriptorium should be created. If not specified, uses current working directory."
+                        "description": "Path where .vespera_scriptorium should be created. If not specified, uses current working directory.",
                     }
-                }
-            }
+                },
+            },
         ),
         types.Tool(
-            name="orchestrator_synthesize_results", 
+            name="orchestrator_synthesize_results",
             description="Combine completed subtasks into a final comprehensive result",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "parent_task_id": {
                         "type": "string",
-                        "description": "ID of the parent task to synthesize"
+                        "description": "ID of the parent task to synthesize",
                     }
                 },
-                "required": ["parent_task_id"]
-            }
+                "required": ["parent_task_id"],
+            },
         ),
         types.Tool(
             name="orchestrator_get_status",
@@ -51,11 +52,11 @@ def get_core_orchestration_tools() -> List[types.Tool]:
                     "include_completed": {
                         "type": "boolean",
                         "description": "Whether to include completed tasks in the status",
-                        "default": False
+                        "default": False,
                     }
-                }
-            }
-        )
+                },
+            },
+        ),
     ]
 
 
@@ -68,55 +69,81 @@ def get_generic_task_tools() -> List[types.Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "title": {
-                        "type": "string",
-                        "description": "Task title"
-                    },
+                    "title": {"type": "string", "description": "Task title"},
                     "description": {
                         "type": "string",
-                        "description": "Detailed task description"
+                        "description": "Detailed task description",
                     },
                     "task_type": {
                         "type": "string",
-                        "enum": ["standard", "breakdown", "milestone", "review", "approval", "research", "implementation", "testing", "documentation", "deployment", "custom"],
+                        "enum": [
+                            "standard",
+                            "breakdown",
+                            "milestone",
+                            "review",
+                            "approval",
+                            "research",
+                            "implementation",
+                            "testing",
+                            "documentation",
+                            "deployment",
+                            "custom",
+                        ],
                         "description": "Type of task",
-                        "default": "standard"
+                        "default": "standard",
                     },
                     "parent_task_id": {
                         "type": "string",
-                        "description": "Parent task ID for hierarchy (optional)"
+                        "description": "Parent task ID for hierarchy (optional)",
                     },
                     "complexity": {
                         "type": "string",
-                        "enum": ["trivial", "simple", "moderate", "complex", "very_complex"],
+                        "enum": [
+                            "trivial",
+                            "simple",
+                            "moderate",
+                            "complex",
+                            "very_complex",
+                        ],
                         "description": "Task complexity level",
-                        "default": "moderate"
+                        "default": "moderate",
                     },
                     "specialist_type": {
                         "type": "string",
-                        "enum": ["analyst", "coder", "tester", "documenter", "reviewer", "architect", "devops", "researcher", "coordinator", "generic"],
-                        "description": "Specialist type for assignment (optional)"
+                        "enum": [
+                            "analyst",
+                            "coder",
+                            "tester",
+                            "documenter",
+                            "reviewer",
+                            "architect",
+                            "devops",
+                            "researcher",
+                            "coordinator",
+                            "generic",
+                        ],
+                        "description": "Specialist type for assignment (optional)",
                     },
                     "estimated_effort": {
                         "type": "string",
-                        "description": "Estimated effort (e.g., '2 hours', '1 day') (optional)"
+                        "description": "Estimated effort (e.g., '2 hours', '1 day') (optional)",
                     },
                     "due_date": {
                         "type": "string",
-                        "description": "Due date in ISO format (optional)"
+                        "description": "Due date in ISO format (optional)",
                     },
                     "context": {
                         "type": "object",
-                        "description": "Additional context data (optional)"
+                        "description": "Additional context data (optional)",
                     },
                     "dependencies": {
                         "type": "array",
                         "items": {"type": "string"},
-                        "description": "List of prerequisite task IDs (optional)"
-                    }
+                        "description": "List of prerequisite task IDs (optional)",
+                    },
                 },
-                "required": ["title", "description"]
-            }
+                "required": ["title", "description"],
+            },
         ),
         types.Tool(
             name="orchestrator_update_task",
@@ -126,46 +153,72 @@ def get_generic_task_tools() -> List[types.Tool]:
                 "properties": {
                     "task_id": {
                         "type": "string",
-                        "description": "ID of task to update"
+                        "description": "ID of task to update",
                     },
                     "title": {
                         "type": "string",
-                        "description": "New task title (optional)"
+                        "description": "New task title (optional)",
                     },
                     "description": {
                         "type": "string",
-                        "description": "New task description (optional)"
+                        "description": "New task description (optional)",
                     },
                     "status": {
                         "type": "string",
-                        "enum": ["pending", "active", "in_progress", "blocked", "completed", "failed", "cancelled", "archived"],
-                        "description": "New task status (optional)"
+                        "enum": [
+                            "pending",
+                            "active",
+                            "in_progress",
+                            "blocked",
+                            "completed",
+                            "failed",
+                            "cancelled",
+                            "archived",
+                        ],
+                        "description": "New task status (optional)",
                     },
                     "specialist_type": {
                         "type": "string",
-                        "enum": ["analyst", "coder", "tester", "documenter", "reviewer", "architect", "devops", "researcher", "coordinator", "generic"],
-                        "description": "New specialist assignment (optional)"
+                        "enum": [
+                            "analyst",
+                            "coder",
+                            "tester",
+                            "documenter",
+                            "reviewer",
+                            "architect",
+                            "devops",
+                            "researcher",
+                            "coordinator",
+                            "generic",
+                        ],
+                        "description": "New specialist assignment (optional)",
                     },
                     "complexity": {
                         "type": "string",
-                        "enum": ["trivial", "simple", "moderate", "complex", "very_complex"],
-                        "description": "New complexity level (optional)"
+                        "enum": [
+                            "trivial",
+                            "simple",
+                            "moderate",
+                            "complex",
+                            "very_complex",
+                        ],
+                        "description": "New complexity level (optional)",
                     },
                     "estimated_effort": {
                         "type": "string",
-                        "description": "New estimated effort (optional)"
+                        "description": "New estimated effort (optional)",
                     },
                     "due_date": {
                         "type": "string",
-                        "description": "New due date in ISO format (optional)"
+                        "description": "New due date in ISO format (optional)",
                     },
                     "context": {
                         "type": "object",
-                        "description": "Updated context data (optional)"
-                    }
+                        "description": "Updated context data (optional)",
+                    },
                 },
-                "required": ["task_id"]
-            }
+                "required": ["task_id"],
+            },
         ),
         types.Tool(
             name="orchestrator_delete_task",
@@ -175,21 +228,21 @@ def get_generic_task_tools() -> List[types.Tool]:
                 "properties": {
                     "task_id": {
                         "type": "string",
-                        "description": "ID of task to delete"
+                        "description": "ID of task to delete",
                     },
                     "force": {
                         "type": "boolean",
                         "description": "Force deletion even if task has dependents",
-                        "default": False
+                        "default": False,
                     },
                     "archive_instead": {
                         "type": "boolean",
                         "description": "Archive task instead of permanent deletion",
-                        "default": True
-                    }
+                        "default": True,
+                    },
                 },
-                "required": ["task_id"]
-            }
+                "required": ["task_id"],
+            },
         ),
         types.Tool(
             name="orchestrator_cancel_task",
@@ -199,20 +252,20 @@ def get_generic_task_tools() -> List[types.Tool]:
                 "properties": {
                     "task_id": {
                         "type": "string",
-                        "description": "ID of task to cancel"
+                        "description": "ID of task to cancel",
                     },
                     "reason": {
                         "type": "string",
-                        "description": "Reason for cancellation (optional)"
+                        "description": "Reason for cancellation (optional)",
                     },
                     "preserve_work": {
                         "type": "boolean",
                         "description": "Whether to preserve work artifacts",
-                        "default": True
-                    }
+                        "default": True,
+                    },
                 },
-                "required": ["task_id"]
-            }
+                "required": ["task_id"],
+            },
         ),
         types.Tool(
             name="orchestrator_query_tasks",
@@ -224,72 +277,110 @@ def get_generic_task_tools() -> List[types.Tool]:
                         "type": "array",
                         "items": {
                             "type": "string",
-                            "enum": ["pending", "active", "in_progress", "blocked", "completed", "failed", "cancelled", "archived"]
+                            "enum": [
+                                "pending",
+                                "active",
+                                "in_progress",
+                                "blocked",
+                                "completed",
+                                "failed",
+                                "cancelled",
+                                "archived",
+                            ],
                         },
-                        "description": "Filter by task status (optional)"
+                        "description": "Filter by task status (optional)",
                     },
                     "task_type": {
                         "type": "array",
                         "items": {
                             "type": "string",
-                            "enum": ["standard", "breakdown", "milestone", "review", "approval", "research", "implementation", "testing", "documentation", "deployment", "custom"]
+                            "enum": [
+                                "standard",
+                                "breakdown",
+                                "milestone",
+                                "review",
+                                "approval",
+                                "research",
+                                "implementation",
+                                "testing",
+                                "documentation",
+                                "deployment",
+                                "custom",
+                            ],
                         },
-                        "description": "Filter by task type (optional)"
+                        "description": "Filter by task type (optional)",
                     },
                     "specialist_type": {
                         "type": "array",
                         "items": {
                             "type": "string",
-                            "enum": ["analyst", "coder", "tester", "documenter", "reviewer", "architect", "devops", "researcher", "coordinator", "generic"]
+                            "enum": [
+                                "analyst",
+                                "coder",
+                                "tester",
+                                "documenter",
+                                "reviewer",
+                                "architect",
+                                "devops",
+                                "researcher",
+                                "coordinator",
+                                "generic",
+                            ],
                         },
-                        "description": "Filter by specialist type (optional)"
+                        "description": "Filter by specialist type (optional)",
                     },
                     "parent_task_id": {
                         "type": "string",
-                        "description": "Filter by parent task (optional)"
+                        "description": "Filter by parent task (optional)",
                     },
                     "complexity": {
                         "type": "array",
                         "items": {
                             "type": "string",
-                            "enum": ["trivial", "simple", "moderate", "complex", "very_complex"]
+                            "enum": [
+                                "trivial",
+                                "simple",
+                                "moderate",
+                                "complex",
+                                "very_complex",
+                            ],
                         },
-                        "description": "Filter by complexity level (optional)"
+                        "description": "Filter by complexity level (optional)",
                     },
                     "search_text": {
                         "type": "string",
-                        "description": "Search in title and description (optional)"
+                        "description": "Search in title and description (optional)",
                     },
                     "created_after": {
                         "type": "string",
-                        "description": "Filter tasks created after this date (ISO format) (optional)"
+                        "description": "Filter tasks created after this date (ISO format) (optional)",
                     },
                     "created_before": {
                         "type": "string",
-                        "description": "Filter tasks created before this date (ISO format) (optional)"
+                        "description": "Filter tasks created before this date (ISO format) (optional)",
                     },
                     "include_children": {
                         "type": "boolean",
                         "description": "Include child tasks in results",
-                        "default": False
+                        "default": False,
                     },
                     "include_artifacts": {
                         "type": "boolean",
                         "description": "Include task artifacts in results",
-                        "default": False
+                        "default": False,
                     },
                     "limit": {
                         "type": "integer",
                         "description": "Maximum number of results",
-                        "default": 100
+                        "default": 100,
                     },
                     "offset": {
                         "type": "integer",
                         "description": "Number of results to skip",
-                        "default": 0
-                    }
-                }
-            }
+                        "default": 0,
+                    },
+                },
+            },
         ),
         types.Tool(
             name="orchestrator_execute_task",
@@ -299,55 +390,63 @@ def get_generic_task_tools() -> List[types.Tool]:
                 "properties": {
                     "task_id": {
                         "type": "string",
-                        "description": "ID of the task to execute"
+                        "description": "ID of the task to execute",
                     }
                 },
-                "required": ["task_id"]
-            }
+                "required": ["task_id"],
+            },
         ),
         types.Tool(
             name="orchestrator_complete_task",
             description="Mark a task as complete and store detailed work as artifacts to prevent context limit issues",
             inputSchema={
-                "type": "object", 
+                "type": "object",
                 "properties": {
                     "task_id": {
                         "type": "string",
-                        "description": "ID of the completed task"
+                        "description": "ID of the completed task",
                     },
                     "summary": {
                         "type": "string",
-                        "description": "Brief summary of what was accomplished (for database/UI display)"
+                        "description": "Brief summary of what was accomplished (for database/UI display)",
                     },
                     "detailed_work": {
                         "type": "string",
-                        "description": "Full detailed work content to store as artifacts (code, documentation, analysis, etc.)"
+                        "description": "Full detailed work content to store as artifacts (code, documentation, analysis, etc.)",
                     },
                     "file_paths": {
                         "type": "array",
                         "items": {"type": "string"},
-                        "description": "List of original file paths being referenced or created (optional)"
+                        "description": "List of original file paths being referenced or created (optional)",
                     },
                     "artifact_type": {
                         "type": "string",
-                        "enum": ["code", "documentation", "analysis", "design", "test", "config", "general"],
+                        "enum": [
+                            "code",
+                            "documentation",
+                            "analysis",
+                            "design",
+                            "test",
+                            "config",
+                            "general",
+                        ],
                         "description": "Type of artifact being created",
-                        "default": "general"
+                        "default": "general",
                     },
                     "next_action": {
                         "type": "string",
                         "enum": ["continue", "needs_revision", "blocked", "complete"],
-                        "description": "What should happen next"
+                        "description": "What should happen next",
                     },
                     "legacy_artifacts": {
                         "type": "array",
                         "items": {"type": "string"},
-                        "description": "Legacy artifacts field for backward compatibility (optional)"
-                    }
+                        "description": "Legacy artifacts field for backward compatibility (optional)",
+                    },
                 },
-                "required": ["task_id", "summary", "detailed_work", "next_action"]
-            }
-        )
+                "required": ["task_id", "summary", "detailed_work", "next_action"],
+            },
+        ),
     ]
 
 
@@ -363,15 +462,15 @@ def get_session_management_tools() -> List[types.Tool]:
                     "include_completed": {
                         "type": "boolean",
                         "description": "Whether to include completed sessions",
-                        "default": False
+                        "default": False,
                     },
                     "limit": {
                         "type": "integer",
                         "description": "Maximum number of sessions to return",
-                        "default": 10
-                    }
-                }
-            }
+                        "default": 10,
+                    },
+                },
+            },
         ),
         types.Tool(
             name="orchestrator_resume_session",
@@ -381,11 +480,11 @@ def get_session_management_tools() -> List[types.Tool]:
                 "properties": {
                     "session_id": {
                         "type": "string",
-                        "description": "ID of the session to resume"
+                        "description": "ID of the session to resume",
                     }
                 },
-                "required": ["session_id"]
-            }
+                "required": ["session_id"],
+            },
         ),
         types.Tool(
             name="orchestrator_cleanup_sessions",
@@ -397,20 +496,20 @@ def get_session_management_tools() -> List[types.Tool]:
                         "type": "string",
                         "enum": ["completed", "orphaned", "old", "all"],
                         "description": "Type of cleanup to perform",
-                        "default": "completed"
+                        "default": "completed",
                     },
                     "older_than_days": {
                         "type": "integer",
                         "description": "For 'old' cleanup, remove sessions older than this many days",
-                        "default": 7
+                        "default": 7,
                     },
                     "dry_run": {
                         "type": "boolean",
                         "description": "Preview what would be cleaned up without actually doing it",
-                        "default": True
-                    }
-                }
-            }
+                        "default": True,
+                    },
+                },
+            },
         ),
         types.Tool(
             name="orchestrator_session_status",
@@ -420,12 +519,12 @@ def get_session_management_tools() -> List[types.Tool]:
                 "properties": {
                     "session_id": {
                         "type": "string",
-                        "description": "ID of the session to check status for"
+                        "description": "ID of the session to check status for",
                     }
                 },
-                "required": ["session_id"]
-            }
-        )
+                "required": ["session_id"],
+            },
+        ),
     ]
 
 
@@ -440,28 +539,33 @@ def get_maintenance_tools() -> List[types.Tool]:
                 "properties": {
                     "action": {
                         "type": "string",
-                        "enum": ["scan_cleanup", "validate_structure", "update_documentation", "prepare_handover"],
-                        "description": "Type of maintenance action to perform"
+                        "enum": [
+                            "scan_cleanup",
+                            "validate_structure",
+                            "update_documentation",
+                            "prepare_handover",
+                        ],
+                        "description": "Type of maintenance action to perform",
                     },
                     "scope": {
-                        "type": "string", 
+                        "type": "string",
                         "enum": ["current_session", "full_project", "specific_subtask"],
                         "description": "Scope of the maintenance operation",
-                        "default": "current_session"
+                        "default": "current_session",
                     },
                     "validation_level": {
                         "type": "string",
                         "enum": ["basic", "comprehensive", "full_audit"],
                         "description": "Level of validation to perform",
-                        "default": "basic"
+                        "default": "basic",
                     },
                     "target_task_id": {
                         "type": "string",
-                        "description": "Specific task ID for maintenance (required when scope is 'specific_subtask')"
-                    }
+                        "description": "Specific task ID for maintenance (required when scope is 'specific_subtask')",
+                    },
                 },
-                "required": ["action"]
-            }
+                "required": ["action"],
+            },
         )
     ]
 
@@ -469,24 +573,25 @@ def get_maintenance_tools() -> List[types.Tool]:
 def get_all_tools() -> List[types.Tool]:
     """Get all available MCP tools for the Task Orchestrator."""
     tools = []
-    
+
     # Add core orchestration tools
     tools.extend(get_core_orchestration_tools())
-    
+
     # Add generic task management tools
     tools.extend(get_generic_task_tools())
-    
+
     # Add session management tools
     tools.extend(get_session_management_tools())
-    
+
     # Add maintenance tools
     tools.extend(get_maintenance_tools())
-    
+
     # Add template system tools
     from ..template_system.mcp_tools import get_template_tools
+
     tools.extend(get_template_tools())
-    
+
     # Add reboot tools from existing system
     tools.extend(REBOOT_TOOLS)
-    
+
     return tools

@@ -2,19 +2,19 @@
 Use case for tracking task progress.
 """
 
-from typing import List, Dict, Any, Optional, Literal, TypedDict
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any, Dict, List, Literal, Optional, TypedDict
 
 from ...domain import (
-    TaskRepository,
-    StateRepository,
+    OrchestrationError,
     OrchestrationSession,
-    Task,
-    TaskStatus,
-    TaskNotFoundError,
     SessionNotFoundError,
-    OrchestrationError
+    StateRepository,
+    Task,
+    TaskNotFoundError,
+    TaskRepository,
+    TaskStatus,
 )
 from ...domain.entities.orchestration import SessionStatus
 from ..dto import ProgressStatusRequest, ProgressStatusResponse
@@ -22,6 +22,7 @@ from ..dto import ProgressStatusRequest, ProgressStatusResponse
 
 class FormattedTask(TypedDict):
     """Type definition for formatted task data."""
+
     task_id: str
     title: str
     description: str
@@ -37,6 +38,7 @@ class FormattedTask(TypedDict):
 
 class SessionSummary(TypedDict):
     """Type definition for session summary data."""
+
     session_id: str
     name: str
     status: str
@@ -47,69 +49,76 @@ class SessionSummary(TypedDict):
 class TrackProgressUseCase:
     """
     Application use case for tracking task and session progress.
-    
+
     This use case provides progress monitoring and status updates.
     """
+
     task_repository: TaskRepository
     state_repository: StateRepository
-    
-    async def get_session_progress(self, request: ProgressStatusRequest) -> ProgressStatusResponse:
+
+    async def get_session_progress(
+        self, request: ProgressStatusRequest
+    ) -> ProgressStatusResponse:
         """
         Get progress status for a session or specific tasks.
-        
+
         Args:
             request: Progress status request
-            
+
         Returns:
             ProgressStatusResponse with current status
-            
+
         Raises:
             SessionNotFoundError: If session not found
             TaskNotFoundError: If specific task not found
         """
         try:
             if request.session_id:
-                return await self._get_session_status(request.session_id, request.include_completed)
+                return await self._get_session_status(
+                    request.session_id, request.include_completed
+                )
             elif request.task_id:
-                return await self._get_task_status(request.task_id, request.include_subtasks)
+                return await self._get_task_status(
+                    request.task_id, request.include_subtasks
+                )
             else:
                 return await self._get_overall_status(request.include_completed)
-                
+
         except (SessionNotFoundError, TaskNotFoundError):
             raise
         except Exception as e:
             raise OrchestrationError(
                 f"Failed to get progress status: {str(e)}",
-                {"request": request.__dict__}
+                {"request": request.__dict__},
             )
-    
+
     async def _get_session_status(
-        self, 
-        session_id: str, 
-        include_completed: bool
+        self, session_id: str, include_completed: bool
     ) -> ProgressStatusResponse:
         """Get status for a specific session."""
         session = await self.state_repository.get_session(session_id)
         if not session:
             raise SessionNotFoundError(session_id)
-        
+
         # Get all tasks in session
         tasks = []
-        for task_id in session.active_tasks + (session.completed_tasks if include_completed else []):
+        for task_id in session.active_tasks + (
+            session.completed_tasks if include_completed else []
+        ):
             task = await self.task_repository.get_task(task_id)
             if task:
                 tasks.append(task)
-        
+
         # Calculate metrics
         metrics = session.get_progress()
-        
+
         return ProgressStatusResponse(
             session_info={
-                'session_id': session.session_id,
-                'name': session.name,
-                'status': session.status.value,
-                'created_at': session.created_at.isoformat(),
-                'progress': metrics
+                "session_id": session.session_id,
+                "name": session.name,
+                "status": session.status.value,
+                "created_at": session.created_at.isoformat(),
+                "progress": metrics,
             },
             active_tasks=self._format_tasks(
                 [t for t in tasks if t.status == TaskStatus.IN_PROGRESS]
@@ -117,94 +126,103 @@ class TrackProgressUseCase:
             pending_tasks=self._format_tasks(
                 [t for t in tasks if t.status == TaskStatus.PENDING]
             ),
-            completed_tasks=self._format_tasks(
-                [t for t in tasks if t.status == TaskStatus.COMPLETED]
-            ) if include_completed else [],
+            completed_tasks=(
+                self._format_tasks(
+                    [t for t in tasks if t.status == TaskStatus.COMPLETED]
+                )
+                if include_completed
+                else []
+            ),
             failed_tasks=self._format_tasks(
                 [t for t in tasks if t.status == TaskStatus.FAILED]
             ),
             metrics=metrics,
-            overall_status=self._determine_overall_status(session, tasks)
+            overall_status=self._determine_overall_status(session, tasks),
         )
-    
+
     async def _get_task_status(
-        self,
-        task_id: str,
-        include_subtasks: bool
+        self, task_id: str, include_subtasks: bool
     ) -> ProgressStatusResponse:
         """Get status for a specific task."""
         task = await self.task_repository.get_task(task_id)
         if not task:
             raise TaskNotFoundError(task_id)
-        
+
         subtasks = []
         if include_subtasks:
             subtasks = await self.task_repository.get_subtasks(task_id)
-        
+
         # Format task info
         task_info = self._format_task(task)
         subtask_info = self._format_tasks(subtasks)
-        
+
         # Calculate task-specific metrics
         metrics = {
-            'subtask_count': len(subtasks),
-            'completed_subtasks': len([t for t in subtasks if t.status == TaskStatus.COMPLETED]),
-            'duration_seconds': (
+            "subtask_count": len(subtasks),
+            "completed_subtasks": len(
+                [t for t in subtasks if t.status == TaskStatus.COMPLETED]
+            ),
+            "duration_seconds": (
                 (task.updated_at - task.created_at).total_seconds()
-                if task.status.is_terminal() else None
-            )
+                if task.status.is_terminal()
+                else None
+            ),
         }
-        
+
         return ProgressStatusResponse(
             task_info=task_info,
             subtasks=subtask_info,
             metrics=metrics,
-            overall_status=task.status.value
+            overall_status=task.status.value,
         )
-    
-    async def _get_overall_status(self, include_completed: bool) -> ProgressStatusResponse:
+
+    async def _get_overall_status(
+        self, include_completed: bool
+    ) -> ProgressStatusResponse:
         """Get overall system status."""
         # Get all active sessions
         sessions = await self.state_repository.list_active_sessions()
-        
+
         # Aggregate metrics
         total_tasks = 0
         active_tasks = 0
         completed_tasks = 0
         failed_tasks = 0
-        
+
         session_summaries = []
         for session in sessions:
             progress = session.get_progress()
-            total_tasks += progress['total_tasks']
-            active_tasks += progress['active_tasks']
-            completed_tasks += progress['completed_tasks']
-            failed_tasks += progress['failed_tasks']
-            
-            session_summaries.append({
-                'session_id': session.session_id,
-                'name': session.name,
-                'status': session.status.value,
-                'progress': progress
-            })
-        
-        metrics = {
-            'total_sessions': len(sessions),
-            'total_tasks': total_tasks,
-            'active_tasks': active_tasks,
-            'completed_tasks': completed_tasks,
-            'failed_tasks': failed_tasks,
-            'overall_completion': (
-                (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
+            total_tasks += progress["total_tasks"]
+            active_tasks += progress["active_tasks"]
+            completed_tasks += progress["completed_tasks"]
+            failed_tasks += progress["failed_tasks"]
+
+            session_summaries.append(
+                {
+                    "session_id": session.session_id,
+                    "name": session.name,
+                    "status": session.status.value,
+                    "progress": progress,
+                }
             )
+
+        metrics = {
+            "total_sessions": len(sessions),
+            "total_tasks": total_tasks,
+            "active_tasks": active_tasks,
+            "completed_tasks": completed_tasks,
+            "failed_tasks": failed_tasks,
+            "overall_completion": (
+                (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
+            ),
         }
-        
+
         return ProgressStatusResponse(
             sessions=session_summaries,
             metrics=metrics,
-            overall_status="active" if active_tasks > 0 else "idle"
+            overall_status="active" if active_tasks > 0 else "idle",
         )
-    
+
     def _format_task(self, task: Task) -> FormattedTask:
         """Format a task for response."""
         return FormattedTask(
@@ -218,18 +236,23 @@ class TrackProgressUseCase:
             parent_task_id=task.parent_task_id,
             dependencies=task.dependencies or [],
             result=task.result,
-            error=task.error
+            error=task.error,
         )
-    
+
     def _format_tasks(self, tasks: List[Task]) -> List[FormattedTask]:
         """Format multiple tasks for response."""
         return [self._format_task(task) for task in tasks]
-    
+
     def _determine_overall_status(
-        self,
-        session: OrchestrationSession,
-        tasks: List[Task]
-    ) -> Literal["failed", "completed", "in_progress", "ready_to_complete", "has_failures", "pending"]:
+        self, session: OrchestrationSession, tasks: List[Task]
+    ) -> Literal[
+        "failed",
+        "completed",
+        "in_progress",
+        "ready_to_complete",
+        "has_failures",
+        "pending",
+    ]:
         """Determine overall status based on session and tasks."""
         if session.status == SessionStatus.FAILED:
             return "failed"

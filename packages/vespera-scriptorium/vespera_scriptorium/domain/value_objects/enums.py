@@ -10,6 +10,7 @@ from enum import Enum
 
 class TaskType(str, Enum):
     """Types of tasks in the system."""
+
     STANDARD = "standard"
     BREAKDOWN = "breakdown"  # Root task that breaks down into subtasks
     MILESTONE = "milestone"
@@ -25,6 +26,7 @@ class TaskType(str, Enum):
 
 class TaskStatus(str, Enum):
     """Current status of a task."""
+
     PENDING = "pending"
     ACTIVE = "active"
     IN_PROGRESS = "in_progress"
@@ -37,6 +39,7 @@ class TaskStatus(str, Enum):
 
 class LifecycleStage(str, Enum):
     """Lifecycle stage of a task."""
+
     CREATED = "created"
     PLANNING = "planning"
     READY = "ready"
@@ -51,6 +54,7 @@ class LifecycleStage(str, Enum):
 
 class DependencyType(str, Enum):
     """Types of dependencies between tasks."""
+
     COMPLETION = "completion"  # Task B starts after Task A completes
     DATA = "data"  # Task B needs output from Task A
     APPROVAL = "approval"  # Task B needs approval from Task A
@@ -61,6 +65,7 @@ class DependencyType(str, Enum):
 
 class DependencyStatus(str, Enum):
     """Status of a dependency."""
+
     PENDING = "pending"
     SATISFIED = "satisfied"
     FAILED = "failed"
@@ -70,6 +75,7 @@ class DependencyStatus(str, Enum):
 
 class QualityGateLevel(str, Enum):
     """Quality gate levels for task validation."""
+
     BASIC = "basic"
     STANDARD = "standard"
     COMPREHENSIVE = "comprehensive"
@@ -78,6 +84,7 @@ class QualityGateLevel(str, Enum):
 
 class EventType(str, Enum):
     """Types of task events."""
+
     CREATED = "created"
     UPDATED = "updated"
     STATUS_CHANGED = "status_changed"
@@ -101,6 +108,7 @@ class EventType(str, Enum):
 
 class EventCategory(str, Enum):
     """Categories of events."""
+
     LIFECYCLE = "lifecycle"
     DATA = "data"
     SYSTEM = "system"
@@ -110,6 +118,7 @@ class EventCategory(str, Enum):
 
 class AttributeType(str, Enum):
     """Types for extensible attributes."""
+
     STRING = "string"
     NUMBER = "number"
     BOOLEAN = "boolean"
@@ -120,6 +129,7 @@ class AttributeType(str, Enum):
 
 class ArtifactType(str, Enum):
     """Types of artifacts."""
+
     CODE = "code"
     DOCUMENTATION = "documentation"
     ANALYSIS = "analysis"

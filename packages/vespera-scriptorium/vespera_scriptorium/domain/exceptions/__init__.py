@@ -8,109 +8,106 @@ of business rules, organized by category with comprehensive error handling.
 # Base exceptions
 from .base_exceptions import (
     BaseOrchestrationError,
-    ErrorSeverity,
-    RecoveryStrategy,
     ConfigurationError,
-    InfrastructureError,
-    ValidationError,
+    ErrorSeverity,
     ExternalServiceError,
+    InfrastructureError,
+    PerformanceError,
+    RecoveryStrategy,
     SecurityError,
-    PerformanceError
+    ValidationError,
 )
 
-# Orchestration exceptions  
+# Orchestration exceptions
 from .orchestration_errors import (
-    OrchestrationError,
-    TaskNotFoundError,
-    TaskStateError,
-    TaskDependencyError,
-    TaskValidationError,
-    SessionNotFoundError,
-    SessionStateError,
-    SpecialistNotFoundError,
-    SpecialistAssignmentError,
     ArtifactError,
     ArtifactNotFoundError,
-    WorkflowError,
     ConcurrencyError,
-    ResourceExhaustedError
-)
-
-# Task-specific exceptions
-from .task_errors import (
-    TaskError,
-    TaskExecutionError,
-    TaskTimeoutError,
-    TaskCancellationError,
-    TaskResourceError,
-    TaskDeadlockError,
-    TaskCorruptionError,
-    TaskPriorityError,
-    TaskBreakdownError,
-    TaskSynthesisError
+    OrchestrationError,
+    ResourceExhaustedError,
+    SessionNotFoundError,
+    SessionStateError,
+    SpecialistAssignmentError,
+    SpecialistNotFoundError,
+    TaskDependencyError,
+    TaskNotFoundError,
+    TaskStateError,
+    TaskValidationError,
+    WorkflowError,
 )
 
 # Specialist-specific exceptions
 from .specialist_errors import (
-    SpecialistError,
-    SpecialistConfigurationError,
     SpecialistCapabilityError,
-    SpecialistLoadError,
-    SpecialistRoleConflictError,
+    SpecialistConfigurationError,
     SpecialistContextError,
+    SpecialistError,
+    SpecialistLoadError,
+    SpecialistOverloadError,
+    SpecialistRoleConflictError,
     SpecialistUnavailableError,
-    SpecialistOverloadError
+)
+
+# Task-specific exceptions
+from .task_errors import (
+    TaskBreakdownError,
+    TaskCancellationError,
+    TaskCorruptionError,
+    TaskDeadlockError,
+    TaskError,
+    TaskExecutionError,
+    TaskPriorityError,
+    TaskResourceError,
+    TaskSynthesisError,
+    TaskTimeoutError,
 )
 
 __all__ = [
     # Base exceptions
-    'BaseOrchestrationError',
-    'ErrorSeverity',
-    'RecoveryStrategy',
-    'ConfigurationError',
-    'InfrastructureError',
-    'ValidationError',
-    'ExternalServiceError',
-    'SecurityError',
-    'PerformanceError',
-    
+    "BaseOrchestrationError",
+    "ErrorSeverity",
+    "RecoveryStrategy",
+    "ConfigurationError",
+    "InfrastructureError",
+    "ValidationError",
+    "ExternalServiceError",
+    "SecurityError",
+    "PerformanceError",
     # Orchestration exceptions
-    'OrchestrationError',
-    'TaskNotFoundError',
-    'TaskStateError',
-    'TaskDependencyError',
-    'TaskValidationError',
-    'SessionNotFoundError',
-    'SessionStateError',
-    'SpecialistNotFoundError',
-    'SpecialistAssignmentError',
-    'ArtifactError',
-    'ArtifactNotFoundError',
-    'WorkflowError',
-    'ConcurrencyError',
-    'ResourceExhaustedError',
-    
+    "OrchestrationError",
+    "TaskNotFoundError",
+    "TaskStateError",
+    "TaskDependencyError",
+    "TaskValidationError",
+    "SessionNotFoundError",
+    "SessionStateError",
+    "SpecialistNotFoundError",
+    "SpecialistAssignmentError",
+    "ArtifactError",
+    "ArtifactNotFoundError",
+    "WorkflowError",
+    "ConcurrencyError",
+    "ResourceExhaustedError",
     # Task exceptions
-    'TaskError',
-    'TaskExecutionError',
-    'TaskTimeoutError',
-    'TaskCancellationError',
-    'TaskResourceError',
-    'TaskDeadlockError',
-    'TaskCorruptionError',
-    'TaskPriorityError',
-    'TaskBreakdownError',
-    'TaskSynthesisError',
-    
+    "TaskError",
+    "TaskExecutionError",
+    "TaskTimeoutError",
+    "TaskCancellationError",
+    "TaskResourceError",
+    "TaskDeadlockError",
+    "TaskCorruptionError",
+    "TaskPriorityError",
+    "TaskBreakdownError",
+    "TaskSynthesisError",
     # Specialist exceptions
-    'SpecialistError',
-    'SpecialistConfigurationError',
-    'SpecialistCapabilityError',
-    'SpecialistLoadError',
-    'SpecialistRoleConflictError',
-    'SpecialistContextError',
-    'SpecialistUnavailableError',
-    'SpecialistOverloadError'
+    "SpecialistError",
+    "SpecialistConfigurationError",
+    "SpecialistCapabilityError",
+    "SpecialistLoadError",
+    "SpecialistRoleConflictError",
+    "SpecialistContextError",
+    "SpecialistUnavailableError",
+    "SpecialistOverloadError",
 ]
 
 
@@ -119,12 +116,7 @@ def get_error_metrics() -> dict:
     return {
         "total_errors": 0,
         "error_rates": {},
-        "severity_breakdown": {
-            "low": 0,
-            "medium": 0,
-            "high": 0,
-            "critical": 0
-        },
+        "severity_breakdown": {"low": 0, "medium": 0, "high": 0, "critical": 0},
         "recovery_success_rate": 0.0,
-        "common_error_types": []
+        "common_error_types": [],
     }

@@ -3,13 +3,14 @@ Task-related Data Transfer Objects.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
 class TaskPlanRequest:
     """Request to plan a complex task."""
+
     description: str
     complexity_level: str = "moderate"
     subtasks_json: Optional[str] = None
@@ -20,6 +21,7 @@ class TaskPlanRequest:
 @dataclass
 class TaskPlanResponse:
     """Response from task planning."""
+
     success: bool
     parent_task_id: str
     description: str
@@ -33,6 +35,7 @@ class TaskPlanResponse:
 @dataclass
 class TaskExecutionRequest:
     """Request to execute a task."""
+
     task_id: str
     force: bool = False
     timeout: Optional[int] = None  # seconds
@@ -43,6 +46,7 @@ class TaskExecutionRequest:
 @dataclass
 class TaskExecutionResponse:
     """Response from task execution."""
+
     success: bool
     task_id: str
     status: str
@@ -57,6 +61,7 @@ class TaskExecutionResponse:
 @dataclass
 class ExecutionContextRequest:
     """Request to get execution context for a task."""
+
     task_id: str
     include_dependencies: bool = True
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -65,6 +70,7 @@ class ExecutionContextRequest:
 @dataclass
 class ExecutionContextResponse:
     """Response with task execution context."""
+
     success: bool
     task_id: str
     task_title: str
@@ -82,6 +88,7 @@ class ExecutionContextResponse:
 @dataclass
 class TaskCompletionRequest:
     """Request to complete a task."""
+
     task_id: str
     summary: str
     detailed_work: str
@@ -94,6 +101,7 @@ class TaskCompletionRequest:
 @dataclass
 class TaskCompletionResponse:
     """Response from task completion."""
+
     success: bool
     task_id: str
     message: str

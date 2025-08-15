@@ -11,33 +11,31 @@ The database layer supports multiple storage backends:
 """
 
 from .base import (
-    DatabaseType,
     DatabaseAdapter,
+    DatabaseAdapterFactory,
+    DatabaseType,
+    GraphDatabaseAdapter,
     OperationalDatabaseAdapter,
     VectorDatabaseAdapter,
-    GraphDatabaseAdapter,
-    DatabaseAdapterFactory
 )
-
-from .unified_manager import UnifiedDatabaseManager, create_unified_manager
 
 # Legacy imports for backward compatibility
 from .connection_manager import DatabaseConnectionManager
 from .repository_factory import RepositoryFactory, create_repository_factory
+from .unified_manager import UnifiedDatabaseManager, create_unified_manager
 
 __all__ = [
     # Modern multi-database architecture
-    'DatabaseType',
-    'DatabaseAdapter',
-    'OperationalDatabaseAdapter', 
-    'VectorDatabaseAdapter',
-    'GraphDatabaseAdapter',
-    'DatabaseAdapterFactory',
-    'UnifiedDatabaseManager',
-    'create_unified_manager',
-    
+    "DatabaseType",
+    "DatabaseAdapter",
+    "OperationalDatabaseAdapter",
+    "VectorDatabaseAdapter",
+    "GraphDatabaseAdapter",
+    "DatabaseAdapterFactory",
+    "UnifiedDatabaseManager",
+    "create_unified_manager",
     # Legacy compatibility
-    'DatabaseConnectionManager',
-    'RepositoryFactory',
-    'create_repository_factory',
+    "DatabaseConnectionManager",
+    "RepositoryFactory",
+    "create_repository_factory",
 ]

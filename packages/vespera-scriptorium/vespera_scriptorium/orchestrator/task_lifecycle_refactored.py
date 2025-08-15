@@ -10,34 +10,31 @@ the same API as the original task_lifecycle.py.
 """
 
 import logging
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from ..db.persistence import DatabasePersistenceManager
 from .artifacts import ArtifactManager
-from .lifecycle import TaskLifecycleManager, TaskLifecycleState, StaleTaskReason
+from .lifecycle import StaleTaskReason, TaskLifecycleManager, TaskLifecycleState
 
 logger = logging.getLogger("mcp_task_orchestrator.lifecycle")
 
 # Re-export main classes for backward compatibility
-__all__ = [
-    'TaskLifecycleManager',
-    'TaskLifecycleState', 
-    'StaleTaskReason'
-]
+__all__ = ["TaskLifecycleManager", "TaskLifecycleState", "StaleTaskReason"]
 
 # Backward compatibility aliases
 TaskLifecycleState = TaskLifecycleState
 StaleTaskReason = StaleTaskReason
 
 
-def create_lifecycle_manager(state_manager: DatabasePersistenceManager, 
-                           artifact_manager: ArtifactManager) -> TaskLifecycleManager:
+def create_lifecycle_manager(
+    state_manager: DatabasePersistenceManager, artifact_manager: ArtifactManager
+) -> TaskLifecycleManager:
     """Factory function to create a TaskLifecycleManager instance.
-    
+
     Args:
         state_manager: Database persistence manager
         artifact_manager: Artifact management instance
-        
+
     Returns:
         Configured TaskLifecycleManager instance
     """

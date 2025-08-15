@@ -24,30 +24,28 @@ File Sizes (all under 500 lines for Claude Code safety):
 """
 
 # Export base repository components for backward compatibility
-from .base import TaskRepository, CycleDetectedError
+from .base import CycleDetectedError, TaskRepository
 
 # Optional: Export converter utilities if needed externally
 from .converters import (
-    row_to_task,
+    row_to_artifact,
     row_to_attribute,
     row_to_dependency,
-    row_to_artifact,
     row_to_event,
-    row_to_template
+    row_to_task,
+    row_to_template,
 )
 
 __all__ = [
     # Core repository class
-    'TaskRepository',
-    
+    "TaskRepository",
     # Exception types
-    'CycleDetectedError',
-    
+    "CycleDetectedError",
     # Converter functions (available if needed)
-    'row_to_task',
-    'row_to_attribute',
-    'row_to_dependency',
-    'row_to_artifact',
-    'row_to_event',
-    'row_to_template',
+    "row_to_task",
+    "row_to_attribute",
+    "row_to_dependency",
+    "row_to_artifact",
+    "row_to_event",
+    "row_to_template",
 ]

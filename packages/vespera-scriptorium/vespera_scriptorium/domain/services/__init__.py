@@ -6,18 +6,18 @@ using the repository interfaces, keeping the domain layer independent
 of infrastructure concerns.
 """
 
-from .task_service import TaskService
-from .task_breakdown_service import TaskBreakdownService
-from .specialist_assignment_service import SpecialistAssignmentService
+from .orchestration_coordinator import OrchestrationCoordinator
 from .progress_tracking_service import ProgressTrackingService
 from .result_synthesis_service import ResultSynthesisService
-from .orchestration_coordinator import OrchestrationCoordinator
+from .specialist_assignment_service import SpecialistAssignmentService
+from .task_breakdown_service import TaskBreakdownService
+from .task_service import TaskService
 
 __all__ = [
-    'TaskService',
-    'TaskBreakdownService',
-    'SpecialistAssignmentService',
-    'ProgressTrackingService',
-    'ResultSynthesisService',
-    'OrchestrationCoordinator'
+    "TaskService",
+    "TaskBreakdownService",
+    "SpecialistAssignmentService",
+    "ProgressTrackingService",
+    "ResultSynthesisService",
+    "OrchestrationCoordinator",
 ]

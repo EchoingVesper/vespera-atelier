@@ -3,12 +3,13 @@ Progress tracking Data Transfer Objects.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
 class ProgressStatusRequest:
     """Request for progress status."""
+
     session_id: Optional[str] = None
     task_id: Optional[str] = None
     include_completed: bool = False
@@ -19,6 +20,7 @@ class ProgressStatusRequest:
 @dataclass
 class ProgressStatusResponse:
     """Response with progress status."""
+
     overall_status: str
     metrics: Dict[str, Any]
     session_info: Optional[Dict[str, Any]] = None

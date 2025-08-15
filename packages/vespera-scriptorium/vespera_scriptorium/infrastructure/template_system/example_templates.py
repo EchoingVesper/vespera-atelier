@@ -179,7 +179,7 @@ CODE_REVIEW_TEMPLATE = """// Code Review Process Template
   }
 }"""
 
-# Example: Bug Investigation Template  
+# Example: Bug Investigation Template
 BUG_INVESTIGATION_TEMPLATE = """// Bug Investigation Template
 // Systematic approach to investigating and resolving bugs
 
@@ -429,7 +429,7 @@ EXAMPLE_TEMPLATES = {
     "code_review_process": CODE_REVIEW_TEMPLATE,
     "bug_investigation": BUG_INVESTIGATION_TEMPLATE,
     "research_base": RESEARCH_BASE_TEMPLATE,
-    "market_research": MARKET_RESEARCH_TEMPLATE
+    "market_research": MARKET_RESEARCH_TEMPLATE,
 }
 
 

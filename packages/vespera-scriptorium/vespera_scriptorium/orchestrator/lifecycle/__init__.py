@@ -5,11 +5,7 @@ This package provides modular task lifecycle management components split from th
 original large task_lifecycle.py file for Claude Code safety and maintainability.
 """
 
-from .base import TaskLifecycleState, StaleTaskReason
+from .base import StaleTaskReason, TaskLifecycleState
 from .manager import TaskLifecycleManager
 
-__all__ = [
-    'TaskLifecycleState',
-    'StaleTaskReason', 
-    'TaskLifecycleManager'
-]
+__all__ = ["TaskLifecycleState", "StaleTaskReason", "TaskLifecycleManager"]

@@ -685,20 +685,15 @@ def get_additional_templates() -> Dict[str, str]:
     return {
         "content_creation_workflow": CONTENT_CREATION_WORKFLOW,
         "design_project_workflow": DESIGN_PROJECT_WORKFLOW,
-        "project_planning_template": PROJECT_PLANNING_TEMPLATE
+        "project_planning_template": PROJECT_PLANNING_TEMPLATE,
     }
 
 
 def get_creative_templates() -> List[str]:
     """Get list of creative workflow templates."""
-    return [
-        "content_creation_workflow",
-        "design_project_workflow"
-    ]
+    return ["content_creation_workflow", "design_project_workflow"]
 
 
 def get_business_templates() -> List[str]:
     """Get list of business process templates."""
-    return [
-        "project_planning_template"
-    ]
+    return ["project_planning_template"]

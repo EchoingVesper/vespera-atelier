@@ -2,17 +2,18 @@
 MCP Server adapter that bridges MCP protocol with clean architecture.
 """
 
-from typing import Dict, Any, List
 import logging
+from typing import Any, Dict, List
 
 from mcp import types
 from mcp.server import Server
 
 from ...application import (
-    OrchestrateTaskUseCase,
     ManageSpecialistsUseCase,
-    TrackProgressUseCase
+    OrchestrateTaskUseCase,
+    TrackProgressUseCase,
 )
+
 # from .handlers import MCPToolHandler, MCPResourceHandler  # Temporarily commented out
 
 logger = logging.getLogger(__name__)
@@ -21,31 +22,31 @@ logger = logging.getLogger(__name__)
 class MCPServerAdapter:
     """
     Adapter that configures an MCP server with clean architecture handlers.
-    
+
     This adapter isolates MCP protocol concerns from the application layer,
     allowing the business logic to remain independent of the protocol.
     """
-    
+
     def __init__(
         self,
         orchestrate_use_case: OrchestrateTaskUseCase,
         specialist_use_case: ManageSpecialistsUseCase,
-        progress_use_case: TrackProgressUseCase
+        progress_use_case: TrackProgressUseCase,
     ):
         self.server = Server("task-orchestrator")
         self.tool_handler = MCPToolHandler(
             orchestrate_use_case=orchestrate_use_case,
             specialist_use_case=specialist_use_case,
-            progress_use_case=progress_use_case
+            progress_use_case=progress_use_case,
         )
         self.resource_handler = MCPResourceHandler()
-        
+
         self._register_tools()
         self._register_handlers()
-    
+
     def _register_tools(self):
         """Register all available tools with the MCP server."""
-        
+
         @self.server.list_tools()
         async def list_tools() -> List[types.Tool]:
             """List all available orchestration tools."""
@@ -58,10 +59,10 @@ class MCPServerAdapter:
                         "properties": {
                             "working_directory": {
                                 "type": "string",
-                                "description": "Working directory for the session"
+                                "description": "Working directory for the session",
                             }
-                        }
-                    }
+                        },
+                    },
                 ),
                 types.Tool(
                     name="orchestrator_plan_task",
@@ -69,39 +70,65 @@ class MCPServerAdapter:
                     inputSchema={
                         "type": "object",
                         "properties": {
-                            "title": {
-                                "type": "string",
-                                "description": "Task title"
-                            },
+                            "title": {"type": "string", "description": "Task title"},
                             "description": {
                                 "type": "string",
-                                "description": "Detailed task description"
+                                "description": "Detailed task description",
                             },
                             "task_type": {
                                 "type": "string",
-                                "enum": ["standard", "breakdown", "milestone", "review", "approval", "research", "implementation", "testing", "documentation", "deployment", "custom"],
+                                "enum": [
+                                    "standard",
+                                    "breakdown",
+                                    "milestone",
+                                    "review",
+                                    "approval",
+                                    "research",
+                                    "implementation",
+                                    "testing",
+                                    "documentation",
+                                    "deployment",
+                                    "custom",
+                                ],
                                 "default": "standard",
-                                "description": "Type of task"
+                                "description": "Type of task",
                             },
                             "complexity": {
                                 "type": "string",
-                                "enum": ["trivial", "simple", "moderate", "complex", "very_complex"],
+                                "enum": [
+                                    "trivial",
+                                    "simple",
+                                    "moderate",
+                                    "complex",
+                                    "very_complex",
+                                ],
                                 "default": "moderate",
-                                "description": "Task complexity level"
+                                "description": "Task complexity level",
                             },
                             "specialist_type": {
                                 "type": "string",
-                                "enum": ["analyst", "coder", "tester", "documenter", "reviewer", "architect", "devops", "researcher", "coordinator", "generic"],
+                                "enum": [
+                                    "analyst",
+                                    "coder",
+                                    "tester",
+                                    "documenter",
+                                    "reviewer",
+                                    "architect",
+                                    "devops",
+                                    "researcher",
+                                    "coordinator",
+                                    "generic",
+                                ],
                                 "default": "generic",
-                                "description": "Specialist type for assignment"
+                                "description": "Specialist type for assignment",
                             },
                             "parent_task_id": {
                                 "type": "string",
-                                "description": "Parent task ID for hierarchy (optional)"
-                            }
+                                "description": "Parent task ID for hierarchy (optional)",
+                            },
                         },
-                        "required": ["title", "description"]
-                    }
+                        "required": ["title", "description"],
+                    },
                 ),
                 types.Tool(
                     name="orchestrator_execute_subtask",
@@ -111,11 +138,11 @@ class MCPServerAdapter:
                         "properties": {
                             "task_id": {
                                 "type": "string",
-                                "description": "ID of the subtask to execute"
+                                "description": "ID of the subtask to execute",
                             }
                         },
-                        "required": ["task_id"]
-                    }
+                        "required": ["task_id"],
+                    },
                 ),
                 types.Tool(
                     name="orchestrator_complete_subtask",
@@ -125,29 +152,34 @@ class MCPServerAdapter:
                         "properties": {
                             "task_id": {
                                 "type": "string",
-                                "description": "ID of the completed subtask"
+                                "description": "ID of the completed subtask",
                             },
                             "summary": {
                                 "type": "string",
-                                "description": "Summary of work completed"
+                                "description": "Summary of work completed",
                             },
                             "detailed_work": {
                                 "type": "string",
-                                "description": "Detailed description of work done"
+                                "description": "Detailed description of work done",
                             },
                             "next_action": {
                                 "type": "string",
-                                "enum": ["continue", "needs_revision", "blocked", "complete"],
-                                "description": "What should happen next"
+                                "enum": [
+                                    "continue",
+                                    "needs_revision",
+                                    "blocked",
+                                    "complete",
+                                ],
+                                "description": "What should happen next",
                             },
                             "artifact_ids": {
                                 "type": "array",
                                 "items": {"type": "string"},
-                                "description": "List of artifact IDs created"
-                            }
+                                "description": "List of artifact IDs created",
+                            },
                         },
-                        "required": ["task_id", "summary", "next_action"]
-                    }
+                        "required": ["task_id", "summary", "next_action"],
+                    },
                 ),
                 types.Tool(
                     name="orchestrator_get_status",
@@ -158,18 +190,18 @@ class MCPServerAdapter:
                             "include_completed": {
                                 "type": "boolean",
                                 "description": "Whether to include completed tasks",
-                                "default": False
+                                "default": False,
                             },
                             "session_id": {
                                 "type": "string",
-                                "description": "Specific session to check"
+                                "description": "Specific session to check",
                             },
                             "task_id": {
                                 "type": "string",
-                                "description": "Specific task to check"
-                            }
-                        }
-                    }
+                                "description": "Specific task to check",
+                            },
+                        },
+                    },
                 ),
                 types.Tool(
                     name="orchestrator_synthesize_results",
@@ -179,21 +211,23 @@ class MCPServerAdapter:
                         "properties": {
                             "parent_task_id": {
                                 "type": "string",
-                                "description": "ID of the parent task to synthesize"
+                                "description": "ID of the parent task to synthesize",
                             }
                         },
-                        "required": ["parent_task_id"]
-                    }
-                )
+                        "required": ["parent_task_id"],
+                    },
+                ),
             ]
-    
+
     def _register_handlers(self):
         """Register tool call handlers with the MCP server."""
-        
+
         @self.server.call_tool()
-        async def call_tool(name: str, arguments: Dict[str, Any]) -> List[types.TextContent]:
+        async def call_tool(
+            name: str, arguments: Dict[str, Any]
+        ) -> List[types.TextContent]:
             """Handle tool calls from the LLM."""
-            
+
             try:
                 # Route to appropriate handler
                 if name == "orchestrator_initialize_session":
@@ -209,18 +243,18 @@ class MCPServerAdapter:
                 elif name == "orchestrator_synthesize_results":
                     return await self.tool_handler.handle_synthesize_results(arguments)
                 else:
-                    return [types.TextContent(
-                        type="text",
-                        text=f"Unknown tool: {name}"
-                    )]
-            
+                    return [
+                        types.TextContent(type="text", text=f"Unknown tool: {name}")
+                    ]
+
             except Exception as e:
                 logger.error(f"Error handling tool {name}: {e}")
-                return [types.TextContent(
-                    type="text",
-                    text=f"Error executing tool {name}: {str(e)}"
-                )]
-    
+                return [
+                    types.TextContent(
+                        type="text", text=f"Error executing tool {name}: {str(e)}"
+                    )
+                ]
+
     def get_server(self) -> Server:
         """Get the configured MCP server instance."""
         return self.server

@@ -10,22 +10,23 @@ File size optimized: <150 lines (previously 1407 lines)
 """
 
 import asyncio
-import os
 import logging
-from typing import Dict, List, Any
+import os
+from typing import Any, Dict, List
 
 from mcp import types
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 
+from .infrastructure.mcp.handlers.core_handlers import (
+    disable_dependency_injection,
+    enable_dependency_injection,
+    setup_logging,
+)
+
 # Import refactored modules
 from .infrastructure.mcp.tool_definitions import get_all_tools
 from .infrastructure.mcp.tool_router import route_tool_call
-from .infrastructure.mcp.handlers.core_handlers import (
-    setup_logging,
-    enable_dependency_injection,
-    disable_dependency_injection
-)
 
 # Configure logging
 logger = setup_logging()
@@ -51,10 +52,14 @@ async def main():
     try:
         # Log server initialization
         logger.info("Starting Vespera Scriptorium server...")
-        
+
         # Check if DI should be enabled
-        enable_di = os.environ.get("MCP_TASK_ORCHESTRATOR_USE_DI", "true").lower() in ("true", "1", "yes")
-        
+        enable_di = os.environ.get("MCP_TASK_ORCHESTRATOR_USE_DI", "true").lower() in (
+            "true",
+            "1",
+            "yes",
+        )
+
         if enable_di:
             # Try to enable dependency injection
             try:
@@ -65,16 +70,14 @@ async def main():
                 logger.info("Falling back to legacy singleton mode")
         else:
             logger.info("Server running in legacy singleton mode")
-        
+
         # Start the server
         logger.info("Vespera Scriptorium server ready")
         async with stdio_server() as (read_stream, write_stream):
             await app.run(
-                read_stream, 
-                write_stream, 
-                app.create_initialization_options()
+                read_stream, write_stream, app.create_initialization_options()
             )
-            
+
     except KeyboardInterrupt:
         logger.info("Server shutdown requested")
     except Exception as e:

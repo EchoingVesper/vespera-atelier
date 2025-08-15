@@ -1,20 +1,25 @@
 """
 MCP Tools for JSON5 Template System
 
-Provides MCP tools for template management including create, list, 
+Provides MCP tools for template management including create, list,
 instantiate, validate, and CRUD operations.
 """
 
 import json
 import logging
-from typing import Dict, Any, List
 from pathlib import Path
+from typing import Any, Dict, List
+
 from mcp import types
 
-from .storage_manager import TemplateStorageManager, TemplateStorageError
-from .template_engine import TemplateEngine, TemplateValidationError, ParameterSubstitutionError
-from .json5_parser import JSON5Parser, JSON5ValidationError
 from .example_templates import EXAMPLE_TEMPLATES, get_example_template
+from .json5_parser import JSON5Parser, JSON5ValidationError
+from .storage_manager import TemplateStorageError, TemplateStorageManager
+from .template_engine import (
+    ParameterSubstitutionError,
+    TemplateEngine,
+    TemplateValidationError,
+)
 from .template_installer import get_template_installer
 
 logger = logging.getLogger(__name__)
@@ -31,26 +36,26 @@ def get_template_tools() -> List[types.Tool]:
                 "properties": {
                     "template_id": {
                         "type": "string",
-                        "description": "Unique template identifier (alphanumeric, underscore, hyphen only)"
+                        "description": "Unique template identifier (alphanumeric, underscore, hyphen only)",
                     },
                     "template_content": {
-                        "type": "string", 
-                        "description": "JSON5 template content"
+                        "type": "string",
+                        "description": "JSON5 template content",
                     },
                     "category": {
                         "type": "string",
                         "enum": ["user", "shared"],
                         "description": "Template category (builtin is read-only)",
-                        "default": "user"
+                        "default": "user",
                     },
                     "overwrite": {
                         "type": "boolean",
                         "description": "Whether to overwrite existing template",
-                        "default": False
-                    }
+                        "default": False,
+                    },
                 },
-                "required": ["template_id", "template_content"]
-            }
+                "required": ["template_id", "template_content"],
+            },
         ),
         types.Tool(
             name="template_list",
@@ -61,15 +66,15 @@ def get_template_tools() -> List[types.Tool]:
                     "category": {
                         "type": "string",
                         "enum": ["builtin", "user", "shared"],
-                        "description": "Filter by template category (optional)"
+                        "description": "Filter by template category (optional)",
                     },
                     "include_metadata": {
                         "type": "boolean",
                         "description": "Include full template metadata",
-                        "default": False
-                    }
-                }
-            }
+                        "default": False,
+                    },
+                },
+            },
         ),
         types.Tool(
             name="template_load",
@@ -79,16 +84,16 @@ def get_template_tools() -> List[types.Tool]:
                 "properties": {
                     "template_id": {
                         "type": "string",
-                        "description": "Template ID to load"
+                        "description": "Template ID to load",
                     },
                     "category": {
                         "type": "string",
                         "enum": ["builtin", "user", "shared"],
-                        "description": "Specific category to search (optional)"
-                    }
+                        "description": "Specific category to search (optional)",
+                    },
                 },
-                "required": ["template_id"]
-            }
+                "required": ["template_id"],
+            },
         ),
         types.Tool(
             name="template_instantiate",
@@ -98,20 +103,20 @@ def get_template_tools() -> List[types.Tool]:
                 "properties": {
                     "template_id": {
                         "type": "string",
-                        "description": "Template to instantiate"
+                        "description": "Template to instantiate",
                     },
                     "parameters": {
                         "type": "object",
-                        "description": "Parameter values for template substitution"
+                        "description": "Parameter values for template substitution",
                     },
                     "create_tasks": {
                         "type": "boolean",
                         "description": "Whether to create actual tasks in the orchestrator",
-                        "default": False
-                    }
+                        "default": False,
+                    },
                 },
-                "required": ["template_id", "parameters"]
-            }
+                "required": ["template_id", "parameters"],
+            },
         ),
         types.Tool(
             name="template_validate",
@@ -121,11 +126,11 @@ def get_template_tools() -> List[types.Tool]:
                 "properties": {
                     "template_content": {
                         "type": "string",
-                        "description": "JSON5 template content to validate"
+                        "description": "JSON5 template content to validate",
                     }
                 },
-                "required": ["template_content"]
-            }
+                "required": ["template_content"],
+            },
         ),
         types.Tool(
             name="template_delete",
@@ -135,16 +140,16 @@ def get_template_tools() -> List[types.Tool]:
                 "properties": {
                     "template_id": {
                         "type": "string",
-                        "description": "Template ID to delete"
+                        "description": "Template ID to delete",
                     },
                     "category": {
                         "type": "string",
                         "enum": ["user", "shared"],
-                        "description": "Category to search (builtin templates cannot be deleted)"
-                    }
+                        "description": "Category to search (builtin templates cannot be deleted)",
+                    },
                 },
-                "required": ["template_id"]
-            }
+                "required": ["template_id"],
+            },
         ),
         types.Tool(
             name="template_info",
@@ -154,16 +159,16 @@ def get_template_tools() -> List[types.Tool]:
                 "properties": {
                     "template_id": {
                         "type": "string",
-                        "description": "Template ID to analyze"
+                        "description": "Template ID to analyze",
                     },
                     "category": {
                         "type": "string",
                         "enum": ["builtin", "user", "shared"],
-                        "description": "Specific category to search (optional)"
-                    }
+                        "description": "Specific category to search (optional)",
+                    },
                 },
-                "required": ["template_id"]
-            }
+                "required": ["template_id"],
+            },
         ),
         types.Tool(
             name="template_install_examples",
@@ -175,15 +180,15 @@ def get_template_tools() -> List[types.Tool]:
                         "type": "string",
                         "enum": ["user", "shared"],
                         "description": "Category to install examples in",
-                        "default": "shared"
+                        "default": "shared",
                     },
                     "overwrite": {
                         "type": "boolean",
                         "description": "Whether to overwrite existing examples",
-                        "default": False
-                    }
-                }
-            }
+                        "default": False,
+                    },
+                },
+            },
         ),
         types.Tool(
             name="template_install_default_library",
@@ -193,25 +198,29 @@ def get_template_tools() -> List[types.Tool]:
                 "properties": {
                     "category": {
                         "type": "string",
-                        "enum": ["all", "development", "research", "creative", "business", "self_development"],
+                        "enum": [
+                            "all",
+                            "development",
+                            "research",
+                            "creative",
+                            "business",
+                            "self_development",
+                        ],
                         "description": "Category of templates to install",
-                        "default": "all"
+                        "default": "all",
                     },
                     "overwrite": {
                         "type": "boolean",
                         "description": "Whether to overwrite existing templates",
-                        "default": False
-                    }
-                }
-            }
+                        "default": False,
+                    },
+                },
+            },
         ),
         types.Tool(
             name="template_get_installation_status",
             description="Get status of template installations and coverage",
-            inputSchema={
-                "type": "object",
-                "properties": {}
-            }
+            inputSchema={"type": "object", "properties": {}},
         ),
         types.Tool(
             name="template_validate_all",
@@ -222,10 +231,10 @@ def get_template_tools() -> List[types.Tool]:
                     "category": {
                         "type": "string",
                         "enum": ["builtin", "user", "shared"],
-                        "description": "Specific category to validate (optional)"
+                        "description": "Specific category to validate (optional)",
                     }
-                }
-            }
+                },
+            },
         ),
         types.Tool(
             name="template_uninstall",
@@ -235,18 +244,18 @@ def get_template_tools() -> List[types.Tool]:
                 "properties": {
                     "template_id": {
                         "type": "string",
-                        "description": "Template ID to uninstall"
+                        "description": "Template ID to uninstall",
                     },
                     "category": {
                         "type": "string",
                         "enum": ["user", "shared"],
                         "description": "Template category",
-                        "default": "user"
-                    }
+                        "default": "user",
+                    },
                 },
-                "required": ["template_id"]
-            }
-        )
+                "required": ["template_id"],
+            },
+        ),
     ]
 
 
@@ -257,17 +266,17 @@ async def handle_template_create(args: Dict[str, Any]) -> List[types.TextContent
         template_content = args["template_content"]
         category = args.get("category", "user")
         overwrite = args.get("overwrite", False)
-        
+
         # Initialize storage manager
         storage_manager = TemplateStorageManager()
-        
+
         # Parse and validate the template content
         json5_parser = JSON5Parser()
         template_data = json5_parser.parse(template_content)
-        
+
         # Save the template
         storage_manager.save_template(template_id, template_data, category, overwrite)
-        
+
         response = {
             "status": "success",
             "message": f"Template '{template_id}' created successfully in {category} category",
@@ -276,19 +285,21 @@ async def handle_template_create(args: Dict[str, Any]) -> List[types.TextContent
             "next_steps": [
                 "Use 'template_instantiate' to create tasks from this template",
                 f"Use 'template_info {template_id}' to view template details",
-                "Use 'template_list' to see all available templates"
-            ]
+                "Use 'template_list' to see all available templates",
+            ],
         }
-        
+
         return [types.TextContent(type="text", text=json.dumps(response, indent=2))]
-        
+
     except (JSON5ValidationError, TemplateStorageError) as e:
         error_response = {
             "status": "error",
             "error_type": type(e).__name__,
-            "message": str(e)
+            "message": str(e),
         }
-        return [types.TextContent(type="text", text=json.dumps(error_response, indent=2))]
+        return [
+            types.TextContent(type="text", text=json.dumps(error_response, indent=2))
+        ]
 
 
 async def handle_template_list(args: Dict[str, Any]) -> List[types.TextContent]:
@@ -296,26 +307,28 @@ async def handle_template_list(args: Dict[str, Any]) -> List[types.TextContent]:
     try:
         category = args.get("category")
         include_metadata = args.get("include_metadata", False)
-        
+
         storage_manager = TemplateStorageManager()
         templates = storage_manager.list_templates(category, include_metadata)
-        
+
         response = {
             "status": "success",
             "templates": templates,
             "total_count": len(templates),
-            "filtered_by_category": category or "all"
+            "filtered_by_category": category or "all",
         }
-        
+
         return [types.TextContent(type="text", text=json.dumps(response, indent=2))]
-        
+
     except TemplateStorageError as e:
         error_response = {
             "status": "error",
             "error_type": "TemplateStorageError",
-            "message": str(e)
+            "message": str(e),
         }
-        return [types.TextContent(type="text", text=json.dumps(error_response, indent=2))]
+        return [
+            types.TextContent(type="text", text=json.dumps(error_response, indent=2))
+        ]
 
 
 async def handle_template_load(args: Dict[str, Any]) -> List[types.TextContent]:
@@ -323,28 +336,30 @@ async def handle_template_load(args: Dict[str, Any]) -> List[types.TextContent]:
     try:
         template_id = args["template_id"]
         category = args.get("category")
-        
+
         storage_manager = TemplateStorageManager()
         template_data = storage_manager.load_template(template_id, category)
-        
+
         # Also get template info
         template_info = storage_manager.get_template_info(template_id, category)
-        
+
         response = {
             "status": "success",
             "template": template_data,
-            "info": template_info
+            "info": template_info,
         }
-        
+
         return [types.TextContent(type="text", text=json.dumps(response, indent=2))]
-        
+
     except TemplateStorageError as e:
         error_response = {
             "status": "error",
             "error_type": "TemplateStorageError",
-            "message": str(e)
+            "message": str(e),
         }
-        return [types.TextContent(type="text", text=json.dumps(error_response, indent=2))]
+        return [
+            types.TextContent(type="text", text=json.dumps(error_response, indent=2))
+        ]
 
 
 async def handle_template_instantiate(args: Dict[str, Any]) -> List[types.TextContent]:
@@ -353,64 +368,72 @@ async def handle_template_instantiate(args: Dict[str, Any]) -> List[types.TextCo
         template_id = args["template_id"]
         parameters = args["parameters"]
         create_tasks = args.get("create_tasks", False)
-        
+
         # Initialize template engine
         template_engine = TemplateEngine()
-        
+
         # Instantiate the template
-        instantiated_template = template_engine.instantiate_template(template_id, parameters)
-        
+        instantiated_template = template_engine.instantiate_template(
+            template_id, parameters
+        )
+
         response = {
             "status": "success",
             "message": f"Template '{template_id}' instantiated successfully",
             "instantiated_template": instantiated_template,
             "parameters_used": parameters,
-            "tasks_created": create_tasks
+            "tasks_created": create_tasks,
         }
-        
+
         # If create_tasks is True, we would integrate with the Vespera Scriptorium here
         if create_tasks:
             response["message"] += " and tasks created in orchestrator"
             response["next_steps"] = [
                 "Use 'orchestrator_get_status' to see created tasks",
-                "Use task management tools to execute the created tasks"
+                "Use task management tools to execute the created tasks",
             ]
         else:
             response["next_steps"] = [
                 "Review the instantiated template above",
-                "Set 'create_tasks: true' to actually create tasks in the orchestrator"
+                "Set 'create_tasks: true' to actually create tasks in the orchestrator",
             ]
-        
+
         return [types.TextContent(type="text", text=json.dumps(response, indent=2))]
-        
-    except (TemplateValidationError, ParameterSubstitutionError, TemplateStorageError) as e:
+
+    except (
+        TemplateValidationError,
+        ParameterSubstitutionError,
+        TemplateStorageError,
+    ) as e:
         error_response = {
             "status": "error",
             "error_type": type(e).__name__,
-            "message": str(e)
+            "message": str(e),
         }
-        return [types.TextContent(type="text", text=json.dumps(error_response, indent=2))]
+        return [
+            types.TextContent(type="text", text=json.dumps(error_response, indent=2))
+        ]
 
 
 async def handle_template_validate(args: Dict[str, Any]) -> List[types.TextContent]:
     """Handle template validation."""
     try:
         template_content = args["template_content"]
-        
+
         # Parse JSON5
         json5_parser = JSON5Parser()
         template_data = json5_parser.parse(template_content)
-        
+
         # Validate with template engine
         template_engine = TemplateEngine()
         validation_errors = template_engine.validate_template_syntax(template_data)
-        
+
         if validation_errors:
             response = {
                 "status": "invalid",
                 "valid": False,
                 "errors": validation_errors,
-                "message": f"Template validation failed with {len(validation_errors)} errors"
+                "message": f"Template validation failed with {len(validation_errors)} errors",
             }
         else:
             response = {
@@ -420,20 +443,22 @@ async def handle_template_validate(args: Dict[str, Any]) -> List[types.TextConte
                 "template_info": {
                     "metadata": template_data.get("metadata", {}),
                     "parameters": list(template_data.get("parameters", {}).keys()),
-                    "tasks": list(template_data.get("tasks", {}).keys())
-                }
+                    "tasks": list(template_data.get("tasks", {}).keys()),
+                },
             }
-        
+
         return [types.TextContent(type="text", text=json.dumps(response, indent=2))]
-        
+
     except JSON5ValidationError as e:
         error_response = {
             "status": "invalid",
             "valid": False,
             "error_type": "JSON5ValidationError",
-            "message": f"JSON5 parsing failed: {str(e)}"
+            "message": f"JSON5 parsing failed: {str(e)}",
         }
-        return [types.TextContent(type="text", text=json.dumps(error_response, indent=2))]
+        return [
+            types.TextContent(type="text", text=json.dumps(error_response, indent=2))
+        ]
 
 
 async def handle_template_delete(args: Dict[str, Any]) -> List[types.TextContent]:
@@ -441,25 +466,27 @@ async def handle_template_delete(args: Dict[str, Any]) -> List[types.TextContent
     try:
         template_id = args["template_id"]
         category = args.get("category")
-        
+
         storage_manager = TemplateStorageManager()
         storage_manager.delete_template(template_id, category)
-        
+
         response = {
             "status": "success",
             "message": f"Template '{template_id}' deleted successfully",
-            "deleted_template": template_id
+            "deleted_template": template_id,
         }
-        
+
         return [types.TextContent(type="text", text=json.dumps(response, indent=2))]
-        
+
     except TemplateStorageError as e:
         error_response = {
             "status": "error",
             "error_type": "TemplateStorageError",
-            "message": str(e)
+            "message": str(e),
         }
-        return [types.TextContent(type="text", text=json.dumps(error_response, indent=2))]
+        return [
+            types.TextContent(type="text", text=json.dumps(error_response, indent=2))
+        ]
 
 
 async def handle_template_info(args: Dict[str, Any]) -> List[types.TextContent]:
@@ -467,10 +494,10 @@ async def handle_template_info(args: Dict[str, Any]) -> List[types.TextContent]:
     try:
         template_id = args["template_id"]
         category = args.get("category")
-        
+
         storage_manager = TemplateStorageManager()
         template_info = storage_manager.get_template_info(template_id, category)
-        
+
         # Also get parameter definitions
         template_engine = TemplateEngine()
         try:
@@ -488,56 +515,59 @@ async def handle_template_info(args: Dict[str, Any]) -> List[types.TextContent]:
                         "min_length": param.min_length,
                         "max_length": param.max_length,
                         "min_value": param.min_value,
-                        "max_value": param.max_value
-                    }
+                        "max_value": param.max_value,
+                    },
                 }
                 for param in parameters
             ]
             template_info["parameter_definitions"] = parameter_details
         except Exception as e:
             logger.warning(f"Could not load parameter definitions: {e}")
-        
-        response = {
-            "status": "success",
-            "template_info": template_info
-        }
-        
+
+        response = {"status": "success", "template_info": template_info}
+
         return [types.TextContent(type="text", text=json.dumps(response, indent=2))]
-        
+
     except TemplateStorageError as e:
         error_response = {
             "status": "error",
             "error_type": "TemplateStorageError",
-            "message": str(e)
+            "message": str(e),
         }
-        return [types.TextContent(type="text", text=json.dumps(error_response, indent=2))]
+        return [
+            types.TextContent(type="text", text=json.dumps(error_response, indent=2))
+        ]
 
 
-async def handle_template_install_examples(args: Dict[str, Any]) -> List[types.TextContent]:
+async def handle_template_install_examples(
+    args: Dict[str, Any],
+) -> List[types.TextContent]:
     """Handle example template installation."""
     try:
         category = args.get("category", "shared")
         overwrite = args.get("overwrite", False)
-        
+
         storage_manager = TemplateStorageManager()
         json5_parser = JSON5Parser()
-        
+
         installed_templates = []
         errors = []
-        
+
         for template_name, template_content in EXAMPLE_TEMPLATES.items():
             try:
                 # Parse the template
                 template_data = json5_parser.parse(template_content)
-                
+
                 # Save the template
-                storage_manager.save_template(template_name, template_data, category, overwrite)
+                storage_manager.save_template(
+                    template_name, template_data, category, overwrite
+                )
                 installed_templates.append(template_name)
-                
+
             except Exception as e:
                 errors.append(f"Failed to install {template_name}: {str(e)}")
                 logger.error(f"Failed to install example template {template_name}: {e}")
-        
+
         response = {
             "status": "success" if installed_templates else "partial_failure",
             "message": f"Installed {len(installed_templates)} example templates in {category} category",
@@ -547,75 +577,87 @@ async def handle_template_install_examples(args: Dict[str, Any]) -> List[types.T
             "next_steps": [
                 "Use 'template_list' to see all installed templates",
                 "Use 'template_info <template_id>' to explore template details",
-                "Use 'template_instantiate' to create tasks from templates"
-            ]
+                "Use 'template_instantiate' to create tasks from templates",
+            ],
         }
-        
+
         return [types.TextContent(type="text", text=json.dumps(response, indent=2))]
-        
+
     except Exception as e:
         error_response = {
             "status": "error",
             "error_type": type(e).__name__,
-            "message": f"Failed to install example templates: {str(e)}"
+            "message": f"Failed to install example templates: {str(e)}",
         }
-        return [types.TextContent(type="text", text=json.dumps(error_response, indent=2))]
+        return [
+            types.TextContent(type="text", text=json.dumps(error_response, indent=2))
+        ]
 
 
-async def handle_template_install_default_library(args: Dict[str, Any]) -> List[types.TextContent]:
+async def handle_template_install_default_library(
+    args: Dict[str, Any],
+) -> List[types.TextContent]:
     """Handle installation of default template library."""
     try:
         category = args.get("category", "all")
         overwrite = args.get("overwrite", False)
-        
+
         installer = get_template_installer()
         result = await installer.install_default_library(category, overwrite)
-        
+
         return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
-        
+
     except Exception as e:
         error_response = {
             "status": "error",
             "error_type": type(e).__name__,
-            "message": f"Failed to install default library: {str(e)}"
+            "message": f"Failed to install default library: {str(e)}",
         }
-        return [types.TextContent(type="text", text=json.dumps(error_response, indent=2))]
+        return [
+            types.TextContent(type="text", text=json.dumps(error_response, indent=2))
+        ]
 
 
-async def handle_template_get_installation_status(args: Dict[str, Any]) -> List[types.TextContent]:
+async def handle_template_get_installation_status(
+    args: Dict[str, Any],
+) -> List[types.TextContent]:
     """Handle getting template installation status."""
     try:
         installer = get_template_installer()
         result = await installer.get_installation_status()
-        
+
         return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
-        
+
     except Exception as e:
         error_response = {
             "status": "error",
             "error_type": type(e).__name__,
-            "message": f"Failed to get installation status: {str(e)}"
+            "message": f"Failed to get installation status: {str(e)}",
         }
-        return [types.TextContent(type="text", text=json.dumps(error_response, indent=2))]
+        return [
+            types.TextContent(type="text", text=json.dumps(error_response, indent=2))
+        ]
 
 
 async def handle_template_validate_all(args: Dict[str, Any]) -> List[types.TextContent]:
     """Handle validation of all templates."""
     try:
         category = args.get("category")
-        
+
         installer = get_template_installer()
         result = await installer.validate_all_templates(category)
-        
+
         return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
-        
+
     except Exception as e:
         error_response = {
             "status": "error",
             "error_type": type(e).__name__,
-            "message": f"Failed to validate templates: {str(e)}"
+            "message": f"Failed to validate templates: {str(e)}",
         }
-        return [types.TextContent(type="text", text=json.dumps(error_response, indent=2))]
+        return [
+            types.TextContent(type="text", text=json.dumps(error_response, indent=2))
+        ]
 
 
 async def handle_template_uninstall(args: Dict[str, Any]) -> List[types.TextContent]:
@@ -623,19 +665,21 @@ async def handle_template_uninstall(args: Dict[str, Any]) -> List[types.TextCont
     try:
         template_id = args["template_id"]
         category = args.get("category", "user")
-        
+
         installer = get_template_installer()
         result = await installer.uninstall_template(template_id, category)
-        
+
         return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
-        
+
     except Exception as e:
         error_response = {
             "status": "error",
             "error_type": type(e).__name__,
-            "message": f"Failed to uninstall template: {str(e)}"
+            "message": f"Failed to uninstall template: {str(e)}",
         }
-        return [types.TextContent(type="text", text=json.dumps(error_response, indent=2))]
+        return [
+            types.TextContent(type="text", text=json.dumps(error_response, indent=2))
+        ]
 
 
 # Template tool handlers mapping
@@ -651,5 +695,5 @@ TEMPLATE_TOOL_HANDLERS = {
     "template_install_default_library": handle_template_install_default_library,
     "template_get_installation_status": handle_template_get_installation_status,
     "template_validate_all": handle_template_validate_all,
-    "template_uninstall": handle_template_uninstall
+    "template_uninstall": handle_template_uninstall,
 }

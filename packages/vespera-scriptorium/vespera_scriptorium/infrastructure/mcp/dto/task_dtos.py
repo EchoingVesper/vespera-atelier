@@ -7,25 +7,28 @@ the MCP protocol boundary.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional, Any, Union
-from pydantic import BaseModel, Field, ConfigDict, field_validator
 from enum import Enum
+from typing import Any, Dict, List, Optional, Union
 
-# Import domain value objects
-from ....domain.value_objects.task_status import TaskStatus
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
 from ....domain.value_objects.complexity_level import ComplexityLevel
 from ....domain.value_objects.specialist_type import SpecialistType
 
+# Import domain value objects
+from ....domain.value_objects.task_status import TaskStatus
+
 # Import security framework for input validation
+from ...security.validators import ValidationError as SecurityValidationError
 from ...security.validators import (
     validate_string_input,
     validate_task_id,
-    ValidationError as SecurityValidationError
 )
 
 
 class ErrorDetail(BaseModel):
     """Detailed error information for responses."""
+
     error: str
     error_type: Optional[str] = None
     details: Optional[str] = None
@@ -36,6 +39,7 @@ class ErrorDetail(BaseModel):
 
 class NextStep(BaseModel):
     """Represents a suggested next step in a workflow."""
+
     action: str
     description: Optional[str] = None
     tool_name: Optional[str] = None
@@ -45,78 +49,95 @@ class NextStep(BaseModel):
 # Task Creation/Planning DTOs
 class CreateTaskRequest(BaseModel):
     """Request model for creating a new task with comprehensive security validation."""
+
     title: str = Field(..., min_length=1, max_length=255, description="Task title")
-    description: str = Field(..., min_length=1, max_length=2000, description="Task description")
+    description: str = Field(
+        ..., min_length=1, max_length=2000, description="Task description"
+    )
     task_type: str = Field(default="STANDARD", description="Type of task")
-    complexity: Optional[str] = Field(default="moderate", description="Task complexity level")
-    specialist_type: Optional[str] = Field(default="generalist", description="Required specialist type")
+    complexity: Optional[str] = Field(
+        default="moderate", description="Task complexity level"
+    )
+    specialist_type: Optional[str] = Field(
+        default="generalist", description="Required specialist type"
+    )
     parent_task_id: Optional[str] = Field(None, description="Parent task identifier")
-    dependencies: Optional[List[str]] = Field(default_factory=list, description="Task dependencies")
-    metadata: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Additional metadata")
+    dependencies: Optional[List[str]] = Field(
+        default_factory=list, description="Task dependencies"
+    )
+    metadata: Optional[Dict[str, Any]] = Field(
+        default_factory=dict, description="Additional metadata"
+    )
     due_date: Optional[datetime] = Field(None, description="Task due date")
     priority: Optional[int] = Field(default=5, ge=1, le=10, description="Task priority")
-    
+
     # Security validators for XSS prevention and input sanitization
-    @field_validator('title', 'description')
+    @field_validator("title", "description")
     @classmethod
     def prevent_xss_and_sanitize(cls, v: str, info) -> str:
         """Prevent XSS attacks and sanitize input in text fields."""
         if not v:
             return v
-        
+
         try:
             field_name = info.field_name if info else "text_field"
             sanitized_value = validate_string_input(v, field_name, max_length=2000)
             return sanitized_value.strip()
         except SecurityValidationError as e:
-            raise ValueError(f"Security validation failed for {info.field_name if info else 'field'}: {str(e)}")
-    
-    @field_validator('parent_task_id')
+            raise ValueError(
+                f"Security validation failed for {info.field_name if info else 'field'}: {str(e)}"
+            )
+
+    @field_validator("parent_task_id")
     @classmethod
     def validate_parent_task_identifier(cls, v: Optional[str]) -> Optional[str]:
         """Validate parent task ID if provided."""
         if v is None:
             return v
-        
+
         try:
             return validate_task_id(v)
         except SecurityValidationError as e:
             raise ValueError(f"Invalid parent task ID format: {str(e)}")
-    
-    @field_validator('dependencies')
+
+    @field_validator("dependencies")
     @classmethod
-    def validate_dependency_identifiers(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+    def validate_dependency_identifiers(
+        cls, v: Optional[List[str]]
+    ) -> Optional[List[str]]:
         """Validate all dependency task IDs."""
         if not v:
             return v
-        
+
         validated_deps = []
         for dep_id in v:
             try:
                 validated_deps.append(validate_task_id(dep_id))
             except SecurityValidationError as e:
                 raise ValueError(f"Invalid dependency task ID '{dep_id}': {str(e)}")
-        
+
         return validated_deps
 
     model_config = ConfigDict(
-        extra='forbid',                    # Reject unknown fields
-        validate_assignment=True,          # Runtime validation
-        str_strip_whitespace=True,        # Auto-sanitization
-        use_enum_values=True
+        extra="forbid",  # Reject unknown fields
+        validate_assignment=True,  # Runtime validation
+        str_strip_whitespace=True,  # Auto-sanitization
+        use_enum_values=True,
     )
     tags: Optional[List[str]] = Field(default_factory=list)
-    
-    @field_validator('complexity')
+
+    @field_validator("complexity")
     @classmethod
     def validate_complexity(cls, v):
         """Validate complexity level."""
         valid_levels = [c.value for c in ComplexityLevel]
         if v and v not in valid_levels:
-            raise ValueError(f"Invalid complexity level. Must be one of: {valid_levels}")
+            raise ValueError(
+                f"Invalid complexity level. Must be one of: {valid_levels}"
+            )
         return v
-    
-    @field_validator('specialist_type')
+
+    @field_validator("specialist_type")
     @classmethod
     def validate_specialist_type(cls, v):
         """Validate specialist type."""
@@ -126,6 +147,7 @@ class CreateTaskRequest(BaseModel):
 
 class CreateTaskResponse(BaseModel):
     """Response model for task creation."""
+
     status: str = Field(default="success")
     message: str
     task_id: str
@@ -139,9 +161,14 @@ class CreateTaskResponse(BaseModel):
 # Task Update DTOs
 class UpdateTaskRequest(BaseModel):
     """Request model for updating a task with comprehensive security validation."""
+
     task_id: str = Field(..., min_length=1, description="Task identifier to update")
-    title: Optional[str] = Field(None, min_length=1, max_length=255, description="Updated task title")
-    description: Optional[str] = Field(None, min_length=1, max_length=2000, description="Updated task description")
+    title: Optional[str] = Field(
+        None, min_length=1, max_length=255, description="Updated task title"
+    )
+    description: Optional[str] = Field(
+        None, min_length=1, max_length=2000, description="Updated task description"
+    )
     status: Optional[str] = Field(None, description="Updated task status")
     complexity: Optional[str] = Field(None, description="Updated task complexity")
     specialist_type: Optional[str] = Field(None, description="Updated specialist type")
@@ -149,23 +176,25 @@ class UpdateTaskRequest(BaseModel):
     due_date: Optional[datetime] = Field(None, description="Updated due date")
     priority: Optional[int] = Field(None, ge=1, le=10, description="Updated priority")
     tags: Optional[List[str]] = Field(None, description="Updated tags")
-    
+
     # Security validators for XSS prevention and input sanitization
-    @field_validator('title', 'description')
+    @field_validator("title", "description")
     @classmethod
     def prevent_xss_and_sanitize(cls, v: Optional[str], info) -> Optional[str]:
         """Prevent XSS attacks and sanitize input in text fields."""
         if v is None:
             return v
-        
+
         try:
             field_name = info.field_name if info else "text_field"
             sanitized_value = validate_string_input(v, field_name, max_length=2000)
             return sanitized_value.strip()
         except SecurityValidationError as e:
-            raise ValueError(f"Security validation failed for {info.field_name if info else 'field'}: {str(e)}")
-    
-    @field_validator('task_id')
+            raise ValueError(
+                f"Security validation failed for {info.field_name if info else 'field'}: {str(e)}"
+            )
+
+    @field_validator("task_id")
     @classmethod
     def validate_task_identifier(cls, v: str) -> str:
         """Validate task ID for security and format compliance."""
@@ -173,8 +202,8 @@ class UpdateTaskRequest(BaseModel):
             return validate_task_id(v)
         except SecurityValidationError as e:
             raise ValueError(f"Invalid task ID format: {str(e)}")
-    
-    @field_validator('status')
+
+    @field_validator("status")
     @classmethod
     def validate_status(cls, v):
         """Validate task status."""
@@ -185,15 +214,16 @@ class UpdateTaskRequest(BaseModel):
         return v
 
     model_config = ConfigDict(
-        extra='forbid',                    # Reject unknown fields
-        validate_assignment=True,          # Runtime validation
-        str_strip_whitespace=True,        # Auto-sanitization
-        use_enum_values=True
+        extra="forbid",  # Reject unknown fields
+        validate_assignment=True,  # Runtime validation
+        str_strip_whitespace=True,  # Auto-sanitization
+        use_enum_values=True,
     )
 
 
 class UpdateTaskResponse(BaseModel):
     """Response model for task update."""
+
     status: str = Field(default="success")
     message: str
     task_id: str
@@ -206,6 +236,7 @@ class UpdateTaskResponse(BaseModel):
 # Task Deletion DTOs
 class DeleteTaskRequest(BaseModel):
     """Request model for deleting a task."""
+
     task_id: str = Field(..., min_length=1)
     force: bool = Field(default=False)
     archive_instead: bool = Field(default=True)
@@ -215,6 +246,7 @@ class DeleteTaskRequest(BaseModel):
 
 class DeleteTaskResponse(BaseModel):
     """Response model for task deletion."""
+
     status: str = Field(default="success")
     message: str
     task_id: str
@@ -227,6 +259,7 @@ class DeleteTaskResponse(BaseModel):
 # Task Cancellation DTOs
 class CancelTaskRequest(BaseModel):
     """Request model for cancelling a task."""
+
     task_id: str = Field(..., min_length=1)
     reason: str = Field(default="No reason provided")
     preserve_work: bool = Field(default=True)
@@ -235,6 +268,7 @@ class CancelTaskRequest(BaseModel):
 
 class CancelTaskResponse(BaseModel):
     """Response model for task cancellation."""
+
     status: str = Field(default="cancelled")
     message: str
     task_id: str
@@ -247,6 +281,7 @@ class CancelTaskResponse(BaseModel):
 # Task Query DTOs
 class TaskQueryResult(BaseModel):
     """Individual task result in query response."""
+
     task_id: str
     title: str
     description: str
@@ -266,33 +301,34 @@ class TaskQueryResult(BaseModel):
 
 class QueryTasksRequest(BaseModel):
     """Request model for querying tasks."""
+
     # Filtering criteria
     status: Optional[Union[str, List[str]]] = None
     task_type: Optional[Union[str, List[str]]] = None
     specialist_type: Optional[Union[str, List[str]]] = None
     parent_task_id: Optional[str] = None
     tags: Optional[List[str]] = None
-    
+
     # Search parameters
     search_text: Optional[str] = None
     search_fields: Optional[List[str]] = Field(
         default_factory=lambda: ["title", "description"]
     )
-    
+
     # Time-based filters
     created_after: Optional[datetime] = None
     created_before: Optional[datetime] = None
     updated_after: Optional[datetime] = None
     updated_before: Optional[datetime] = None
-    
+
     # Pagination
     page: int = Field(default=1, ge=1)
     page_size: int = Field(default=20, ge=1, le=100)
-    
+
     # Sorting
     sort_by: str = Field(default="updated_at")
     sort_order: str = Field(default="desc", pattern="^(asc|desc)$")
-    
+
     # Additional options
     include_archived: bool = Field(default=False)
     include_metadata: bool = Field(default=True)
@@ -301,6 +337,7 @@ class QueryTasksRequest(BaseModel):
 
 class QueryTasksResponse(BaseModel):
     """Response model for task queries."""
+
     status: str = Field(default="success")
     message: str
     query_summary: Dict[str, Any]
@@ -315,14 +352,16 @@ class QueryTasksResponse(BaseModel):
 # Task Execution DTOs
 class ExecuteTaskRequest(BaseModel):
     """Request model for executing a task."""
+
     task_id: str = Field(..., min_length=1)
     execution_context: Optional[Dict[str, Any]] = Field(default_factory=dict)
     override_specialist: Optional[str] = None
     max_execution_time: Optional[int] = Field(None, gt=0)  # seconds
-    
-    
+
+
 class ExecuteTaskResponse(BaseModel):
     """Response model for task execution."""
+
     status: str = Field(default="ready_for_execution")
     task_id: str
     task_title: str
@@ -340,24 +379,26 @@ class ExecuteTaskResponse(BaseModel):
 # Task Completion DTOs
 class CompleteTaskRequest(BaseModel):
     """Request model for completing a task."""
+
     task_id: str = Field(..., min_length=1)
     summary: str = Field(..., min_length=1)
     detailed_work: str = Field(..., min_length=1)
     next_action: str = Field(..., min_length=1)
-    
+
     # Optional completion details
     artifacts: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
     metrics: Optional[Dict[str, Any]] = Field(default_factory=dict)
     issues_encountered: Optional[List[str]] = Field(default_factory=list)
     recommendations: Optional[List[str]] = Field(default_factory=list)
-    
+
     # Completion metadata
     completion_quality: Optional[float] = Field(None, ge=0, le=1)
     actual_effort: Optional[str] = None
-    
-    
+
+
 class CompleteTaskResponse(BaseModel):
     """Response model for task completion."""
+
     status: str = Field(default="success")
     task_id: str
     message: str
@@ -375,6 +416,7 @@ class CompleteTaskResponse(BaseModel):
 # Status Checking DTOs
 class StatusSummary(BaseModel):
     """Summary of system or task status."""
+
     total_tasks: int
     active_tasks: int
     completed_tasks: int
@@ -387,24 +429,26 @@ class StatusSummary(BaseModel):
 
 class GetStatusRequest(BaseModel):
     """Request model for getting status."""
+
     scope: str = Field(default="session", pattern="^(session|task|system)$")
     task_id: Optional[str] = None  # Required if scope is "task"
     include_details: bool = Field(default=True)
     include_metrics: bool = Field(default=False)
     time_range_hours: Optional[int] = Field(None, gt=0)
-    
-    @field_validator('task_id')
+
+    @field_validator("task_id")
     @classmethod
     def validate_task_id(cls, v, info):
         """Ensure task_id is provided when scope is 'task'."""
         values = info.data if info else {}
-        if values.get('scope') == 'task' and not v:
+        if values.get("scope") == "task" and not v:
             raise ValueError("task_id is required when scope is 'task'")
         return v
 
 
 class GetStatusResponse(BaseModel):
     """Response model for status requests."""
+
     status: str = Field(default="success")
     scope: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
@@ -419,32 +463,29 @@ class GetStatusResponse(BaseModel):
 # Error Response DTOs (unified)
 class MCPErrorResponse(BaseModel):
     """Unified error response for all MCP operations."""
+
     status: str = Field(default="error")
     error: ErrorDetail
     tool: str
     request_id: Optional[str] = None
     recovery_suggestions: List[str] = Field(default_factory=list)
     partial_result: Optional[Dict[str, Any]] = None
-    
+
     @classmethod
     def from_exception(
-        cls, 
-        exception: Exception, 
+        cls,
+        exception: Exception,
         tool: str,
         component: Optional[str] = None,
         operation: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ) -> "MCPErrorResponse":
         """Create error response from exception."""
         error_detail = ErrorDetail(
             error=str(exception),
             error_type=type(exception).__name__,
             component=component,
-            operation=operation
+            operation=operation,
         )
-        
-        return cls(
-            error=error_detail,
-            tool=tool,
-            **kwargs
-        )
+
+        return cls(error=error_detail, tool=tool, **kwargs)

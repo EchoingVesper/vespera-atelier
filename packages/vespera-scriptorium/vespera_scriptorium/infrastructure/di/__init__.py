@@ -6,56 +6,52 @@ lifetime management, service registration, and automatic resolution.
 """
 
 from .container import (
-    ServiceContainer, 
-    ServiceResolutionError, 
     CircularDependencyError,
+    ServiceContainer,
+    ServiceResolutionError,
+    auto_register_repositories,
     get_container,
-    set_container,
-    reset_container,
-    register_services,
     get_service,
-    auto_register_repositories
+    register_services,
+    reset_container,
+    set_container,
 )
-
-from .registration import (
-    ServiceRegistration,
-    ServiceRegistrar,
-    AutoRegistration,
-    ServiceFactory
-)
-
 from .lifetime_managers import (
-    LifetimeScope,
     LifetimeManager,
+    LifetimeScope,
+    ScopedLifetimeManager,
+    ServiceScope,
     SingletonLifetimeManager,
     TransientLifetimeManager,
-    ScopedLifetimeManager,
-    ServiceScope
+)
+from .registration import (
+    AutoRegistration,
+    ServiceFactory,
+    ServiceRegistrar,
+    ServiceRegistration,
 )
 
 __all__ = [
     # Container
-    'ServiceContainer',
-    'ServiceResolutionError',
-    'CircularDependencyError',
-    'get_container',
-    'set_container',
-    'reset_container',
-    'register_services',
-    'get_service',
-    'auto_register_repositories',
-    
+    "ServiceContainer",
+    "ServiceResolutionError",
+    "CircularDependencyError",
+    "get_container",
+    "set_container",
+    "reset_container",
+    "register_services",
+    "get_service",
+    "auto_register_repositories",
     # Registration
-    'ServiceRegistration',
-    'ServiceRegistrar',
-    'AutoRegistration',
-    'ServiceFactory',
-    
+    "ServiceRegistration",
+    "ServiceRegistrar",
+    "AutoRegistration",
+    "ServiceFactory",
     # Lifetime Management
-    'LifetimeScope',
-    'LifetimeManager',
-    'SingletonLifetimeManager',
-    'TransientLifetimeManager', 
-    'ScopedLifetimeManager',
-    'ServiceScope'
+    "LifetimeScope",
+    "LifetimeManager",
+    "SingletonLifetimeManager",
+    "TransientLifetimeManager",
+    "ScopedLifetimeManager",
+    "ServiceScope",
 ]

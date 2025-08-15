@@ -12,16 +12,16 @@ The Task model is now properly located in the domain layer following Clean Archi
 """
 
 # Re-export from domain layer for backward compatibility
-from ..domain.entities.task import Task, TaskType, TaskStatus, LifecycleStage
-from ..domain.value_objects.specialist_type import SpecialistType
+from ..domain.entities.task import LifecycleStage, Task, TaskStatus, TaskType
 from ..domain.value_objects.complexity_level import ComplexityLevel
+from ..domain.value_objects.specialist_type import SpecialistType
 
 # Export common types
 __all__ = [
-    'Task', 
-    'TaskType', 
-    'TaskStatus', 
-    'LifecycleStage',
-    'SpecialistType',
-    'ComplexityLevel'
+    "Task",
+    "TaskType",
+    "TaskStatus",
+    "LifecycleStage",
+    "SpecialistType",
+    "ComplexityLevel",
 ]
