@@ -76,7 +76,10 @@ packages/vespera-utilities/
 ### Phase 4: Integration
 1. Integrate with Vespera Scriptorium orchestrator
 2. Add Codex views to `.task_orchestrator/` artifacts
-3. Prepare Obsidian plugin integration points
+3. Obsidian plugin integration:
+   - Leverage Obsidian's built-in Graph View instead of neo4j implementation
+   - Explore Obsidian Bases (new database feature) for structured data views
+   - Use Obsidian's API for view rendering (see https://docs.obsidian.md/Home)
 4. Create CLI visualization tools
 
 ## Success Criteria
@@ -94,6 +97,13 @@ packages/vespera-utilities/
 - Plugin architecture for extensible views
 - JSON/YAML schema definitions
 - Cross-platform compatibility
+
+## Implementation Notes
+
+### Obsidian Integration Strategy
+- **Graph View**: Obsidian has a built-in Graph view that can be leveraged via their API, potentially replacing the in-progress neo4j implementation
+- **Obsidian Bases**: New database feature (early access) provides table/database views with YAML properties - perfect for Codex structured data
+- **Neo4j Status**: Basic adapter exists at `vespera_scriptorium/infrastructure/database/adapters/neo4j_adapter.py` but not fully integrated; Obsidian's features may obviate the need
 
 ## Benefits
 1. **Unified infrastructure**: Single system for both tools
