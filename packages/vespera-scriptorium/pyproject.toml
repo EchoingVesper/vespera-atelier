@@ -3,7 +3,7 @@ name = "vespera-scriptorium"
 version = "1.0.0-alpha.1"
 description = "Vespera Scriptorium - An intelligent platform for document-centric orchestration, task management, and creative workflows"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dependencies = [
     "mcp>=1.9.0",
     "pydantic>=2.0.0",
