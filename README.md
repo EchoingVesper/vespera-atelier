@@ -20,6 +20,10 @@ Vespera Atelier is a comprehensive monorepo containing the Vespera ecosystem of 
 ### Plugins
 - **`obsidian/vespera-scriptorium`** - Obsidian plugin for document-centric workflows
 
+## Quick Start
+
+**New users**: See [GETTING_STARTED.md](GETTING_STARTED.md) for a complete setup guide.
+
 ## Installation Options
 
 ### MCP Server Only (Minimal)
@@ -52,13 +56,33 @@ Download from Obsidian Community Plugins or GitHub releases.
 - Git
 
 ### Setup
+
+**Quick Start (Most Users):**
 ```bash
 # Clone repository
 git clone https://github.com/[username]/vespera-atelier
 cd vespera-atelier
 
-# Install dependencies
+# Install all dependencies and build packages
+pnpm setup
+
+# Start development server
+pnpm dev
+```
+
+**Step-by-Step Setup:**
+```bash
+# Clone repository
+git clone https://github.com/[username]/vespera-atelier
+cd vespera-atelier
+
+# Install Node.js dependencies for workspace packages
 pnpm install
+
+# Install Python dependencies for vespera-scriptorium
+cd packages/vespera-scriptorium
+pip install -e ".[dev]"
+cd ../..
 
 # Build all packages
 pnpm build
@@ -66,6 +90,11 @@ pnpm build
 # Run development servers
 pnpm dev
 ```
+
+**Prerequisites:**
+- Node.js 18+ with pnpm 8+
+- Python 3.8+ with pip
+- Git
 
 ### Development Scripts
 ```bash

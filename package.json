@@ -1,0 +1,95 @@
+{
+  "name": "vespera-atelier",
+  "version": "0.1.0",
+  "description": "An intelligent platform for document-centric orchestration, task management, and creative workflows",
+  "type": "module",
+  "private": true,
+  "author": "EchoingVesper",
+  "license": "AGPL-3.0",
+  "homepage": "https://github.com/[username]/vespera-atelier",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/[username]/vespera-atelier.git"
+  },
+  "bugs": {
+    "url": "https://github.com/[username]/vespera-atelier/issues"
+  },
+  "keywords": [
+    "monorepo",
+    "mcp",
+    "model-context-protocol",
+    "task-orchestration",
+    "document-processing",
+    "obsidian-plugin",
+    "creative-workflows",
+    "ai-agents"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "scripts": {
+    "install": "pnpm install:workspaces",
+    "install:workspaces": "pnpm install --recursive",
+    "build": "pnpm run build:scriptorium && pnpm run build:utilities && pnpm run build:obsidian",
+    "build:scriptorium": "cd packages/vespera-scriptorium && pip install -e '.[dev]' && python -m build",
+    "build:utilities": "cd vespera-utilities && npm ci && npm run build",
+    "build:obsidian": "cd plugins/Obsidian/Vespera-Scriptorium && npm ci && npm run build",
+    "dev": "pnpm run dev:scriptorium",
+    "dev:scriptorium": "cd packages/vespera-scriptorium && vespera-scriptorium --server",
+    "dev:utilities": "cd vespera-utilities && npm run dev",
+    "dev:obsidian": "cd plugins/Obsidian/Vespera-Scriptorium && npm run dev",
+    "test": "pnpm run test:scriptorium && pnpm run test:utilities && pnpm run test:obsidian",
+    "test:scriptorium": "cd packages/vespera-scriptorium && pytest tests/unit/ tests/integration/test_complete_task.py tests/integration/test_orchestrator.py tests/integration/test_task_execution.py -v",
+    "test:utilities": "cd vespera-utilities && npm test",
+    "test:obsidian": "cd plugins/Obsidian/Vespera-Scriptorium && npm test || echo 'Tests not yet implemented'",
+    "lint": "pnpm run lint:scriptorium && pnpm run lint:utilities && pnpm run lint:obsidian",
+    "lint:scriptorium": "cd packages/vespera-scriptorium && flake8 mcp_task_orchestrator/ && mypy mcp_task_orchestrator/ || true",
+    "lint:utilities": "cd vespera-utilities && npm run lint && npm run type-check",
+    "lint:obsidian": "cd plugins/Obsidian/Vespera-Scriptorium && npm run lint || echo 'Linting not configured'",
+    "format": "pnpm run format:scriptorium && pnpm run format:utilities && pnpm run format:obsidian",
+    "format:scriptorium": "cd packages/vespera-scriptorium && black mcp_task_orchestrator/ && isort mcp_task_orchestrator/",
+    "format:utilities": "cd vespera-utilities && npm run format",
+    "format:obsidian": "cd plugins/Obsidian/Vespera-Scriptorium && npm run format || echo 'Formatting not configured'",
+    "clean": "pnpm run clean:scriptorium && pnpm run clean:utilities && pnpm run clean:obsidian",
+    "clean:scriptorium": "cd packages/vespera-scriptorium && rm -rf build/ dist/ *.egg-info/ .pytest_cache/ && find . -type d -name __pycache__ -exec rm -rf {} +",
+    "clean:utilities": "cd vespera-utilities && rm -rf dist/ build/ node_modules/.cache/",
+    "clean:obsidian": "cd plugins/Obsidian/Vespera-Scriptorium && rm -rf dist/ build/ node_modules/.cache/",
+    "typecheck": "pnpm run typecheck:utilities && pnpm run typecheck:obsidian",
+    "typecheck:utilities": "cd vespera-utilities && npm run type-check",
+    "typecheck:obsidian": "cd plugins/Obsidian/Vespera-Scriptorium && npx tsc --noEmit || echo 'TypeScript check not configured'",
+    "setup": "pnpm install && pnpm build",
+    "setup:dev": "pnpm setup && pip install pre-commit && pre-commit install",
+    "health-check": "make health-check",
+    "version-check": "make version-check",
+    "security-check": "make security-check"
+  },
+  "workspaces": [
+    "vespera-utilities",
+    "plugins/Obsidian/Vespera-Scriptorium"
+  ],
+  "devDependencies": {
+    "@changesets/cli": "^2.27.10",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.4.2"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ],
+    "*.py": [
+      "black",
+      "isort"
+    ]
+  },
+  "pnpm": {
+    "overrides": {},
+    "patchedDependencies": {},
+    "packageExtensions": {}
+  }
+}

@@ -1,0 +1,42 @@
+packages:
+  # Node.js packages that can be managed by pnpm workspaces
+  - 'vespera-utilities'
+  - 'plugins/Obsidian/Vespera-Scriptorium'
+  
+  # Note: packages/vespera-scriptorium is a Python package and managed separately via pip
+  # It's included in the monorepo structure but not in the pnpm workspace
+
+catalog:
+  # Core dependencies for TypeScript/Node.js packages
+  typescript: ^5.8.3
+  '@types/node': ^22.15.30
+  
+  # Build tools
+  esbuild: ^0.19.12
+  tsx: ^4.19.4
+  rimraf: ^6.0.1
+  
+  # Testing
+  jest: ^29.7.0
+  '@types/jest': ^29.5.14
+  ts-jest: ^29.3.4
+  '@jest/globals': ^29.7.0
+  vitest: ^2.1.6
+  
+  # Linting and formatting
+  eslint: ^9.28.0
+  '@typescript-eslint/parser': ^8.33.1
+  '@typescript-eslint/eslint-plugin': ^8.33.1
+  prettier: ^3.4.2
+  
+  # MCP SDK
+  '@modelcontextprotocol/sdk': ^1.12.1
+  
+  # Utilities
+  zod: ^3.25.55
+  chalk: ^5.4.1
+  winston: ^3.18.0
+  commander: ^13.0.1
+  
+  # Obsidian specific
+  obsidian: ^1.7.2
