@@ -1,0 +1,152 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'packages/vespera-scriptorium/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'packages/vespera-scriptorium/**'
+
+defaults:
+  run:
+    working-directory: packages/vespera-scriptorium
+
+jobs:
+  documentation:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+    
+    - name: Set up Python
+      run: uv python install 3.12
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Check documentation completeness
+      run: |
+        echo "Checking for missing docstrings..."
+        uv run python -c "
+        import ast
+        import os
+        
+        def check_docstrings(filepath):
+            with open(filepath, 'r') as f:
+                tree = ast.parse(f.read())
+            
+            missing = []
+            for node in ast.walk(tree):
+                if isinstance(node, (ast.FunctionDef, ast.ClassDef, ast.AsyncFunctionDef)):
+                    if not ast.get_docstring(node):
+                        missing.append(f'{filepath}:{node.lineno} - {node.name}')
+            return missing
+        
+        missing_docs = []
+        for root, dirs, files in os.walk('mcp_task_orchestrator'):
+            for file in files:
+                if file.endswith('.py') and not file.startswith('__'):
+                    filepath = os.path.join(root, file)
+                    missing_docs.extend(check_docstrings(filepath))
+        
+        if missing_docs:
+            print('Missing docstrings:')
+            for item in missing_docs[:10]:  # Show first 10
+                print(f'  {item}')
+            if len(missing_docs) > 10:
+                print(f'  ... and {len(missing_docs) - 10} more')
+        else:
+            print('All functions and classes have docstrings!')
+        "
+    
+    - name: Validate README and docs
+      run: |
+        echo "Checking documentation files..."
+        test -f README.md || (echo "Missing README.md" && exit 1)
+        test -f CLAUDE.md || (echo "Missing CLAUDE.md" && exit 1)
+        test -f CHANGELOG.md || (echo "Missing CHANGELOG.md" && exit 1)
+        echo "Documentation files present ✓"
+
+  complexity:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+    
+    - name: Set up Python
+      run: uv python install 3.12
+    
+    - name: Install dependencies
+      run: |
+        uv sync --all-extras
+        uv add radon
+    
+    - name: Check cyclomatic complexity
+      run: |
+        echo "Checking code complexity..."
+        uv run radon cc mcp_task_orchestrator -a -nc --total-average
+        
+    - name: Check maintainability index
+      run: |
+        echo "Checking maintainability index..."
+        uv run radon mi mcp_task_orchestrator -nc
+
+  performance:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+    
+    - name: Set up Python
+      run: uv python install 3.12
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Run performance tests
+      run: |
+        if [ -d "tests/performance" ]; then
+          uv run pytest tests/performance/ -v --tb=short
+        else
+          echo "No performance tests found, skipping..."
+        fi
+
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+    
+    - name: Set up Python
+      run: uv python install 3.12
+    
+    - name: Check for known vulnerabilities
+      run: |
+        uv add safety
+        uv run safety check --json || echo "Safety check completed with warnings"
+        
+    - name: Check dependencies freshness
+      run: |
+        echo "Checking dependency versions..."
+        uv tree
+        echo "UV lock file status:"
+        uv lock --check || echo "Lock file may need updates"

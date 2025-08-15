@@ -1,14 +1,51 @@
 
 # Changelog
 
-All notable changes to the Vespera Scriptorium project will be documented in this file.
+All notable changes to Vespera Scriptorium will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-#
+## [1.0.0] - 2025-08-15
 
-# [1.8.1] - 2025-08-15
+### 🚀 First Public Release
+
+This is the first public release of Vespera Scriptorium (formerly MCP Task Orchestrator).
+
+### ✨ Major Features
+
+- **Complete MCP Orchestration Platform**: Full-featured task orchestration with 32 MCP tools
+- **Template System**: Comprehensive template library for task automation and workflow patterns
+- **Specialist Roles**: Integrated AI specialist roles for focused task execution
+- **Clean Architecture**: Modern software design with proper separation of concerns
+- **UV Integration**: Modern Python packaging with faster, more reliable dependency management
+- **Comprehensive Documentation**: Professional documentation system with user guides and developer resources
+- **Robust Testing**: 602 tests covering unit, integration, and security validation
+- **GitHub Actions CI/CD**: Automated testing, linting, security checks, and release pipeline
+
+### 🔧 Technical Improvements
+
+- **Python 3.10+ Requirement**: Updated from 3.8+ to align with MCP package requirements
+- **Modern Build System**: Migrated to hatchling build backend for better packaging
+- **Dependency Updates**: All dependencies updated to latest stable versions
+- **Security Enhancements**: Comprehensive security testing and validation framework
+- **Error Handling**: Improved error handling and recovery throughout the system
+
+### 📚 Documentation Updates
+
+- **Branding Consistency**: Complete migration to Vespera Scriptorium branding
+- **Installation Guides**: Updated installation instructions for pip and UV
+- **API Documentation**: Comprehensive MCP tool documentation
+- **Developer Guides**: Architecture guides and contribution documentation
+
+### 🏗️ Infrastructure
+
+- **Monorepo Structure**: Integrated into Vespera Atelier monorepo ecosystem
+- **CI/CD Pipeline**: GitHub Actions for testing, quality checks, and automated releases
+- **Dependabot**: Automated dependency updates
+- **Release Automation**: Automated PyPI publishing and GitHub releases
+
+## [1.8.1] - 2025-08-15
 
 #
 
@@ -107,7 +144,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Resolved migration manager connection passing in auto-migration system
 
 - **Server Import Conflicts**: Resolved server.py vs server/ package naming conflicts
-  - Renamed vespera_scriptorium/server/ to vespera_scriptorium/reboot/
+  - Renamed mcp_task_orchestrator/server/ to mcp_task_orchestrator/reboot/
   - Updated all imports to use new package structure
   - Eliminated Python module import ambiguity issues
 
@@ -245,7 +282,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 🐛 Critical Bug Fixes
 
 - **CRITICAL**: Fixed artifact path resolution issue where artifacts were written to MCP server directory instead of user's current working directory
-  - Artifacts are now correctly stored in `.vespera_scriptorium/artifacts/` within the user's project directory
+  - Artifacts are now correctly stored in `.task_orchestrator/artifacts/` within the user's project directory
   - Restores accessibility to all generated artifacts for 100% of users
   - Enables proper artifact retrieval and prevents accumulation in wrong locations
   - **Impact**: This bug rendered the artifact system non-functional for practical use

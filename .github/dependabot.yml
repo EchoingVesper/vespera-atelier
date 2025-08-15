@@ -1,0 +1,30 @@
+version: 2
+updates:
+  # Python dependencies for Vespera Scriptorium
+  - package-ecosystem: "pip"
+    directory: "/packages/vespera-scriptorium"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "vespera-scriptorium"
+    commit-message:
+      prefix: "deps(vespera-scriptorium)"
+      include: "scope"
+    
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "deps(github-actions)"

@@ -1,0 +1,139 @@
+name: Release Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0)'
+        required: true
+        type: string
+
+defaults:
+  run:
+    working-directory: packages/vespera-scriptorium
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+    
+    - name: Set up Python
+      run: uv python install 3.12
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+        
+    - name: Run full test suite
+      run: uv run pytest --cov=mcp_task_orchestrator --tb=short
+      
+    - name: Run security validation
+      run: uv run pytest tests/security/ -v
+      
+    - name: Validate package structure
+      run: |
+        uv build --wheel
+        python -c "import zipfile; z=zipfile.ZipFile('dist/vespera_scriptorium-$(cat VERSION)-py3-none-any.whl'); print('Package contents:'); [print(f) for f in z.namelist()]"
+
+  build:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+    
+    - name: Set up Python
+      run: uv python install 3.12
+    
+    - name: Install dependencies
+      run: uv sync
+    
+    - name: Extract version from tag
+      id: version
+      run: |
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+        else
+          echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Update version in pyproject.toml
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+        sed -i "s/version = \".*\"/version = \"$VERSION\"/" pyproject.toml
+        echo "Updated version to $VERSION"
+        
+    - name: Build package
+      run: |
+        uv build
+        
+    - name: Verify build
+      run: |
+        ls -la dist/
+        uv run twine check dist/*
+        
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist
+        path: packages/vespera-scriptorium/dist/
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    environment: release
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: dist
+        path: dist/
+        
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        packages-dir: dist/
+        password: ${{ secrets.PYPI_API_TOKEN }}
+        
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Vespera Scriptorium ${{ github.ref }}
+        body: |
+          ## Vespera Scriptorium Release
+          
+          This release includes:
+          - Full MCP orchestration capabilities
+          - Template system for task automation
+          - Comprehensive error handling and validation
+          - Professional documentation and guides
+          
+          ### Installation
+          ```bash
+          pip install vespera-scriptorium
+          ```
+          
+          ### Quick Start
+          ```bash
+          vespera-scriptorium --server
+          ```
+          
+          See the [documentation](https://github.com/your-org/vespera-atelier/tree/main/packages/vespera-scriptorium) for full setup instructions.
+        draft: false
+        prerelease: false
