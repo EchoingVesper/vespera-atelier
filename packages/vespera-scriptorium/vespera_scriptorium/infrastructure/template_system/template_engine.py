@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional, Set, Union
 
 from .json5_parser import JSON5Parser, JSON5ValidationError
 from .security_validator import SecurityValidationError, TemplateSecurityValidator
+from .storage_manager import TemplateStorageManager, TemplateStorageError
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +86,7 @@ class TemplateEngine:
         )
         self.json5_parser = JSON5Parser()
         self.security_validator = security_validator or TemplateSecurityValidator()
+        self.storage_manager = TemplateStorageManager(create_dirs=True)
         self._template_cache: Dict[str, Dict[str, Any]] = {}
         self._inheritance_chain: Set[str] = set()
 
@@ -105,14 +107,10 @@ class TemplateEngine:
         if use_cache and template_id in self._template_cache:
             return copy.deepcopy(self._template_cache[template_id])
 
-        template_file = self.template_dir / f"{template_id}.json5"
-
-        if not template_file.exists():
-            raise TemplateValidationError(f"Template not found: {template_id}")
-
         try:
-            template_data = self.json5_parser.parse_file(template_file)
-
+            # Try to load using storage manager first (searches categories)
+            template_data = self.storage_manager.load_template(template_id)
+            
             # Validate template structure
             self._validate_template_structure(template_data)
 
@@ -125,10 +123,32 @@ class TemplateEngine:
 
             return template_data
 
-        except JSON5ValidationError as e:
-            raise TemplateValidationError(
-                f"Failed to parse template {template_id}: {e}"
-            )
+        except TemplateStorageError:
+            # Fallback to direct file lookup for backward compatibility
+            template_file = self.template_dir / f"{template_id}.json5"
+            
+            if not template_file.exists():
+                raise TemplateValidationError(f"Template not found: {template_id}")
+            
+            try:
+                template_data = self.json5_parser.parse_file(template_file)
+                
+                # Validate template structure
+                self._validate_template_structure(template_data)
+                
+                # Security validation
+                self.security_validator.validate_template(template_data)
+                
+                # Cache the template
+                if use_cache:
+                    self._template_cache[template_id] = copy.deepcopy(template_data)
+                
+                return template_data
+                
+            except JSON5ValidationError as e:
+                raise TemplateValidationError(
+                    f"Failed to parse template {template_id}: {e}"
+                )
         except SecurityValidationError as e:
             raise TemplateValidationError(
                 f"Security validation failed for template {template_id}: {e}"

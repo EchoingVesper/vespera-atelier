@@ -447,6 +447,89 @@ def get_generic_task_tools() -> List[types.Tool]:
                 "required": ["task_id", "summary", "detailed_work", "next_action"],
             },
         ),
+        # Backward compatibility alias for orchestrator_plan_task
+        types.Tool(
+            name="orchestrator_create_generic_task",
+            description="Create a new task with rich metadata and flexible structure (alias for orchestrator_plan_task)",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string", "description": "Task title"},
+                    "description": {
+                        "type": "string",
+                        "description": "Detailed task description",
+                    },
+                    "task_type": {
+                        "type": "string",
+                        "enum": [
+                            "standard",
+                            "breakdown",
+                            "milestone",
+                            "review",
+                            "approval",
+                            "research",
+                            "implementation",
+                            "testing",
+                            "documentation",
+                            "deployment",
+                            "custom",
+                        ],
+                        "description": "Type of task",
+                        "default": "standard",
+                    },
+                    "parent_task_id": {
+                        "type": "string",
+                        "description": "Parent task ID for hierarchy (optional)",
+                    },
+                    "complexity": {
+                        "type": "string",
+                        "enum": [
+                            "trivial",
+                            "simple",
+                            "moderate",
+                            "complex",
+                            "very_complex",
+                        ],
+                        "description": "Task complexity level",
+                        "default": "moderate",
+                    },
+                    "specialist_type": {
+                        "type": "string",
+                        "enum": [
+                            "analyst",
+                            "coder",
+                            "tester",
+                            "documenter",
+                            "reviewer",
+                            "architect",
+                            "devops",
+                            "researcher",
+                            "coordinator",
+                            "generic",
+                        ],
+                        "description": "Specialist type for assignment (optional)",
+                    },
+                    "estimated_effort": {
+                        "type": "string",
+                        "description": "Estimated effort (e.g., '2 hours', '1 day') (optional)",
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "description": "Due date in ISO format (optional)",
+                    },
+                    "context": {
+                        "type": "object",
+                        "description": "Additional context data (optional)",
+                    },
+                    "dependencies": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "List of prerequisite task IDs (optional)",
+                    },
+                },
+                "required": ["title", "description"],
+            },
+        ),
     ]
 
 

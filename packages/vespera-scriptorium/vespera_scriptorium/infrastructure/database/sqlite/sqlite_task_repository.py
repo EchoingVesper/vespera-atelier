@@ -10,7 +10,7 @@ import logging
 import sqlite3
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from ....domain.repositories.task_repository import TaskRepository
 from ..connection_manager import DatabaseConnectionManager
@@ -186,11 +186,14 @@ class SQLiteTaskRepository(TaskRepository):
         self,
         session_id: Optional[str] = None,
         parent_task_id: Optional[str] = None,
-        status: Optional[str] = None,
+        status: Optional[Union[str, List[str]]] = None,
+        specialist_type: Optional[Union[str, List[str]]] = None,
+        complexity: Optional[Union[str, List[str]]] = None,
+        task_type: Optional[Union[str, List[str]]] = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
-        """List tasks with optional filtering."""
+        """List tasks with optional filtering including array support."""
         query = "SELECT * FROM tasks WHERE 1=1"
         params = []
 
@@ -202,9 +205,48 @@ class SQLiteTaskRepository(TaskRepository):
             query += " AND parent_task_id = ?"
             params.append(parent_task_id)
 
+        # Handle status filter (can be single value or list)
         if status:
-            query += " AND status = ?"
-            params.append(status)
+            if isinstance(status, list):
+                placeholders = ",".join("?" * len(status))
+                query += f" AND status IN ({placeholders})"
+                params.extend(status)
+            else:
+                query += " AND status = ?"
+                params.append(status)
+        
+        # Handle filters that are stored in metadata JSON
+        # Note: SQLite JSON functions require JSON1 extension
+        if specialist_type:
+            if isinstance(specialist_type, list):
+                conditions = []
+                for st in specialist_type:
+                    conditions.append("json_extract(metadata, '$.specialist_type') = ?")
+                    params.append(st)
+                query += f" AND ({' OR '.join(conditions)})"
+            else:
+                query += " AND json_extract(metadata, '$.specialist_type') = ?"
+                params.append(specialist_type)
+        
+        if complexity:
+            if isinstance(complexity, list):
+                conditions = []
+                for c in complexity:
+                    conditions.append("json_extract(metadata, '$.complexity') = ?")
+                    params.append(c)
+                query += f" AND ({' OR '.join(conditions)})"
+            else:
+                query += " AND json_extract(metadata, '$.complexity') = ?"
+                params.append(complexity)
+        
+        if task_type:
+            if isinstance(task_type, list):
+                placeholders = ",".join("?" * len(task_type))
+                query += f" AND type IN ({placeholders})"
+                params.extend(task_type)
+            else:
+                query += " AND type = ?"
+                params.append(task_type)
 
         query += " ORDER BY created_at DESC"
 
@@ -355,14 +397,30 @@ class SQLiteTaskRepository(TaskRepository):
         session_id = filters.get("session_id")
         parent_task_id = filters.get("parent_task_id")
         status = filters.get("status")
+        specialist_type = filters.get("specialist_type")
+        complexity = filters.get("complexity")
+        task_type = filters.get("task_type")
         limit = filters.get("limit")
         offset = filters.get("offset")
 
-        # Call existing list_tasks method (sync method)
+        # Handle array parameters - convert to list if single value
+        if status and not isinstance(status, list):
+            status = [status]
+        if specialist_type and not isinstance(specialist_type, list):
+            specialist_type = [specialist_type]
+        if complexity and not isinstance(complexity, list):
+            complexity = [complexity]
+        if task_type and not isinstance(task_type, list):
+            task_type = [task_type]
+
+        # Call enhanced list_tasks method
         return self.list_tasks(
             session_id=session_id,
             parent_task_id=parent_task_id,
             status=status,
+            specialist_type=specialist_type,
+            complexity=complexity,
+            task_type=task_type,
             limit=limit,
             offset=offset,
         )
