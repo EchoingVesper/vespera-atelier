@@ -2,31 +2,38 @@
 
 ## Feature Request
 
-Create a comprehensive, security-first code review command that can handle small-scale to codebase-wide reviews with systematic methodology, multi-language support, and actionable reporting. This enhanced command should replace the current basic `review-general.md` with a professional-grade code review system.
+Create a comprehensive, security-first code review command that can handle small-scale to codebase-
+wide reviews with systematic methodology, multi-language support, and actionable reporting. This
+enhanced command should replace the current basic `review-general.md` with a professional-grade code
+review system.
 
 ## Research Summary
 
 ### External Research Integration
 
 **GitHub AI Code Review Prompts Analysis**:
+
 - Comprehensive analysis dimensions: Security, Performance, Architecture, Testing
 - Structured severity categorization (Critical/High/Medium/Low)
 - Systematic review framework with root cause analysis
 - Specific, actionable recommendations with implementation steps
 
 **2024 Modern Code Review Best Practices**:
+
 - Constructive feedback approach with context-aware communication
 - Small review sizes (under 400 lines) with timely feedback
 - Technological integration with automation tools
 - Cultural considerations for learning-oriented environments
 
 **OWASP Security Code Review Methodology**:
+
 - Manual security reviews remain critical despite automation
 - Focus on OWASP Top 10 vulnerabilities
 - "Red flags" identification approach
 - Secure coding pattern guidance
 
 **10-Point Security Checklist**:
+
 - Input validation, authentication, authorization
 - Data encryption, exception handling, dependency management
 - API integration, CSRF protection, business logic validation
@@ -34,12 +41,14 @@ Create a comprehensive, security-first code review command that can handle small
 ### Codebase Analysis Results
 
 **Current Limitations**:
+
 - Basic 94-line review with limited scope
 - Minimal security checklist (4 basic items)
 - No severity categorization framework
 - Simple output format without actionable guidance
 
 **Existing Patterns to Leverage**:
+
 - Testing structure: unit/integration/security/performance
 - Security testing with XSS/injection prevention
 - Clean Architecture validation
@@ -72,14 +81,16 @@ ai_documentation_references:
 ```
 
 **External Documentation URLs**:
-- OWASP Code Review Guide: https://owasp.org/www-project-code-review-guide/
-- Spring Boot Security Patterns: https://github.com/fluidfocuschannel/ai-code-review-prompts/tree/main/prompts
-- GitKraken 2024 Best Practices: https://www.gitkraken.com/blog/code-review-best-practices-2024
-- HackTheBox Security Checklist: https://www.hackthebox.com/blog/secure-code-reviews
+
+- OWASP Code Review Guide: <https://owasp.org/www-project-code-review-guide/>
+- Spring Boot Security Patterns: <https://github.com/fluidfocuschannel/ai-code-review-prompts/tree/main/prompts>
+- GitKraken 2024 Best Practices: <https://www.gitkraken.com/blog/code-review-best-practices-2024>
+- HackTheBox Security Checklist: <https://www.hackthebox.com/blog/secure-code-reviews>
 
 ### Implementation Context
 
 **Codebase Integration Points**:
+
 ```yaml
 existing_patterns:
   testing_framework:
@@ -104,6 +115,7 @@ existing_patterns:
 ### Enhanced Code Review Methodology
 
 **1. Multi-Dimensional Analysis Framework**:
+
 ```yaml
 analysis_dimensions:
   security:
@@ -146,6 +158,7 @@ analysis_dimensions:
 ```
 
 **2. Systematic Review Process**:
+
 ```yaml
 review_stages:
   stage_1_preparation:
@@ -183,6 +196,7 @@ review_stages:
 **File Location**: `.claude/commands/code-quality/review-comprehensive.md`
 
 **Command Implementation**:
+
 ```markdown
 # Comprehensive Code Review
 
@@ -213,6 +227,7 @@ $ARGUMENTS
    ```
 
 3. **Security Baseline**:
+
    ```bash
    # Check for secrets
    git secrets --scan || true
@@ -445,12 +460,14 @@ black . && isort . && mypy . && pytest --cov=app --cov-fail-under=80
 ## Review Quality Score
 
 **Overall Score**: [X/100]
+
 - Security: [X/25]
 - Architecture: [X/25]
 - Quality: [X/25]
 - Testing: [X/25]
 
 ## Good Practices Identified
+
 - [List things done well]
 - [Positive patterns to continue]
 - [Examples others can learn from]
@@ -461,13 +478,13 @@ black . && isort . && mypy . && pytest --cov=app --cov-fail-under=80
 **Review Date**: [Current date]
 **Review Type**: [Scope type]
 **Next Review**: [Recommended timeframe]
-```
 
 Save report to `PRPs/code_reviews/review-[YYYY-MM-DD]-[scope].md`
 
 ## Enhanced Multi-Stage Validation Framework
 
-**Stage 1: Syntax & Security Validation**
+### **Stage 1: Syntax & Security Validation**
+
 ```bash
 # Python projects
 black . && isort . && ruff check --fix
@@ -478,7 +495,8 @@ git secrets --scan
 eslint . --fix || true  # TypeScript/JavaScript
 ```
 
-**Stage 2: Architecture & Testing Validation**
+### **Stage 2: Architecture & Testing Validation**
+
 ```bash
 # Architecture tests
 pytest tests/architecture/ -v
@@ -490,7 +508,8 @@ pytest tests/unit/ -v --cov=app --cov-fail-under=70
 pytest tests/integration/ -v
 ```
 
-**Stage 3: Performance & Resource Validation**
+### **Stage 3: Performance & Resource Validation**
+
 ```bash
 # Performance monitoring
 python tools/diagnostics/performance_monitor.py --duration 60
@@ -499,7 +518,8 @@ python tools/diagnostics/performance_monitor.py --duration 60
 python tests/test_resource_cleanup.py
 ```
 
-**Stage 4: Security Penetration Testing**
+### **Stage 4: Security Penetration Testing**
+
 ```bash
 # Security validation
 pytest tests/security/test_input_validation.py -v
@@ -509,7 +529,8 @@ pytest tests/security/test_attack_vectors.py -v
 python tools/security/owasp_compliance_check.py
 ```
 
-**Stage 5: Production Readiness Validation**
+### **Stage 5: Production Readiness Validation**
+
 ```bash
 # Health check
 python tools/diagnostics/health_check.py
@@ -522,6 +543,7 @@ pytest tests/validation_gates/ -v
 ```
 
 **Git Commit After Validation**:
+
 ```bash
 git add -A
 git commit -m "feat(code-review): implement comprehensive review command with security-first design
@@ -534,21 +556,25 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 ## Security Integration Requirements
 
 **XSS Prevention**:
+
 - Output encoding validation
 - CSP header implementation
 - Input sanitization verification
 
 **SQL Injection Prevention**:
+
 - Parameterized query validation
 - ORM usage verification
 - Dynamic query analysis
 
 **Authentication Security**:
+
 - Session management review
 - Token validation patterns
 - Authorization boundary checks
 
 **Error Sanitization**:
+
 - Error message content review
 - Log sanitization verification
 - Information disclosure prevention
@@ -556,11 +582,13 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 ## Performance Requirements
 
 **Database Optimization**:
+
 - Query efficiency analysis
 - N+1 query detection
 - Index usage validation
 
 **Resource Management**:
+
 - Memory leak detection
 - Connection pool validation
 - Async pattern optimization
@@ -568,26 +596,31 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 ## Implementation Tasks
 
 ### Task 1: Create Enhanced Command File
+
 - **Location**: `.claude/commands/code-quality/review-comprehensive.md`
 - **Content**: Full implementation following specification above
 - **Integration**: Replace current `review-general.md` usage
 
 ### Task 2: Security Validation Integration
+
 - **Reference**: `PRPs/validation/security-validation.md`
 - **Implementation**: Integrate OWASP-based security checks
 - **Testing**: Validate with existing security test suite
 
 ### Task 3: Multi-Language Support
+
 - **Languages**: Python, TypeScript, JavaScript, general patterns
 - **Detection**: Automatic language detection from file extensions
 - **Patterns**: Language-specific best practices integration
 
 ### Task 4: Reporting Enhancement
+
 - **Format**: Markdown with severity categorization
 - **Storage**: `PRPs/code_reviews/` with auto-incrementing numbers
 - **Metrics**: Quality scoring and trend tracking
 
 ### Task 5: Validation Framework Integration
+
 - **5-Stage Process**: Implement comprehensive validation pipeline
 - **Security Gates**: Critical security validation requirements
 - **Performance Benchmarks**: Resource and speed optimization validation
@@ -596,7 +629,8 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 
 ### One-Pass Implementation Success Criteria
 
-1. **Comprehensive Analysis**: Multi-dimensional review covering security, architecture, quality, and performance
+1. **Comprehensive Analysis**: Multi-dimensional review covering security, architecture, quality,
+   and performance
 2. **Actionable Output**: Specific recommendations with file:line references and code examples
 3. **Security-First Design**: OWASP-compliant security analysis integrated throughout
 4. **Scalable Scope**: Handle small files to full codebase reviews
@@ -605,18 +639,21 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 ### Context Engineering Validation
 
 **Context Completeness Score**: 9/10
+
 - All enhanced AI documentation referenced
 - External research comprehensively integrated
 - Codebase patterns thoroughly analyzed
 - Implementation path clearly defined
 
 **Security Integration Score**: 10/10
+
 - OWASP methodology integrated
 - Security-first design throughout
 - Comprehensive security validation gates
 - Attack vector analysis included
 
 **Overall Confidence Score**: 9/10
+
 - Systematic approach ensuring one-pass success
 - Comprehensive context for AI agent
 - Professional-grade implementation specification
@@ -634,6 +671,7 @@ After implementation, validate with:
 6. **Report quality**: Verify actionable recommendations
 
 **Success Metrics**:
+
 - Review completion time under 5 minutes for typical files
 - 100% security checklist completion
 - Actionable recommendations with specific fixes
