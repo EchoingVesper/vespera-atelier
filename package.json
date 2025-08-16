@@ -30,8 +30,8 @@
   },
   "packageManager": "pnpm@8.15.0",
   "scripts": {
-    "install": "pnpm install:workspaces",
-    "install:workspaces": "pnpm install --recursive",
+    "postinstall": "pnpm install:workspaces",
+    "install:workspaces": "pnpm install --recursive --filter=!.",
     "build": "pnpm run build:scriptorium && pnpm run build:utilities && pnpm run build:obsidian",
     "build:scriptorium": "cd packages/vespera-scriptorium && ./venv/bin/pip install -e '.[dev]' && ./venv/bin/python -m build",
     "build:utilities": "cd vespera-utilities && npm ci && npm run build",
