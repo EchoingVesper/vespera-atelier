@@ -151,3 +151,9 @@ Cargo.lock
 *.rar
 *.tar
 *.zip
+# Vespera Scriptorium runtime data
+.vespera_scriptorium/
+*.sqlite-shm
+*.sqlite-wal
+*.db-shm
+*.db-wal
