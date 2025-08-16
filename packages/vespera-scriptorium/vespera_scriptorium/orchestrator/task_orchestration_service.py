@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional
 
 from ..application.dto.error_responses import ErrorResponseBuilder
 from ..domain.entities.task import LifecycleStage, Task, TaskStatus, TaskType
+from ..domain.services.task_service import TaskService
 from ..domain.value_objects.complexity_level import ComplexityLevel
 from ..domain.value_objects.specialist_type import SpecialistType
 from ..infrastructure.error_handling.decorators import handle_errors
@@ -384,27 +385,92 @@ class TaskOrchestrator:
         component="TaskOrchestrator",
         operation="synthesize_results",
     )
-    async def synthesize_results(self, parent_task_id: str) -> str:
-        """Combine completed subtasks into a comprehensive final result."""
+    async def synthesize_results(self, parent_task_id: str) -> Dict[str, Any]:
+        """Synthesize results with error recovery."""
+        try:
+            # Validate task ID format using domain service
+            task_service = TaskService(None, None)  # Temporary instance for validation
+            if not task_service.validate_task_id(parent_task_id):
+                return {
+                    "status": "synthesis_failed",
+                    "error": f"Invalid task ID format: {parent_task_id}",
+                    "recovery_suggestions": [
+                        "Verify the task ID format (task_XXXXXXXX)",
+                        "Use orchestrator_query_tasks to find valid tasks"
+                    ]
+                }
+            
+            # Check if task exists by attempting to get subtasks
+            try:
+                subtasks = await asyncio.wait_for(
+                    self.state.get_subtasks_for_parent(parent_task_id), timeout=5
+                )
+            except asyncio.TimeoutError:
+                logger.error(f"Timeout getting subtasks for task {parent_task_id}")
+                return {
+                    "status": "synthesis_failed",
+                    "error": f"Timeout retrieving subtasks for task {parent_task_id}",
+                    "parent_task_id": parent_task_id,
+                    "recovery_suggestions": [
+                        "Try again after a moment",
+                        "Check system load and database connectivity"
+                    ]
+                }
+            except Exception as e:
+                logger.error(f"Error getting subtasks for task {parent_task_id}: {str(e)}")
+                return {
+                    "status": "synthesis_failed", 
+                    "error": f"Parent task {parent_task_id} not found",
+                    "parent_task_id": parent_task_id,
+                    "recovery_suggestions": [
+                        "Verify the parent task ID exists",
+                        "Use orchestrator_query_tasks to find valid tasks"
+                    ]
+                }
 
-        # Get all subtasks for parent with timeout
-        subtasks = await asyncio.wait_for(
-            self.state.get_subtasks_for_parent(parent_task_id), timeout=5
-        )
+            completed_subtasks = [
+                st for st in subtasks if st.status == TaskStatus.COMPLETED
+            ]
 
-        completed_subtasks = [
-            st for st in subtasks if st.status == TaskStatus.COMPLETED
-        ]
-
-        # Generate synthesis using specialist manager
-        synthesis = await asyncio.wait_for(
-            self.specialists.synthesize_task_results(
-                parent_task_id, completed_subtasks
-            ),
-            timeout=10,
-        )
-
-        return synthesis
+            # Generate synthesis using specialist manager
+            try:
+                synthesis = await asyncio.wait_for(
+                    self.specialists.synthesize_task_results(
+                        parent_task_id, completed_subtasks
+                    ),
+                    timeout=10,
+                )
+                
+                return {
+                    "status": "synthesis_successful",
+                    "parent_task_id": parent_task_id,
+                    "synthesis": synthesis,
+                    "subtasks_count": len(completed_subtasks)
+                }
+                
+            except asyncio.TimeoutError:
+                logger.error(f"Timeout during synthesis for task {parent_task_id}")
+                return {
+                    "status": "synthesis_timeout",
+                    "error": "Synthesis operation timed out",
+                    "parent_task_id": parent_task_id,
+                    "recovery_suggestions": [
+                        "Try again with a shorter timeout",
+                        "Check if subtasks have valid results"
+                    ]
+                }
+        
+        except Exception as e:
+            logger.error(f"Synthesis error: {str(e)}")
+            return {
+                "status": "synthesis_error",
+                "error": str(e),
+                "parent_task_id": parent_task_id,
+                "recovery_suggestions": [
+                    "Check the error details",
+                    "Verify task exists and has completed subtasks"
+                ]
+            }
 
     @handle_errors(
         auto_retry=True,

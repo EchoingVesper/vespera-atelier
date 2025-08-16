@@ -96,6 +96,16 @@ class SQLiteTaskRepository(TaskRepository):
                 "CREATE INDEX IF NOT EXISTS idx_artifacts_task ON task_artifacts(task_id)"
             )
 
+    def _serialize_datetime(self, dt):
+        """Safely serialize datetime objects."""
+        if dt is None:
+            return None
+        if isinstance(dt, str):
+            return dt  # Already a string
+        if hasattr(dt, 'isoformat'):
+            return dt.isoformat()
+        return str(dt)
+
     def create_task(self, task_data: Dict[str, Any]) -> str:
         """Create a new task."""
         task_id = task_data.get("id", str(uuid.uuid4()))
@@ -212,6 +222,12 @@ class SQLiteTaskRepository(TaskRepository):
         for row in rows:
             task = dict(row)
             task["metadata"] = json.loads(task["metadata"]) if task["metadata"] else {}
+            
+            # Fix datetime fields in results
+            task["created_at"] = self._serialize_datetime(task.get("created_at"))
+            task["updated_at"] = self._serialize_datetime(task.get("updated_at"))
+            task["completed_at"] = self._serialize_datetime(task.get("completed_at"))
+            
             tasks.append(task)
 
         return tasks

@@ -121,12 +121,14 @@ make clean      # Clean everything
 Once installed, you can add the MCP server to Claude Code:
 
 ```bash
-# If vespera-scriptorium is installed globally
-claude mcp add vespera-scriptorium vespera-scriptorium
+# Recommended: Using the launch script (handles venv automatically)
+claude mcp add vespera-scriptorium ./packages/vespera-scriptorium/launch_server.sh
 
-# If running from development environment
-claude mcp add vespera-scriptorium ./packages/vespera-scriptorium
+# Alternative: Direct path (requires manual venv activation)
+claude mcp add vespera-scriptorium ./packages/vespera-scriptorium/venv/bin/vespera-scriptorium
 ```
+
+**Note**: The Vespera Scriptorium uses a local virtual environment (`packages/vespera-scriptorium/venv/`) for dependency isolation. The `launch_server.sh` script handles venv activation automatically.
 
 ## Troubleshooting
 
