@@ -50,9 +50,47 @@ jobs:
     
     - name: Install health check dependencies
       run: |
-        pip install --upgrade pip
+        python3 -m pip install --upgrade pip || python -m pip install --upgrade pip
         pip install pyyaml requests gitpython psutil
         npm install -g @npmcli/arborist
+    
+    - name: System Dependencies Check
+      id: system
+      run: |
+        echo "::group::System Dependencies Check"
+        
+        # Check essential system tools
+        system_tools=(
+          "git"
+          "curl"
+          "jq"
+          "make"
+        )
+        
+        missing_tools=()
+        for tool in "${system_tools[@]}"; do
+          if ! command -v "$tool" &> /dev/null; then
+            missing_tools+=("$tool")
+            echo "❌ Missing: $tool"
+          else
+            echo "✅ Found: $tool ($(command -v $tool))"
+          fi
+        done
+        
+        # Check Python and Node versions
+        echo "🐍 Python version: $(python3 --version 2>/dev/null || python --version 2>/dev/null || echo 'Not found')"
+        echo "📦 Node.js version: $(node --version 2>/dev/null || echo 'Not found')"
+        echo "📦 npm version: $(npm --version 2>/dev/null || echo 'Not found')"
+        
+        if [[ ${#missing_tools[@]} -gt 0 ]]; then
+          echo "system_status=FAILED" >> $GITHUB_OUTPUT
+          echo "system_issues=${missing_tools[*]}" >> $GITHUB_OUTPUT
+        else
+          echo "system_status=PASSED" >> $GITHUB_OUTPUT
+          echo "system_issues=" >> $GITHUB_OUTPUT
+        fi
+        
+        echo "::endgroup::"
     
     - name: Repository Structure Health Check
       id: structure
@@ -143,7 +181,8 @@ jobs:
         
         # Test Python package build
         cd packages/vespera-scriptorium
-        python -m build 2>&1 | tee build.log
+        python3 -m pip install --upgrade build || python -m pip install --upgrade build
+        python3 -m build 2>&1 | tee build.log || python -m build 2>&1 | tee build.log
         if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
           build_issues+=("Python package build failed")
         fi
@@ -275,7 +314,7 @@ jobs:
         
         # Run the internal health check tool if it exists
         if [[ -f tools/diagnostics/health_check.py ]]; then
-          python tools/diagnostics/health_check.py --health --json > internal_health.json 2>&1 || true
+          python3 tools/diagnostics/health_check.py --health --json > internal_health.json 2>&1 || python tools/diagnostics/health_check.py --health --json > internal_health.json 2>&1 || true
           
           if [[ -f internal_health.json ]]; then
             # Check if the internal health check passed
@@ -306,6 +345,7 @@ jobs:
         echo "::group::Health Report Generation"
         
         # Collect all check results
+        system_status="${{ steps.system.outputs.system_status }}"
         structure_status="${{ steps.structure.outputs.structure_status }}"
         dependency_status="${{ steps.dependencies.outputs.dependency_status }}"
         build_status="${{ steps.build.outputs.build_status }}"
@@ -315,6 +355,7 @@ jobs:
         
         # Collect all issues
         all_issues=()
+        [[ -n "${{ steps.system.outputs.system_issues }}" ]] && all_issues+=(${{ steps.system.outputs.system_issues }})
         [[ -n "${{ steps.structure.outputs.structure_issues }}" ]] && all_issues+=(${{ steps.structure.outputs.structure_issues }})
         [[ -n "${{ steps.dependencies.outputs.dependency_issues }}" ]] && all_issues+=(${{ steps.dependencies.outputs.dependency_issues }})
         [[ -n "${{ steps.build.outputs.build_issues }}" ]] && all_issues+=(${{ steps.build.outputs.build_issues }})
@@ -323,7 +364,7 @@ jobs:
         [[ -n "${{ steps.internal.outputs.internal_issues }}" ]] && all_issues+=(${{ steps.internal.outputs.internal_issues }})
         
         # Determine overall status
-        if [[ "$structure_status" == "PASSED" && "$dependency_status" == "PASSED" && "$build_status" == "PASSED" && "$test_status" == "PASSED" && "$security_status" == "PASSED" ]]; then
+        if [[ "$system_status" == "PASSED" && "$structure_status" == "PASSED" && "$dependency_status" == "PASSED" && "$build_status" == "PASSED" && "$test_status" == "PASSED" && "$security_status" == "PASSED" ]]; then
           overall_status="HEALTHY"
         else
           overall_status="UNHEALTHY"
@@ -340,6 +381,7 @@ jobs:
         
         | Check | Status | Issues |
         |-------|--------|--------|
+        | System Dependencies | $system_status | ${{ steps.system.outputs.system_issues }} |
         | Repository Structure | $structure_status | ${{ steps.structure.outputs.structure_issues }} |
         | Dependencies | $dependency_status | ${{ steps.dependencies.outputs.dependency_issues }} |
         | Build | $build_status | ${{ steps.build.outputs.build_issues }} |

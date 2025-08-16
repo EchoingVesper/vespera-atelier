@@ -50,35 +50,158 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
     
-    - name: Install maintenance tools
+    - name: Install maintenance tools with retry and debug logging
+      id: install-tools
       run: |
-        pip install --upgrade pip
-        pip install pip-tools uv
-        npm install -g npm-check-updates
+        echo "=== Debug: Starting tool installation ==="
+        echo "Python version: $(python --version)"
+        echo "Pip version: $(pip --version)"
+        echo "Node version: $(node --version)"
+        echo "NPM version: $(npm --version)"
+        
+        # Function to install tools with retry logic
+        install_tools_with_retry() {
+          local attempt=1
+          local max_attempts=3
+          local delay=10
+          
+          while [ $attempt -le $max_attempts ]; do
+            echo "Attempt $attempt of $max_attempts: Installing maintenance tools..."
+            
+            # Try pip installation
+            if pip install --upgrade pip; then
+              echo "✅ Pip upgrade successful on attempt $attempt"
+              
+              if pip install pip-tools uv; then
+                echo "✅ Python tools installation successful on attempt $attempt"
+                
+                # Try npm installation
+                if npm install -g npm-check-updates; then
+                  echo "✅ NPM tools installation successful on attempt $attempt"
+                  return 0
+                else
+                  echo "❌ NPM tools installation failed on attempt $attempt"
+                fi
+              else
+                echo "❌ Python tools installation failed on attempt $attempt"
+              fi
+            else
+              echo "❌ Pip upgrade failed on attempt $attempt"
+            fi
+            
+            if [ $attempt -lt $max_attempts ]; then
+              echo "⏳ Waiting ${delay} seconds before retry..."
+              sleep $delay
+              delay=$((delay * 2))  # Progressive backoff: 10s, 20s, 40s
+            fi
+            
+            attempt=$((attempt + 1))
+          done
+          
+          echo "❌ All tool installation attempts failed"
+          return 1
+        }
+        
+        # Execute installation with retry
+        if install_tools_with_retry; then
+          echo "✅ All maintenance tools installed successfully"
+        else
+          echo "❌ Failed to install maintenance tools after all retries"
+          exit 1
+        fi
     
-    - name: Update Python Dependencies
+    - name: Update Python Dependencies with retry and debug logging
       id: python-deps
       run: |
-        cd packages/vespera-scriptorium
+        echo "=== Debug: Starting Python dependency updates ==="
+        echo "Current working directory: $(pwd)"
+        echo "Checking vespera-scriptorium package..."
         
-        # Backup current requirements
-        cp pyproject.toml pyproject.toml.backup
-        
-        # Update dependencies using uv
-        if command -v uv &> /dev/null; then
-          echo "Using uv for dependency management..."
-          uv lock --upgrade || echo "uv lock failed, continuing with pip"
+        if [ ! -d "packages/vespera-scriptorium" ]; then
+          echo "❌ vespera-scriptorium package directory not found"
+          exit 1
         fi
         
-        # Check for outdated packages
-        pip list --outdated --format=json > outdated_packages.json
-        outdated_count=$(cat outdated_packages.json | jq '. | length')
+        cd packages/vespera-scriptorium
+        echo "Changed to directory: $(pwd)"
+        echo "Directory contents:"
+        ls -la
         
-        echo "python_updates=$outdated_count" >> $GITHUB_OUTPUT
+        # Function to update dependencies with retry
+        update_python_deps_with_retry() {
+          local attempt=1
+          local max_attempts=3
+          local delay=15
+          
+          while [ $attempt -le $max_attempts ]; do
+            echo "Python dependency update attempt $attempt of $max_attempts..."
+            
+            # Backup current requirements
+            if [ -f "pyproject.toml" ]; then
+              cp pyproject.toml pyproject.toml.backup
+              echo "✅ Backed up pyproject.toml"
+            else
+              echo "⚠️ pyproject.toml not found, creating backup from requirements.txt if available"
+            fi
+            
+            # Update dependencies using uv with retry
+            if command -v uv &> /dev/null; then
+              echo "Using uv for dependency management..."
+              if uv lock --upgrade; then
+                echo "✅ uv lock upgrade successful on attempt $attempt"
+              else
+                echo "❌ uv lock failed on attempt $attempt, continuing with pip"
+              fi
+            else
+              echo "⚠️ uv not available, using pip for dependency management"
+            fi
+            
+            # Check for outdated packages with retry
+            if pip list --outdated --format=json > outdated_packages.json; then
+              echo "✅ Successfully retrieved outdated packages list"
+              
+              if command -v jq &> /dev/null; then
+                outdated_count=$(cat outdated_packages.json | jq '. | length')
+                echo "python_updates=$outdated_count" >> $GITHUB_OUTPUT
+                
+                if [[ $outdated_count -gt 0 ]]; then
+                  echo "Found $outdated_count outdated Python packages:"
+                  cat outdated_packages.json | jq -r '.[] | "  \(.name): \(.version) -> \(.latest_version)"'
+                else
+                  echo "✅ All Python packages are up to date"
+                fi
+                
+                return 0
+              else
+                echo "⚠️ jq not available, counting manually"
+                outdated_count=$(cat outdated_packages.json | grep -o '"name"' | wc -l)
+                echo "python_updates=$outdated_count" >> $GITHUB_OUTPUT
+                echo "Found approximately $outdated_count outdated Python packages"
+                return 0
+              fi
+            else
+              echo "❌ Failed to retrieve outdated packages on attempt $attempt"
+            fi
+            
+            if [ $attempt -lt $max_attempts ]; then
+              echo "⏳ Waiting ${delay} seconds before retry..."
+              sleep $delay
+              delay=$((delay + 10))  # Progressive backoff: 15s, 25s, 35s
+            fi
+            
+            attempt=$((attempt + 1))
+          done
+          
+          echo "❌ All Python dependency update attempts failed"
+          echo "python_updates=0" >> $GITHUB_OUTPUT
+          return 1
+        }
         
-        if [[ $outdated_count -gt 0 ]]; then
-          echo "Found $outdated_count outdated Python packages"
-          cat outdated_packages.json | jq -r '.[] | "\(.name): \(.version) -> \(.latest_version)"'
+        # Execute update with retry
+        if update_python_deps_with_retry; then
+          echo "✅ Python dependencies processed successfully"
+        else
+          echo "⚠️ Python dependency updates failed, continuing with workflow"
         fi
     
     - name: Update Node.js Dependencies

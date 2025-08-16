@@ -35,7 +35,7 @@ jobs:
     - name: Install dependencies
       working-directory: packages/vespera-scriptorium
       run: |
-        python -m pip install --upgrade pip
+        python3 -m pip install --upgrade pip || python -m pip install --upgrade pip
         pip install -e ".[dev]"
     
     - name: Run linting
@@ -147,7 +147,7 @@ jobs:
     - name: Install Python dependencies
       working-directory: packages/vespera-scriptorium
       run: |
-        python -m pip install --upgrade pip
+        python3 -m pip install --upgrade pip || python -m pip install --upgrade pip
         pip install -e ".[dev]"
     
     - name: Install Node dependencies (utilities)
@@ -164,7 +164,7 @@ jobs:
       working-directory: packages/vespera-scriptorium
       run: |
         # Test basic CLI functionality
-        python -m vespera_scriptorium_cli --help
+        python3 -m vespera_scriptorium_cli --help || python -m vespera_scriptorium_cli --help
         vespera-scriptorium --help
 
   # Security and quality checks
@@ -183,7 +183,7 @@ jobs:
     
     - name: Install security tools
       run: |
-        python -m pip install --upgrade pip
+        python3 -m pip install --upgrade pip || python -m pip install --upgrade pip
         pip install bandit safety
     
     - name: Run Bandit security scan
@@ -222,8 +222,8 @@ jobs:
     - name: Build Python package
       working-directory: packages/vespera-scriptorium
       run: |
-        python -m pip install --upgrade pip build
-        python -m build
+        python3 -m pip install --upgrade pip build || python -m pip install --upgrade pip build
+        python3 -m build || python -m build
     
     - name: Validate package
       working-directory: packages/vespera-scriptorium
