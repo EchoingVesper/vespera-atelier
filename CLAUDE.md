@@ -22,11 +22,30 @@ vespera-atelier/
 
 ## 🎯 Working in the Monorepo
 
+### ⚠️ Important: Automatic Directory Switching
+
+**Claude Code automatically switches to `packages/vespera-scriptorium` as the working directory** due to workspace configuration:
+
+- **Primary workspace**: Set to `packages/vespera-scriptorium` in `.claude/config.json`
+- **Behavior**: Commands often execute from this directory automatically
+- **Root operations**: Use explicit paths when working from monorepo root
+
+```bash
+# If you need monorepo root context, be explicit:
+cd /home/aya/dev/monorepo/vespera-atelier && [your command]
+
+# Or use absolute paths:
+ls /home/aya/dev/monorepo/vespera-atelier/PRPs/
+
+# Check current directory when in doubt:
+pwd
+```
+
 ### Package-Specific Development
 
 When working on a specific package:
 ```bash
-# Navigate to package
+# Navigate to package (or Claude Code may auto-switch here)
 cd packages/vespera-scriptorium
 
 # Install dependencies
