@@ -8,6 +8,7 @@ health checking, and restart coordination.
 import asyncio
 import json
 import logging
+import time
 from typing import Any, Dict, List, Optional
 
 from mcp import types
@@ -269,11 +270,35 @@ async def handle_health_check(args: Dict[str, Any]) -> List[types.TextContent]:
         # Check database status
         if include_database_status:
             try:
-                # TODO: Implement actual database health check
-                health_status["checks"]["database"] = {
-                    "connected": True,
-                    "status": "operational",
-                }
+                # Implement actual database health check
+                from pathlib import Path
+                import sqlite3
+                
+                db_path = Path.cwd() / ".vespera_scriptorium" / "vespera_scriptorium.db"
+                if db_path.exists():
+                    # Test database connection and basic query
+                    with sqlite3.connect(str(db_path), timeout=5.0) as conn:
+                        cursor = conn.execute("SELECT 1")
+                        cursor.fetchone()
+                        
+                        # Check if main tables exist
+                        cursor = conn.execute(
+                            "SELECT name FROM sqlite_master WHERE type='table' AND name='tasks'"
+                        )
+                        has_tasks_table = cursor.fetchone() is not None
+                        
+                        health_status["checks"]["database"] = {
+                            "connected": True,
+                            "status": "operational",
+                            "has_tasks_table": has_tasks_table,
+                            "db_size_bytes": db_path.stat().st_size,
+                        }
+                else:
+                    health_status["checks"]["database"] = {
+                        "connected": False,
+                        "status": "no_database_file",
+                        "db_path": str(db_path),
+                    }
             except Exception as e:
                 logger.error(f"Failed to check database status: {e}")
                 health_status["checks"]["database"] = {
@@ -285,10 +310,23 @@ async def handle_health_check(args: Dict[str, Any]) -> List[types.TextContent]:
         # Check connection status
         if include_connection_status:
             try:
-                # TODO: Implement actual connection status check
+                # Implement actual connection status check
+                import psutil
+                import os
+                
+                # Get current process info
+                current_process = psutil.Process(os.getpid())
+                connections = current_process.connections()
+                
+                # Count active connections
+                active_connections = len([c for c in connections if c.status == 'ESTABLISHED'])
+                listening_ports = len([c for c in connections if c.status == 'LISTEN'])
+                
                 health_status["checks"]["connections"] = {
-                    "active_connections": 0,
+                    "active_connections": active_connections,
+                    "listening_ports": listening_ports,
                     "status": "operational",
+                    "process_id": os.getpid(),
                 }
             except Exception as e:
                 logger.error(f"Failed to check connection status: {e}")
@@ -349,12 +387,34 @@ async def handle_shutdown_prepare(args: Dict[str, Any]) -> List[types.TextConten
         # Check active tasks
         if check_active_tasks:
             try:
-                # TODO: Implement active task checking
+                # Check for tasks in active states
+                from ...infrastructure.database.sqlite.sqlite_repository_factory import get_repository_factory
+                from ...domain.task import TaskStatus
+                
+                factory = get_repository_factory()
+                task_repo = factory.get_task_repository()
+                
+                # Count tasks in active states
+                active_statuses = [TaskStatus.IN_PROGRESS, TaskStatus.ACTIVE]
+                active_tasks = await task_repo.query_tasks(
+                    status=[status.value for status in active_statuses],
+                    limit=100
+                )
+                
                 shutdown_readiness["checks"]["active_tasks"] = {
-                    "count": 0,
-                    "suspendable": True,
-                    "status": "ready",
+                    "count": len(active_tasks),
+                    "suspendable": len(active_tasks) == 0,  # Only ready if no active tasks
+                    "status": "ready" if len(active_tasks) == 0 else "has_active_tasks",
+                    "active_task_ids": [task.id for task in active_tasks[:5]]  # First 5 IDs
                 }
+                
+                # Block shutdown if there are active tasks
+                if len(active_tasks) > 0:
+                    shutdown_readiness["ready_for_shutdown"] = False
+                    shutdown_readiness["blocking_issues"].append(
+                        f"{len(active_tasks)} active tasks must be completed or suspended"
+                    )
+                    
             except Exception as e:
                 logger.error(f"Failed to check active tasks: {e}")
                 shutdown_readiness["checks"]["active_tasks"] = {
@@ -366,12 +426,53 @@ async def handle_shutdown_prepare(args: Dict[str, Any]) -> List[types.TextConten
         # Check database state
         if check_database_state:
             try:
-                # TODO: Implement database state checking
-                shutdown_readiness["checks"]["database"] = {
-                    "transactions_pending": 0,
-                    "connections_open": 1,
-                    "status": "ready",
-                }
+                # Check database health and connection status
+                from pathlib import Path
+                import sqlite3
+                
+                db_path = Path.cwd() / ".vespera_scriptorium" / "vespera_scriptorium.db"
+                
+                if db_path.exists():
+                    # Test database connection and check for locks
+                    try:
+                        with sqlite3.connect(str(db_path), timeout=2.0) as conn:
+                            # Check for any pending transactions
+                            cursor = conn.execute("BEGIN IMMEDIATE")
+                            conn.rollback()
+                            
+                            # Test basic operations
+                            cursor = conn.execute("SELECT COUNT(*) FROM sqlite_master")
+                            table_count = cursor.fetchone()[0]
+                            
+                            shutdown_readiness["checks"]["database"] = {
+                                "transactions_pending": 0,  # SQLite auto-commits
+                                "connections_open": 1,
+                                "status": "ready",
+                                "table_count": table_count,
+                                "db_size_mb": round(db_path.stat().st_size / (1024*1024), 2)
+                            }
+                            
+                    except sqlite3.OperationalError as e:
+                        if "database is locked" in str(e).lower():
+                            shutdown_readiness["checks"]["database"] = {
+                                "transactions_pending": "unknown",
+                                "connections_open": "unknown", 
+                                "status": "locked",
+                                "error": "Database is locked by another process"
+                            }
+                            shutdown_readiness["ready_for_shutdown"] = False
+                            shutdown_readiness["blocking_issues"].append(
+                                "Database is locked - wait for operations to complete"
+                            )
+                        else:
+                            raise
+                else:
+                    shutdown_readiness["checks"]["database"] = {
+                        "transactions_pending": 0,
+                        "connections_open": 0,
+                        "status": "no_database",
+                    }
+                    
             except Exception as e:
                 logger.error(f"Failed to check database state: {e}")
                 shutdown_readiness["checks"]["database"] = {
@@ -383,12 +484,34 @@ async def handle_shutdown_prepare(args: Dict[str, Any]) -> List[types.TextConten
         # Check client connections
         if check_client_connections:
             try:
-                # TODO: Implement client connection checking
+                # Check for active MCP client connections
+                import psutil
+                import os
+                
+                current_process = psutil.Process(os.getpid())
+                connections = current_process.connections()
+                
+                # Count established connections (excluding loopback)
+                active_connections = []
+                for conn in connections:
+                    if (conn.status == 'ESTABLISHED' and 
+                        conn.raddr and 
+                        not conn.raddr.ip.startswith('127.')):
+                        active_connections.append({
+                            "local": f"{conn.laddr.ip}:{conn.laddr.port}",
+                            "remote": f"{conn.raddr.ip}:{conn.raddr.port}" if conn.raddr else "unknown"
+                        })
+                
                 shutdown_readiness["checks"]["client_connections"] = {
-                    "active_connections": 0,
-                    "notifiable": True,
+                    "active_connections": len(active_connections),
+                    "notifiable": True,  # MCP clients can be notified of shutdown
                     "status": "ready",
+                    "connection_details": active_connections[:5]  # First 5 connections
                 }
+                
+                # Note: MCP connections are typically short-lived request/response
+                # so active connections don't necessarily block shutdown
+                
             except Exception as e:
                 logger.error(f"Failed to check client connections: {e}")
                 shutdown_readiness["checks"]["client_connections"] = {
@@ -429,9 +552,7 @@ async def handle_reconnect_test(args: Dict[str, Any]) -> List[types.TextContent]
         include_buffer_status = args.get("include_buffer_status", True)
         include_reconnection_stats = args.get("include_reconnection_stats", True)
 
-        # TODO: Implement actual reconnection testing
-        # For now, return a mock response
-
+        # Implement actual reconnection testing
         test_results = {
             "test_completed": True,
             "timestamp": None,
@@ -444,22 +565,68 @@ async def handle_reconnect_test(args: Dict[str, Any]) -> List[types.TextContent]
 
         test_results["timestamp"] = datetime.now(timezone.utc).isoformat()
 
-        if session_id:
-            # Test specific session
-            test_results["results"]["session_test"] = {
-                "session_id": session_id,
-                "reachable": True,
-                "reconnect_capable": True,
-                "status": "pass",
-            }
-        else:
-            # Test all sessions
-            test_results["results"]["all_sessions"] = {
-                "total_sessions": 0,
-                "reachable_sessions": 0,
-                "reconnect_capable": 0,
-                "status": "pass",
-            }
+        try:
+            # Test server responsiveness
+            reboot_manager = get_reboot_manager()
+            start_time = time.time()
+            health_check = await reboot_manager.get_restart_readiness()
+            response_time = time.time() - start_time
+            
+            server_responsive = response_time < 5.0  # 5 second timeout
+            
+            if session_id:
+                # Test specific session connectivity
+                from ...infrastructure.database.sqlite.sqlite_repository_factory import get_repository_factory
+                
+                factory = get_repository_factory()
+                session_repo = factory.get_session_repository()
+                
+                try:
+                    session_data = await session_repo.get_session(session_id)
+                    session_exists = session_data is not None
+                except Exception:
+                    session_exists = False
+                
+                test_results["results"]["session_test"] = {
+                    "session_id": session_id,
+                    "reachable": session_exists and server_responsive,
+                    "reconnect_capable": server_responsive,
+                    "status": "pass" if session_exists and server_responsive else "fail",
+                    "response_time_ms": round(response_time * 1000, 2)
+                }
+                
+                if not session_exists or not server_responsive:
+                    test_results["overall_status"] = "fail"
+                    
+            else:
+                # Test overall system connectivity 
+                from ...infrastructure.database.sqlite.sqlite_repository_factory import get_repository_factory
+                
+                factory = get_repository_factory()
+                session_repo = factory.get_session_repository()
+                
+                try:
+                    # Count active sessions
+                    all_sessions = await session_repo.list_sessions(include_completed=False)
+                    active_sessions = len(all_sessions)
+                except Exception:
+                    active_sessions = 0
+                    
+                test_results["results"]["all_sessions"] = {
+                    "total_sessions": active_sessions,
+                    "reachable_sessions": active_sessions if server_responsive else 0,
+                    "reconnect_capable": active_sessions if server_responsive else 0,
+                    "status": "pass" if server_responsive else "fail",
+                    "server_response_time_ms": round(response_time * 1000, 2)
+                }
+                
+                if not server_responsive:
+                    test_results["overall_status"] = "fail"
+                    
+        except Exception as e:
+            logger.error(f"Reconnection test failed: {e}")
+            test_results["overall_status"] = "error"
+            test_results["error"] = str(e)
 
         # Include buffer status
         if include_buffer_status:
@@ -521,12 +688,37 @@ async def handle_restart_status(args: Dict[str, Any]) -> List[types.TextContent]
 
         # Include history if requested
         if include_history:
-            # TODO: Implement restart history tracking
-            restart_status["history"] = {
-                "recent_restarts": [],
-                "total_restarts": 0,
-                "last_successful_restart": None,
-            }
+            # Implement restart history tracking
+            try:
+                history_file = self.scriptorium_dir / "restart_history.json"
+                
+                if history_file.exists():
+                    import json
+                    with open(history_file, 'r') as f:
+                        history_data = json.load(f)
+                        
+                    restart_status["history"] = {
+                        "recent_restarts": history_data.get("restarts", [])[-10:],  # Last 10
+                        "total_restarts": len(history_data.get("restarts", [])),
+                        "last_successful_restart": history_data.get("last_successful"),
+                        "last_failed_restart": history_data.get("last_failed"),
+                    }
+                else:
+                    restart_status["history"] = {
+                        "recent_restarts": [],
+                        "total_restarts": 0,
+                        "last_successful_restart": None,
+                        "last_failed_restart": None,
+                    }
+                    
+            except Exception as e:
+                logger.error(f"Failed to load restart history: {e}")
+                restart_status["history"] = {
+                    "recent_restarts": [],
+                    "total_restarts": 0,
+                    "last_successful_restart": None,
+                    "error": f"Failed to load history: {str(e)}"
+                }
 
         # Filter error details if not requested
         if not include_error_details and "errors" in restart_status["current_status"]:

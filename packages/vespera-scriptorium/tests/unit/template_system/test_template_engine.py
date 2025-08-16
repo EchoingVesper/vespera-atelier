@@ -180,7 +180,7 @@ class TestTemplateEngine:
             # Missing required project_name
             parameters = {"complexity": "simple"}
             
-            with pytest.raises(ParameterSubstitutionError, match="Missing required parameter"):
+            with pytest.raises(ParameterSubstitutionError, match="Required parameter missing"):
                 self.engine.instantiate_template("test_template", parameters)
     
     def test_instantiate_template_invalid_parameter_value(self):

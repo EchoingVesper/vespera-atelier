@@ -274,8 +274,54 @@ async def handle_template_create(args: Dict[str, Any]) -> List[types.TextContent
         json5_parser = JSON5Parser()
         template_data = json5_parser.parse(template_content)
 
+        # Run validation hooks before template save
+        from ..automation.validation_hooks import run_validation_hooks, HookTrigger
+        validation_context = {
+            "template_id": template_id,
+            "template_content": template_content,
+            "template_data": template_data,
+            "category": category
+        }
+        validation_results = await run_validation_hooks(
+            HookTrigger.BEFORE_TEMPLATE_SAVE,
+            validation_context,
+            fail_fast=True
+        )
+        
+        # Check if any validation failed
+        failed_validations = [r for r in validation_results if not r.passed]
+        if failed_validations:
+            error_messages = [r.message for r in failed_validations]
+            error_response = {
+                "status": "error",
+                "error_type": "ValidationError",
+                "message": "Template validation failed",
+                "validation_errors": error_messages,
+                "details": [r.details for r in failed_validations]
+            }
+            return [types.TextContent(type="text", text=json.dumps(error_response, indent=2))]
+
         # Save the template
         storage_manager.save_template(template_id, template_data, category, overwrite)
+
+        # Run validation hooks after template save
+        post_save_context = {
+            **validation_context,
+            "saved_successfully": True
+        }
+        post_validation_results = await run_validation_hooks(
+            HookTrigger.AFTER_TEMPLATE_SAVE,
+            post_save_context,
+            fail_fast=False
+        )
+        
+        # Log any post-save validation issues
+        failed_post_validations = [r for r in post_validation_results if not r.passed]
+        if failed_post_validations:
+            import logging
+            logger = logging.getLogger(__name__)
+            error_messages = [r.message for r in failed_post_validations]
+            logger.warning(f"Post-save template validation issues: {error_messages}")
 
         response = {
             "status": "success",
