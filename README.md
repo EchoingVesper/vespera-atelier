@@ -1,5 +1,8 @@
 # Vespera Atelier
 
+> ⚠️ **TRANSITION STATE NOTICE** ⚠️  
+> This project is currently in a transition state following a recent merge of multiple repositories and a complete "clean architecture" rewrite. While functional, it is **NOT ready for production use** until critical bugs from the monorepo formation and architecture migration are resolved. You may try using it, but expect to encounter breaking bugs. See [Critical Fixes Progress](PRPs/in-progress/vespera-scriptorium-critical-fixes/) for current status.
+
 **An intelligent platform for document-centric orchestration, task management, and creative workflows.**
 
 ## Overview

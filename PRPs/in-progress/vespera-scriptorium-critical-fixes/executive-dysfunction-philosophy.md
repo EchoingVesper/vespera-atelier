@@ -1,8 +1,8 @@
-# Executive Dysfunction Philosophy - {PROJECT_NAME}
+# Executive Dysfunction Philosophy - Vespera Scriptorium Critical Fixes
 
-**Application**: {PROJECT_NAME} Meta-PRP  
+**Application**: Vespera Scriptorium Critical Fixes Meta-PRP  
 **Template Version**: 2.1  
-**Last Updated**: {DATE}
+**Last Updated**: 2025-08-16
 
 ## Core Executive Dysfunction Design Principles
 
