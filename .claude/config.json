@@ -37,6 +37,15 @@
   "hooks": {
     "directories": [
       ".claude/hooks"
+    ],
+    "post-edit": [
+      ".claude/hooks/python_auto_formatter.py"
+    ],
+    "post-multi-edit": [
+      ".claude/hooks/python_auto_formatter.py"
+    ],
+    "post-write": [
+      ".claude/hooks/python_auto_formatter.py"
     ]
   }
 }
