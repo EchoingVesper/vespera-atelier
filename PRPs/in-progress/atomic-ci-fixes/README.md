@@ -4,12 +4,12 @@
 **Philosophy**: Executive Dysfunction-Aware Multi-Agent Coordination  
 **Git Strategy**: Worktree isolation for conflict-free parallel development
 
-**Status**: [IN-PROGRESS - Phase 1 Complete, Phase 2 Starting]  
+**Status**: [IN-PROGRESS - Phase 1 Complete, Phase 2 Expanded]  
 **Meta-PRP ID**: `ATOMIC_CI_FIXES_META_PRP_2025`  
 **Created**: 2025-01-16  
-**Last Updated**: 2025-01-16  
+**Last Updated**: 2025-08-17  
 **Phase 1 Duration**: 2 hours (completed)
-**Phase 2 Estimated**: 2-3 hours (new CI workflow fixes)
+**Phase 2 Estimated**: 4-5 hours (expanded CI, testing, and modernization fixes)
 
 ## 📁 Directory Structure
 
@@ -28,9 +28,21 @@ atomic-ci-fixes/
 │   ├── index.md              # Priority coordination
 │   └── subtasks/             # Individual tasks
 │
-└── 03-enhancement-tasks/      # PRIORITY 3 - Enhancement Tasks
+├── 03-enhancement-tasks/      # PRIORITY 3 - Enhancement Tasks
+│   ├── index.md              # Priority coordination
+│   └── subtasks/             # Individual tasks
+│
+├── 04-actual-ci-workflow-fixes/ # PRIORITY 4 - CI Workflow Fixes  
+│   ├── index.md              # Priority coordination
+│   └── subtasks/             # CI workflow repair tasks
+│
+├── 05-python-testing-fixes/   # PRIORITY 5 - Python Testing & Config
+│   ├── index.md              # Priority coordination
+│   └── subtasks/             # Unit test and package fixes
+│
+└── 06-ci-modernization/       # PRIORITY 6 - CI/CD Modernization
     ├── index.md              # Priority coordination
-    └── subtasks/             # Individual tasks
+    └── subtasks/             # npm to pnpm migration
 ```
 
 ## 🚀 Quick Start
@@ -54,12 +66,12 @@ atomic-ci-fixes/
 
 **PR #15**: Created and ready for review - addresses GitHub issues #11, #12, #13, #14
 
-### Phase 2 (New - Actual CI Workflow Fixes)
+### Phase 2 (Expanded - CI, Testing & Modernization)
 | Priority | Task | Status | Estimated |
 |----------|------|--------|-----------|
 | **4** | Fix Failing CI/CD Workflows | [TODO] | 1 hour |
-| **5** | Python Environment Compatibility | [TODO] | 30 mins |
-| **6** | Path Resolution in Workflows | [TODO] | 1 hour |
+| **5** | Python Testing & Configuration Fixes | [TODO] | 2 hours |
+| **6** | CI/CD Modernization (npm→pnpm) | [TODO] | 1.5 hours |
 
 ## 🤖 Orchestrator Integration
 
@@ -110,32 +122,31 @@ atomic-ci-fixes/
 
 ### 🚀 PHASE 2 (ACTIVE): Actual CI Workflow Fixes
 
-**New GitHub Issues Created:**
-- **Issue #16**: CI/CD Pipeline Workflow Failing - Python Command and Path Issues
-- **Issue #17**: Quality Checks Workflow Failing - Linting and Type Checking Issues
-- **Issue #18**: Health Check Workflow Failing - System Validation Issues
-- **Issue #19**: Release Workflow Failing - Build and Package Issues
+**Issues Added to Phase 2:**
+- **Issue #16**: CI/CD Pipeline Workflow Failing (Priority 4)
+- **Issue #17**: Quality Checks Workflow Failing (Priority 4)
+- **Issue #18**: Health Check Workflow Failing (Priority 4)  
+- **Issue #19**: Release Workflow Failing (Priority 4)
+- **Issue #20**: orchestrator_get_status Bug (Priority 5)
+- **Issue #21**: Fix failing unit tests (Priority 5) 
+- **Issue #22**: Fix pyproject.toml configuration warnings (Priority 5)
+- **Issue #23**: Update CI workflows to use pnpm (Priority 6)
 
 **Atomic Tasks for Phase 2:**
-1. **Fix CI/CD Pipeline** (Priority: Critical)
-   - Update Python commands to use `python3`
-   - Fix path resolution in workflows
-   - Ensure virtual environment creation works
+1. **Priority 4 - CI Workflow Fixes** (Issues #16-19)
+   - Fix Python commands and paths in all workflows
+   - Ensure workflows pass in GitHub Actions
+   - Add proper error handling and validation
 
-2. **Fix Quality Checks** (Priority: Critical)
-   - Configure linting tools properly
-   - Fix TypeScript checking
-   - Ensure quality gates work
+2. **Priority 5 - Python Testing & Config** (Issues #20-22) 
+   - Fix 104 failing unit tests in vespera-scriptorium
+   - Resolve orchestrator_get_status bug
+   - Clean up pyproject.toml configuration warnings
 
-3. **Fix Health Checks** (Priority: High)
-   - Validate package installations
-   - Add system dependency checks
-   - Create health validation scripts
-
-4. **Fix Release Workflow** (Priority: High)
-   - Configure build processes
-   - Set up asset generation
-   - Add version management
+3. **Priority 6 - CI Modernization** (Issue #23)
+   - Convert all workflows from npm to pnpm
+   - Remove package-lock.json maintenance burden
+   - Improve CI build performance
 
 ### **Available Context/Inputs**
 
