@@ -55,27 +55,31 @@ async def handle_create_generic_task(args: Dict[str, Any]) -> List[types.TextCon
     logger.info(f"Creating generic task: {args.get('title', 'Unknown')}")
 
     # Run validation hooks before task creation
-    from ...automation.validation_hooks import run_validation_hooks, HookTrigger
+    from ...automation.validation_hooks import HookTrigger, run_validation_hooks
+
     validation_results = await run_validation_hooks(
-        HookTrigger.BEFORE_TASK_CREATE, 
-        args,
-        fail_fast=True
+        HookTrigger.BEFORE_TASK_CREATE, args, fail_fast=True
     )
-    
+
     # Check if any validation failed
     failed_validations = [r for r in validation_results if not r.passed]
     if failed_validations:
         error_messages = [r.message for r in failed_validations]
         logger.warning(f"Task creation validation failed: {error_messages}")
-        return [types.TextContent(
-            type="text", 
-            text=json.dumps({
-                "success": False,
-                "error": "Task validation failed",
-                "validation_errors": error_messages,
-                "details": [r.details for r in failed_validations]
-            }, indent=2)
-        )]
+        return [
+            types.TextContent(
+                type="text",
+                text=json.dumps(
+                    {
+                        "success": False,
+                        "error": "Task validation failed",
+                        "validation_errors": error_messages,
+                        "details": [r.details for r in failed_validations],
+                    },
+                    indent=2,
+                ),
+            )
+        ]
 
     # Get use case instance
     use_case = await get_clean_task_use_case()
@@ -85,15 +89,17 @@ async def handle_create_generic_task(args: Dict[str, Any]) -> List[types.TextCon
 
     # Run validation hooks after task creation
     post_create_context = {
-        "task_data": created_task.dict() if hasattr(created_task, 'dict') else created_task,
-        "original_args": args
+        "task_data": (
+            created_task.dict() if hasattr(created_task, "dict") else created_task
+        ),
+        "original_args": args,
     }
     post_validation_results = await run_validation_hooks(
         HookTrigger.AFTER_TASK_CREATE,
         post_create_context,
-        fail_fast=False  # Don't fail fast after creation, just log issues
+        fail_fast=False,  # Don't fail fast after creation, just log issues
     )
-    
+
     # Log any post-creation validation issues
     failed_post_validations = [r for r in post_validation_results if not r.passed]
     if failed_post_validations:

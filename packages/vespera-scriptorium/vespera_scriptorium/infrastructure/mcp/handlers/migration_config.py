@@ -35,7 +35,6 @@ from .task_handlers_v2 import (
 # Fixed handler removed - routing directly to Clean Architecture handlers
 
 
-
 @dataclass
 class HandlerConfig:
     """Configuration for a handler migration."""
