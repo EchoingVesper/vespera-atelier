@@ -34,7 +34,7 @@ from vespera_scriptorium.infrastructure.mcp.tool_router import route_tool_call
 from mcp import types
 
 # Test infrastructure
-from validation_framework import TestResult, TestStatus, TestLevel
+from validation_framework import ValidationResult, ValidationStatus, ValidationLevel
 
 logger = logging.getLogger(__name__)
 
@@ -172,7 +172,7 @@ class CoreToolTests(BaseToolTest):
         return "core_orchestration"
     
     # orchestrator_initialize_session tests
-    async def test_initialize_session_default(self) -> TestResult:
+    async def test_initialize_session_default(self) -> ValidationResult:
         """Test default session initialization."""
         start_time = time.time()
         try:
@@ -183,28 +183,28 @@ class CoreToolTests(BaseToolTest):
             if result.get("success", False) or (result.get("status") != "error" and 
                 "session_id" in result
             ):
-                return TestResult(
+                return ValidationResult(
                     name="test_initialize_session_default",
-                    status=TestStatus.PASS,
+                    status=ValidationStatus.PASS,
                     duration=duration,
                     output=json.dumps(result)
                 )
             else:
-                return TestResult(
+                return ValidationResult(
                     name="test_initialize_session_default",
-                    status=TestStatus.FAIL,
+                    status=ValidationStatus.FAIL,
                     duration=duration,
                     error=f"Unexpected response: {json.dumps(result)}"
                 )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_initialize_session_default",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=time.time() - start_time,
                 error=str(e)
             )
     
-    async def test_initialize_session_custom_directory(self) -> TestResult:
+    async def test_initialize_session_custom_directory(self) -> ValidationResult:
         """Test session initialization with custom directory."""
         try:
             custom_dir = "/tmp/test_orchestrator"
@@ -215,21 +215,21 @@ class CoreToolTests(BaseToolTest):
             assert "status" in result
             assert result["status"] == "success"
             
-            return TestResult(
+            return ValidationResult(
                 name="test_initialize_session_custom_directory",
-                status=TestStatus.PASS,
+                status=ValidationStatus.PASS,
                 duration=0.1,
                 output=json.dumps(result)
             )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_initialize_session_custom_directory",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
     
-    async def test_initialize_session_invalid_directory(self) -> TestResult:
+    async def test_initialize_session_invalid_directory(self) -> ValidationResult:
         """Test session initialization with invalid directory."""
         try:
             invalid_dir = "/invalid/path/that/does/not/exist"
@@ -239,29 +239,29 @@ class CoreToolTests(BaseToolTest):
             
             # Should handle error gracefully
             if result.get("status") == "error":
-                return TestResult(
+                return ValidationResult(
                     name="test_initialize_session_invalid_directory",
-                    status=TestStatus.PASS,
+                    status=ValidationStatus.PASS,
                     duration=0.1,
                     output="Properly handled invalid directory"
                 )
             else:
-                return TestResult(
+                return ValidationResult(
                     name="test_initialize_session_invalid_directory",
-                    status=TestStatus.FAIL,
+                    status=ValidationStatus.FAIL,
                     duration=0.1,
                     error="Should have returned error for invalid directory"
                 )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_initialize_session_invalid_directory",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
     
     # orchestrator_get_status tests
-    async def test_get_status_default(self) -> TestResult:
+    async def test_get_status_default(self) -> ValidationResult:
         """Test default status retrieval."""
         try:
             result = await self._call_tool("orchestrator_get_status", {})
@@ -269,21 +269,21 @@ class CoreToolTests(BaseToolTest):
             assert "status" in result
             assert result["status"] == "success"
             
-            return TestResult(
+            return ValidationResult(
                 name="test_get_status_default",
-                status=TestStatus.PASS,
+                status=ValidationStatus.PASS,
                 duration=0.1,
                 output=json.dumps(result)
             )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_get_status_default",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
     
-    async def test_get_status_include_completed(self) -> TestResult:
+    async def test_get_status_include_completed(self) -> ValidationResult:
         """Test status retrieval with completed tasks included."""
         try:
             result = await self._call_tool("orchestrator_get_status", {
@@ -293,21 +293,21 @@ class CoreToolTests(BaseToolTest):
             assert "status" in result
             assert result["status"] == "success"
             
-            return TestResult(
+            return ValidationResult(
                 name="test_get_status_include_completed",
-                status=TestStatus.PASS,
+                status=ValidationStatus.PASS,
                 duration=0.1,
                 output=json.dumps(result)
             )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_get_status_include_completed",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
     
-    async def test_get_status_performance(self) -> TestResult:
+    async def test_get_status_performance(self) -> ValidationResult:
         """Test status retrieval performance."""
         try:
             result, duration = await self._measure_performance(
@@ -315,29 +315,29 @@ class CoreToolTests(BaseToolTest):
             )
             
             if duration > self.env.performance_timeout:
-                return TestResult(
+                return ValidationResult(
                     name="test_get_status_performance",
-                    status=TestStatus.FAIL,
+                    status=ValidationStatus.FAIL,
                     duration=duration,
                     error=f"Performance timeout: {duration:.2f}s > {self.env.performance_timeout}s"
                 )
             
-            return TestResult(
+            return ValidationResult(
                 name="test_get_status_performance",
-                status=TestStatus.PASS,
+                status=ValidationStatus.PASS,
                 duration=duration,
                 output=f"Performance: {duration:.2f}s"
             )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_get_status_performance",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
     
     # orchestrator_synthesize_results tests
-    async def test_synthesize_results_basic(self) -> TestResult:
+    async def test_synthesize_results_basic(self) -> ValidationResult:
         """Test basic result synthesis."""
         try:
             result = await self._call_tool("orchestrator_synthesize_results", {
@@ -347,44 +347,44 @@ class CoreToolTests(BaseToolTest):
             assert "status" in result
             assert result["status"] == "success"
             
-            return TestResult(
+            return ValidationResult(
                 name="test_synthesize_results_basic",
-                status=TestStatus.PASS,
+                status=ValidationStatus.PASS,
                 duration=0.1,
                 output=json.dumps(result)
             )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_synthesize_results_basic",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
     
-    async def test_synthesize_results_missing_parent(self) -> TestResult:
+    async def test_synthesize_results_missing_parent(self) -> ValidationResult:
         """Test synthesis with missing parent task ID."""
         try:
             result = await self._call_tool("orchestrator_synthesize_results", {})
             
             # Should return error for missing required parameter
             if result.get("status") == "error":
-                return TestResult(
+                return ValidationResult(
                     name="test_synthesize_results_missing_parent",
-                    status=TestStatus.PASS,
+                    status=ValidationStatus.PASS,
                     duration=0.1,
                     output="Properly handled missing parent_task_id"
                 )
             else:
-                return TestResult(
+                return ValidationResult(
                     name="test_synthesize_results_missing_parent",
-                    status=TestStatus.FAIL,
+                    status=ValidationStatus.FAIL,
                     duration=0.1,
                     error="Should have returned error for missing parent_task_id"
                 )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_synthesize_results_missing_parent",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
@@ -397,7 +397,7 @@ class TaskToolTests(BaseToolTest):
         return "task_management"
     
     # orchestrator_plan_task tests
-    async def test_plan_task_minimal(self) -> TestResult:
+    async def test_plan_task_minimal(self) -> ValidationResult:
         """Test minimal task creation."""
         try:
             result = await self._call_tool("orchestrator_plan_task", {
@@ -408,21 +408,21 @@ class TaskToolTests(BaseToolTest):
             assert "status" in result
             assert result["status"] == "success"
             
-            return TestResult(
+            return ValidationResult(
                 name="test_plan_task_minimal",
-                status=TestStatus.PASS,
+                status=ValidationStatus.PASS,
                 duration=0.1,
                 output=json.dumps(result)
             )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_plan_task_minimal",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
     
-    async def test_plan_task_full_parameters(self) -> TestResult:
+    async def test_plan_task_full_parameters(self) -> ValidationResult:
         """Test task creation with all parameters."""
         try:
             result = await self._call_tool("orchestrator_plan_task", {
@@ -440,21 +440,21 @@ class TaskToolTests(BaseToolTest):
             assert "status" in result
             assert result["status"] == "success"
             
-            return TestResult(
+            return ValidationResult(
                 name="test_plan_task_full_parameters",
-                status=TestStatus.PASS,
+                status=ValidationStatus.PASS,
                 duration=0.1,
                 output=json.dumps(result)
             )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_plan_task_full_parameters",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
     
-    async def test_plan_task_missing_required(self) -> TestResult:
+    async def test_plan_task_missing_required(self) -> ValidationResult:
         """Test task creation with missing required fields."""
         try:
             result = await self._call_tool("orchestrator_plan_task", {
@@ -464,28 +464,28 @@ class TaskToolTests(BaseToolTest):
             
             # Should return error for missing required parameter
             if result.get("status") == "error":
-                return TestResult(
+                return ValidationResult(
                     name="test_plan_task_missing_required",
-                    status=TestStatus.PASS,
+                    status=ValidationStatus.PASS,
                     duration=0.1,
                     output="Properly handled missing required field"
                 )
             else:
-                return TestResult(
+                return ValidationResult(
                     name="test_plan_task_missing_required",
-                    status=TestStatus.FAIL,
+                    status=ValidationStatus.FAIL,
                     duration=0.1,
                     error="Should have returned error for missing description"
                 )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_plan_task_missing_required",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
     
-    async def test_plan_task_invalid_enum(self) -> TestResult:
+    async def test_plan_task_invalid_enum(self) -> ValidationResult:
         """Test task creation with invalid enum values."""
         try:
             result = await self._call_tool("orchestrator_plan_task", {
@@ -497,29 +497,29 @@ class TaskToolTests(BaseToolTest):
             
             # Should return error for invalid enum values
             if result.get("status") == "error":
-                return TestResult(
+                return ValidationResult(
                     name="test_plan_task_invalid_enum",
-                    status=TestStatus.PASS,
+                    status=ValidationStatus.PASS,
                     duration=0.1,
                     output="Properly handled invalid enum values"
                 )
             else:
-                return TestResult(
+                return ValidationResult(
                     name="test_plan_task_invalid_enum",
-                    status=TestStatus.FAIL,
+                    status=ValidationStatus.FAIL,
                     duration=0.1,
                     error="Should have returned error for invalid enum values"
                 )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_plan_task_invalid_enum",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
     
     # orchestrator_query_tasks tests
-    async def test_query_tasks_no_filters(self) -> TestResult:
+    async def test_query_tasks_no_filters(self) -> ValidationResult:
         """Test task query with no filters."""
         try:
             result = await self._call_tool("orchestrator_query_tasks", {})
@@ -527,21 +527,21 @@ class TaskToolTests(BaseToolTest):
             assert "status" in result
             assert result["status"] == "success"
             
-            return TestResult(
+            return ValidationResult(
                 name="test_query_tasks_no_filters",
-                status=TestStatus.PASS,
+                status=ValidationStatus.PASS,
                 duration=0.1,
                 output=json.dumps(result)
             )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_query_tasks_no_filters",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
     
-    async def test_query_tasks_with_filters(self) -> TestResult:
+    async def test_query_tasks_with_filters(self) -> ValidationResult:
         """Test task query with multiple filters."""
         try:
             result = await self._call_tool("orchestrator_query_tasks", {
@@ -554,21 +554,21 @@ class TaskToolTests(BaseToolTest):
             assert "status" in result
             assert result["status"] == "success"
             
-            return TestResult(
+            return ValidationResult(
                 name="test_query_tasks_with_filters",
-                status=TestStatus.PASS,
+                status=ValidationStatus.PASS,
                 duration=0.1,
                 output=json.dumps(result)
             )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_query_tasks_with_filters",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
     
-    async def test_query_tasks_pagination(self) -> TestResult:
+    async def test_query_tasks_pagination(self) -> ValidationResult:
         """Test task query with pagination."""
         try:
             result = await self._call_tool("orchestrator_query_tasks", {
@@ -579,22 +579,22 @@ class TaskToolTests(BaseToolTest):
             assert "status" in result
             assert result["status"] == "success"
             
-            return TestResult(
+            return ValidationResult(
                 name="test_query_tasks_pagination",
-                status=TestStatus.PASS,
+                status=ValidationStatus.PASS,
                 duration=0.1,
                 output=json.dumps(result)
             )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_query_tasks_pagination",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
     
     # orchestrator_complete_task tests
-    async def test_complete_task_basic(self) -> TestResult:
+    async def test_complete_task_basic(self) -> ValidationResult:
         """Test basic task completion."""
         try:
             result = await self._call_tool("orchestrator_complete_task", {
@@ -607,21 +607,21 @@ class TaskToolTests(BaseToolTest):
             assert "status" in result
             assert result["status"] == "success"
             
-            return TestResult(
+            return ValidationResult(
                 name="test_complete_task_basic",
-                status=TestStatus.PASS,
+                status=ValidationStatus.PASS,
                 duration=0.1,
                 output=json.dumps(result)
             )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_complete_task_basic",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
     
-    async def test_complete_task_with_artifacts(self) -> TestResult:
+    async def test_complete_task_with_artifacts(self) -> ValidationResult:
         """Test task completion with artifacts."""
         try:
             result = await self._call_tool("orchestrator_complete_task", {
@@ -636,16 +636,16 @@ class TaskToolTests(BaseToolTest):
             assert "status" in result
             assert result["status"] == "success"
             
-            return TestResult(
+            return ValidationResult(
                 name="test_complete_task_with_artifacts",
-                status=TestStatus.PASS,
+                status=ValidationStatus.PASS,
                 duration=0.1,
                 output=json.dumps(result)
             )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_complete_task_with_artifacts",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
@@ -658,7 +658,7 @@ class RebootToolTests(BaseToolTest):
         return "server_reboot"
     
     # orchestrator_restart_server tests
-    async def test_restart_server_graceful(self) -> TestResult:
+    async def test_restart_server_graceful(self) -> ValidationResult:
         """Test graceful server restart."""
         try:
             result = await self._call_tool("orchestrator_restart_server", {
@@ -670,21 +670,21 @@ class RebootToolTests(BaseToolTest):
             
             assert "status" in result
             
-            return TestResult(
+            return ValidationResult(
                 name="test_restart_server_graceful",
-                status=TestStatus.PASS,
+                status=ValidationStatus.PASS,
                 duration=0.1,
                 output=json.dumps(result)
             )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_restart_server_graceful",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
     
-    async def test_restart_server_invalid_timeout(self) -> TestResult:
+    async def test_restart_server_invalid_timeout(self) -> ValidationResult:
         """Test server restart with invalid timeout."""
         try:
             result = await self._call_tool("orchestrator_restart_server", {
@@ -693,50 +693,50 @@ class RebootToolTests(BaseToolTest):
             
             # Should handle invalid timeout gracefully
             if result.get("status") == "error":
-                return TestResult(
+                return ValidationResult(
                     name="test_restart_server_invalid_timeout",
-                    status=TestStatus.PASS,
+                    status=ValidationStatus.PASS,
                     duration=0.1,
                     output="Properly handled invalid timeout"
                 )
             else:
-                return TestResult(
+                return ValidationResult(
                     name="test_restart_server_invalid_timeout",
-                    status=TestStatus.FAIL,
+                    status=ValidationStatus.FAIL,
                     duration=0.1,
                     error="Should have returned error for invalid timeout"
                 )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_restart_server_invalid_timeout",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
     
     # orchestrator_health_check tests
-    async def test_health_check_basic(self) -> TestResult:
+    async def test_health_check_basic(self) -> ValidationResult:
         """Test basic health check."""
         try:
             result = await self._call_tool("orchestrator_health_check", {})
             
             assert "status" in result
             
-            return TestResult(
+            return ValidationResult(
                 name="test_health_check_basic",
-                status=TestStatus.PASS,
+                status=ValidationStatus.PASS,
                 duration=0.1,
                 output=json.dumps(result)
             )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_health_check_basic",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
     
-    async def test_health_check_comprehensive(self) -> TestResult:
+    async def test_health_check_comprehensive(self) -> ValidationResult:
         """Test comprehensive health check."""
         try:
             result = await self._call_tool("orchestrator_health_check", {
@@ -747,65 +747,65 @@ class RebootToolTests(BaseToolTest):
             
             assert "status" in result
             
-            return TestResult(
+            return ValidationResult(
                 name="test_health_check_comprehensive",
-                status=TestStatus.PASS,
+                status=ValidationStatus.PASS,
                 duration=0.1,
                 output=json.dumps(result)
             )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_health_check_comprehensive",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
     
     # orchestrator_shutdown_prepare tests
-    async def test_shutdown_prepare_basic(self) -> TestResult:
+    async def test_shutdown_prepare_basic(self) -> ValidationResult:
         """Test basic shutdown preparation."""
         try:
             result = await self._call_tool("orchestrator_shutdown_prepare", {})
             
             assert "status" in result
             
-            return TestResult(
+            return ValidationResult(
                 name="test_shutdown_prepare_basic",
-                status=TestStatus.PASS,
+                status=ValidationStatus.PASS,
                 duration=0.1,
                 output=json.dumps(result)
             )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_shutdown_prepare_basic",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
     
     # orchestrator_reconnect_test tests
-    async def test_reconnect_test_basic(self) -> TestResult:
+    async def test_reconnect_test_basic(self) -> ValidationResult:
         """Test basic reconnection test."""
         try:
             result = await self._call_tool("orchestrator_reconnect_test", {})
             
             assert "status" in result
             
-            return TestResult(
+            return ValidationResult(
                 name="test_reconnect_test_basic",
-                status=TestStatus.PASS,
+                status=ValidationStatus.PASS,
                 duration=0.1,
                 output=json.dumps(result)
             )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_reconnect_test_basic",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
     
-    async def test_reconnect_test_specific_session(self) -> TestResult:
+    async def test_reconnect_test_specific_session(self) -> ValidationResult:
         """Test reconnection test for specific session."""
         try:
             result = await self._call_tool("orchestrator_reconnect_test", {
@@ -814,43 +814,43 @@ class RebootToolTests(BaseToolTest):
             
             assert "status" in result
             
-            return TestResult(
+            return ValidationResult(
                 name="test_reconnect_test_specific_session",
-                status=TestStatus.PASS,
+                status=ValidationStatus.PASS,
                 duration=0.1,
                 output=json.dumps(result)
             )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_reconnect_test_specific_session",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
     
     # orchestrator_restart_status tests
-    async def test_restart_status_basic(self) -> TestResult:
+    async def test_restart_status_basic(self) -> ValidationResult:
         """Test basic restart status."""
         try:
             result = await self._call_tool("orchestrator_restart_status", {})
             
             assert "status" in result
             
-            return TestResult(
+            return ValidationResult(
                 name="test_restart_status_basic",
-                status=TestStatus.PASS,
+                status=ValidationStatus.PASS,
                 duration=0.1,
                 output=json.dumps(result)
             )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_restart_status_basic",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
     
-    async def test_restart_status_with_history(self) -> TestResult:
+    async def test_restart_status_with_history(self) -> ValidationResult:
         """Test restart status with history."""
         try:
             result = await self._call_tool("orchestrator_restart_status", {
@@ -860,16 +860,16 @@ class RebootToolTests(BaseToolTest):
             
             assert "status" in result
             
-            return TestResult(
+            return ValidationResult(
                 name="test_restart_status_with_history",
-                status=TestStatus.PASS,
+                status=ValidationStatus.PASS,
                 duration=0.1,
                 output=json.dumps(result)
             )
         except Exception as e:
-            return TestResult(
+            return ValidationResult(
                 name="test_restart_status_with_history",
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=0.1,
                 error=str(e)
             )
@@ -899,7 +899,7 @@ class ValidationCaseRegistry:
             if method.startswith("test_") and callable(getattr(test_class, method))
         ]
     
-    async def run_tool_tests(self, tool_name: str, test_level: TestLevel) -> List[TestResult]:
+    async def run_tool_tests(self, tool_name: str, test_level: ValidationLevel) -> List[ValidationResult]:
         """Run all tests for a specific tool at a given level."""
         results = []
         
@@ -946,9 +946,9 @@ class ValidationCaseRegistry:
                     result = await method()
                     results.append(result)
                 except Exception as e:
-                    results.append(TestResult(
+                    results.append(ValidationResult(
                         name=method_name,
-                        status=TestStatus.FAIL,
+                        status=ValidationStatus.FAIL,
                         duration=0.0,
                         error=str(e)
                     ))
@@ -959,7 +959,7 @@ class ValidationCaseRegistry:
         
         return results
     
-    def _is_method_for_tool(self, method_name: str, tool_name: str, test_level: TestLevel) -> bool:
+    def _is_method_for_tool(self, method_name: str, tool_name: str, test_level: ValidationLevel) -> bool:
         """Check if a test method is relevant for a specific tool and level."""
         # Extract tool name from method name
         # e.g., "test_initialize_session_default" -> "initialize_session"
@@ -974,13 +974,13 @@ class ValidationCaseRegistry:
             return False
         
         # Check test level based on method name patterns
-        if test_level == TestLevel.BASIC:
+        if test_level == ValidationLevel.BASIC:
             return any(pattern in method_name for pattern in ["_basic", "_default", "_minimal"])
-        elif test_level == TestLevel.EDGE_CASES:
+        elif test_level == ValidationLevel.EDGE_CASES:
             return any(pattern in method_name for pattern in ["_invalid", "_missing", "_error", "_timeout"])
-        elif test_level == TestLevel.INTEGRATION:
+        elif test_level == ValidationLevel.INTEGRATION:
             return any(pattern in method_name for pattern in ["_integration", "_performance", "_comprehensive"])
-        elif test_level == TestLevel.ALL:
+        elif test_level == ValidationLevel.ALL:
             return True
         
         return False
@@ -989,10 +989,10 @@ class ValidationCaseRegistry:
 # Example usage
 async def main():
     """Example usage of the test case registry."""
-    registry = TestCaseRegistry()
+    registry = ValidationCaseRegistry()
     
     # Run tests for a specific tool
-    results = await registry.run_tool_tests("orchestrator_get_status", TestLevel.BASIC)
+    results = await registry.run_tool_tests("orchestrator_get_status", ValidationLevel.BASIC)
     
     print(f"Ran {len(results)} tests:")
     for result in results:

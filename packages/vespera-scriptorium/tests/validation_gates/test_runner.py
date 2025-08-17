@@ -23,8 +23,8 @@ from typing import Dict, List, Optional, Any, Set
 import argparse
 
 # Import our validation framework
-from validation_framework import ValidationFramework, TestLevel, TestStatus, TestResult
-from tool_test_cases import TestCaseRegistry
+from validation_framework import ValidationFramework, ValidationLevel, ValidationStatus, ValidationResult
+from tool_test_cases import ValidationCaseRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ class ValidationRunner:
         
         # Initialize framework and registry
         self.framework = ValidationFramework(self.output_dir)
-        self.registry = TestCaseRegistry()
+        self.registry = ValidationCaseRegistry()
         
         # Runtime state
         self.running = False
@@ -68,7 +68,7 @@ class ValidationRunner:
         logger.info(f"Received signal {signum}, shutting down gracefully...")
         self.running = False
     
-    async def run_single_tool(self, tool_name: str, level: TestLevel) -> Dict[str, Any]:
+    async def run_single_tool(self, tool_name: str, level: ValidationLevel) -> Dict[str, Any]:
         """Run tests for a single tool with retry logic."""
         logger.info(f"Starting test run for {tool_name} at {level.value} level")
         
@@ -81,7 +81,7 @@ class ValidationRunner:
                 results = await self.framework.run_validation_gate(tool_name, level)
                 
                 # Check if any tests failed
-                failed_tests = [r for r in results if r.status == TestStatus.FAIL]
+                failed_tests = [r for r in results if r.status == ValidationStatus.FAIL]
                 
                 if failed_tests and attempt < max_attempts - 1:
                     logger.warning(f"Tool {tool_name} failed {len(failed_tests)} tests on attempt {attempt + 1}")
@@ -102,7 +102,7 @@ class ValidationRunner:
                     "attempt": attempt + 1,
                     "status": "success" if not failed_tests else "failed",
                     "total_tests": len(results),
-                    "passed": len([r for r in results if r.status == TestStatus.PASS]),
+                    "passed": len([r for r in results if r.status == ValidationStatus.PASS]),
                     "failed": len(failed_tests),
                     "results": results,
                     "timestamp": datetime.now(timezone.utc).isoformat()
@@ -146,7 +146,7 @@ class ValidationRunner:
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
     
-    async def _apply_issue_resolution(self, tool_name: str, failed_tests: List[TestResult]) -> bool:
+    async def _apply_issue_resolution(self, tool_name: str, failed_tests: List[ValidationResult]) -> bool:
         """Apply automated issue resolution workflows."""
         logger.info(f"Applying issue resolution for {tool_name}")
         
@@ -212,7 +212,7 @@ class ValidationRunner:
         logger.info("Restarting MCP server")
         await asyncio.sleep(0.1)
     
-    async def run_all_tools(self, level: TestLevel) -> Dict[str, Any]:
+    async def run_all_tools(self, level: ValidationLevel) -> Dict[str, Any]:
         """Run tests for all tools systematically."""
         logger.info(f"Starting systematic test run for all tools at {level.value} level")
         
@@ -257,7 +257,7 @@ class ValidationRunner:
             "comprehensive_report": report
         }
     
-    async def run_continuous(self, interval: int = 300, level: TestLevel = TestLevel.ALL):
+    async def run_continuous(self, interval: int = 300, level: ValidationLevel = ValidationLevel.ALL):
         """Run tests continuously at specified intervals."""
         logger.info(f"Starting continuous test runner with {interval}s interval")
         
@@ -294,7 +294,7 @@ class ValidationRunner:
         
         logger.info("Continuous test runner stopped")
     
-    async def run_priority_based(self, level: TestLevel) -> Dict[str, Any]:
+    async def run_priority_based(self, level: ValidationLevel) -> Dict[str, Any]:
         """Run tests based on tool priority (HIGH -> MEDIUM -> LOW)."""
         logger.info(f"Starting priority-based test run at {level.value} level")
         
@@ -342,7 +342,7 @@ class ValidationRunner:
         """Run comprehensive validation for a single tool (all levels)."""
         logger.info(f"Starting comprehensive validation for {tool_name}")
         
-        levels = [TestLevel.BASIC, TestLevel.EDGE_CASES, TestLevel.INTEGRATION]
+        levels = [ValidationLevel.BASIC, ValidationLevel.EDGE_CASES, ValidationLevel.INTEGRATION]
         level_results = {}
         
         for level in levels:
@@ -447,7 +447,7 @@ async def main():
     try:
         if args.continuous:
             # Continuous testing
-            await runner.run_continuous(args.interval, TestLevel(args.level))
+            await runner.run_continuous(args.interval, ValidationLevel(args.level))
             
         elif args.comprehensive and args.tool:
             # Comprehensive validation for single tool
@@ -458,21 +458,21 @@ async def main():
             
         elif args.priority_based:
             # Priority-based testing
-            results = await runner.run_priority_based(TestLevel(args.level))
+            results = await runner.run_priority_based(ValidationLevel(args.level))
             print(f"Priority-based testing completed:")
             print(f"Tools tested: {len(results)}")
             print(f"Success rate: {runner.successful_runs / runner.total_runs * 100:.1f}%")
             
         elif args.run_all:
             # Run all tools
-            results = await runner.run_all_tools(TestLevel(args.level))
+            results = await runner.run_all_tools(ValidationLevel(args.level))
             print(f"All tools testing completed:")
             print(f"Success rate: {results['success_rate']:.1f}%")
             print(f"Failed tools: {results['failed_tools']}")
             
         elif args.tool:
             # Single tool testing
-            result = await runner.run_single_tool(args.tool, TestLevel(args.level))
+            result = await runner.run_single_tool(args.tool, ValidationLevel(args.level))
             print(f"Tool {args.tool} testing completed:")
             print(f"Status: {result['status']}")
             print(f"Tests: {result.get('passed', 0)}/{result.get('total_tests', 0)} passed")
