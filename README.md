@@ -1,7 +1,7 @@
 # Vespera Atelier
 
-> ✅ **STABILITY UPDATE** (2025-08-16) ✅  
-> **All Known Critical Issues Fixed!** The recent comprehensive bug fix initiative has resolved all identified critical issues. The monorepo infrastructure is now stable and working correctly. However, as this is a complex system, **please consider it experimental** until further stress-testing has been performed. See [Completed Fixes](PRPs/completed/) for details on what was resolved.
+> **MAJOR UPDATE** (2025-08-17)   
+> **Progress continues apace**: While I've fixed quite a few core issues with the code, there are still quite a few I have left to do, and the fundamental task and artifact infrastructure in existence is only a shadow of what I intend it to be. ***WARNING***: Expect breaking changes! Expect nothing to work right! You are free to play with the code as you wish, fork it, do whatever, but expect everything that is currently here to be changing drastically as I continue this project. I would not recommend attempting to use it to manage a major project just yet (even though I *am* using it to aid in its own development). You have been warned.
 
 **An intelligent platform for document-centric orchestration, task management, and creative workflows.**
 
@@ -190,5 +190,6 @@ This project is licensed under the GNU Affero General Public License v3.0 - see 
 - Part of the broader Vespera ecosystem of creative productivity tools
 
 ---
+
 
 **Vespera Atelier** - Where ideas become reality through intelligent orchestration.
