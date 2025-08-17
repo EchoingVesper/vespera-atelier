@@ -1,0 +1,1560 @@
+diff --git a/dist/Vespera-Scriptorium/styles.css b/dist/Vespera-Scriptorium/styles.css
+index f78ac14..cb19c75 100644
+--- a/dist/Vespera-Scriptorium/styles.css
++++ b/dist/Vespera-Scriptorium/styles.css
+@@ -12,10 +12,25 @@ If your plugin does not need CSS, delete this file.
+ 	height: 24px;
+ 	display: block;
+ 	margin: auto;
++	position: relative;
++	z-index: 1;
+ }
+ 
+ .vespera-ribbon-icon {
+ 	color: var(--icon-color);
++	position: relative;
++	cursor: pointer;
++}
++
++/* Ensure the entire ribbon icon is clickable */
++.vespera-ribbon-icon::after {
++	content: "";
++	position: absolute;
++	top: 0;
++	left: 0;
++	width: 100%;
++	height: 100%;
++	z-index: 0;
+ }
+ 
+ .vespera-treeview-card {
+@@ -195,3 +210,37 @@ If your plugin does not need CSS, delete this file.
+ .vespera-prompt-saved:focus {
+   width: 100%;
+ }
++
++/* Custom styling for prompt dropdown */
++.vespera-prompt-preview {
++  position: relative;
++  display: flex;
++  align-items: center;
++  padding: 8px 12px;
++  cursor: pointer;
++  border-bottom: 1px solid var(--background-modifier-border);
++}
++
++.vespera-prompt-title {
++  font-weight: 600;
++  margin-right: 8px;
++  white-space: nowrap;
++}
++
++.vespera-prompt-content-preview {
++  color: var(--text-muted);
++  white-space: nowrap;
++  overflow: hidden;
++  position: relative;
++  max-width: 60%;
++}
++
++.vespera-prompt-content-preview::after {
++  content: "";
++  position: absolute;
++  right: 0;
++  top: 0;
++  height: 100%;
++  width: 40px;
++  background: linear-gradient(to right, transparent, var(--background-primary));
++}
+diff --git a/package-lock.json b/package-lock.json
+index 0e21f45..d19e9c1 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -9,7 +9,9 @@
+ 			"version": "1.0.0",
+ 			"license": "MIT",
+ 			"dependencies": {
+-				"@playwright/test": "^1.52.0"
++				"@playwright/test": "^1.52.0",
++				"@types/uuid": "^10.0.0",
++				"uuid": "^11.1.0"
+ 			},
+ 			"devDependencies": {
+ 				"@types/node": "^16.11.6",
+@@ -983,6 +985,12 @@
+ 				"@types/estree": "*"
+ 			}
+ 		},
++		"node_modules/@types/uuid": {
++			"version": "10.0.0",
++			"resolved": "https://registry.npmjs.org/@types/uuid/-/uuid-10.0.0.tgz",
++			"integrity": "sha512-7gqG38EyHgyP1S+7+xomFtL+ZNHcKv6DwNaCZmJmo1vgMugyF3TCnXVg4t1uk89mLNwnLtnY3TpOpCOyp1/xHQ==",
++			"license": "MIT"
++		},
+ 		"node_modules/@typescript-eslint/eslint-plugin": {
+ 			"version": "5.29.0",
+ 			"resolved": "https://registry.npmjs.org/@typescript-eslint/eslint-plugin/-/eslint-plugin-5.29.0.tgz",
+@@ -3483,6 +3491,19 @@
+ 				"punycode": "^2.1.0"
+ 			}
+ 		},
++		"node_modules/uuid": {
++			"version": "11.1.0",
++			"resolved": "https://registry.npmjs.org/uuid/-/uuid-11.1.0.tgz",
++			"integrity": "sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==",
++			"funding": [
++				"https://github.com/sponsors/broofa",
++				"https://github.com/sponsors/ctavan"
++			],
++			"license": "MIT",
++			"bin": {
++				"uuid": "dist/esm/bin/uuid"
++			}
++		},
+ 		"node_modules/vite-node": {
+ 			"version": "0.34.6",
+ 			"resolved": "https://registry.npmjs.org/vite-node/-/vite-node-0.34.6.tgz",
+diff --git a/package.json b/package.json
+index 3062e7e..e76d0e0 100644
+--- a/package.json
++++ b/package.json
+@@ -25,6 +25,8 @@
+ 		"vitest": "^0.34.6"
+ 	},
+ 	"dependencies": {
+-		"@playwright/test": "^1.52.0"
++		"@playwright/test": "^1.52.0",
++		"@types/uuid": "^10.0.0",
++		"uuid": "^11.1.0"
+ 	}
+ }
+diff --git a/src/UI/MultiSelectModal.ts b/src/UI/MultiSelectModal.ts
+index 6616e51..6301b15 100644
+--- a/src/UI/MultiSelectModal.ts
++++ b/src/UI/MultiSelectModal.ts
+@@ -1,7 +1,7 @@
+-import { App, Modal } from "obsidian";
++import { App, Modal, Notice } from "obsidian";
+ import type { VaultFileMeta } from "../FileManager";
+ import { VaultTreeView } from "./VaultTreeView";
+-import { Notice } from "obsidian";
++import { SettingsManager, SavedPrompt } from "../SettingsManager";
+ 
+ /**
+  * MultiSelectModal (Vespera Scriptorium)
+@@ -57,6 +57,7 @@ export interface MultiSelectModalProps {
+   onConfirm: (selected: FileTreeNode[], prompt: string) => void;
+   onCancel?: () => void;
+   initialPrompt?: string;
++  settingsManager: SettingsManager;
+ }
+ 
+ /**
+@@ -88,6 +89,9 @@ export class MultiSelectModal extends Modal {
+   private selectedPaths: string[];
+   private selectionFeedbackEl?: HTMLElement;
+   private _gearBtn?: HTMLElement;
++  private settingsManager: SettingsManager;
++  private savedPrompts: SavedPrompt[] = [];
++  private isEditMode: boolean = false;
+ 
+   constructor(app: App, props: MultiSelectModalProps) {
+     super(app);
+@@ -97,34 +101,70 @@ export class MultiSelectModal extends Modal {
+     this.prompt = props.initialPrompt ?? "";
+     this.selection = {};
+     this.selectedPaths = [];
+-    // TODO: Initialize selection state from props/files
++    this.settingsManager = props.settingsManager;
++    // Load saved prompts
++    this.savedPrompts = this.settingsManager.getPrompts();
+   }
+ 
+   onOpen() {
++    console.log("MultiSelectModal.onOpen called");
++    
+     const { contentEl } = this;
+     contentEl.empty();
++    
++    // Add modal title for screen readers
++    contentEl.createEl("h2", {
++      text: "Select Files for Summarization",
++      cls: "vespera-modal-title sr-only",
++      attr: { "aria-live": "polite" }
++    });
++    
++    console.log("Added modal title");
++    
+     // --- Integration point: VaultTreeView ---
+     if (this.files.length === 0) {
+-      contentEl.createEl("div", { text: "No eligible files found in the vault.", cls: "vespera-empty-message" });
++      contentEl.createEl("div", {
++        text: "No eligible files found in the vault.",
++        cls: "vespera-empty-message",
++        attr: { "aria-live": "assertive", role: "alert" }
++      });
+       return;
+     }
+-    const treeContainer = contentEl.createDiv({ cls: "vespera-treeview-container" });
++    
++    const treeContainer = contentEl.createDiv({
++      cls: "vespera-treeview-container",
++      attr: {
++        role: "region",
++        "aria-label": "File selection tree"
++      }
++    });
+     treeContainer.style.position = "relative";
++    console.log("Initializing VaultTreeView with files:", this.files);
++    
+     // Instantiate the VaultTreeView with current files and selection
+-    this.treeView = new VaultTreeView({
+-      rootNodes: this.files,
+-      selectedPaths: this.selectedPaths,
+-      onSelect: (node: FileTreeNode) => {
+-        if (this.selectedPaths.includes(node.path)) {
+-          this.selectedPaths = this.selectedPaths.filter(p => p !== node.path);
+-        } else {
+-          this.selectedPaths = [...this.selectedPaths, node.path];
+-        }
+-        this.renderSelectionFeedback();
+-      },
+-      onExpandCollapse: (node: FileTreeNode, expanded: boolean) => {},
+-    });
+-    this.treeView.render(treeContainer);
++    try {
++      this.treeView = new VaultTreeView({
++        rootNodes: this.files,
++        selectedPaths: this.selectedPaths,
++        onSelect: (node: FileTreeNode) => {
++          console.log("Node selected:", node);
++          if (this.selectedPaths.includes(node.path)) {
++            this.selectedPaths = this.selectedPaths.filter(p => p !== node.path);
++          } else {
++            this.selectedPaths = [...this.selectedPaths, node.path];
++          }
++          this.renderSelectionFeedback();
++        },
++        onExpandCollapse: (node: FileTreeNode, expanded: boolean) => {
++          console.log("Node expanded/collapsed:", node, expanded);
++        },
++      });
++      console.log("VaultTreeView created:", this.treeView);
++      this.treeView.render(treeContainer);
++      console.log("VaultTreeView rendered");
++    } catch (error) {
++      console.error("Error creating VaultTreeView:", error);
++    }
+ 
+     // --- Move gear to treeview container ---
+     const gearBtn = treeContainer.createEl("button", { cls: "vespera-settings-btn", attr: { "aria-label": "Settings" } });
+@@ -135,6 +175,7 @@ export class MultiSelectModal extends Modal {
+     gearBtn.style.top = "0.5rem";
+     gearBtn.style.right = "0.5rem";
+     gearBtn.style.opacity = "0.4";
++    gearBtn.style.zIndex = "10"; // Ensure gear icon stays on top
+     gearBtn.addEventListener("mouseenter", () => gearBtn.style.opacity = "1");
+     gearBtn.addEventListener("mouseleave", () => { if (!gearBtn.matches(":focus")) gearBtn.style.opacity = "0.4"; });
+     gearBtn.addEventListener("focus", () => gearBtn.style.opacity = "1");
+@@ -142,44 +183,457 @@ export class MultiSelectModal extends Modal {
+     gearBtn.addEventListener("click", () => this.openSettings());
+     this._gearBtn = gearBtn;
+ 
+-    // --- Prompt textarea ---
+-    const promptContainer = contentEl.createDiv({ cls: "vespera-prompt-container" });
+-    promptContainer.style.margin = "1rem 0";
++    // --- Prompt management section ---
++    const promptSection = contentEl.createDiv({
++      cls: "vespera-prompt-section",
++      attr: {
++        role: "region",
++        "aria-label": "Prompt management"
++      }
++    });
++    promptSection.style.margin = "1rem 0";
++    promptSection.style.width = "100%";
++    
++    // Title input field
++    const titleContainer = promptSection.createDiv({ cls: "vespera-prompt-title-container" });
++    titleContainer.style.width = "100%";
++    titleContainer.style.marginBottom = "0.5rem";
++    
++    const titleInput = titleContainer.createEl("input", {
++      attr: {
++        type: "text",
++        placeholder: "Prompt Title",
++        "aria-label": "Prompt title"
++      },
++      cls: "vespera-prompt-title-input"
++    });
++    titleInput.style.width = "100%";
++    titleInput.style.padding = "0.5rem";
++    titleInput.style.borderRadius = "4px 4px 0 0";
++    
++    // Ensure cursor is in the field when selected
++    titleInput.addEventListener("focus", () => {
++      // If empty, place cursor at beginning, otherwise at end
++      const pos = titleInput.value.length;
++      titleInput.setSelectionRange(pos, pos);
++    });
++    
++    // Divider line that tapers to fine points
++    const divider = titleContainer.createDiv({ cls: "vespera-prompt-divider" });
++    divider.style.width = "100%";
++    divider.style.height = "1px";
++    divider.style.background = "linear-gradient(to right, transparent, var(--background-modifier-border) 10%, var(--background-modifier-border) 90%, transparent)";
++    divider.style.margin = "0";
++    
++    // Prompt textarea
++    const promptContainer = promptSection.createDiv({ cls: "vespera-prompt-container" });
+     promptContainer.style.width = "100%";
+-    const promptInput = promptContainer.createEl("textarea", { attr: { rows: "7", placeholder: "Enter your prompt..." }, cls: "vespera-prompt-input" });
++    const promptInput = promptContainer.createEl("textarea", {
++      attr: {
++        rows: "7",
++        placeholder: "Enter your prompt...",
++        "aria-label": "Summarization prompt"
++      },
++      cls: "vespera-prompt-input"
++    });
+     promptInput.tabIndex = 0;
+     promptInput.style.width = "100%";
+     promptInput.style.resize = "vertical";
++    
++    // Ensure cursor is in the field when selected
++    promptInput.addEventListener("focus", () => {
++      // If empty, place cursor at beginning, otherwise keep current position
++      if (!promptInput.value) {
++        promptInput.setSelectionRange(0, 0);
++      }
++    });
++    
++    // Set initial value from state
++    promptInput.value = this.prompt;
++    
++    // Update state when changed
++    promptInput.addEventListener("input", (e) => {
++      this.prompt = (e.target as HTMLTextAreaElement).value;
++    });
+ 
+-    // --- Saved prompts & retain checkbox group ---
+-    const actionsContainer = contentEl.createDiv({ cls: "vespera-prompt-actions-container", attr: { tabindex: "0", role: "group", "aria-label": "Saved prompts and retain" } });
+-    actionsContainer.style.display = "flex";
+-    actionsContainer.style.width = "100%";
+-    actionsContainer.style.position = "relative";
+-    actionsContainer.style.gap = "0.5rem";
+-    actionsContainer.style.alignItems = "center";
+-    actionsContainer.style.marginBottom = "1rem";
+-    const savedSelect = actionsContainer.createEl("select", { cls: "vespera-prompt-saved" });
++    // --- Saved prompts dropdown ---
++    const savedPromptsContainer = promptSection.createDiv({
++      cls: "vespera-saved-prompts-container",
++      attr: {
++        role: "region",
++        "aria-label": "Saved prompts"
++      }
++    });
++    savedPromptsContainer.style.marginBottom = "0.5rem";
++    
++    // Create a container for the dropdown in normal mode
++    const dropdownContainer = savedPromptsContainer.createDiv({
++      cls: "vespera-dropdown-container",
++      attr: { "data-mode": "normal" }
++    });
++    dropdownContainer.style.display = "flex";
++    dropdownContainer.style.width = "100%";
++    dropdownContainer.style.marginBottom = "0.5rem";
++    
++    // Create a custom dropdown container
++    const customDropdownContainer = dropdownContainer.createDiv({
++      cls: "vespera-custom-dropdown-container"
++    });
++    customDropdownContainer.style.position = "relative";
++    customDropdownContainer.style.width = "100%";
++    
++    // Create the select element (hidden but still accessible for keyboard navigation)
++    const savedSelect = customDropdownContainer.createEl("select", {
++      cls: "vespera-prompt-saved",
++      attr: {
++        "aria-label": "Select a saved prompt"
++      }
++    });
+     savedSelect.tabIndex = 0;
+-    savedSelect.style.flex = "1";
+-    savedSelect.style.minWidth = "0";
+-    const placeholderOptions = ["Lorem ipsum dolor sit amet", "Consectetur adipiscing elit", "Sed do eiusmod tempor"];
+-    placeholderOptions.forEach(text => {
+-      const opt = savedSelect.createEl("option", { text });
+-      opt.value = text;
+-    });
+-    savedSelect.addEventListener("keydown", (e) => {
+-      if (e.key === "Enter") {
+-        e.preventDefault();
+-        promptInput.value = savedSelect.value;
+-        promptInput.focus();
++    savedSelect.style.position = "absolute";
++    savedSelect.style.opacity = "0";
++    savedSelect.style.width = "100%";
++    savedSelect.style.height = "100%";
++    savedSelect.style.top = "0";
++    savedSelect.style.left = "0";
++    savedSelect.style.cursor = "pointer";
++    
++    // Create the custom dropdown display
++    const customDropdownDisplay = customDropdownContainer.createDiv({
++      cls: "vespera-custom-dropdown-display"
++    });
++    customDropdownDisplay.style.width = "100%";
++    customDropdownDisplay.style.padding = "0.5rem";
++    customDropdownDisplay.style.border = "1px solid var(--background-modifier-border)";
++    customDropdownDisplay.style.borderRadius = "4px";
++    customDropdownDisplay.style.backgroundColor = "var(--background-primary)";
++    customDropdownDisplay.style.cursor = "pointer";
++    customDropdownDisplay.style.display = "flex";
++    customDropdownDisplay.style.alignItems = "center";
++    customDropdownDisplay.style.justifyContent = "space-between";
++    
++    // Create the display text element
++    const displayText = customDropdownDisplay.createDiv({
++      text: "Select a saved prompt...",
++      cls: "vespera-dropdown-display-text"
++    });
++    
++    // Create the dropdown arrow
++    const dropdownArrow = customDropdownDisplay.createSpan({
++      cls: "vespera-dropdown-arrow"
++    });
++    dropdownArrow.innerHTML = "▼";
++    dropdownArrow.style.fontSize = "0.8em";
++    dropdownArrow.style.marginLeft = "8px";
++    
++    // Create the dropdown options container (initially hidden)
++    const dropdownOptions = customDropdownContainer.createDiv({
++      cls: "vespera-dropdown-options"
++    });
++    dropdownOptions.style.position = "absolute";
++    dropdownOptions.style.top = "100%";
++    dropdownOptions.style.left = "0";
++    dropdownOptions.style.width = "100%";
++    dropdownOptions.style.maxHeight = "200px";
++    dropdownOptions.style.overflowY = "auto";
++    dropdownOptions.style.backgroundColor = "var(--background-primary)";
++    dropdownOptions.style.border = "1px solid var(--background-modifier-border)";
++    dropdownOptions.style.borderTop = "none";
++    dropdownOptions.style.borderRadius = "0 0 4px 4px";
++    dropdownOptions.style.zIndex = "100";
++    dropdownOptions.style.display = "none";
++    
++    // Add a default "Select a prompt" option
++    const defaultOption = savedSelect.createEl("option", {
++      text: "Select a saved prompt...",
++      attr: { selected: "", disabled: "" }
++    });
++    defaultOption.value = "";
++    
++    // Create a default option in the custom dropdown
++    const defaultOptionDiv = dropdownOptions.createDiv({
++      cls: "vespera-prompt-preview",
++      attr: { "data-value": "" }
++    });
++    defaultOptionDiv.createDiv({
++      text: "Select a saved prompt...",
++      cls: "vespera-prompt-title"
++    });
++    
++    // Add saved prompts to both the select element and custom dropdown
++    this.savedPrompts.forEach(prompt => {
++      // Add to the select element
++      const opt = savedSelect.createEl("option", { text: prompt.title });
++      opt.value = prompt.id;
++      
++      // Add to the custom dropdown
++      const optionDiv = dropdownOptions.createDiv({
++        cls: "vespera-prompt-preview",
++        attr: { "data-value": prompt.id }
++      });
++      
++      // Create title element
++      optionDiv.createDiv({
++        text: prompt.title,
++        cls: "vespera-prompt-title"
++      });
++      
++      // Create content preview with fade-out effect
++      const contentPreview = optionDiv.createDiv({
++        cls: "vespera-prompt-content-preview"
++      });
++      contentPreview.textContent = prompt.content.substring(0, 100);
++      
++      // Add click handler to the option
++      optionDiv.addEventListener("click", () => {
++        // Update the select element value
++        savedSelect.value = prompt.id;
++        
++        // Update the display text
++        displayText.textContent = prompt.title;
++        
++        // Hide the dropdown
++        dropdownOptions.style.display = "none";
++        
++        // Trigger the change event on the select element
++        savedSelect.dispatchEvent(new Event("change"));
++      });
++    });
++    
++    // Toggle dropdown on click
++    customDropdownDisplay.addEventListener("click", () => {
++      const isVisible = dropdownOptions.style.display === "block";
++      dropdownOptions.style.display = isVisible ? "none" : "block";
++      
++      // Update arrow
++      dropdownArrow.innerHTML = isVisible ? "▼" : "▲";
++    });
++    
++    // Close dropdown when clicking outside
++    document.addEventListener("click", (e) => {
++      if (!customDropdownContainer.contains(e.target as Node)) {
++        dropdownOptions.style.display = "none";
++        dropdownArrow.innerHTML = "▼";
++      }
++    });
++    
++    // Connect saved prompts dropdown to the prompt textarea
++    savedSelect.addEventListener("change", (e) => {
++      const selectEl = e.target as HTMLSelectElement;
++      const promptId = selectEl.value;
++      
++      if (promptId && promptId !== "") {
++        // Find the prompt by ID
++        const prompt = this.savedPrompts.find(p => p.id === promptId);
++        
++        if (prompt) {
++          // Update the prompt textarea and title
++          promptInput.value = prompt.content;
++          this.prompt = prompt.content;
++          titleInput.value = prompt.title;
++          
++          // Update the display text
++          displayText.textContent = prompt.title;
++          
++          // Mark the prompt as used
++          this.settingsManager.markPromptAsUsed(promptId).catch(error => {
++            console.error("Failed to mark prompt as used:", error);
++          });
++          
++          // Focus the prompt textarea
++          promptInput.focus();
++        }
++      }
++    });
++    
++    // Create a container for the table in edit mode (initially hidden)
++    const tableContainer = savedPromptsContainer.createDiv({
++      cls: "vespera-table-container",
++      attr: {
++        "data-mode": "edit",
++        "aria-label": "Edit saved prompts"
+       }
+     });
+-    const retainCheckbox = actionsContainer.createEl("input", { attr: { type: "checkbox", id: "vespera-retain-checkbox" }, cls: "vespera-prompt-retain-checkbox" });
+-    retainCheckbox.tabIndex = 0;
+-    const retainLabel = actionsContainer.createEl("label", { attr: { for: "vespera-retain-checkbox" }, text: "Save current prompt?" });
+-    actionsContainer.addEventListener("focus", () => savedSelect.focus());
++    tableContainer.style.display = "none"; // Initially hidden
++    tableContainer.style.width = "100%";
++    tableContainer.style.marginBottom = "0.5rem";
++    
++    // Create the table for edit mode
++    const promptTable = tableContainer.createEl("table", {
++      cls: "vespera-prompt-table",
++      attr: { role: "grid" }
++    });
++    promptTable.style.width = "100%";
++    promptTable.style.borderCollapse = "collapse";
++    
++    // Create table header
++    const tableHead = promptTable.createEl("thead");
++    const headerRow = tableHead.createEl("tr");
++    
++    const titleHeader = headerRow.createEl("th", {
++      text: "Title",
++      attr: { scope: "col" }
++    });
++    titleHeader.style.textAlign = "left";
++    titleHeader.style.padding = "0.5rem";
++    
++    const actionsHeader = headerRow.createEl("th", {
++      text: "Actions",
++      attr: { scope: "col" }
++    });
++    actionsHeader.style.textAlign = "right";
++    actionsHeader.style.padding = "0.5rem";
++    actionsHeader.style.width = "80px";
++    
++    // Create table body
++    const tableBody = promptTable.createEl("tbody");
++    
++    // Add saved prompts to the table
++    this.savedPrompts.forEach(prompt => {
++      this.addPromptToTable(tableBody, prompt);
++    });
++    
++    // Add sorting dropdown in edit mode
++    const sortingContainer = tableContainer.createDiv({
++      cls: "vespera-sorting-container"
++    });
++    sortingContainer.style.display = "flex";
++    sortingContainer.style.justifyContent = "flex-end";
++    sortingContainer.style.marginTop = "0.5rem";
++    
++    sortingContainer.createEl("label", {
++      text: "Sort by: ",
++      attr: { for: "vespera-sort-select" }
++    });
++    
++    const sortSelect = sortingContainer.createEl("select", {
++      attr: { id: "vespera-sort-select" }
++    });
++    
++    const sortOptions = [
++      { value: "recent", text: "Most recently used" },
++      { value: "alpha-asc", text: "Title (A-Z)" },
++      { value: "alpha-desc", text: "Title (Z-A)" },
++      { value: "created", text: "Date created" }
++    ];
++    
++    sortOptions.forEach(option => {
++      const opt = sortSelect.createEl("option", { text: option.text });
++      opt.value = option.value;
++    });
++    
++    // Set default sort option
++    sortSelect.value = "recent";
++    
++    // Add event listener for sorting
++    sortSelect.addEventListener("change", () => {
++      const sortBy = sortSelect.value as 'recent' | 'alpha-asc' | 'alpha-desc' | 'created';
++      
++      // Sort the prompts
++      this.savedPrompts = this.settingsManager.sortPrompts(sortBy);
++      
++      // Clear and rebuild the table
++      tableBody.empty();
++      this.savedPrompts.forEach(prompt => {
++        this.addPromptToTable(tableBody, prompt);
++      });
++    });
+ 
++    // --- Prompt management buttons ---
++    const promptButtonsContainer = promptSection.createDiv({
++      cls: "vespera-prompt-buttons-container",
++      attr: { role: "group", "aria-label": "Prompt management buttons" }
++    });
++    promptButtonsContainer.style.display = "flex";
++    promptButtonsContainer.style.gap = "0.5rem";
++    promptButtonsContainer.style.justifyContent = "flex-end";
++    promptButtonsContainer.style.marginTop = "0.5rem";
++    
++    // Save/Update button
++    const saveButton = promptButtonsContainer.createEl("button", {
++      text: "Save",
++      cls: "vespera-save-prompt-btn",
++      attr: { "aria-label": "Save current prompt" }
++    });
++    saveButton.tabIndex = 0;
++    
++    // Edit button
++    const editButton = promptButtonsContainer.createEl("button", {
++      text: "Edit Prompts",
++      cls: "vespera-edit-prompts-btn",
++      attr: { "aria-label": "Edit saved prompts" }
++    });
++    editButton.tabIndex = 0;
++    
++    // Back button (initially hidden)
++    const backButton = promptButtonsContainer.createEl("button", {
++      text: "Back",
++      cls: "vespera-back-btn",
++      attr: { "aria-label": "Back to prompt selection" }
++    });
++    backButton.tabIndex = 0;
++    backButton.style.display = "none"; // Initially hidden
++    
++    // Add event listeners for prompt management
++    saveButton.addEventListener("click", async () => {
++      const title = titleInput.value.trim();
++      const promptText = promptInput.value.trim();
++      
++      if (!title) {
++        new Notice("Please enter a title for your prompt");
++        titleInput.focus();
++        return;
++      }
++      
++      if (!promptText) {
++        new Notice("Please enter a prompt");
++        promptInput.focus();
++        return;
++      }
++      
++      try {
++        // Save the prompt to storage
++        const savedPrompt = await this.settingsManager.savePrompt(title, promptText);
++        new Notice(`Prompt "${title}" saved!`);
++        
++        // Refresh saved prompts
++        this.savedPrompts = this.settingsManager.getPrompts();
++        
++        // Add to dropdown
++        const opt = savedSelect.createEl("option", { text: promptText });
++        opt.value = savedPrompt.id;
++        opt.setAttribute("data-title", title);
++        savedSelect.value = savedPrompt.id;
++        
++        // Add to table
++        this.addPromptToTable(tableBody, savedPrompt);
++      } catch (error) {
++        console.error("Failed to save prompt:", error);
++        new Notice("Failed to save prompt. Please try again.");
++      }
++    });
++    
++    // Toggle between normal and edit mode
++    let isEditMode = false;
++    
++    editButton.addEventListener("click", () => {
++      isEditMode = true;
++      dropdownContainer.style.display = "none";
++      tableContainer.style.display = "block";
++      editButton.style.display = "none";
++      backButton.style.display = "inline-block";
++      saveButton.style.display = "none";
++    });
++    
++    backButton.addEventListener("click", () => {
++      isEditMode = false;
++      dropdownContainer.style.display = "flex";
++      tableContainer.style.display = "none";
++      editButton.style.display = "inline-block";
++      backButton.style.display = "none";
++      saveButton.style.display = "inline-block";
++    });
++    
+     // --- Footer: Button group ---
+     const footer = contentEl.createDiv({ cls: "vespera-modal-footer" });
+     // Button group as a single tab stop
+@@ -239,6 +693,8 @@ export class MultiSelectModal extends Modal {
+         this.treeView["focusTreeContainer"].focus();
+       }
+     }, 0);
++    
++    console.log("MultiSelectModal.onOpen completed successfully");
+   }
+ 
+   onClose() {
+@@ -264,11 +720,171 @@ export class MultiSelectModal extends Modal {
+   }
+ 
+   private openSettings(): void {
+-    // Stub: will open settings panel in the future
+-    new Notice("Settings panel coming soon!");
++    // Create a settings panel
++    const settingsModal = new Modal(this.app);
++    settingsModal.titleEl.setText("Vespera Scriptorium Settings");
++    
++    const contentEl = settingsModal.contentEl;
++    
++    // Get current settings
++    const settings = this.settingsManager.getSettings();
++    
++    // Chunking settings section
++    const chunkingSection = contentEl.createDiv({ cls: "vespera-settings-section" });
++    chunkingSection.createEl("h3", { text: "Text Chunking Options" });
++    
++    // Chunk size
++    const chunkSizeContainer = chunkingSection.createDiv({ cls: "vespera-setting-item" });
++    chunkSizeContainer.createEl("label", {
++      text: "Chunk Size (tokens):",
++      attr: { for: "chunk-size-input" }
++    });
++    const chunkSizeInput = chunkSizeContainer.createEl("input", {
++      attr: {
++        type: "number",
++        id: "chunk-size-input",
++        value: settings.chunkSize.toString(),
++        min: "100",
++        max: "8000",
++        step: "100"
++      }
++    });
++    
++    // Chunk overlap
++    const overlapContainer = chunkingSection.createDiv({ cls: "vespera-setting-item" });
++    overlapContainer.createEl("label", {
++      text: "Chunk Overlap (tokens):",
++      attr: { for: "overlap-input" }
++    });
++    const overlapInput = overlapContainer.createEl("input", {
++      attr: {
++        type: "number",
++        id: "overlap-input",
++        value: settings.chunkOverlap.toString(),
++        min: "0",
++        max: "500",
++        step: "10"
++      }
++    });
++    
++    // Cleanup options section
++    const cleanupSection = contentEl.createDiv({ cls: "vespera-settings-section" });
++    cleanupSection.createEl("h3", { text: "Text Cleanup Options" });
++    
++    // Cleanup checkboxes
++    const checkboxes = [
++      { id: "cleanup-spelling", label: "Fix spelling errors", checked: settings.cleanup.spelling },
++      { id: "cleanup-punctuation", label: "Fix punctuation", checked: settings.cleanup.punctuation },
++      { id: "cleanup-formatting", label: "Normalize formatting", checked: settings.cleanup.formatting },
++      { id: "cleanup-whitespace", label: "Remove excessive whitespace", checked: settings.cleanup.whitespace }
++    ];
++    
++    const checkboxElements: Record<string, HTMLInputElement> = {};
++    
++    checkboxes.forEach(({ id, label, checked }) => {
++      const container = cleanupSection.createDiv({ cls: "vespera-setting-item" });
++      const checkbox = container.createEl("input", {
++        attr: {
++          type: "checkbox",
++          id
++        }
++      });
++      checkbox.checked = checked;
++      checkboxElements[id] = checkbox;
++      
++      container.createEl("label", {
++        text: label,
++        attr: { for: id }
++      });
++    });
++    
++    // Save button
++    const buttonContainer = contentEl.createDiv({ cls: "vespera-settings-buttons" });
++    const saveButton = buttonContainer.createEl("button", {
++      text: "Save Settings",
++      cls: "mod-cta"
++    });
++    saveButton.addEventListener("click", async () => {
++      // Save settings to plugin data
++      const updatedSettings = {
++        chunkSize: parseInt(chunkSizeInput.value),
++        chunkOverlap: parseInt(overlapInput.value),
++        cleanup: {
++          spelling: checkboxElements["cleanup-spelling"].checked,
++          punctuation: checkboxElements["cleanup-punctuation"].checked,
++          formatting: checkboxElements["cleanup-formatting"].checked,
++          whitespace: checkboxElements["cleanup-whitespace"].checked
++        }
++      };
++      
++      await this.settingsManager.updateSettings(updatedSettings);
++      new Notice("Settings saved!");
++      settingsModal.close();
++    });
++    
++    // Cancel button
++    const cancelButton = buttonContainer.createEl("button", {
++      text: "Cancel"
++    });
++    cancelButton.addEventListener("click", () => {
++      settingsModal.close();
++    });
++    
++    // Add some basic styling
++    contentEl.createEl("style", {
++      text: `
++        .vespera-settings-section {
++          margin-bottom: 20px;
++        }
++        .vespera-setting-item {
++          display: flex;
++          justify-content: space-between;
++          align-items: center;
++          margin: 10px 0;
++        }
++        .vespera-settings-buttons {
++          display: flex;
++          justify-content: flex-end;
++          gap: 10px;
++          margin-top: 20px;
++        }
++      `
++    });
++    
++    settingsModal.open();
+   }
+ 
+   private handleKeyboardEvents(e: KeyboardEvent): void {
++    // Get title and prompt input elements
++    const titleInput = this.contentEl.querySelector(".vespera-prompt-title-input") as HTMLInputElement;
++    const promptInput = this.contentEl.querySelector(".vespera-prompt-input") as HTMLTextAreaElement;
++    const promptButtons = Array.from(this.contentEl.querySelectorAll(".vespera-prompt-buttons-container button")) as HTMLButtonElement[];
++    
++    // Handle arrow key navigation between title and prompt fields
++    if (document.activeElement === titleInput && (e.key === "ArrowDown" || e.key === "Enter")) {
++      e.preventDefault();
++      promptInput.focus();
++      // Place cursor at the beginning of the text
++      promptInput.setSelectionRange(0, 0);
++      return;
++    }
++    
++    if (document.activeElement === promptInput && e.key === "ArrowUp" && promptInput.selectionStart === 0) {
++      e.preventDefault();
++      titleInput.focus();
++      // Place cursor at the end of the text
++      titleInput.setSelectionRange(titleInput.value.length, titleInput.value.length);
++      return;
++    }
++    
++    // Handle + key to access prompt management buttons
++    if ((e.key === "+" || e.code === "NumpadAdd") &&
++        (document.activeElement === titleInput || document.activeElement === promptInput)) {
++      e.preventDefault();
++      promptButtons[0]?.focus();
++      return;
++    }
++    
+     // Tab focus trap
+     const focusable = Array.from(this.containerEl.querySelectorAll("button, [tabindex]:not([tabindex='-1'])")) as HTMLElement[];
+     const first = focusable[0], last = focusable[focusable.length - 1];
+@@ -303,14 +919,158 @@ export class MultiSelectModal extends Modal {
+ 
+   private confirm(): void {
+     if (this.onConfirm) {
+-      // TODO: Gather selected FileTreeNode objects
+-      this.onConfirm([], this.prompt); // Replace [] with selected nodes
++      // Gather selected FileTreeNode objects
++      const selectedNodes: FileTreeNode[] = this.getSelectedNodes();
++      // Get prompt text from textarea
++      const promptEl = this.contentEl.querySelector(".vespera-prompt-input") as HTMLTextAreaElement;
++      this.prompt = promptEl ? promptEl.value : this.prompt;
++      
++      if (selectedNodes.length === 0) {
++        new Notice("Please select at least one file to continue");
++        return;
++      }
++      
++      this.onConfirm(selectedNodes, this.prompt);
+     }
+     this.close();
+   }
++  
++  // Helper to find selected nodes from paths
++  private getSelectedNodes(): FileTreeNode[] {
++    const selectedNodes: FileTreeNode[] = [];
++    
++    // Recursive function to find nodes by path
++    const findNodesByPath = (nodes: FileTreeNode[], selectedPaths: Set<string>) => {
++      for (const node of nodes) {
++        if (!node.isFolder && selectedPaths.has(node.path)) {
++          selectedNodes.push(node);
++        }
++        if (node.isFolder && node.children) {
++          findNodesByPath(node.children, selectedPaths);
++        }
++      }
++    };
++    
++    // Convert array to Set for faster lookups
++    const selectedPathsSet = new Set(this.selectedPaths);
++    findNodesByPath(this.files, selectedPathsSet);
++    
++    return selectedNodes;
++  }
+ 
+   private cancel(): void {
+     if (this.onCancel) this.onCancel();
+     this.close();
+   }
++  
++  /**
++   * Shows progress feedback for the summarization process.
++   * This is a stub that will be connected to the actual processing later.
++   *
++   * @param current Current file/chunk being processed
++   * @param total Total number of files/chunks to process
++   * @param message Optional status message
++   */
++  public showProgress(current: number, total: number, message?: string): void {
++    // Create or update progress pane
++    if (!this.app.workspace.rightSplit.collapsed) {
++      // If right sidebar is open, show progress there
++      this.showProgressInPane(current, total, message);
++    } else {
++      // Otherwise show as a notice
++      this.showProgressAsNotice(current, total, message);
++    }
++  }
++  
++  /**
++   * Shows progress in a dedicated pane in the right sidebar.
++   * This is a stub that will be implemented in ProgressPane.ts.
++   */
++  private showProgressInPane(current: number, total: number, message?: string): void {
++    // TODO: Implement ProgressPane integration
++    // This would create or update a leaf in the right sidebar
++    // with a progress bar and status message
++    
++    // For now, just show a notice
++    this.showProgressAsNotice(current, total, message);
++  }
++  
++  /**
++   * Shows progress as a notice at the bottom of the screen.
++   */
++  private showProgressAsNotice(current: number, total: number, message?: string): void {
++    const percent = Math.round((current / total) * 100);
++    const statusMessage = message || `Processing files...`;
++    new Notice(`${statusMessage} (${percent}% - ${current}/${total})`);
++  }
++  
++  /**
++   * Add a prompt to the table in edit mode
++   */
++  private addPromptToTable(tableBody: HTMLElement, prompt: SavedPrompt): void {
++    const row = tableBody.createEl("tr");
++    
++    const titleCell = row.createEl("td", { text: prompt.title });
++    titleCell.style.padding = "0.5rem";
++    
++    const actionsCell = row.createEl("td");
++    actionsCell.style.padding = "0.5rem";
++    actionsCell.style.textAlign = "right";
++    
++    const deleteBtn = actionsCell.createEl("button", {
++      cls: "vespera-delete-prompt",
++      attr: {
++        "aria-label": `Delete prompt ${prompt.title}`,
++        "data-prompt-id": prompt.id
++      }
++    });
++    deleteBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #e57373;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
++    deleteBtn.style.background = "none";
++    deleteBtn.style.border = "none";
++    deleteBtn.style.cursor = "pointer";
++    
++    deleteBtn.addEventListener("click", async (e) => {
++      e.stopPropagation();
++      // Show confirmation dialog
++      const confirmDelete = confirm(`Are you sure you want to delete the prompt "${prompt.title}"?`);
++      if (confirmDelete) {
++        try {
++          // Delete the prompt
++          const success = await this.settingsManager.deletePrompt(prompt.id);
++          if (success) {
++            row.remove();
++            
++            // Remove from dropdown
++            const option = Array.from(this.contentEl.querySelectorAll("select.vespera-prompt-saved option"))
++              .find(opt => opt.getAttribute("value") === prompt.id);
++            if (option) {
++              option.remove();
++            }
++            
++            // Refresh saved prompts
++            this.savedPrompts = this.settingsManager.getPrompts();
++            
++            new Notice(`Deleted prompt: ${prompt.title}`);
++          } else {
++            new Notice(`Failed to delete prompt: ${prompt.title}`);
++          }
++        } catch (error) {
++          console.error("Failed to delete prompt:", error);
++          new Notice("Failed to delete prompt. Please try again.");
++        }
++      }
++    });
++    
++    // Make the row clickable to load the prompt
++    row.style.cursor = "pointer";
++    row.addEventListener("click", () => {
++      const titleInput = this.contentEl.querySelector(".vespera-prompt-title-input") as HTMLInputElement;
++      const promptInput = this.contentEl.querySelector(".vespera-prompt-input") as HTMLTextAreaElement;
++      
++      promptInput.value = prompt.content;
++      this.prompt = prompt.content;
++      titleInput.value = prompt.title;
++      promptInput.focus();
++    });
++  }
+ }
+diff --git a/src/UI/VaultTreeView.ts b/src/UI/VaultTreeView.ts
+index 9cf7d75..f069015 100644
+--- a/src/UI/VaultTreeView.ts
++++ b/src/UI/VaultTreeView.ts
+@@ -50,11 +50,17 @@ export class VaultTreeView {
+   }
+ 
+   render(container: HTMLElement): void {
++    console.log("VaultTreeView.render called with container:", container);
+     this._rootContainer = container;
+     container.empty();
+     const treeRoot = container.createEl("div", {
+       cls: "nav-files-container vespera-treeview-root vespera-treeview-card",
+-      attr: { tabindex: "0", role: "tree" }
++      attr: {
++        tabindex: "0",
++        role: "tree",
++        "aria-label": "Vault files and folders",
++        "aria-multiselectable": "true"
++      }
+     });
+     this.focusTreeContainer = treeRoot;
+     // Focus on mount if not already
+@@ -72,8 +78,13 @@ export class VaultTreeView {
+       this.renderNode(node, treeRoot, 0);
+     });
+     // Footer
+-    const footer = container.createDiv({cls: "vespera-treeview-footer"});
+-    footer.textContent = "Right-click or Space to select item. Ctrl/Cmd+click for multi-select.";
++    const footer = container.createDiv({
++      cls: "vespera-treeview-footer",
++      attr: { "aria-live": "polite", role: "status" }
++    });
++    footer.textContent = "Right-click, Space, or Enter to select files. Shift+Enter to select folders. Ctrl/Cmd+click for multi-select.";
++    
++    console.log("VaultTreeView.render completed with rootNodes:", this.rootNodes);
+   }
+ 
+   private getVisibleNodes(): FileTreeNode[] {
+@@ -94,8 +105,11 @@ export class VaultTreeView {
+   }
+ 
+   private renderNode(node: FileTreeNode, parent: HTMLElement, depth: number): void {
++    console.log("Rendering node:", node, "at depth:", depth);
++    
+     // Skip folders that have no files anywhere in their subtree
+     if (node.isFolder && !this.hasRenderableDescendant(node)) {
++      console.log("Skipping empty folder:", node.path);
+       return;
+     }
+     if (node.isFolder) {
+@@ -109,12 +123,23 @@ export class VaultTreeView {
+           fullySelected ? "is-selected" : "",
+           partiallySelected ? "is-partial" : "",
+           isFocused ? "is-focused" : ""
+-        ].join(" ")
++        ].join(" "),
++        attr: {
++          role: "treeitem",
++          "aria-expanded": this.expanded.has(node.path) ? "true" : "false",
++          "aria-selected": fullySelected ? "true" : partiallySelected ? "mixed" : "false",
++          "aria-label": `Folder: ${node.name}`
++        }
+       });
+       // Folder title row (clickable for expand/collapse & selection)
+       const titleEl = folderEl.createDiv({
+         cls: ["nav-folder-title", isFocused ? "is-focused" : ""].join(" "),
+-        attr: { style: `margin-left: ${depth * 18}px; display: flex; align-items: center; cursor: pointer;` }
++        attr: {
++          style: `margin-left: ${depth * 18}px; display: flex; align-items: center; cursor: pointer;`,
++          role: "button",
++          "aria-label": `Toggle folder ${node.name}`,
++          tabindex: isFocused ? "0" : "-1"
++        }
+       });
+       // Folder icon
+       const iconSpan = titleEl.createSpan({ cls: "nav-folder-icon" });
+@@ -181,13 +206,7 @@ export class VaultTreeView {
+           }
+         }
+       });
+-      // Left-click: expand/collapse only
+-      titleEl.addEventListener("click", (e) => {
+-        e.stopPropagation();
+-        this.toggleExpand(node);
+-        this.focusedPath = node.path;
+-        if (this._rootContainer) this.render(this._rootContainer);
+-      });
++      // Left-click: expand/collapse only (this was duplicated - removing this listener)
+       // Children container (always present)
+       let childrenEl: HTMLElement | undefined;
+       if (node.children && node.children.length > 0) {
+@@ -201,11 +220,21 @@ export class VaultTreeView {
+       const isSelected = this.selectedPaths.has(node.path);
+       const isFocused = this.focusedPath === node.path;
+       const fileEl = parent.createDiv({
+-        cls: ["nav-file", isSelected ? "is-selected" : "", isFocused ? "is-focused" : ""].join(" ")
++        cls: ["nav-file", isSelected ? "is-selected" : "", isFocused ? "is-focused" : ""].join(" "),
++        attr: {
++          role: "treeitem",
++          "aria-selected": isSelected ? "true" : "false",
++          "aria-label": `File: ${node.name}${node.extension ? `, ${node.extension.toUpperCase()}` : ""}${node.size ? `, ${node.size} bytes` : ""}`
++        }
+       });
+       const titleEl = fileEl.createDiv({
+         cls: ["nav-file-title", isFocused ? "is-focused" : ""].join(" "),
+-        attr: { style: `margin-left: ${depth * 18 + 18}px; display: flex; align-items: center; cursor: pointer;` }
++        attr: {
++          style: `margin-left: ${depth * 18 + 18}px; display: flex; align-items: center; cursor: pointer;`,
++          role: "button",
++          "aria-label": `Select file ${node.name}`,
++          tabindex: isFocused ? "0" : "-1"
++        }
+       });
+       // Icon
+       const iconSpan = titleEl.createSpan({ cls: "nav-file-icon" });
+@@ -231,7 +260,7 @@ export class VaultTreeView {
+         if (this._rootContainer) this.render(this._rootContainer);
+       });
+       titleEl.addEventListener("keydown", (e) => {
+-        // Enter, NumpadEnter, Spacebar: select file (ignore shift)
++        // Enter, NumpadEnter, Spacebar: select file (ignore shift for files)
+         if (
+           e.key === " " ||
+           e.key === "Spacebar" ||
+@@ -375,8 +404,15 @@ export class VaultTreeView {
+       }
+       e.preventDefault();
+     } else if (isEnter) {
+-      // Enter toggles expand/collapse for folders
+-      if (node.isFolder) {
++      // With Shift: select folder recursively (like spacebar)
++      if (e.shiftKey && node.isFolder) {
++        this.toggleSelection(node);
++        if (this._rootContainer) this.render(this._rootContainer);
++        e.preventDefault();
++      }
++      // Without Shift: toggle folders, select files
++      else if (node.isFolder) {
++        // Enter toggles expand/collapse for folders
+         if (this.expanded.has(node.path)) {
+           this.expanded.delete(node.path);
+         } else {
+@@ -384,6 +420,11 @@ export class VaultTreeView {
+         }
+         if (this._rootContainer) this.render(this._rootContainer);
+         e.preventDefault();
++      } else {
++        // Enter selects files (like spacebar)
++        this.toggleSelection(node);
++        if (this._rootContainer) this.render(this._rootContainer);
++        e.preventDefault();
+       }
+     }
+   }
+diff --git a/src/main.ts b/src/main.ts
+index baeba66..89fb8f7 100644
+--- a/src/main.ts
++++ b/src/main.ts
+@@ -1,45 +1,71 @@
+ import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+ import { discoverVaultTreeFromRoot } from "./FileManager";
+ import { MultiSelectModal, FileTreeNode } from "./UI/MultiSelectModal";
++import { SettingsManager, VesperaScriptoriumSettings, DEFAULT_SETTINGS as DEFAULT_VESPERA_SETTINGS } from "./SettingsManager";
+ import quillScrollSVG from '../assets/quill-svgrepo-com.svg';
+ import quillScrollOutlineSVG from '../assets/sign-svgrepo-com.svg';
+ 
+-// Remember to rename these classes and interfaces!
+-
+-interface MyPluginSettings {
+-	mySetting: string;
+-}
+-
+-const DEFAULT_SETTINGS: MyPluginSettings = {
+-	mySetting: 'default'
+-}
+-
+-export default class MyPlugin extends Plugin {
+-	settings!: MyPluginSettings;
++export default class VesperaScriptoriumPlugin extends Plugin {
++	settings!: VesperaScriptoriumSettings;
++	settingsManager!: SettingsManager;
+ 
+ 	async onload() {
+-		await this.loadSettings();
++		// Initialize settings manager
++		this.settingsManager = new SettingsManager(this.app);
++		await this.settingsManager.initialize();
++		this.settings = this.settingsManager.getSettings();
+ 
+ 		// This creates an icon in the left ribbon.
+ 		const ribbonIconEl = this.addRibbonIcon('vespera-scroll', 'Vespera Scriptorium', (evt: MouseEvent) => {
+-			// Open the file selection modal directly from the ribbon icon, using folder-aware tree
+-			const treeNodes = discoverVaultTreeFromRoot(this.app.vault);
+-			new MultiSelectModal(this.app, {
+-				files: treeNodes,
+-				onConfirm: (selected: FileTreeNode[], prompt: string) => {
+-					new Notice(`${selected.length} file(s) selected for summarization.`);
+-					// TODO: Pass selected to next workflow step (Parser)
+-				}
+-			}).open();
++			console.log("Ribbon icon clicked");
++			try {
++				// Open the file selection modal directly from the ribbon icon, using folder-aware tree
++				const treeNodes = discoverVaultTreeFromRoot(this.app.vault);
++				console.log("Tree nodes:", treeNodes);
++				
++				const modal = new MultiSelectModal(this.app, {
++					files: treeNodes,
++					settingsManager: this.settingsManager,
++					onConfirm: (selected: FileTreeNode[], prompt: string) => {
++						new Notice(`${selected.length} file(s) selected for summarization.`);
++						// TODO: Pass selected to next workflow step (Parser)
++					}
++				});
++				console.log("Modal created:", modal);
++				modal.open();
++				console.log("Modal opened");
++			} catch (error: any) {
++				console.error("Error opening modal:", error);
++				new Notice("Error opening modal: " + (error.message || String(error)));
++			}
+ 		});
+ 		// Set custom SVG and hover effect
+ 		ribbonIconEl.innerHTML = quillScrollSVG;
+ 		ribbonIconEl.classList.add('vespera-ribbon-icon');
++		
++		// Make sure the entire icon is clickable by adding a background
++		ribbonIconEl.style.position = "relative";
++		
++		// Add a transparent background to make the entire area clickable
++		const clickArea = document.createElement('div');
++		clickArea.style.position = "absolute";
++		clickArea.style.top = "0";
++		clickArea.style.left = "0";
++		clickArea.style.width = "100%";
++		clickArea.style.height = "100%";
++		clickArea.style.cursor = "pointer";
++		ribbonIconEl.appendChild(clickArea);
++		
++		// Handle hover effects
+ 		ribbonIconEl.addEventListener('mouseenter', () => {
+ 			ribbonIconEl.innerHTML = quillScrollOutlineSVG;
++			// Re-add the click area after changing the innerHTML
++			ribbonIconEl.appendChild(clickArea);
+ 		});
+ 		ribbonIconEl.addEventListener('mouseleave', () => {
+ 			ribbonIconEl.innerHTML = quillScrollSVG;
++			// Re-add the click area after changing the innerHTML
++			ribbonIconEl.appendChild(clickArea);
+ 		});
+ 
+ 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
+@@ -90,14 +116,26 @@ export default class MyPlugin extends Plugin {
+ 			id: 'open-vespera-file-selector',
+ 			name: 'Vespera: Select files for summarization',
+ 			callback: () => {
+-				const treeNodes = discoverVaultTreeFromRoot(this.app.vault);
+-				new MultiSelectModal(this.app, {
+-					files: treeNodes,
+-					onConfirm: (selected: FileTreeNode[], prompt: string) => {
+-						new Notice(`${selected.length} file(s) selected for summarization.`);
+-						// TODO: Pass selected to next workflow step (Parser)
+-					}
+-				}).open();
++				console.log("Command callback executed");
++				try {
++					const treeNodes = discoverVaultTreeFromRoot(this.app.vault);
++					console.log("Tree nodes:", treeNodes);
++					
++					const modal = new MultiSelectModal(this.app, {
++						files: treeNodes,
++						settingsManager: this.settingsManager,
++						onConfirm: (selected: FileTreeNode[], prompt: string) => {
++							new Notice(`${selected.length} file(s) selected for summarization.`);
++							// TODO: Pass selected to next workflow step (Parser)
++						}
++					});
++					console.log("Modal created:", modal);
++					modal.open();
++					console.log("Modal opened");
++				} catch (error: any) {
++					console.error("Error opening modal from command:", error);
++					new Notice("Error opening modal: " + (error.message || String(error)));
++				}
+ 			}
+ 		});
+ 		// --- End Integration ---
+@@ -120,11 +158,19 @@ export default class MyPlugin extends Plugin {
+ 	}
+ 
+ 	async loadSettings() {
+-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
++		// Load plugin data and merge with settings
++		const data = await this.loadData();
++		if (data) {
++			// Update settings manager with any saved plugin data
++			await this.settingsManager.updateSettings(data);
++		}
++		// Always get the latest settings
++		this.settings = this.settingsManager.getSettings();
+ 	}
+ 
+ 	async saveSettings() {
+ 		await this.saveData(this.settings);
++		await this.settingsManager.updateSettings(this.settings);
+ 	}
+ }
+ 
+@@ -145,9 +191,9 @@ class SampleModal extends Modal {
+ }
+ 
+ class SampleSettingTab extends PluginSettingTab {
+-	plugin: MyPlugin;
++	plugin: VesperaScriptoriumPlugin;
+ 
+-	constructor(app: App, plugin: MyPlugin) {
++	constructor(app: App, plugin: VesperaScriptoriumPlugin) {
+ 		super(app, plugin);
+ 		this.plugin = plugin;
+ 	}
+@@ -157,14 +203,75 @@ class SampleSettingTab extends PluginSettingTab {
+ 
+ 		containerEl.empty();
+ 
++		containerEl.createEl('h2', { text: 'Vespera Scriptorium Settings' });
++
++		// Chunking settings
++		containerEl.createEl('h3', { text: 'Text Chunking Options' });
++
++		new Setting(containerEl)
++			.setName('Chunk Size (tokens)')
++			.setDesc('The maximum number of tokens in each chunk')
++			.addSlider(slider => slider
++				.setLimits(100, 8000, 100)
++				.setValue(this.plugin.settings.chunkSize)
++				.setDynamicTooltip()
++				.onChange(async (value) => {
++					this.plugin.settings.chunkSize = value;
++					await this.plugin.saveSettings();
++				}));
++
++		new Setting(containerEl)
++			.setName('Chunk Overlap (tokens)')
++			.setDesc('The number of tokens to overlap between chunks')
++			.addSlider(slider => slider
++				.setLimits(0, 500, 10)
++				.setValue(this.plugin.settings.chunkOverlap)
++				.setDynamicTooltip()
++				.onChange(async (value) => {
++					this.plugin.settings.chunkOverlap = value;
++					await this.plugin.saveSettings();
++				}));
++
++		// Cleanup settings
++		containerEl.createEl('h3', { text: 'Text Cleanup Options' });
++
++		new Setting(containerEl)
++			.setName('Fix spelling errors')
++			.setDesc('Attempt to fix spelling errors in the text')
++			.addToggle(toggle => toggle
++				.setValue(this.plugin.settings.cleanup.spelling)
++				.onChange(async (value) => {
++					this.plugin.settings.cleanup.spelling = value;
++					await this.plugin.saveSettings();
++				}));
++
++		new Setting(containerEl)
++			.setName('Fix punctuation')
++			.setDesc('Attempt to fix punctuation in the text')
++			.addToggle(toggle => toggle
++				.setValue(this.plugin.settings.cleanup.punctuation)
++				.onChange(async (value) => {
++					this.plugin.settings.cleanup.punctuation = value;
++					await this.plugin.saveSettings();
++				}));
++
++		new Setting(containerEl)
++			.setName('Normalize formatting')
++			.setDesc('Normalize formatting in the text')
++			.addToggle(toggle => toggle
++				.setValue(this.plugin.settings.cleanup.formatting)
++				.onChange(async (value) => {
++					this.plugin.settings.cleanup.formatting = value;
++					await this.plugin.saveSettings();
++				}));
++
+ 		new Setting(containerEl)
+-			.setName('Setting #1')
+-			.setDesc('It\'s a secret')
+-			.addText(text => text
+-				.setPlaceholder('Enter your secret')
+-				.setValue(this.plugin.settings.mySetting)
++			.setName('Remove excessive whitespace')
++			.setDesc('Remove excessive whitespace in the text')
++			.addToggle(toggle => toggle
++				.setValue(this.plugin.settings.cleanup.whitespace)
+ 				.onChange(async (value) => {
+-					this.plugin.settings.mySetting = value;
++					this.plugin.settings.cleanup.whitespace = value;
+ 					await this.plugin.saveSettings();
+ 				}));
+ 	}
+diff --git a/styles.css b/styles.css
+index f78ac14..cb19c75 100644
+--- a/styles.css
++++ b/styles.css
+@@ -12,10 +12,25 @@ If your plugin does not need CSS, delete this file.
+ 	height: 24px;
+ 	display: block;
+ 	margin: auto;
++	position: relative;
++	z-index: 1;
+ }
+ 
+ .vespera-ribbon-icon {
+ 	color: var(--icon-color);
++	position: relative;
++	cursor: pointer;
++}
++
++/* Ensure the entire ribbon icon is clickable */
++.vespera-ribbon-icon::after {
++	content: "";
++	position: absolute;
++	top: 0;
++	left: 0;
++	width: 100%;
++	height: 100%;
++	z-index: 0;
+ }
+ 
+ .vespera-treeview-card {
+@@ -195,3 +210,37 @@ If your plugin does not need CSS, delete this file.
+ .vespera-prompt-saved:focus {
+   width: 100%;
+ }
++
++/* Custom styling for prompt dropdown */
++.vespera-prompt-preview {
++  position: relative;
++  display: flex;
++  align-items: center;
++  padding: 8px 12px;
++  cursor: pointer;
++  border-bottom: 1px solid var(--background-modifier-border);
++}
++
++.vespera-prompt-title {
++  font-weight: 600;
++  margin-right: 8px;
++  white-space: nowrap;
++}
++
++.vespera-prompt-content-preview {
++  color: var(--text-muted);
++  white-space: nowrap;
++  overflow: hidden;
++  position: relative;
++  max-width: 60%;
++}
++
++.vespera-prompt-content-preview::after {
++  content: "";
++  position: absolute;
++  right: 0;
++  top: 0;
++  height: 100%;
++  width: 40px;
++  background: linear-gradient(to right, transparent, var(--background-primary));
++}

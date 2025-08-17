@@ -1,0 +1,12 @@
+{
+	"id": "vespera-scriptorium",
+	"name": "Vespera Scriptorium",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "Extracts and summarizes story fragments from mixed Vault content.",
+	"author": "Echoing Vesper",
+	"authorUrl": "https://github.com/EchoingVesper",
+	"fundingUrl": "https://github.com/sponsors/EchoingVesper",
+	"isDesktopOnly": false,
+	"license": "AGPL-3.0-only"
+}

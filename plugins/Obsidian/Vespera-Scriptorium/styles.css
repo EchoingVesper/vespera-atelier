@@ -1,0 +1,260 @@
+/*
+
+This CSS file will be included with your plugin, and
+available in the app when your plugin is enabled.
+
+If your plugin does not need CSS, delete this file.
+
+*/
+
+.vespera-ribbon-icon svg {
+	width: 24px;
+	height: 24px;
+	display: block;
+	margin: auto;
+	position: relative;
+	z-index: 1;
+}
+
+.vespera-ribbon-icon {
+	color: var(--icon-color);
+	position: relative;
+	cursor: pointer;
+}
+
+/* Ensure the entire ribbon icon is clickable */
+.vespera-ribbon-icon::after {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 0;
+}
+
+.vespera-treeview-card {
+  background: var(--background-secondary, #23232a);
+  border-radius: 12px;
+  box-shadow: 0 4px 18px 0 rgba(0,0,0,0.18), 0 1.5px 4px 0 rgba(0,0,0,0.12);
+  padding: 18px 12px 12px 12px;
+  margin: 12px 0;
+  transition: box-shadow 0.18s;
+}
+
+.vespera-treeview-root {
+  /* Ensure full width for highlight bar */
+  min-width: 320px;
+  max-width: 100%;
+}
+
+.vespera-treeview-meta {
+  color: var(--text-faint, #888);
+  font-size: 0.85em;
+  margin-left: 8px;
+  letter-spacing: 0.03em;
+}
+
+.vespera-meta-ext {
+  color: var(--text-muted, #aaa);
+  font-size: 0.85em;
+  margin-left: 6px;
+  border-radius: 4px;
+  padding: 0 4px;
+  background: var(--background-modifier-hover, #353545);
+}
+
+.vespera-meta-size {
+  color: var(--text-faint, #888);
+  margin-left: 4px;
+}
+
+/* --- Treeview Selection States --- */
+.vespera-treeview-root .nav-file,
+.vespera-treeview-root .nav-folder {
+  margin: 2px 0;
+  border-radius: 6px;
+  min-height: 28px;
+  position: relative;
+}
+
+/* Green tint for fully selected */
+.vespera-treeview-root .nav-file.is-selected,
+.vespera-treeview-root .nav-folder.is-selected {
+  background: linear-gradient(90deg, rgba(130,255,180,0.14) 0%, rgba(130,255,180,0.08) 100%);
+  border-radius: 6px;
+  box-shadow: 0 0 0 2px rgba(130,255,180,0.22);
+  color: var(--text-normal);
+}
+
+/* Faint green border for partially selected folders */
+.vespera-treeview-root .nav-folder.is-partial {
+  background: none;
+  border-radius: 6px;
+  box-shadow: 0 0 0 2px rgba(130,255,180,0.11);
+}
+
+/* Blue/purple focus box for keyboard focus or hover only */
+.vespera-treeview-root .nav-file.is-focused,
+.vespera-treeview-root .nav-folder.is-focused {
+  outline: 2px solid var(--color-accent, #a586ff);
+  outline-offset: -2px;
+  border-radius: 6px;
+  z-index: 2;
+}
+.vespera-treeview-root .nav-file:hover:not(.is-selected):not(.is-partial),
+.vespera-treeview-root .nav-folder:hover:not(.is-selected):not(.is-partial) {
+  outline: 2px solid var(--color-accent, #a586ff);
+  outline-offset: -2px;
+  border-radius: 6px;
+  z-index: 2;
+}
+
+.vespera-treeview-footer {
+  margin-top: 12px;
+  padding: 7px 0 0 0;
+  color: var(--text-faint, #7bb);
+  font-size: 0.97em;
+  text-align: center;
+  opacity: 0.88;
+  -webkit-user-select: none; 
+  user-select: none;
+}
+
+/* Settings gear overlay in treeview */
+.vespera-treeview-container {
+  position: relative;
+}
+.vespera-settings-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 2;
+  background: none;
+  border: none;
+  padding: 0.2rem;
+  border-radius: 50%;
+  opacity: 0.4;
+  transition: opacity 0.2s, background 0.2s;
+  color: var(--interactive-accent, #5ad6a3);
+  outline: none;
+  cursor: pointer;
+}
+.vespera-settings-btn:hover,
+.vespera-settings-btn:focus {
+  opacity: 1;
+  background: var(--background-modifier-hover, #232323);
+}
+.vespera-settings-btn:active {
+  background: var(--background-modifier-active, #2e2e2e);
+}
+
+.vespera-modal-footer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0 0.5rem 0.5rem 0.5rem;
+  margin-top: 1.5rem;
+}
+.vespera-modal-button-group {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.2rem;
+  outline: none;
+  align-self: flex-end;
+}
+.vespera-modal-button-group:focus {
+  box-shadow: 0 0 0 2px var(--color-accent, #a586ff);
+}
+.vespera-modal-button-group button {
+  min-width: 86px;
+  /* Remove tab focus ring, handled by group */
+  outline: none;
+}
+.vespera-selection-feedback {
+  margin: 0.7em 0 0 0;
+  text-align: left;
+  color: var(--text-faint, #7bb);
+  font-size: 0.97em;
+  opacity: 0.88;
+  padding-left: 0.5rem;
+}
+
+.vespera-prompt-input.vespera-prompt-retain-on {
+  outline: 2px solid var(--color-accent, #a586ff);
+  outline-offset: 2px;
+}
+
+.vespera-prompt-container {
+  width: 100%;
+}
+.vespera-prompt-input {
+  width: 100%;
+  resize: vertical;
+}
+.vespera-prompt-actions-container {
+  width: 100%;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.vespera-prompt-saved {
+  flex: 1;
+  min-width: 0;
+  /* When open, position absolute to cover checkbox */
+  position: relative;
+}
+.vespera-prompt-saved:focus {
+  width: 100%;
+}
+
+/* Custom styling for prompt dropdown */
+.vespera-prompt-preview {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.vespera-prompt-title {
+  font-weight: 600;
+  margin-right: 8px;
+  white-space: nowrap;
+}
+
+.vespera-prompt-content-preview {
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  position: relative;
+  max-width: 60%;
+}
+
+.vespera-prompt-content-preview::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 40px;
+  background: linear-gradient(to right, transparent, var(--background-primary));
+}
+
+.vespera-treeview-root .nav-file.is-selected,
+.vespera-treeview-root .nav-folder.is-selected {
+  background: linear-gradient(90deg, rgba(130,255,180,0.14) 0%, rgba(130,255,180,0.08) 100%);
+  border-radius: 6px;
+  box-shadow: 0 0 0 2px rgba(130,255,180,0.22);
+  color: var(--text-normal);
+}
+
+.vespera-treeview-root .nav-folder.is-partial {
+  background: none;
+  border-radius: 6px;
+  box-shadow: 0 0 0 2px rgba(130,255,180,0.11);
+}

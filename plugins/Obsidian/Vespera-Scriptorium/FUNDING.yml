@@ -1,0 +1,4 @@
+# .github/FUNDING.yml
+github: EchoingVesper          # enables the Sponsor button
+kofi: echoingvesper         # shows a Ko-fi badge
+custom: ["https://patreon.com/EchoingVesper"]  # optional
