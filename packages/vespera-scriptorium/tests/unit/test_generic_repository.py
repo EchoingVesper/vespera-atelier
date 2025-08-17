@@ -11,8 +11,8 @@ from typing import List
 import tempfile
 import os
 
-# from vespera_scriptorium.db.generic_repository import  # TODO: Complete this import
-# from vespera_scriptorium.orchestrator.generic_models import  # TODO: Complete this import
+from vespera_scriptorium.db.generic_repository import GenericTaskRepository
+from vespera_scriptorium.orchestrator.generic_models import Task
 
 
 @pytest.fixture
