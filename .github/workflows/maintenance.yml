@@ -555,7 +555,7 @@ jobs:
         
         # Check for broken internal links
         echo "Checking for broken internal links..."
-        python -c "
+        python3 -c '
 import re
 import os
 from pathlib import Path
@@ -564,41 +564,44 @@ broken_links = []
 all_files = set()
 
 # Get all existing files
-for root, dirs, files in os.walk('.'):
-    if '.git' in root or 'node_modules' in root:
+for root, dirs, files in os.walk("."):
+    if ".git" in root or "node_modules" in root:
         continue
     for file in files:
-        rel_path = os.path.relpath(os.path.join(root, file), '.')
+        rel_path = os.path.relpath(os.path.join(root, file), ".")
         all_files.add(rel_path)
 
 # Check markdown files for links
-for md_file in Path('.').rglob('*.md'):
-    if '.git' in str(md_file) or 'node_modules' in str(md_file):
+for md_file in Path(".").rglob("*.md"):
+    if ".git" in str(md_file) or "node_modules" in str(md_file):
         continue
     
-    with open(md_file, 'r', encoding='utf-8', errors='ignore') as f:
-        content = f.read()
-    
-    # Find relative links
-    links = re.findall(r'\[.*?\]\(([^)]+)\)', content)
-    for link in links:
-        if link.startswith('http') or link.startswith('#'):
-            continue
+    try:
+        with open(md_file, "r", encoding="utf-8", errors="ignore") as f:
+            content = f.read()
         
-        # Resolve relative path
-        link_path = os.path.normpath(os.path.join(os.path.dirname(md_file), link))
-        if link_path not in all_files:
-            broken_links.append(f'{md_file}: {link}')
+        # Find relative links
+        links = re.findall(r"\[.*?\]\(([^)]+)\)", content)
+        for link in links:
+            if link.startswith("http") or link.startswith("#"):
+                continue
+            
+            # Resolve relative path
+            link_path = os.path.normpath(os.path.join(os.path.dirname(md_file), link))
+            if link_path not in all_files:
+                broken_links.append(f"{md_file}: {link}")
+    except Exception as e:
+        print(f"Error processing {md_file}: {e}")
 
 if broken_links:
-    print('Broken internal links found:')
+    print("Broken internal links found:")
     for link in broken_links[:10]:
-        print(f'  {link}')
+        print(f"  {link}")
     if len(broken_links) > 10:
-        print(f'  ... and {len(broken_links) - 10} more')
+        print(f"  ... and {len(broken_links) - 10} more")
 else:
-    print('No broken internal links found')
-"
+    print("No broken internal links found")
+'
     
     - name: Update Documentation Timestamps
       run: |
