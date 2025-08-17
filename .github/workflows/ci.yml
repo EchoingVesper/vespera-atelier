@@ -10,6 +10,7 @@ jobs:
   # Test vespera-scriptorium package
   test-vespera-scriptorium:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       matrix:
         python-version: ['3.10', '3.11', '3.12']
@@ -68,6 +69,7 @@ jobs:
   # Test vespera-utilities package  
   test-vespera-utilities:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       matrix:
         node-version: ['18', '20', '21']
@@ -85,7 +87,7 @@ jobs:
     - name: Install pnpm
       uses: pnpm/action-setup@v4
       with:
-        version: latest
+        version: 8.15.0
     
     - name: Install dependencies
       working-directory: vespera-utilities
@@ -106,6 +108,7 @@ jobs:
   # Test Obsidian plugin
   test-obsidian-plugin:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     
     steps:
     - uses: actions/checkout@v5
@@ -116,6 +119,11 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
+    
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 8.15.0
     
     - name: Install dependencies
       working-directory: plugins/Obsidian/Vespera-Scriptorium
@@ -133,6 +141,7 @@ jobs:
   # Integration tests across packages
   integration-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     needs: [test-vespera-scriptorium]
     
     steps:
@@ -176,6 +185,7 @@ jobs:
   # Security and quality checks
   security-checks:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     
     steps:
     - uses: actions/checkout@v5
@@ -213,6 +223,7 @@ jobs:
   # Build and validate packages
   build-packages:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: [test-vespera-scriptorium, test-vespera-utilities, test-obsidian-plugin]
     
     steps:
