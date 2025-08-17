@@ -84,6 +84,33 @@ required_context_loading:
 
 ## Meta-PRP Execution Framework
 
+### Phase 0: Mandatory Systematic Research Phase
+
+**CRITICAL LESSONS LEARNED**: Always complete comprehensive research before any implementation:
+
+```yaml
+systematic_research_requirements:
+  research_phase_completion:
+    purpose: "Gather ALL relevant information before implementation begins"
+    validation: "Research phase must be marked complete before proceeding"
+    artifacts: "Comprehensive data gathering stored in orchestrator artifacts"
+    
+  pattern_recognition_analysis:
+    approach: "Identify root causes affecting multiple components"
+    validation: "Look for systematic patterns, not individual issues"
+    documentation: "Document identified patterns in orchestrator artifacts"
+    
+  infrastructure_stability_focus:
+    priority: "Address configuration, dependencies, build systems first"
+    impact: "Prioritize changes with multiplicative positive effects"
+    validation: "Infrastructure fixes enable future development velocity"
+    
+  hook_integration_planning:
+    prevention_design: "Design automated prevention for identified failure patterns"
+    implementation: "Plan validation hooks for each critical failure point"
+    testing: "Validate hooks catch intended problems before deployment"
+```
+
 ### Phase 1: Orchestrator Session Initialization
 
 **Main Agent Responsibilities:**
@@ -522,6 +549,15 @@ python scripts/validate_multi_agent_success.py $ARGUMENTS
 - [ ] **Results synthesized** via orchestrator_synthesize_results (no manual summaries)
 - [ ] **Meta-task completed** with comprehensive final artifacts in orchestrator storage
 
+### Systematic Approach Execution Success
+
+- [ ] **Research phase completed first** before any implementation began
+- [ ] **Pattern recognition applied** to identify root causes over individual symptoms
+- [ ] **Infrastructure stability prioritized** with multiplicative impact solutions
+- [ ] **Comprehensive data gathering** completed and documented in artifacts
+- [ ] **Hook integration patterns** designed for automated problem prevention
+- [ ] **Systematic validation** applied rather than ad-hoc testing approaches
+
 ### Lessons Learned Integration Success
 
 - [ ] **Hook integration** applied for automated problem detection and prevention
@@ -595,8 +631,9 @@ python scripts/validate_multi_agent_success.py $ARGUMENTS
 7. **Security Integration Score Target**: 10/10 (dedicated security validation)
 8. **Orchestrator Integration Score Target**: 10/10 (full tool suite utilized)
 9. **Multi-Agent Coordination Score Target**: 10/10 (seamless collaboration)
-10. **Lessons Learned Integration Score Target**: 10/10 (hook patterns, session management, artifact-centric)
-11. **Future 'Undo' Readiness Score Target**: 10/10 (all work stored in orchestrator for automation)
+10. **Systematic Approach Score Target**: 10/10 (research-first, pattern recognition, infrastructure focus)
+11. **Lessons Learned Integration Score Target**: 10/10 (hook patterns, session management, artifact-centric)
+12. **Future 'Undo' Readiness Score Target**: 10/10 (all work stored in orchestrator for automation)
 
 **Mad Scientist Achievement Unlocked**: *"Eventually I WILL have my automated 'oops! undo that!' feature!"*
 - All work stored in orchestrator artifacts enables future automated undo capabilities
