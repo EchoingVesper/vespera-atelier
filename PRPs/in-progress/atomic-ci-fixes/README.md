@@ -4,12 +4,13 @@
 **Philosophy**: Executive Dysfunction-Aware Multi-Agent Coordination  
 **Git Strategy**: Worktree isolation for conflict-free parallel development
 
-**Status**: [IN-PROGRESS - Phase 1 Complete, Phase 2 Expanded]  
+**Status**: [IN-PROGRESS - Phase 2 Complete, Phase 3 Starting]  
 **Meta-PRP ID**: `ATOMIC_CI_FIXES_META_PRP_2025`  
 **Created**: 2025-01-16  
 **Last Updated**: 2025-08-17  
 **Phase 1 Duration**: 2 hours (completed)
-**Phase 2 Estimated**: 4-5 hours (expanded CI, testing, and modernization fixes)
+**Phase 2 Duration**: 4 hours (completed) - CI workflow fixes
+**Phase 3 Estimated**: 6-8 hours (individual test failure deep-dive)
 
 ## 📁 Directory Structure
 
@@ -40,9 +41,29 @@ atomic-ci-fixes/
 │   ├── index.md              # Priority coordination
 │   └── subtasks/             # Unit test and package fixes
 │
-└── 06-ci-modernization/       # PRIORITY 6 - CI/CD Modernization
-    ├── index.md              # Priority coordination
-    └── subtasks/             # npm to pnpm migration
+├── 06-ci-modernization/       # PRIORITY 6 - CI/CD Modernization
+│   ├── index.md              # Priority coordination
+│   └── subtasks/             # npm to pnpm migration
+│
+├── 07-phase3-failed-tests/    # PHASE 3 - Failed Tests (23 tests)
+│   ├── 00-research-phase/    # 23 research agents
+│   ├── 01-implementation-phase/ # 23 implementation agents
+│   └── index.md              # Failed tests coordination
+│
+├── 08-phase3-cancelled-tests/ # PHASE 3 - Cancelled Tests (4 tests)
+│   ├── 00-research-phase/    # 4 research agents
+│   ├── 01-implementation-phase/ # 4 implementation agents
+│   └── index.md              # Cancelled tests coordination
+│
+├── 09-phase3-hanging-tests/   # PHASE 3 - Hanging Tests (6 tests)
+│   ├── 00-research-phase/    # 6 research agents
+│   ├── 01-implementation-phase/ # 6 implementation agents
+│   └── index.md              # Hanging tests coordination
+│
+└── 10-phase3-skipped-tests/   # PHASE 3 - Skipped Tests (4 tests)
+    ├── 00-research-phase/    # 4 research agents
+    ├── 01-implementation-phase/ # 4 implementation agents
+    └── index.md              # Skipped tests coordination
 ```
 
 ## 🚀 Quick Start
@@ -132,57 +153,83 @@ atomic-ci-fixes/
 - **Issue #22**: Fix pyproject.toml configuration warnings (Priority 5) ✅
 - **Issue #23**: Update CI workflows to use pnpm (Priority 6) ✅
 
-### 🔄 PHASE 3 (ACTIVE): CI Stabilization & Performance
+### 🔄 PHASE 3 (ACTIVE): Strategic Research-First Analysis
 
-**Current Status (Actions Run #17015878764):**
+**Current Status:**
 - **✅ Success**: 9 tests now passing (up from ~4 previously)
-- **❌ Failures**: 23 tests still failing with specific patterns
-- **⏱️ Hanging**: 6 tests running 1+ hours (likely frozen)
-- **🚫 Cancelled**: 4 tests cancelled due to dependency failures
-- **⏭️ Skipped**: 4 tests skipped for configuration reasons
+- **❌ Failed**: 23 tests consistently failing - require systematic analysis
+- **⏱️ Hanging**: 6 tests running indefinitely (months old, likely frozen)
+- **🚫 Cancelled**: 4 tests cancelled due to configuration or dependency issues
+- **⏭️ Skipped**: 4 tests skipped for various reasons
 
-**Phase 2 Completed Tasks:**
-1. **Priority 4 - CI Workflow Fixes** ✅ (Issues #16-19)
-   - ✅ Fixed Python commands and paths in all workflows
-   - ✅ Added proper error handling and validation
-   - ✅ Enhanced robustness with continue-on-error directives
+**Phase 3 Strategic Approach: Research → Analysis → Targeted Implementation**
+After Phase 2's broad workflow fixes, remaining test failures require evidence-based analysis before implementation attempts.
 
-2. **Priority 5 - Python Testing & Config** ✅ (Issues #20-22) 
-   - ✅ Fixed critical import issues in test files
-   - ✅ Resolved StaleTaskDetector constructor signature mismatch
-   - ✅ Added proper mock context manager support
-   - ✅ Clean up pyproject.toml configuration warnings
+**Data Source**: [GitHub PR #15 Checks](https://github.com/EchoingVesper/vespera-atelier/pull/15/checks) - Real test failure data
 
-3. **Priority 6 - CI Modernization** ✅ (Issue #23)
-   - ✅ Converted all workflows from npm to pnpm
-   - ✅ Removed package-lock.json maintenance burden
-   - ✅ Improved CI build performance
+**Strategic Coordination Pattern:**
 
-**Phase 3 Active Tasks:**
-1. **Priority 7 - pnpm Version Standardization**
-   - Fix "Multiple versions of pnpm specified" errors
-   - Standardize pnpm version across package.json and GitHub Actions
-   - Address version mismatch conflicts
+**Phase 3A: Individual Test Research** (37 research agents)
+- Extract actual test details from GitHub Actions logs
+- Analyze real error messages and failure patterns  
+- Research root causes based on evidence, not assumptions
+- Document solution approaches with actual context
 
-2. **Priority 8 - Git Process Stabilization**
-   - Fix consistent exit code 128 across multiple jobs
-   - Address Git authentication and repository access issues
-   - Resolve Git clone/checkout step failures
+**Phase 3B: Analysis & Categorization** (1 analysis agent)
+- Consolidate 37 research findings into problem categories
+- Identify patterns: environment, configuration, code, infrastructure issues
+- Create targeted implementation strategy based on actual findings
+- Reduce 37 individual fixes → estimated 10-15 consolidated fix tasks
 
-3. **Priority 9 - Test Execution Stabilization**
-   - Address 6 hanging/frozen tests (1+ hour execution)
-   - Fix exit code 127 in test-obsidian-plugin
-   - Resolve matrix job dependency and failure propagation
-   - Address test timeout and resource management issues
+**Phase 3C: Targeted Implementation** (10-15 implementation agents - TBD)
+- Execute fixes based on evidence-gathered implementation plan
+- Focus on root causes rather than individual symptoms
+- Batch similar fixes for efficiency
+- Validate systematically across consolidated categories
+
+**Phase 3 Coordination Structure:**
+
+1. **Priority 11: Research Coordination** - [11-phase3-research-coordination/](11-phase3-research-coordination/)
+   - **Phase 3A**: 37 research agents analyzing individual tests with real GitHub data
+   - **Phase 3B**: 1 analysis agent consolidating findings into implementation strategy
+   - **Phase 3C**: 10-15 targeted implementation agents (based on Phase 3B findings)
+   - Focus: Evidence-based approach with systematic consolidation
+
+**Strategic Benefits:**
+- **Evidence-Based**: All decisions based on actual GitHub Actions error data
+- **Consolidation**: Reduce 37 → ~10-15 implementation tasks through pattern recognition
+- **Risk Mitigation**: Understand root causes before attempting fixes
+- **Resource Optimization**: Focus implementation effort on actual problems
+- **Phase Gates**: Clear gates between research, analysis, and implementation
+
+**Improved Executive Dysfunction Design:**
+- **Research First**: No premature implementation attempts
+- **Evidence-Based**: Decisions based on real data, not assumptions  
+- **Clear Phase Gates**: Can't proceed to implementation without completed research
+- **Consolidation Strategy**: Reduces complexity through pattern recognition
+- **Progress Tracking**: Clear metrics for each phase completion
+
+**Strategic Validation:**
+After Phase 3A (Research):
+1. Review all 37 research findings
+2. Identify patterns and consolidation opportunities
+3. Create evidence-based implementation strategy
+4. Decide on actual number of implementation agents needed (likely 10-15)
+
+After Phase 3C (Implementation):
+1. Push consolidated fixes to GitHub
+2. Monitor complete test run with systematic validation
+3. Verify targeted fixes resolve multiple related test failures
+4. Achieve 100% test success rate through strategic approach
 
 ### **Phase 3 Context/Inputs**
 
-- **CI Run Analysis**: Actions run #17015878764 with detailed failure patterns
-- **Progress Validation**: 9 tests passing vs previous ~4 (125% improvement)
-- **Failure Classification**: pnpm version conflicts, Git exit code 128, hanging tests
-- **Performance Issues**: 6 tests running 1+ hours indicating timeout/resource problems
-- **Dependency Chain**: Matrix job cancellations due to initial failures
-- **Success Metrics**: Clear progression from Phase 1 → Phase 2 → measurable improvements
+- **Individual Test Analysis**: Each test needs dedicated investigation
+- **Historical Context**: Some hanging tests haven't worked since monorepo migration
+- **Agent Coordination**: 74 agents working in parallel across 4 test categories
+- **Orchestrator Management**: Full orchestrator coordination for agent spawning and tracking
+- **Root Cause Focus**: Deep analysis rather than broad workflow changes
+- **Final Validation**: All tests must pass before PR merge
 
 ## 🎨 Vision
 
