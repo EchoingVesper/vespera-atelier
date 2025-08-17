@@ -1,0 +1,141 @@
+/* src/error-handling/error-view.css */
+
+/* Error view container */
+.error-view-container {
+  padding: 10px;
+  overflow-y: auto;
+  max-height: calc(100vh - 120px);
+}
+
+/* Error view header */
+.error-view-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+  padding: 0 10px;
+}
+
+/* Error list */
+.error-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Individual error item */
+.error-item {
+  border-radius: 4px;
+  padding: 10px;
+  background-color: var(--background-secondary);
+  border-left: 4px solid var(--text-normal);
+}
+
+/* Error severity colors */
+.error-item.error-severity-info {
+  border-left-color: var(--interactive-accent);
+}
+
+.error-item.error-severity-warning {
+  border-left-color: var(--text-warning);
+}
+
+.error-item.error-severity-error {
+  border-left-color: var(--text-error);
+}
+
+.error-item.error-severity-critical {
+  border-left-color: #ff3333;
+  background-color: rgba(255, 51, 51, 0.1);
+}
+
+/* Error header */
+.error-header {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+  font-size: 0.85em;
+}
+
+/* Error timestamp */
+.error-timestamp {
+  color: var(--text-muted);
+}
+
+/* Error severity badge */
+.error-severity {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.7em;
+}
+
+.error-severity-info {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.error-severity-warning {
+  background-color: var(--text-warning);
+  color: var(--background-primary);
+}
+
+.error-severity-error {
+  background-color: var(--text-error);
+  color: var(--background-primary);
+}
+
+.error-severity-critical {
+  background-color: #ff3333;
+  color: white;
+}
+
+/* Error type badge */
+.error-type {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: var(--background-modifier-border);
+  color: var(--text-normal);
+  font-size: 0.7em;
+}
+
+/* Error message */
+.error-message {
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+/* Error source */
+.error-source {
+  font-size: 0.85em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.error-source-label {
+  margin-right: 4px;
+  font-weight: 500;
+}
+
+/* Error details (stack trace) */
+.error-details {
+  margin-top: 8px;
+  font-size: 0.85em;
+}
+
+.error-details summary {
+  cursor: pointer;
+  color: var(--text-accent);
+}
+
+.error-stack {
+  margin-top: 4px;
+  padding: 8px;
+  background-color: var(--background-primary);
+  border-radius: 4px;
+  overflow-x: auto;
+  font-family: monospace;
+  font-size: 0.85em;
+  white-space: pre-wrap;
+}

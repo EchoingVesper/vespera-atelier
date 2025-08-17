@@ -1,0 +1,297 @@
+/* Robust Processing System Styles */
+
+/* Progress Pane */
+.progress-items-container {
+  margin-top: 1rem;
+}
+
+.progress-item {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border-radius: 4px;
+  background-color: var(--background-secondary);
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.progress-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.progress-bar-container {
+  height: 8px;
+  background-color: var(--background-modifier-border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: var(--interactive-accent);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-status {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Output Files View */
+.tabs-container {
+  display: flex;
+  border-bottom: 1px solid var(--background-modifier-border);
+  margin-bottom: 1rem;
+}
+
+.tab {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.tab:hover {
+  background-color: var(--background-secondary);
+}
+
+.tab.active {
+  border-bottom-color: var(--interactive-accent);
+  font-weight: bold;
+}
+
+.tabs-content {
+  padding: 0.5rem 0;
+}
+
+.file-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.file-item {
+  margin-bottom: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 4px;
+  background-color: var(--background-secondary);
+}
+
+.file-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.file-name {
+  font-weight: bold;
+}
+
+.file-status {
+  font-size: 0.8rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  margin-left: 0.5rem;
+}
+
+.status-pending .file-status {
+  background-color: var(--background-modifier-border);
+}
+
+.status-processing .file-status {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.status-completed .file-status {
+  background-color: var(--color-green);
+  color: var(--text-on-accent);
+}
+
+.status-error .file-status {
+  background-color: var(--color-red);
+  color: var(--text-on-accent);
+}
+
+.file-error {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: var(--background-modifier-error);
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.file-open-button {
+  margin-left: 0.5rem;
+}
+
+/* MultiSelect Modal */
+.file-tree-container {
+  max-height: 400px;
+  overflow-y: auto;
+  margin: 1rem 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  padding: 0.5rem;
+}
+
+.file-tree {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.file-tree li {
+  margin: 0.25rem 0;
+}
+
+.file-tree ul {
+  list-style: none;
+  padding-left: 1.5rem;
+  margin: 0;
+}
+
+.button-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+/* Checkpoint Manager Modal */
+.checkpoint-list {
+  max-height: 400px;
+  overflow-y: auto;
+  margin: 1rem 0;
+}
+
+.checkpoint-item {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border-radius: 4px;
+  background-color: var(--background-secondary);
+}
+
+.checkpoint-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.checkpoint-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.checkpoint-date {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.checkpoint-description {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.checkpoint-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.checkpoint-close-button {
+  display: block;
+  margin: 1rem auto 0;
+}
+
+/* Vault Tree View */
+.vault-tree-container {
+  max-height: 500px;
+  overflow-y: auto;
+  margin: 1rem 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  padding: 0.5rem;
+}
+
+.vault-tree {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.vault-tree-item {
+  margin: 0.25rem 0;
+}
+
+.vault-tree-node {
+  display: flex;
+  align-items: center;
+  padding: 0.25rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.vault-tree-node:hover {
+  background-color: var(--background-secondary);
+}
+
+.vault-tree-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 0.5rem;
+}
+
+.vault-tree-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.folder-icon {
+  fill: var(--text-accent);
+}
+
+.file-icon {
+  fill: var(--text-normal);
+}
+
+.vault-tree-name {
+  flex: 1;
+}
+
+.vault-tree-children {
+  list-style: none;
+  padding-left: 1.5rem;
+  margin: 0;
+}
+
+.vault-tree-item.collapsed > .vault-tree-children {
+  display: none;
+}
+
+.vault-tree-refresh {
+  margin-top: 1rem;
+}
+
+/* Notice Styles */
+.vespera-error-notice {
+  background-color: var(--background-modifier-error) !important;
+}
+
+.vespera-success-notice {
+  background-color: var(--color-green) !important;
+  color: var(--text-on-accent) !important;
+}

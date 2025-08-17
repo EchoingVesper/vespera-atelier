@@ -1,10 +1,13 @@
 packages:
-  # Node.js packages that can be managed by pnpm workspaces
+  # All packages in packages/ directory (includes both Node.js and Python packages)
+  - 'packages/*'
+  
+  # Additional Node.js packages that can be managed by pnpm workspaces
   - 'vespera-utilities'
   - 'plugins/Obsidian/Vespera-Scriptorium'
   
   # Note: packages/vespera-scriptorium is a Python package and managed separately via pip
-  # It's included in the monorepo structure but not in the pnpm workspace
+  # It's included in the monorepo structure for consistency but pip handles its dependencies
 
 catalog:
   # Core dependencies for TypeScript/Node.js packages

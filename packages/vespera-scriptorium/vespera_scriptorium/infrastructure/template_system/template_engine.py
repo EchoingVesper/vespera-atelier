@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Set, Union
 
 from .json5_parser import JSON5Parser, JSON5ValidationError
 from .security_validator import SecurityValidationError, TemplateSecurityValidator
-from .storage_manager import TemplateStorageManager, TemplateStorageError
+from .storage_manager import TemplateStorageError, TemplateStorageManager
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +110,7 @@ class TemplateEngine:
         try:
             # Try to load using storage manager first (searches categories)
             template_data = self.storage_manager.load_template(template_id)
-            
+
             # Validate template structure
             self._validate_template_structure(template_data)
 
@@ -126,25 +126,25 @@ class TemplateEngine:
         except TemplateStorageError:
             # Fallback to direct file lookup for backward compatibility
             template_file = self.template_dir / f"{template_id}.json5"
-            
+
             if not template_file.exists():
                 raise TemplateValidationError(f"Template not found: {template_id}")
-            
+
             try:
                 template_data = self.json5_parser.parse_file(template_file)
-                
+
                 # Validate template structure
                 self._validate_template_structure(template_data)
-                
+
                 # Security validation
                 self.security_validator.validate_template(template_data)
-                
+
                 # Cache the template
                 if use_cache:
                     self._template_cache[template_id] = copy.deepcopy(template_data)
-                
+
                 return template_data
-                
+
             except JSON5ValidationError as e:
                 raise TemplateValidationError(
                     f"Failed to parse template {template_id}: {e}"

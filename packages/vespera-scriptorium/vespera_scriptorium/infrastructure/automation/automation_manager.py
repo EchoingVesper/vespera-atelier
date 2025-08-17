@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class AutomationManager:
     """
     Manages background automation tasks for system maintenance.
-    
+
     Features:
     - Auto-install missing dependencies
     - Session cleanup and maintenance
@@ -60,9 +60,9 @@ class AutomationManager:
             # Wait for stop signal or any task to complete
             done, pending = await asyncio.wait(
                 tasks + [asyncio.create_task(self._stop_event.wait())],
-                return_when=asyncio.FIRST_COMPLETED
+                return_when=asyncio.FIRST_COMPLETED,
             )
-            
+
             # Cancel remaining tasks
             for task in pending:
                 task.cancel()
@@ -81,7 +81,7 @@ class AutomationManager:
         """Stop background automation gracefully."""
         if not self.is_running:
             return
-        
+
         logger.info("Stopping background automation")
         self._stop_event.set()
 
@@ -104,7 +104,7 @@ class AutomationManager:
             sessions_dir = self.scriptorium_dir / "sessions"
             if sessions_dir.exists():
                 cutoff_time = datetime.now() - timedelta(days=7)
-                
+
                 for session_file in sessions_dir.glob("session_*.json"):
                     if session_file.stat().st_mtime < cutoff_time.timestamp():
                         session_file.unlink()
@@ -114,7 +114,7 @@ class AutomationManager:
             artifacts_dir = self.scriptorium_dir / "artifacts"
             if artifacts_dir.exists():
                 cutoff_time = datetime.now() - timedelta(days=30)
-                
+
                 for artifact_file in artifacts_dir.glob("task_*_artifact_*.txt"):
                     if artifact_file.stat().st_mtime < cutoff_time.timestamp():
                         artifact_file.unlink()
@@ -170,6 +170,7 @@ class AutomationManager:
 
             # Check memory usage (approximate)
             import psutil
+
             memory = psutil.virtual_memory()
             if memory.percent > 90:
                 health_issues.append(f"High memory usage: {memory.percent}%")
@@ -213,22 +214,28 @@ class AutomationManager:
         try:
             # Check Python dependencies
             missing_deps = []
-            
+
             required_modules = [
-                "watchfiles", "aiofiles", "pydantic", "jinja2", 
-                "pyyaml", "psutil", "filelock", "sqlalchemy"
+                "watchfiles",
+                "aiofiles",
+                "pydantic",
+                "jinja2",
+                "pyyaml",
+                "psutil",
+                "filelock",
+                "sqlalchemy",
             ]
-            
+
             for module in required_modules:
                 try:
                     __import__(module)
                 except ImportError:
                     missing_deps.append(module)
-            
+
             if missing_deps:
                 logger.warning(f"Missing dependencies detected: {missing_deps}")
                 # Could implement auto-pip install here for production
-                
+
         except Exception as e:
             logger.error(f"Dependency check failed: {e}")
 
@@ -252,7 +259,7 @@ class AutomationManager:
                 return
 
             corrupted_templates = []
-            
+
             for template_file in templates_dir.rglob("*.json5"):
                 try:
                     # Basic validation - could be more sophisticated
@@ -261,7 +268,7 @@ class AutomationManager:
                         corrupted_templates.append(template_file.name)
                 except Exception:
                     corrupted_templates.append(template_file.name)
-            
+
             if corrupted_templates:
                 logger.warning(f"Corrupted templates detected: {corrupted_templates}")
 
@@ -272,15 +279,17 @@ class AutomationManager:
         """Get current automation system status."""
         return {
             "is_running": self.is_running,
-            "last_cleanup": self.last_cleanup.isoformat() if self.last_cleanup else None,
+            "last_cleanup": (
+                self.last_cleanup.isoformat() if self.last_cleanup else None
+            ),
             "workspace_dir": str(self.workspace_dir),
             "automation_config": str(self.automation_config),
             "features": [
                 "auto_cleanup",
-                "health_monitoring", 
+                "health_monitoring",
                 "dependency_monitoring",
-                "template_validation"
-            ]
+                "template_validation",
+            ],
         }
 
 

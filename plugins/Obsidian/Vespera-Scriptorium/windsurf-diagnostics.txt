@@ -1,0 +1,2085 @@
+{
+  "systemInfo": {
+    "operatingSystem": "win32",
+    "windsurfVersion": "1.9.2",
+    "ideName": "windsurf",
+    "userName": "Fiona Liath",
+    "userEmail": "fionaliath@gmail.com",
+    "teamsTier": 2,
+    "timestamp": "2025-05-25T11:45:15.869Z",
+    "installationId": "6616cf0d-91e0-4013-b03e-fc2c3c3005c0"
+  },
+  "userSettings": {
+    "openMostRecentChatConversation": true,
+    "lastSelectedModel": "MODEL_UNSPECIFIED",
+    "themePreference": "THEME_PREFERENCE_UNSPECIFIED",
+    "extensionPanelTab": "EXTENSION_PANEL_TAB_UNSPECIFIED",
+    "fontSize": "FONT_SIZE_LARGE",
+    "autocompleteSpeed": "AUTOCOMPLETE_SPEED_UNSPECIFIED",
+    "rememberLastModelSelection": "REMEMBER_LAST_MODEL_SELECTION_ENABLED",
+    "lastSelectedModelName": "",
+    "lastSelectedCascadeModel": "MODEL_CLAUDE_3_7_SONNET_20250219",
+    "cascadeNuxStates": [
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_DIFF_OVERVIEW"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_UNSPECIFIED"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_UNSPECIFIED"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_UNSPECIFIED"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_UNSPECIFIED"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_UNSPECIFIED"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_WEB_SEARCH"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_TOOL_CALL"
+      },
+      {
+        "event": "CASCADE_NUX_EVENT_MODEL_SELECTOR_NUX"
+      }
+    ],
+    "cascadePlannerMode": "CONVERSATIONAL_PLANNER_MODE_DEFAULT",
+    "cascadeAllowedCommands": [
+      "pnpm install",
+      "pnpm run build"
+    ],
+    "cascadeDeniedCommands": [],
+    "userNuxStates": [],
+    "cascadeWebSearchDisabled": false,
+    "disableAutocomplete": false,
+    "disableSupercomplete": false,
+    "disableSelectionPopup": false,
+    "disableExplainProblemInlayHint": false,
+    "disableInlayHintShortcuts": false,
+    "disableOpenCascadeOnReload": false,
+    "disableAutoOpenEditedFiles": false,
+    "disableTabToJump": false,
+    "cascadeAutoExecutionPolicy": "CASCADE_COMMANDS_AUTO_EXECUTION_EAGER",
+    "lastSelectedCascadeId": "36db9d84-cd97-4563-94bb-aeff26d80e12",
+    "explainAndFixInCurrentConversation": true,
+    "allowCascadeAccessGitignoreFiles": true,
+    "disableCascadeAutoFixLints": false,
+    "disableCascadeBrowserPreviews": false,
+    "detectProxy": false,
+    "disableTabToImport": false,
+    "useClipboardForCompletions": false,
+    "disableHighlightAfterAccept": false,
+    "lastSelectedNewConvoTab": "mcp",
+    "disableAutoGenerateMemories": false,
+    "enableSoundsForSpecialEvents": true,
+    "enableTabSounds": false,
+    "allowCascadeInBackground": false,
+    "tabToJump": "TAB_TO_JUMP_UNSPECIFIED",
+    "cascadeWebSearch": "CASCADE_WEB_SEARCH_TOOL_UNSPECIFIED",
+    "enableTerminalCompletion": false,
+    "lastModelOverride": "MODEL_CHAT_GPT_4_1_2025_04_14",
+    "featureUsageData": {
+      "CASCADE_REVERT_TO_STEP": {
+        "hasUsed": true
+      },
+      "CASCADE_CLICK_MODEL_SELECTOR": {
+        "hasUsed": true
+      }
+    },
+    "disableCascadeInBackground": false
+  },
+  "extensionLogs": [
+    "2025-05-25 06:43:59.909 [info] 2025/05/25 06:43:59 maxprocs: Leaving GOMAXPROCS=12: CPU quota undefined",
+    "2025-05-25 06:44:00.117 [info] I0525 06:44:00.117529 26460 main.go:585] Setting GOMAXPROCS to 4",
+    "2025-05-25 06:44:00.118 [info] I0525 06:44:00.117529 26460 main.go:800] Starting language server process with pid 26460",
+    "2025-05-25 06:44:00.118 [info] I0525 06:44:00.118028 26460 server.go:269] Language server will attempt to listen on host 127.0.0.1",
+    "2025-05-25 06:44:00.118 [info] I0525 06:44:00.118528 26460 server.go:276] Language server listening on random port at 56868",
+    "2025-05-25 06:44:00.709 [info] I0525 06:44:00.709339 26460 server.go:387] Created extension server client at port 56867",
+    "2025-05-25 06:44:02.161 [info] I0525 06:44:02.161136 26460 server.go:946] Local search is enabled, will index local files.",
+    "2025-05-25 06:44:02.161 [info] I0525 06:44:02.161136 26460 server.go:950] Using 3 indexer workers",
+    "2025-05-25 06:44:02.193 [info] (Windsurf) 2025-05-25 06:44:02.190 [INFO]: Language server started",
+    "2025-05-25 06:44:04.019 [info] (Windsurf) 2025-05-25 06:44:04.018 [INFO]: LS lspClient started successfully",
+    "2025-05-25 06:44:45.116 [info] (Windsurf) 2025-05-25 06:44:45.116 [INFO]: [Cascade Manager] Opening diff zones for: ",
+    "2025-05-25 06:45:09.587 [info] (Windsurf) 2025-05-25 06:45:09.586 [INFO]: [Cascade Manager] Opening diff zones for: "
+  ],
+  "languageServerDiagnostics": {
+    "logs": [
+      "I0525 06:44:00.117529 26460 main.go:585] Setting GOMAXPROCS to 4\n",
+      "I0525 06:44:00.117529 26460 main.go:800] Starting language server process with pid 26460\n",
+      "I0525 06:44:00.118028 26460 server.go:269] Language server will attempt to listen on host 127.0.0.1\n",
+      "I0525 06:44:00.118528 26460 server.go:276] Language server listening on random port at 56868\n",
+      "I0525 06:44:00.709339 26460 server.go:387] Created extension server client at port 56867\n",
+      "I0525 06:44:02.161136 26460 server.go:946] Local search is enabled, will index local files.\n",
+      "I0525 06:44:02.161136 26460 server.go:950] Using 3 indexer workers\n"
+    ]
+  },
+  "recentTrajectories": [
+    {
+      "cascadeId": "50dcb0ac-7011-48d8-93fd-a8276e27867c",
+      "trajectoryId": "fd55d2a5-db2a-41fa-b498-8d81138e9508",
+      "summary": "Implementing A2A Message Types",
+      "lastStepIndex": 86,
+      "lastModifiedTime": "2025-05-25T11:22:42.736Z"
+    },
+    {
+      "cascadeId": "cd57b645-0982-49c8-92e5-54bac43f90d6",
+      "trajectoryId": "dfce17fe-a49c-4c9c-a30a-0817df484bca",
+      "summary": "Integrating Protocol-Based Architecture",
+      "lastStepIndex": 5,
+      "lastModifiedTime": "2025-05-25T11:21:45.735Z"
+    },
+    {
+      "cascadeId": "6fe3f06b-252c-4523-8688-171582a6c80d",
+      "trajectoryId": "9fcbc303-2e94-4934-95e2-5b7a82115402",
+      "summary": "A2A Implementation Assistance",
+      "lastStepIndex": 7,
+      "lastModifiedTime": "2025-05-25T11:20:33.758Z"
+    },
+    {
+      "cascadeId": "1e37179d-8147-49fc-abc8-7f6a587843f0",
+      "trajectoryId": "2003fea7-a3e4-4c37-a2d3-512553c27b0c",
+      "summary": "Fixing TypeScript Issues",
+      "lastStepIndex": 141,
+      "lastModifiedTime": "2025-05-25T09:39:40.279Z"
+    },
+    {
+      "cascadeId": "17703810-2673-45cc-9562-8bbecfc7987b",
+      "trajectoryId": "2f271eff-65dc-444d-8791-1f6014692d95",
+      "summary": "Resolving TypeScript Errors",
+      "lastStepIndex": 15,
+      "lastModifiedTime": "2025-05-25T09:09:30.641Z"
+    },
+    {
+      "cascadeId": "2b5bf5c5-67af-432b-bb8e-e9ba5098f0a1",
+      "trajectoryId": "5d6c8e25-4300-410d-9916-e3f43e187b00",
+      "summary": "Creating Commit Message for MCP",
+      "lastStepIndex": 100,
+      "lastModifiedTime": "2025-05-24T11:12:00.882Z"
+    },
+    {
+      "cascadeId": "0e571e39-3754-439a-9799-34613e2ae00a",
+      "trajectoryId": "e21a0b5e-999f-45cb-a75f-42cf2ae1c5c1",
+      "summary": "Creating Development Prompts for MCP",
+      "lastStepIndex": 196,
+      "lastModifiedTime": "2025-05-24T09:43:12.862Z"
+    },
+    {
+      "cascadeId": "597b0bdf-3455-4658-8a11-2bf93a64a6b7",
+      "trajectoryId": "61d81fdb-3eb6-4521-a648-575bb505db02",
+      "summary": "Managing Windsurf Orchestrator Configuration",
+      "lastStepIndex": 223,
+      "lastModifiedTime": "2025-05-21T12:45:04.940Z"
+    },
+    {
+      "cascadeId": "07e1f00c-3123-4de8-8326-e7808d7a1a60",
+      "trajectoryId": "e9b1e8c9-29dd-40d6-b0aa-f47326d23217",
+      "summary": "Enhancing Windsurf Orchestrator Functionality",
+      "lastStepIndex": 328,
+      "lastModifiedTime": "2025-05-21T10:16:22.551Z"
+    },
+    {
+      "cascadeId": "01ffe07c-4522-4395-9664-2395cd41e228",
+      "trajectoryId": "b6b705a1-9338-4a20-9aa9-e471bf5f0bf1",
+      "summary": "Initializing Windsurf Orchestrator Project  ",
+      "lastStepIndex": 233,
+      "lastModifiedTime": "2025-05-21T06:56:27.584Z"
+    }
+  ],
+  "fields": {
+    "cascadeId": "50dcb0ac-7011-48d8-93fd-a8276e27867c",
+    "currentLatestStepIndex": 86,
+    "trajectoryId": "fd55d2a5-db2a-41fa-b498-8d81138e9508",
+    "consoleLogs": [
+      "[LOG] 2025-5-25 6:44:8.370 Sentry initialized"
+    ]
+  }
+}

@@ -17,6 +17,22 @@ Every Meta-PRP must be designed with these principles:
 - **Pressure Delegation**: Clear structure for agent work distribution
 - **Damage Prevention**: Graceful degradation paths built into structure
 
+## Systematic Approach Integration
+
+**LESSONS LEARNED**: Meta-PRPs must integrate proven systematic methodology from CI fixes success:
+
+### Research-First Methodology
+- **Comprehensive Data Gathering**: Collect ALL relevant information before implementation
+- **Pattern Recognition**: Identify root causes affecting multiple components
+- **Infrastructure Focus**: Prioritize configuration, dependencies, build systems
+- **Hook Integration**: Design automated prevention for known failure patterns
+
+### Pattern Recognition Framework
+- **Root Cause Analysis**: Look for systematic patterns, not individual issues
+- **Multiplicative Impact**: Solutions should fix multiple symptoms with single change
+- **Infrastructure Stability**: Address foundational issues that enable future velocity
+- **Automated Prevention**: Design hooks that catch problems before they occur
+
 ## Standard Directory Structure
 
 ```directory
@@ -105,23 +121,33 @@ Files in this directory are generated automatically. Manual edits will be overwr
 - Local LLM integration specifications
 - Implementation specifications
 
-**Multi-Level Organization**:
+**Multi-Level Organization with Systematic Approach Integration**:
 
 ```directory
 subtasks/
-├── 00-{category-name}/           # Task category (analysis, fixes, etc.)
+├── 00-research-phase/            # MANDATORY: Comprehensive research first
+│   ├── README.md                 # Research methodology and systematic approach
+│   ├── 01-data-gathering.md      # Comprehensive information collection
+│   ├── 02-pattern-analysis.md    # Root cause identification
+│   ├── 03-infrastructure-assessment.md  # Foundation stability review
+│   └── 04-hook-integration-planning.md  # Automated prevention design
+├── 01-{category-name}/           # Task category (analysis, fixes, etc.)
 │   ├── README.md                 # Category overview and structure
 │   ├── 01-{first-task}.md        # First atomic task in category
 │   ├── 02-{second-task}.md       # Second atomic task in category
 │   └── ...
-├── 01-{next-category}/           # Next task category
+├── 02-{next-category}/           # Next task category
 │   ├── README.md                 # Category overview
 │   ├── 01-{task}.md              # Tasks within category
 │   └── ...
-└── README.md                     # Overall subtasks overview
+└── README.md                     # Overall subtasks overview with systematic methodology
 ```
 
-**Benefits of Multi-Level Structure**:
+**Benefits of Multi-Level Structure with Systematic Integration**:
+- **Research-First Enforcement**: Mandatory research phase prevents premature implementation
+- **Pattern Recognition Support**: Structure guides identification of root causes
+- **Infrastructure Focus**: Dedicated assessment of foundational stability issues
+- **Hook Integration Planning**: Systematic design of automated problem prevention
 - **Executive Dysfunction Support**: Clearer task organization reduces overwhelm
 - **Local LLM Integration**: Category-based organization supports automated task distribution
 - **Agent Specialization**: Categories align with specialist agent types
@@ -537,6 +563,14 @@ Structure reveals complexity gradually, not all at once
 - [ ] Main coordination links to all priorities
 - [ ] Each priority has index.md
 - [ ] Tracking checklists created
+
+### Systematic Approach Integration Validation
+
+- [ ] Mandatory research phase (00-research-phase/) included in all meta-PRPs
+- [ ] Pattern recognition methodology documented and implemented
+- [ ] Infrastructure focus prioritized in task organization
+- [ ] Hook integration planning included for automated prevention
+- [ ] Research-first enforcement prevents premature implementation
 
 ### Multi-Level Subtask Validation
 

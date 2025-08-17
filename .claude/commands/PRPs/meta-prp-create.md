@@ -7,15 +7,20 @@ capabilities with sub-agent coordination, git worktree isolation, and executive 
 
 ## Scaffolded Template Workflow
 
-**CRITICAL**: Use the comprehensive scaffolded template system for efficient meta-PRP creation:
+**MANDATORY**: Always use the comprehensive scaffolded template - NEVER create flat structure meta-PRPs:
 
-### Step 1: Copy Template Structure
+### Step 1: Copy Template Structure (REQUIRED)
 ```bash
+# CRITICAL: Always copy the template - do not create structure manually
 cp -r PRPs/templates/meta-prp-template PRPs/in-progress/{project-name}
 cd PRPs/in-progress/{project-name}
+
+# Verify template was copied correctly
+ls -la | grep -E "00-main|01-priority|02-priority|03-priority|04-priority" || echo "ERROR: Template not copied!"
 ```
 
 ### Step 2: Fill All Placeholders
+
 Replace all `{PLACEHOLDER}` values throughout the copied structure:
 - `{PROJECT_NAME}` - Your project name  
 - `{PRIORITY_X_NAME}` - Names for each priority area
@@ -23,7 +28,30 @@ Replace all `{PLACEHOLDER}` values throughout the copied structure:
 - `{TIMELINE}` - Estimated timelines
 - All other placeholders found in template files
 
-### Step 3: Initialize and Execute
+### Step 3: Apply Systematic Approach Methodology
+
+**LESSONS LEARNED**: Integrate systematic analysis patterns that proved successful in atomic CI fixes:
+
+```bash
+# Before any implementation, complete systematic research phase
+# 1. Pattern Recognition Over Individual Debugging
+#    - Look for common patterns across multiple issues
+#    - Identify root causes affecting multiple symptoms
+#    - Analyze for systematic solutions rather than individual fixes
+
+# 2. Research-First Methodology
+#    - Gather comprehensive information before any implementation
+#    - Analyze ALL data to identify true root causes
+#    - Stop after research phase to synthesize findings
+
+# 3. Infrastructure Stability Focus
+#    - Fix systematic issues that affect multiple components
+#    - Prioritize changes with multiplicative impact
+#    - Address root causes in configuration, dependencies, build systems
+```
+
+### Step 4: Initialize and Execute
+
 ```bash
 # Initialize orchestrator session
 orchestrator_initialize_session working_directory="$(pwd)"
@@ -78,9 +106,60 @@ required_context:
     sections: ["Task Orchestrator Failure Protocol", "Clean Architecture"]
 ```
 
+## Hook Integration and Automated Prevention Patterns
+
+**LESSONS LEARNED**: Apply hook-style automated problem prevention discovered in CI fixes:
+
+```yaml
+hook_integration_methodology:
+  automated_quality_gates:
+    - "Design validation hooks for each phase"
+    - "Implement automated problem detection before they occur"
+    - "Create self-checking systems that prevent known failure patterns"
+    
+  systematic_automation_strategy:
+    formatting_hooks: "Automatic code formatting to prevent linting violations"
+    dependency_hooks: "Automatic dependency validation to prevent build failures"
+    configuration_hooks: "Automatic configuration validation to prevent runtime errors"
+    testing_hooks: "Automatic test validation to prevent regression introduction"
+    
+  prevention_over_correction:
+    philosophy: "Design systems that prevent problems rather than fixing them"
+    implementation: "Each known failure pattern gets an automated prevention hook"
+    validation: "All hooks must be tested to ensure they catch the intended problems"
+```
+
+## Systematic Research Phase Design
+
+**CRITICAL**: Always complete comprehensive research before any implementation:
+
+```yaml
+systematic_research_methodology:
+  phase_1_comprehensive_data_gathering:
+    purpose: "Collect ALL relevant information before analysis"
+    approach: "Cast wide net - gather more than seems necessary"
+    validation: "Continue gathering until patterns become clear"
+    
+  phase_2_pattern_recognition:
+    purpose: "Identify root causes affecting multiple symptoms"
+    approach: "Look for common elements across different failure points"
+    validation: "True patterns affect multiple areas, not just single issues"
+    
+  phase_3_systematic_solution_design:
+    purpose: "Design solutions that address root causes"
+    approach: "Solutions should have multiplicative impact"
+    validation: "Good solutions fix multiple symptoms with single change"
+    
+  phase_4_infrastructure_focus:
+    purpose: "Prioritize changes with broadest positive impact"
+    approach: "Configuration, dependencies, build systems over individual fixes"
+    validation: "Infrastructure fixes enable future development velocity"
+```
+
 ## Meta-PRP Design Principles
 
 **Key Characteristics:**
+
 - **Main Orchestrator Agent**: Creates and manages task breakdown using orchestrator_plan_task
 - **Sub-Agent Coordination**: Each sub-agent gets specific orchestrator tasks with specialist contexts
 - **Automatic Artifact Storage**: Task completion via orchestrator_complete_task stores detailed work
@@ -524,6 +603,14 @@ python scripts/test_meta_prp_workflow.py PRPs/{concept}-meta-prp.md
 - [ ] **Result synthesis** via orchestrator_synthesize_results
 - [ ] **Multi-phase structure** with proper dependencies
 
+### Systematic Approach Integration Requirements
+
+- [ ] **Research-first methodology** enforced before any implementation phases
+- [ ] **Pattern recognition** documented for identifying root causes over symptoms
+- [ ] **Infrastructure focus** prioritizing multiplicative impact solutions
+- [ ] **Hook integration patterns** designed for automated problem prevention
+- [ ] **Comprehensive data gathering** completed before solution design
+
 ### Multi-Level Subtask Structure Requirements
 
 - [ ] **Category-based organization** of subtasks for clarity
@@ -592,6 +679,9 @@ python scripts/test_meta_prp_workflow.py PRPs/{concept}-meta-prp.md
 6. **Context Engineering Score Target**: 10/10 (enhanced for multi-agent)
 7. **Security Integration Score Target**: 10/10 (dedicated security sub-agent)
 8. **Orchestrator Integration Score Target**: 10/10 (full tool suite usage)
+9. **Systematic Approach Score Target**: 10/10 (research-first, pattern recognition, infrastructure focus)
+10. **Hook Integration Score Target**: 10/10 (automated problem prevention designed throughout)
+11. **Lessons Learned Integration Score Target**: 10/10 (CI fixes methodology applied to meta-PRP design)
 
 Save as: `PRPs/{concept}-meta-prp.md`
 

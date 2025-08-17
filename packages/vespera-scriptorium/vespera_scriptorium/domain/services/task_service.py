@@ -258,9 +258,11 @@ class TaskService:
     def generate_task_id(self) -> str:
         """Generate unique task ID with consistent format."""
         import uuid
+        
         return f"task_{uuid.uuid4().hex[:8]}"
 
     def validate_task_id(self, task_id: str) -> bool:
         """Validate task ID format."""
         import re
-        return bool(re.match(r'^task_[a-f0-9]{8}$', task_id))
+
+        return bool(re.match(r"^task_[a-f0-9]{8}$", task_id))

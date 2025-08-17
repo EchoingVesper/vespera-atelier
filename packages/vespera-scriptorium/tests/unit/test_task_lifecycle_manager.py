@@ -13,12 +13,12 @@ import json
 from pathlib import Path
 
 from vespera_scriptorium.orchestrator.lifecycle.manager import TaskLifecycleManager
-from vespera_scriptorium.orchestrator.lifecycle.base import LifecycleConfig
+from vespera_scriptorium.orchestrator.lifecycle.base import LifecycleConfig, StaleTaskReason
 # Import Clean Architecture v2.0 models
 from vespera_scriptorium.domain.entities.task import Task, TaskStatus, TaskType
 from vespera_scriptorium.domain.value_objects.complexity_level import ComplexityLevel
 from vespera_scriptorium.domain.value_objects.specialist_type import SpecialistType
-# from vespera_scriptorium.db.models import  # TODO: Complete this import
+from vespera_scriptorium.db.models import TaskBreakdownModel, SubTaskModel
 
 
 class TestTaskLifecycleManager:
@@ -36,6 +36,11 @@ class TestTaskLifecycleManager:
         manager.create_task_archive = AsyncMock()
         manager.get_task_by_id = AsyncMock()
         manager.update_task_status = AsyncMock()
+        # Add context manager support for session_scope
+        mock_session = Mock()
+        manager.session_scope = Mock(return_value=mock_session)
+        manager.session_scope.return_value.__enter__ = Mock(return_value=mock_session)
+        manager.session_scope.return_value.__exit__ = Mock(return_value=None)
         return manager
     
     @pytest.fixture

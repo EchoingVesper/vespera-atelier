@@ -34,8 +34,9 @@ Make sure you have these installed:
 curl -fsSL https://get.pnpm.io/install.sh | sh -
 source ~/.bashrc
 
-# Python and pip (usually pre-installed)
-sudo apt update && sudo apt install python3 python3-pip git
+# Python with venv support (required for virtual environments)
+sudo apt update && sudo apt install python3 python3.12-venv python3-pip git
+# Note: Replace python3.12-venv with your Python version (e.g., python3.11-venv)
 ```
 
 #### macOS

@@ -69,7 +69,7 @@ class Complexity(Enum):
 class ValidationResult:
     """Individual test result."""
     name: str
-    status: TestStatus
+    status: ValidationStatus
     duration: float
     error: Optional[str] = None
     warning: Optional[str] = None
@@ -105,7 +105,7 @@ class ToolSpec:
     description: str
     required_params: List[str]
     optional_params: List[str]
-    validation_gates: Dict[TestLevel, ValidationGate]
+    validation_gates: Dict[ValidationLevel, ValidationGate]
     
     @property
     def total_tests(self) -> int:
@@ -121,7 +121,7 @@ class ValidationFramework:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
         # Test results storage
-        self.results: Dict[str, Dict[TestLevel, List[TestResult]]] = {}
+        self.results: Dict[str, Dict[ValidationLevel, List[ValidationResult]]] = {}
         
         # Tool specifications
         self.tools = self._initialize_tool_specs()
@@ -159,7 +159,7 @@ class ValidationFramework:
                 required_params=[],
                 optional_params=["working_directory"],
                 validation_gates={
-                    TestLevel.BASIC: ValidationGate(
+                    ValidationLevel.BASIC: ValidationGate(
                         name="Basic Functionality",
                         description="Core session initialization tests",
                         tests=[
@@ -171,7 +171,7 @@ class ValidationFramework:
                         required_setup=["clean_database", "valid_working_directory"],
                         success_criteria=["session_created", "database_initialized", "valid_response"]
                     ),
-                    TestLevel.EDGE_CASES: ValidationGate(
+                    ValidationLevel.EDGE_CASES: ValidationGate(
                         name="Edge Cases",
                         description="Boundary conditions and error scenarios",
                         tests=[
@@ -183,7 +183,7 @@ class ValidationFramework:
                         required_setup=["test_directories", "permission_scenarios"],
                         success_criteria=["proper_error_handling", "graceful_degradation"]
                     ),
-                    TestLevel.INTEGRATION: ValidationGate(
+                    ValidationLevel.INTEGRATION: ValidationGate(
                         name="Integration",
                         description="Cross-system integration tests",
                         tests=[
@@ -207,7 +207,7 @@ class ValidationFramework:
                 required_params=[],
                 optional_params=["include_completed"],
                 validation_gates={
-                    TestLevel.BASIC: ValidationGate(
+                    ValidationLevel.BASIC: ValidationGate(
                         name="Basic Functionality",
                         description="Core status retrieval tests",
                         tests=[
@@ -219,7 +219,7 @@ class ValidationFramework:
                         required_setup=["sample_tasks", "database_connection"],
                         success_criteria=["status_retrieved", "valid_format", "acceptable_performance"]
                     ),
-                    TestLevel.EDGE_CASES: ValidationGate(
+                    ValidationLevel.EDGE_CASES: ValidationGate(
                         name="Edge Cases",
                         description="Boundary conditions and error scenarios",
                         tests=[
@@ -231,7 +231,7 @@ class ValidationFramework:
                         required_setup=["various_db_states", "performance_test_data"],
                         success_criteria=["handles_empty_state", "performance_under_load"]
                     ),
-                    TestLevel.INTEGRATION: ValidationGate(
+                    ValidationLevel.INTEGRATION: ValidationGate(
                         name="Integration",
                         description="Cross-system integration tests",
                         tests=[
@@ -255,7 +255,7 @@ class ValidationFramework:
                 required_params=["parent_task_id"],
                 optional_params=[],
                 validation_gates={
-                    TestLevel.BASIC: ValidationGate(
+                    ValidationLevel.BASIC: ValidationGate(
                         name="Basic Functionality",
                         description="Core result synthesis tests",
                         tests=[
@@ -267,7 +267,7 @@ class ValidationFramework:
                         required_setup=["parent_task", "completed_subtasks", "artifacts"],
                         success_criteria=["synthesis_complete", "artifacts_combined", "valid_output"]
                     ),
-                    TestLevel.EDGE_CASES: ValidationGate(
+                    ValidationLevel.EDGE_CASES: ValidationGate(
                         name="Edge Cases",
                         description="Boundary conditions and error scenarios",
                         tests=[
@@ -279,7 +279,7 @@ class ValidationFramework:
                         required_setup=["complex_task_structures", "edge_case_data"],
                         success_criteria=["error_handling", "graceful_failures"]
                     ),
-                    TestLevel.INTEGRATION: ValidationGate(
+                    ValidationLevel.INTEGRATION: ValidationGate(
                         name="Integration",
                         description="Cross-system integration tests",
                         tests=[
@@ -307,7 +307,7 @@ class ValidationFramework:
                 required_params=["title", "description"],
                 optional_params=["task_type", "parent_task_id", "complexity", "specialist_type"],
                 validation_gates={
-                    TestLevel.BASIC: ValidationGate(
+                    ValidationLevel.BASIC: ValidationGate(
                         name="Basic Functionality",
                         description="Core task creation tests",
                         tests=[
@@ -319,7 +319,7 @@ class ValidationFramework:
                         required_setup=["database_connection", "clean_state"],
                         success_criteria=["task_created", "id_generated", "persisted"]
                     ),
-                    TestLevel.EDGE_CASES: ValidationGate(
+                    ValidationLevel.EDGE_CASES: ValidationGate(
                         name="Edge Cases",
                         description="Boundary conditions and error scenarios",
                         tests=[
@@ -331,7 +331,7 @@ class ValidationFramework:
                         required_setup=["validation_test_data"],
                         success_criteria=["proper_validation", "error_messages"]
                     ),
-                    TestLevel.INTEGRATION: ValidationGate(
+                    ValidationLevel.INTEGRATION: ValidationGate(
                         name="Integration",
                         description="Cross-system integration tests",
                         tests=[
@@ -356,7 +356,7 @@ class ValidationFramework:
                 required_params=[],
                 optional_params=["status", "task_type", "specialist_type", "search_text"],
                 validation_gates={
-                    TestLevel.BASIC: ValidationGate(
+                    ValidationLevel.BASIC: ValidationGate(
                         name="Basic Functionality",
                         description="Core query functionality tests",
                         tests=[
@@ -368,7 +368,7 @@ class ValidationFramework:
                         required_setup=["sample_tasks", "database_connection"],
                         success_criteria=["query_results", "pagination_works", "valid_format"]
                     ),
-                    TestLevel.EDGE_CASES: ValidationGate(
+                    ValidationLevel.EDGE_CASES: ValidationGate(
                         name="Edge Cases",
                         description="Boundary conditions and error scenarios",
                         tests=[
@@ -380,7 +380,7 @@ class ValidationFramework:
                         required_setup=["large_dataset", "complex_queries"],
                         success_criteria=["handles_invalid_input", "performance_acceptable"]
                     ),
-                    TestLevel.INTEGRATION: ValidationGate(
+                    ValidationLevel.INTEGRATION: ValidationGate(
                         name="Integration",
                         description="Cross-system integration tests",
                         tests=[
@@ -408,7 +408,7 @@ class ValidationFramework:
                 required_params=[],
                 optional_params=["graceful", "preserve_state", "timeout", "reason"],
                 validation_gates={
-                    TestLevel.BASIC: ValidationGate(
+                    ValidationLevel.BASIC: ValidationGate(
                         name="Basic Functionality",
                         description="Core restart functionality tests",
                         tests=[
@@ -420,7 +420,7 @@ class ValidationFramework:
                         required_setup=["server_instance", "state_data"],
                         success_criteria=["restart_initiated", "state_preserved", "proper_logging"]
                     ),
-                    TestLevel.EDGE_CASES: ValidationGate(
+                    ValidationLevel.EDGE_CASES: ValidationGate(
                         name="Edge Cases",
                         description="Boundary conditions and error scenarios",
                         tests=[
@@ -432,7 +432,7 @@ class ValidationFramework:
                         required_setup=["edge_case_scenarios", "corrupted_state"],
                         success_criteria=["handles_emergencies", "prevents_corruption"]
                     ),
-                    TestLevel.INTEGRATION: ValidationGate(
+                    ValidationLevel.INTEGRATION: ValidationGate(
                         name="Integration",
                         description="Cross-system integration tests",
                         tests=[
@@ -456,7 +456,7 @@ class ValidationFramework:
                 required_params=[],
                 optional_params=["include_reboot_readiness", "include_connection_status"],
                 validation_gates={
-                    TestLevel.BASIC: ValidationGate(
+                    ValidationLevel.BASIC: ValidationGate(
                         name="Basic Functionality",
                         description="Core health check tests",
                         tests=[
@@ -468,7 +468,7 @@ class ValidationFramework:
                         required_setup=["running_server", "database_connection"],
                         success_criteria=["health_reported", "status_accurate", "valid_format"]
                     ),
-                    TestLevel.EDGE_CASES: ValidationGate(
+                    ValidationLevel.EDGE_CASES: ValidationGate(
                         name="Edge Cases",
                         description="Boundary conditions and error scenarios",
                         tests=[
@@ -480,7 +480,7 @@ class ValidationFramework:
                         required_setup=["degraded_states", "failure_scenarios"],
                         success_criteria=["detects_issues", "proper_error_reporting"]
                     ),
-                    TestLevel.INTEGRATION: ValidationGate(
+                    ValidationLevel.INTEGRATION: ValidationGate(
                         name="Integration",
                         description="Cross-system integration tests",
                         tests=[
@@ -496,7 +496,7 @@ class ValidationFramework:
             )
         }
     
-    async def run_validation_gate(self, tool_name: str, level: TestLevel) -> List[TestResult]:
+    async def run_validation_gate(self, tool_name: str, level: ValidationLevel) -> List[ValidationResult]:
         """Run a specific validation gate for a tool."""
         if tool_name not in self.tools:
             raise ValueError(f"Unknown tool: {tool_name}")
@@ -513,9 +513,9 @@ class ValidationFramework:
         # Check setup requirements
         setup_ok = await self._verify_setup_requirements(gate.required_setup)
         if not setup_ok:
-            results.append(TestResult(
+            results.append(ValidationResult(
                 name=f"setup_verification",
-                status=TestStatus.BLOCKED,
+                status=ValidationStatus.BLOCKED,
                 duration=0.0,
                 error="Required setup not available"
             ))
@@ -528,9 +528,9 @@ class ValidationFramework:
                 results.append(result)
             except Exception as e:
                 logger.error(f"Error running test {test_name}: {e}")
-                results.append(TestResult(
+                results.append(ValidationResult(
                     name=test_name,
-                    status=TestStatus.FAIL,
+                    status=ValidationStatus.FAIL,
                     duration=0.0,
                     error=str(e)
                 ))
@@ -593,7 +593,7 @@ class ValidationFramework:
         # Mock implementation - replace with actual directory check
         return True
     
-    async def _run_individual_test(self, tool_name: str, test_name: str, level: TestLevel) -> TestResult:
+    async def _run_individual_test(self, tool_name: str, test_name: str, level: ValidationLevel) -> ValidationResult:
         """Run an individual test and return result."""
         start_time = time.time()
         
@@ -605,18 +605,18 @@ class ValidationFramework:
             
             # For demonstration, make some tests fail
             if "invalid" in test_name or "error" in test_name:
-                status = TestStatus.FAIL
+                status = ValidationStatus.FAIL
                 error = f"Mock failure for {test_name}"
             elif "warning" in test_name:
-                status = TestStatus.WARNING
+                status = ValidationStatus.WARNING
                 error = None
             else:
-                status = TestStatus.PASS
+                status = ValidationStatus.PASS
                 error = None
             
             duration = time.time() - start_time
             
-            result = TestResult(
+            result = ValidationResult(
                 name=test_name,
                 status=status,
                 duration=duration,
@@ -626,9 +626,9 @@ class ValidationFramework:
             
             # Update statistics
             self.total_tests_run += 1
-            if status == TestStatus.PASS:
+            if status == ValidationStatus.PASS:
                 self.total_passed += 1
-            elif status == TestStatus.FAIL:
+            elif status == ValidationStatus.FAIL:
                 self.total_failed += 1
             
             return result
@@ -638,14 +638,14 @@ class ValidationFramework:
             self.total_tests_run += 1
             self.total_failed += 1
             
-            return TestResult(
+            return ValidationResult(
                 name=test_name,
-                status=TestStatus.FAIL,
+                status=ValidationStatus.FAIL,
                 duration=duration,
                 error=str(e)
             )
     
-    async def run_all_tools(self, level: TestLevel = TestLevel.ALL) -> Dict[str, Dict[TestLevel, List[TestResult]]]:
+    async def run_all_tools(self, level: ValidationLevel = ValidationLevel.ALL) -> Dict[str, Dict[ValidationLevel, List[ValidationResult]]]:
         """Run validation for all tools."""
         self.start_time = time.time()
         
@@ -656,9 +656,9 @@ class ValidationFramework:
         for tool_name in self.tools:
             tool_results = {}
             
-            if level == TestLevel.ALL:
+            if level == ValidationLevel.ALL:
                 # Run all levels
-                for test_level in [TestLevel.BASIC, TestLevel.EDGE_CASES, TestLevel.INTEGRATION]:
+                for test_level in [ValidationLevel.BASIC, ValidationLevel.EDGE_CASES, ValidationLevel.INTEGRATION]:
                     results = await self.run_validation_gate(tool_name, test_level)
                     tool_results[test_level] = results
             else:
@@ -684,9 +684,9 @@ class ValidationFramework:
             for level_results in tool_results.values():
                 for result in level_results:
                     total_tests += 1
-                    if result.status == TestStatus.PASS:
+                    if result.status == ValidationStatus.PASS:
                         passed_tests += 1
-                    elif result.status == TestStatus.FAIL:
+                    elif result.status == ValidationStatus.FAIL:
                         failed_tests += 1
         
         # Build report
@@ -721,8 +721,8 @@ class ValidationFramework:
             for level, results in tool_results.items():
                 level_summary = {
                     "total": len(results),
-                    "passed": sum(1 for r in results if r.status == TestStatus.PASS),
-                    "failed": sum(1 for r in results if r.status == TestStatus.FAIL),
+                    "passed": sum(1 for r in results if r.status == ValidationStatus.PASS),
+                    "failed": sum(1 for r in results if r.status == ValidationStatus.FAIL),
                     "tests": [
                         {
                             "name": r.name,
@@ -741,7 +741,7 @@ class ValidationFramework:
                 
                 # Collect failed tests
                 for result in results:
-                    if result.status == TestStatus.FAIL:
+                    if result.status == ValidationStatus.FAIL:
                         report["failed_tests"].append({
                             "tool": tool_name,
                             "level": level.value,
@@ -784,7 +784,7 @@ class ValidationFramework:
         for tool_name, tool_results in self.results.items():
             for level, results in tool_results.items():
                 for result in results:
-                    if result.status == TestStatus.PASS:
+                    if result.status == ValidationStatus.PASS:
                         # Update checkboxes to checked
                         content = content.replace(
                             f"- [ ] **{level.value.replace('_', ' ').title()}**",
@@ -823,14 +823,14 @@ async def main():
     
     # Run tests
     if args.all:
-        results = await framework.run_all_tools(TestLevel(args.level))
+        results = await framework.run_all_tools(ValidationLevel(args.level))
     elif args.tool:
         if args.tool not in framework.tools:
             print(f"Error: Unknown tool '{args.tool}'")
             print(f"Available tools: {list(framework.tools.keys())}")
             sys.exit(1)
         
-        results = await framework.run_validation_gate(args.tool, TestLevel(args.level))
+        results = await framework.run_validation_gate(args.tool, ValidationLevel(args.level))
     else:
         print("Error: Must specify either --tool or --all")
         sys.exit(1)

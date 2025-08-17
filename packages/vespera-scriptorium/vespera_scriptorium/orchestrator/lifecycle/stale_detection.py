@@ -13,15 +13,17 @@ from .base import LifecycleConfig, StaleTaskReason, TaskLifecycleState, logger
 class StaleTaskDetector:
     """Handles detection of stale tasks based on various criteria."""
 
-    def __init__(self, state_manager):
+    def __init__(self, state_manager, config=None):
         """Initialize the stale task detector.
 
         Args:
             state_manager: Database persistence manager
+            config: Optional lifecycle configuration
         """
         self.state_manager = state_manager
+        self.config = config or LifecycleConfig()
         self.logger = logger
-        self.stale_detection_config = LifecycleConfig.STALE_DETECTION_CONFIG
+        self.stale_detection_config = self.config.STALE_DETECTION_CONFIG
 
     async def detect_stale_tasks(
         self, comprehensive_scan: bool = False

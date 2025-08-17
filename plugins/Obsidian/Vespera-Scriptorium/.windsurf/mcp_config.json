@@ -1,0 +1,53 @@
+{
+  "mcpServers": {
+    "memory": {
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ],
+      "env": {
+        "MEMORY_FILE_PATH": "E:\My Work\Programming\Plugins\Obsidian\Vespera-Scriptorium\.memory\memory.json"
+      },
+      "command": "npx",
+      "disabledTools": []
+    },
+    "nats-mcp-server": {
+      "args": [
+        "-y",
+        "@modelcontextprotocol/nats-mcp-server"
+      ],
+      "env": {},
+      "command": "npx",
+      "disabledTools": [
+        "nats_monitor_general",
+        "nats_get_server_info"
+      ]
+    },
+    "desktop-commander": {
+      "args": [
+        "@wonderwhy-er/desktop-commander@latest"
+      ],
+      "command": "npx.cmd",
+      "disabledTools": [
+        "set_config_value",
+        "get_config",
+        "get_file_info",
+        "list_processes"
+      ]
+    },
+    "Puppeteer": {
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-puppeteer"
+      ],
+      "env": {},
+      "command": "npx",
+      "disabledTools": [
+        "puppeteer_pdf",
+        "puppeteer_type",
+        "puppeteer_press",
+        "puppeteer_focus"
+      ]
+    }
+  }
+}

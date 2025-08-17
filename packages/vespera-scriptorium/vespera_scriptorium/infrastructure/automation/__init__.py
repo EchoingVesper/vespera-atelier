@@ -21,7 +21,7 @@ from .validation_hooks import (
 
 __all__ = [
     "AutomationManager",
-    "get_automation_manager", 
+    "get_automation_manager",
     "start_automation",
     "stop_automation",
     "HookTrigger",
