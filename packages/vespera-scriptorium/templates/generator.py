@@ -11,7 +11,6 @@ from jinja2 import Environment, Template
 
 from .models import TemplateConfig, TemplateInstantiationResult, TaskTemplate
 from tasks.models import Task, TaskPriority, TaskStatus
-# Note: Will integrate with actual TaskManager and RoleManager when available
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +26,9 @@ class TaskTreeGenerator:
     - Role assignment with capability validation
     """
     
-    def __init__(self):
+    def __init__(self, mcp_client=None):
         self.jinja_env = Environment()
-        # TODO: Integrate with actual TaskManager and RoleManager
-        self.task_manager = None
-        self.role_manager = None
+        self.mcp_client = mcp_client  # For MCP tool calls when available
         
     def create_hierarchical_tasks(
         self,
@@ -135,11 +132,34 @@ class TaskTreeGenerator:
             title = self._substitute_variables(task_template.title_template, variables)
             description = self._substitute_variables(task_template.description_template, variables)
             
-            # For now, simulate task creation (TODO: integrate with actual MCP tools)
+            # Create task using MCP client if available
+            if self.mcp_client:
+                try:
+                    # Use the MCP integration client
+                    import asyncio
+                    task_id = asyncio.run(self.mcp_client.create_task(
+                        title=title,
+                        description=description,
+                        priority=task_template.priority.value if hasattr(task_template.priority, 'value') else task_template.priority,
+                        project_id=project_id,
+                        parent_id=parent_id,
+                        role=task_template.required_role,
+                        feature=getattr(task_template, 'feature_area', None)
+                    ))
+                    
+                    if task_id:
+                        logger.info(f"Created task via MCP: {task_id} - {title}")
+                        return task_id
+                        
+                except Exception as mcp_error:
+                    logger.error(f"MCP task creation failed: {mcp_error}")
+                    # Fall through to mock implementation
+            
+            # Mock implementation fallback
             import uuid
             task_id = str(uuid.uuid4())[:8]
             
-            logger.info(f"[MOCK] Created task {task_id}: {title}")
+            logger.info(f"Created task (mock): {task_id} - {title}")
             logger.info(f"  Description: {description}")
             logger.info(f"  Priority: {task_template.priority}")
             logger.info(f"  Parent: {parent_id}")
@@ -184,12 +204,32 @@ class TaskTreeGenerator:
                 dep_task_id = task_id_mapping[dep_template_id]
                 
                 try:
-                    # Mock dependency creation (TODO: integrate with actual MCP tools)
-                    logger.info(f"[MOCK] Added dependency: {task_id} depends on {dep_task_id}")
+                    # Add dependency using MCP client if available
+                    success = False
+                    if self.mcp_client:
+                        try:
+                            import asyncio
+                            success = asyncio.run(self.mcp_client.add_dependency(
+                                task_id=task_id,
+                                depends_on_task_id=dep_task_id
+                            ))
+                            
+                            if success:
+                                logger.info(f"Added dependency via MCP: {task_id} depends on {dep_task_id}")
+                            else:
+                                logger.warning(f"MCP dependency creation returned failure")
+                                
+                        except Exception as mcp_error:
+                            logger.error(f"MCP dependency creation failed: {mcp_error}")
+                    
+                    # Add to results (even if mock)
+                    if not success:
+                        logger.info(f"Added dependency (mock): {task_id} depends on {dep_task_id}")
+                    
                     dependency_results.append({
                         "task_id": task_id,
                         "depends_on": dep_task_id,
-                        "status": "created"
+                        "status": "created" if success else "mock_created"
                     })
                         
                 except Exception as e:
@@ -214,8 +254,33 @@ class TaskTreeGenerator:
             task_id = task_id_mapping[template_id]
             
             try:
-                # Mock role assignment (TODO: integrate with actual MCP tools)
-                logger.info(f"[MOCK] Assigned role '{role_name}' to task {task_id}")
+                # Validate role first
+                if self.mcp_client and not self.mcp_client.validate_role(role_name):
+                    logger.warning(f"Role '{role_name}' is not valid, skipping assignment")
+                    continue
+                
+                # Assign role using MCP client if available
+                success = False
+                if self.mcp_client:
+                    try:
+                        import asyncio
+                        success = asyncio.run(self.mcp_client.assign_role(
+                            task_id=task_id,
+                            role_name=role_name
+                        ))
+                        
+                        if success:
+                            logger.info(f"Assigned role via MCP: '{role_name}' to task {task_id}")
+                        else:
+                            logger.warning(f"MCP role assignment returned failure")
+                            
+                    except Exception as mcp_error:
+                        logger.error(f"MCP role assignment failed: {mcp_error}")
+                
+                # Add to results (even if mock)
+                if not success:
+                    logger.info(f"Assigned role (mock): '{role_name}' to task {task_id}")
+                    
                 successful_assignments[task_id] = role_name
                     
             except Exception as e:

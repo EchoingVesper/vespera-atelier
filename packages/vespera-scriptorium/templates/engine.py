@@ -21,6 +21,7 @@ from .models import (
 )
 from .generator import TaskTreeGenerator
 from .validator import TemplateValidator
+from .mcp_integration import template_mcp_client
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ class V2TemplateEngine:
     
     def __init__(self):
         self.jinja_env = Environment()
-        self.task_generator = TaskTreeGenerator()
+        self.task_generator = TaskTreeGenerator(mcp_client=template_mcp_client)
         self.validator = TemplateValidator()
         
     def create_from_template(
