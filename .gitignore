@@ -160,3 +160,7 @@ Cargo.lock
 
 # Reference repositories - all contents ignored
 reference/
+
+# Vespera V2 session files (auto-generated)
+**/session_context.json
+**/.session_context.json
