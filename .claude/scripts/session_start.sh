@@ -1,40 +1,70 @@
 #!/bin/bash
 
-# Session start script for MCP Task Orchestrator development
+# Session start script for Vespera Scriptorium V2 development
 # This runs when Claude Code starts or resumes a session
 
-echo "🚀 MCP Task Orchestrator Development Session"
-echo "============================================"
+echo "🚀 Vespera Scriptorium V2 Development Session"
+echo "=============================================="
 
-# Check Python virtual environment
-if [[ -n "$VIRTUAL_ENV" ]]; then
-    echo "✅ Virtual environment active: $VIRTUAL_ENV"
+# Check current directory context
+if [[ -f "packages/vespera-scriptorium/mcp_server_v2.py" ]]; then
+    echo "✅ V2 system detected in monorepo"
+    cd packages/vespera-scriptorium 2>/dev/null || echo "⚠️  Could not switch to V2 directory"
+elif [[ -f "mcp_server_v2.py" ]]; then
+    echo "✅ V2 system detected in current directory"
 else
-    echo "⚠️  No virtual environment active"
-    echo "   Consider running: source venv/bin/activate"
+    echo "⚠️  V2 system not found - ensure you're in the correct directory"
 fi
 
-# Check for required tools
-command -v black >/dev/null 2>&1 && echo "✅ black installed" || echo "⚠️  black not found (auto-formatting disabled)"
-command -v isort >/dev/null 2>&1 && echo "✅ isort installed" || echo "⚠️  isort not found (import sorting disabled)"
-command -v markdownlint >/dev/null 2>&1 && echo "✅ markdownlint installed" || echo "⚠️  markdownlint not found"
-command -v pytest >/dev/null 2>&1 && echo "✅ pytest installed" || echo "⚠️  pytest not found"
-
-# Check database status
-if [ -f ".task_orchestrator/orchestrator.db" ]; then
-    echo "✅ Task orchestrator database found"
-    # Could add size check or last modified time here
+# Check Python virtual environment for V2
+if [[ -d "mcp_venv" ]]; then
+    if [[ -n "$VIRTUAL_ENV" ]] && [[ "$VIRTUAL_ENV" == *"mcp_venv"* ]]; then
+        echo "✅ V2 virtual environment active: $VIRTUAL_ENV"
+    else
+        echo "⚠️  V2 virtual environment not active"
+        echo "   Consider running: source mcp_venv/bin/activate"
+    fi
 else
-    echo "ℹ️  No task orchestrator database (will be created on first use)"
+    echo "ℹ️  V2 virtual environment not found (run installation first)"
 fi
 
-# Remind about key commands
+# Check for V2 required tools
+command -v black >/dev/null 2>&1 && echo "✅ black installed" || echo "⚠️  black not found (V2 formatting disabled)"
+command -v isort >/dev/null 2>&1 && echo "✅ isort installed" || echo "⚠️  isort not found (V2 import sorting disabled)"
+
+# Check V2 system status
+if [[ -f "requirements.txt" ]]; then
+    echo "✅ V2 requirements.txt found"
+else
+    echo "⚠️  V2 requirements.txt missing"
+fi
+
+if [[ -d "tasks" ]] && [[ -d "roles" ]]; then
+    echo "✅ V2 core modules (tasks, roles) found"
+else
+    echo "⚠️  V2 core modules missing"
+fi
+
+# Check V2 database
+if [[ -f "tasks.sqlite" ]]; then
+    echo "✅ V2 task database found"
+else
+    echo "ℹ️  V2 task database will be created on first use"
+fi
+
+# Remind about V2 commands
 echo ""
-echo "Key Commands:"
-echo "  pytest -m unit                  # Run unit tests"
-echo "  pytest -m integration           # Run integration tests"
-echo "  python tools/diagnostics/health_check.py  # System health check"
-echo "  MCP_TASK_ORCHESTRATOR_USE_DI=true python -m mcp_task_orchestrator.server  # Run server"
+echo "V2 Development Commands:"
+echo "  python test_task_system.py      # Test V2 task management"
+echo "  python test_role_system.py      # Test V2 role system"
+echo "  python test_mcp_fastmcp.py      # Test V2 MCP server"
+echo "  ./mcp_venv/bin/python mcp_server_v2.py  # Run V2 MCP server"
+echo "  black roles/ tasks/ *.py        # Format V2 code"
+echo "  isort roles/ tasks/ *.py        # Sort V2 imports"
+echo ""
+echo "Claude Code MCP Integration:"
+echo "  claude mcp restart vespera-scriptorium  # Restart V2 MCP server"
+echo "  claude mcp list | grep vespera-scriptorium  # Check V2 MCP status"
 
-echo "============================================"
-echo "Ready for development! Check CLAUDE.md for guidelines."
+echo "=============================================="
+echo "Ready for V2 development! Check CLAUDE.md for V2 guidelines."

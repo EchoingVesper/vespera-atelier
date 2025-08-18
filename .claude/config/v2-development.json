@@ -1,0 +1,147 @@
+{
+  "v2_config": {
+    "version": "2.0",
+    "description": "V2 development configuration for Vespera Scriptorium FastMCP system",
+    "last_updated": "2025-08-18",
+    "environment": "production"
+  },
+  
+  "mcp_server_config": {
+    "server_name": "vespera-scriptorium",
+    "server_path": "packages/vespera-scriptorium/mcp_server_v2.py",
+    "virtual_env": "packages/vespera-scriptorium/mcp_venv",
+    "auto_restart": true,
+    "health_check_interval": 300,
+    "tools_count": 14
+  },
+  
+  "v2_system_limits": {
+    "max_concurrent_tasks": 50,
+    "max_task_tree_depth": 10,
+    "max_role_validations_per_minute": 100,
+    "task_database_max_size_mb": 100,
+    "mcp_response_timeout_seconds": 30
+  },
+  
+  "role_system_config": {
+    "max_file_patterns_per_role": 20,
+    "file_access_validation": true,
+    "role_capability_caching": true,
+    "pattern_compilation_cache": true,
+    "validation_timeout_seconds": 5
+  },
+  
+  "development_settings": {
+    "auto_format_on_save": true,
+    "run_tests_on_change": false,
+    "mcp_server_auto_restart": true,
+    "debug_mode": false,
+    "verbose_logging": false
+  },
+  
+  "testing_config": {
+    "component_tests": [
+      "test_task_system.py",
+      "test_role_system.py", 
+      "test_mcp_fastmcp.py"
+    ],
+    "test_timeout_seconds": 60,
+    "auto_cleanup_test_data": true,
+    "parallel_test_execution": false
+  },
+  
+  "code_quality": {
+    "formatting": {
+      "black_enabled": true,
+      "black_targets": ["roles/", "tasks/", "*.py"],
+      "isort_enabled": true,
+      "isort_targets": ["roles/", "tasks/", "*.py"]
+    },
+    "validation": {
+      "import_validation": true,
+      "syntax_checking": true,
+      "type_hints_preferred": true
+    }
+  },
+  
+  "performance_monitoring": {
+    "task_execution_tracking": true,
+    "role_validation_metrics": true,
+    "mcp_response_time_tracking": true,
+    "database_query_optimization": true,
+    "memory_usage_monitoring": false
+  },
+  
+  "security_settings": {
+    "file_access_restrictions": true,
+    "role_capability_enforcement": true,
+    "mcp_tool_validation": true,
+    "secure_task_execution": true,
+    "audit_trail": true
+  },
+  
+  "integration_points": {
+    "claude_code_mcp": {
+      "enabled": true,
+      "auto_configure": true,
+      "restart_on_changes": true
+    },
+    "obsidian_plugin": {
+      "enabled": false,
+      "sync_tasks": false
+    },
+    "github_actions": {
+      "enabled": true,
+      "v2_ci_pipeline": true,
+      "auto_testing": true
+    }
+  },
+  
+  "data_management": {
+    "task_database": {
+      "auto_backup": false,
+      "vacuum_interval_days": 30,
+      "max_completed_tasks": 1000
+    },
+    "role_definitions": {
+      "hot_reload": true,
+      "validation_on_load": true,
+      "cache_compiled_patterns": true
+    }
+  },
+  
+  "migration_settings": {
+    "v1_archives": {
+      "preserve_location": "archive/v1-database-archives/",
+      "access_mode": "read_only",
+      "cleanup_after_days": 365
+    },
+    "legacy_support": {
+      "v1_data_access": false,
+      "v1_command_compatibility": false,
+      "migration_tools": false
+    }
+  },
+  
+  "documentation_config": {
+    "auto_generate_tool_docs": false,
+    "role_system_docs_sync": false,
+    "changelog_automation": false,
+    "api_documentation": false
+  },
+  
+  "alerts_and_notifications": {
+    "mcp_server_down": {
+      "enabled": true,
+      "notification_method": "console"
+    },
+    "role_validation_failures": {
+      "enabled": true,
+      "threshold_per_hour": 10
+    },
+    "task_execution_errors": {
+      "enabled": true,
+      "escalation_after_count": 5
+    }
+  }
+}
