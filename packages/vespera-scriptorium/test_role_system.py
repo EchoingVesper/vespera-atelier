@@ -10,7 +10,7 @@ from pathlib import Path
 # Add the package to path for testing
 sys.path.insert(0, str(Path(__file__).parent))
 
-from roles import RoleManager, RoleValidator, RoleExecutor
+from roles import RoleManager, RoleValidator, RoleExecutor, ToolGroup
 
 
 def test_role_system():
@@ -30,7 +30,9 @@ def test_role_system():
     coder_role = role_manager.get_role("coder")
     if coder_role:
         print(f"   ✓ Coder role: {coder_role.display_name}")
-        print(f"   ✓ Capabilities: {[cap.type.value for cap in coder_role.capabilities]}")
+        print(f"   ✓ Tool groups: {[group.value if hasattr(group, 'value') else str(group) for group in coder_role.tool_groups]}")
+        print(f"   ✓ Has EDIT group: {coder_role.has_tool_group(ToolGroup.EDIT)}")
+        print(f"   ✓ Can edit Python file: {coder_role.can_edit_file('test.py')}")
         print(f"   ✓ Restrictions: {len(coder_role.restrictions)}")
         print(f"   ✓ Max file changes: {coder_role.get_max_file_changes()}")
     else:
@@ -63,7 +65,7 @@ def test_role_system():
     
     print(f"   ✓ Execution status: {result.status.value}")
     print(f"   ✓ Role used: {result.role_name}")
-    print(f"   ✓ Capabilities: {result.capabilities_used}")
+    print(f"   ✓ Tool groups: {result.tool_groups_used}")
     print(f"   ✓ Execution time: {result.execution_time:.3f}s")
     
     # Test context generation
@@ -72,16 +74,13 @@ def test_role_system():
     if context:
         prompt = context.to_llm_prompt()
         print(f"   ✓ Generated LLM prompt ({len(prompt)} chars)")
-        print(f"   ✓ Capability restrictions: {len(context.capability_restrictions)}")
+        print(f"   ✓ Tool group restrictions: {len(context.tool_group_restrictions)}")
         print(f"   ✓ Validation requirements: {len(context.validation_requirements)}")
     
     # Test role finding
     print("\n6. Testing Role Finding...")
-    suitable_roles = executor.list_suitable_roles(
-        required_capabilities=["file_read", "file_write"],
-        task_type="implementation"
-    )
-    print(f"   ✓ Found {len(suitable_roles)} suitable roles for implementation:")
+    suitable_roles = role_manager.get_roles_by_tool_group(ToolGroup.EDIT)
+    print(f"   ✓ Found {len(suitable_roles)} suitable roles with EDIT tool group:")
     for role in suitable_roles:
         print(f"      - {role.name}: {role.display_name}")
     
@@ -90,9 +89,9 @@ def test_role_system():
     summary = role_manager.get_role_summary()
     print(f"   ✓ Total roles loaded: {len(summary)}")
     for name, info in summary.items():
-        caps = len(info['capabilities'])
+        groups = len(info['tool_groups'])
         restrictions = info['restrictions']
-        print(f"      - {name}: {caps} caps, {restrictions} restrictions")
+        print(f"      - {name}: {groups} tool groups, {restrictions} restrictions")
     
     print("\n" + "=" * 50)
     print("✅ Role System Test Complete!")

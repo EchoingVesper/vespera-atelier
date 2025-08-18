@@ -13,7 +13,7 @@ from pathlib import Path
 import json
 import time
 
-from .definitions import Role, CapabilityType, RestrictionType, RoleCapability, RoleRestriction
+from .definitions import Role, ToolGroup, RestrictionType, RoleRestriction
 from .manager import RoleManager
 from .validation import RoleValidator
 
@@ -39,7 +39,7 @@ class ExecutionContext:
     linked_documents: List[str]
     project_context: str
     parent_context: Optional[str]
-    capability_restrictions: List[str]
+    tool_group_restrictions: List[str]
     validation_requirements: List[str]
     
     def to_llm_prompt(self) -> str:
@@ -52,16 +52,21 @@ class ExecutionContext:
             "# System Instructions", 
             self.role.system_prompt,
             "",
-            "# Capability Restrictions",
-            "You are restricted to the following capabilities:"
+            "# Tool Group Access",
+            "You have access to the following tool groups:"
         ]
         
-        # Add capabilities
-        for cap in self.role.capabilities:
-            prompt_parts.append(f"- ✓ {cap.type.value}")
+        # Add tool groups
+        for group_entry in self.role.tool_groups:
+            if isinstance(group_entry, ToolGroup):
+                prompt_parts.append(f"- ✓ {group_entry.value}")
+            elif isinstance(group_entry, tuple):
+                group, options = group_entry
+                restriction_info = f" (restricted to: {options.file_regex})" if options.file_regex else ""
+                prompt_parts.append(f"- ✓ {group.value}{restriction_info}")
         
         prompt_parts.append("")
-        prompt_parts.append("You must NOT perform actions outside these capabilities.")
+        prompt_parts.append("You must ONLY use tools from your assigned tool groups.")
         
         # Add specific restrictions
         if self.role.restrictions:
@@ -102,8 +107,8 @@ class ExecutionContext:
             self.task_prompt,
             "",
             "# Instructions",
-            "Execute the task according to your role restrictions and capabilities. ",
-            "If you cannot complete the task due to capability restrictions, explain why clearly."
+            "Execute the task according to your role restrictions and tool groups. ",
+            "If you cannot complete the task due to tool group restrictions, explain why clearly."
         ])
         
         return "\n".join(prompt_parts)
@@ -116,7 +121,7 @@ class ExecutionResult:
     output: str
     role_name: str
     execution_time: float
-    capabilities_used: List[str]
+    tool_groups_used: List[str]
     restrictions_violated: List[str]
     files_modified: List[str]
     error_message: Optional[str] = None
@@ -129,7 +134,7 @@ class ExecutionResult:
             'output': self.output,
             'role_name': self.role_name,
             'execution_time': self.execution_time,
-            'capabilities_used': self.capabilities_used,
+            'tool_groups_used': self.tool_groups_used,
             'restrictions_violated': self.restrictions_violated,
             'files_modified': self.files_modified,
             'error_message': self.error_message,
@@ -137,8 +142,8 @@ class ExecutionResult:
         }
 
 
-class CapabilityEnforcer:
-    """Enforces role capability restrictions during execution."""
+class ToolGroupEnforcer:
+    """Enforces role tool group restrictions during execution."""
     
     def __init__(self, role: Role):
         self.role = role
@@ -146,21 +151,18 @@ class CapabilityEnforcer:
         self.usage_counts: Dict[str, int] = {}
         
     def check_file_operation(self, operation: str, file_path: str) -> bool:
-        """Check if file operation is allowed."""
-        if operation == "read" and not self.role.has_capability(CapabilityType.FILE_READ):
-            self.violations.append(f"File read not allowed: {file_path}")
+        """Check if file operation is allowed based on tool groups."""
+        if operation == "read" and not self.role.has_tool_group(ToolGroup.READ):
+            self.violations.append(f"File read not allowed: {file_path} (missing READ tool group)")
             return False
             
-        if operation == "write" and not self.role.has_capability(CapabilityType.FILE_WRITE):
-            self.violations.append(f"File write not allowed: {file_path}")
+        if operation in ["write", "create", "delete"] and not self.role.has_tool_group(ToolGroup.EDIT):
+            self.violations.append(f"File {operation} not allowed: {file_path} (missing EDIT tool group)")
             return False
             
-        if operation == "create" and not self.role.has_capability(CapabilityType.FILE_CREATE):
-            self.violations.append(f"File create not allowed: {file_path}")
-            return False
-            
-        if operation == "delete" and not self.role.has_capability(CapabilityType.FILE_DELETE):
-            self.violations.append(f"File delete not allowed: {file_path}")
+        # Check file pattern restrictions for EDIT operations
+        if operation in ["write", "create", "delete"] and not self.role.can_edit_file(file_path):
+            self.violations.append(f"File {operation} not allowed: {file_path} (file pattern restriction)")
             return False
         
         # Check file change limits
@@ -178,40 +180,31 @@ class CapabilityEnforcer:
         return True
     
     def check_database_operation(self, operation: str) -> bool:
-        """Check if database operation is allowed."""
-        if operation == "read" and not self.role.has_capability(CapabilityType.DATABASE_READ):
-            self.violations.append("Database read not allowed")
-            return False
-            
-        if operation == "write" and not self.role.has_capability(CapabilityType.DATABASE_WRITE):
-            self.violations.append("Database write not allowed")
-            return False
-            
-        # Check read-only restriction
-        if operation == "write" and self.role.is_restricted(RestrictionType.READ_ONLY_DATABASE):
-            self.violations.append("Database is read-only for this role")
+        """Check if database operation is allowed based on tool groups."""
+        if not self.role.has_tool_group(ToolGroup.MCP):
+            self.violations.append(f"Database {operation} not allowed (missing MCP tool group)")
             return False
         
         return True
     
-    def check_code_execution(self) -> bool:
-        """Check if code execution is allowed."""
-        if not self.role.has_capability(CapabilityType.CODE_EXECUTION):
-            self.violations.append("Code execution not allowed")
+    def check_command_execution(self) -> bool:
+        """Check if command execution is allowed."""
+        if not self.role.has_tool_group(ToolGroup.COMMAND):
+            self.violations.append("Command execution not allowed (missing COMMAND tool group)")
             return False
         return True
     
-    def check_network_access(self) -> bool:
-        """Check if network access is allowed.""" 
-        if not self.role.has_capability(CapabilityType.NETWORK_ACCESS):
-            self.violations.append("Network access not allowed")
+    def check_browser_access(self) -> bool:
+        """Check if browser access is allowed.""" 
+        if not self.role.has_tool_group(ToolGroup.BROWSER):
+            self.violations.append("Browser access not allowed (missing BROWSER tool group)")
             return False
         return True
     
-    def check_task_spawning(self, depth: int = 0) -> bool:
-        """Check if task spawning is allowed."""
-        if not self.role.has_capability(CapabilityType.SPAWN_TASKS):
-            self.violations.append("Task spawning not allowed")
+    def check_task_coordination(self, depth: int = 0) -> bool:
+        """Check if task coordination is allowed."""
+        if not self.role.has_tool_group(ToolGroup.COORDINATION):
+            self.violations.append("Task coordination not allowed (missing COORDINATION tool group)")
             return False
             
         # Check depth limits
@@ -223,7 +216,7 @@ class CapabilityEnforcer:
         return True
     
     def get_violations(self) -> List[str]:
-        """Get all capability violations."""
+        """Get all tool group violations."""
         return self.violations.copy()
     
     def reset_violations(self) -> None:
@@ -279,7 +272,7 @@ class RoleExecutor:
                 output="",
                 role_name=role_name,
                 execution_time=0,
-                capabilities_used=[],
+                tool_groups_used=[],
                 restrictions_violated=[],
                 files_modified=[],
                 error_message=f"Role '{role_name}' not found"
@@ -293,7 +286,7 @@ class RoleExecutor:
                 output="",
                 role_name=role_name,
                 execution_time=0,
-                capabilities_used=[],
+                tool_groups_used=[],
                 restrictions_violated=[],
                 files_modified=[],
                 error_message=f"Role validation failed: {'; '.join(errors)}"
@@ -306,7 +299,7 @@ class RoleExecutor:
             linked_documents=linked_documents or [],
             project_context=project_context or "",
             parent_context=parent_context,
-            capability_restrictions=[
+            tool_group_restrictions=[
                 f"{restriction.type.value}: {restriction.value}"
                 for restriction in role.restrictions
             ],
@@ -319,13 +312,13 @@ class RoleExecutor:
                 output=execution_context.to_llm_prompt(),
                 role_name=role_name,
                 execution_time=time.time() - start_time,
-                capabilities_used=[cap.type.value for cap in role.capabilities],
+                tool_groups_used=[group.value if isinstance(group, ToolGroup) else group[0].value for group in role.tool_groups],
                 restrictions_violated=[],
                 files_modified=[]
             )
         
-        # Execute with capability enforcement
-        enforcer = CapabilityEnforcer(role)
+        # Execute with tool group enforcement
+        enforcer = ToolGroupEnforcer(role)
         
         try:
             # This is where we would spawn the actual LLM
@@ -337,7 +330,7 @@ class RoleExecutor:
                 output="[SIMULATION] Task would be executed with role capabilities",
                 role_name=role_name,
                 execution_time=execution_time,
-                capabilities_used=[cap.type.value for cap in role.capabilities],
+                tool_groups_used=[group.value if isinstance(group, ToolGroup) else group[0].value for group in role.tool_groups],
                 restrictions_violated=enforcer.get_violations(),
                 files_modified=[],
                 llm_used=role.preferred_llm
@@ -349,7 +342,7 @@ class RoleExecutor:
                 output="",
                 role_name=role_name,
                 execution_time=time.time() - start_time,
-                capabilities_used=[],
+                tool_groups_used=[],
                 restrictions_violated=enforcer.get_violations(),
                 files_modified=[],
                 error_message=str(e)
@@ -372,27 +365,27 @@ class RoleExecutor:
             linked_documents=context_docs,
             project_context="[PROJECT_CONTEXT_PLACEHOLDER]",
             parent_context=None,
-            capability_restrictions=[
+            tool_group_restrictions=[
                 f"{restriction.type.value}: {restriction.value}"
                 for restriction in role.restrictions
             ],
             validation_requirements=role.validation_rules
         )
     
-    def list_suitable_roles(self, required_capabilities: List[str], task_type: Optional[str] = None) -> List[Role]:
-        """Find roles suitable for specific capabilities and task type."""
+    def list_suitable_roles(self, required_tool_groups: List[str], task_type: Optional[str] = None) -> List[Role]:
+        """Find roles suitable for specific tool groups and task type."""
         suitable_roles = []
         
         for role in self.role_manager.roles.values():
-            # Check capabilities
-            has_all_capabilities = all(
-                role.has_capability(cap) for cap in required_capabilities
+            # Check tool groups
+            has_all_groups = all(
+                role.has_tool_group(group) for group in required_tool_groups
             )
             
             # Check task type
             task_type_match = task_type is None or task_type in role.task_types
             
-            if has_all_capabilities and task_type_match:
+            if has_all_groups and task_type_match:
                 suitable_roles.append(role)
         
         return suitable_roles

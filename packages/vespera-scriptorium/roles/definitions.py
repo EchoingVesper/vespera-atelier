@@ -9,68 +9,68 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Optional, Any, Union
 from enum import Enum
 import yaml
+import re
 from pathlib import Path
 
 
-class CapabilityType(Enum):
-    """Types of capabilities that roles can have."""
-    FILE_READ = "file_read"
-    FILE_WRITE = "file_write"
-    FILE_CREATE = "file_create"
-    FILE_DELETE = "file_delete"
-    CODE_EXECUTION = "code_execution"
-    SPAWN_TASKS = "spawn_tasks"
-    DATABASE_READ = "database_read"
-    DATABASE_WRITE = "database_write"
-    NETWORK_ACCESS = "network_access"
-    SYSTEM_COMMANDS = "system_commands"
-    USER_INTERACTION = "user_interaction"
-    AGENT_COORDINATION = "agent_coordination"
-    
+# Always available tools (inspired by Roo Code)
+ALWAYS_AVAILABLE_TOOLS = [
+    "ask_followup_question",
+    "attempt_completion", 
+    "switch_mode",
+    "user_interaction",
+    "status_check"
+]
+
+
+class ToolGroup(Enum):
+    """Tool groups that define sets of related capabilities (Roo Code-inspired)."""
+    READ = "read"           # File reading, searching, listing
+    EDIT = "edit"           # File writing, content manipulation
+    COMMAND = "command"     # Terminal command execution
+    BROWSER = "browser"     # Web browsing actions
+    MCP = "mcp"            # Model Context Protocol tools
+    COORDINATION = "coordination"  # Agent coordination and task spawning
+
 
 class RestrictionType(Enum):
     """Types of restrictions that can be applied to roles."""
     MAX_FILE_CHANGES = "max_file_changes"
     MAX_TASK_DEPTH = "max_task_depth"
     SINGLE_CODEBLOCK_ONLY = "single_codeblock_only"
-    NO_DESTRUCTIVE_OPERATIONS = "no_destructive_operations"
-    READ_ONLY_DATABASE = "read_only_database"
     TIME_LIMIT_MINUTES = "time_limit_minutes"
     MAX_TOKEN_USAGE = "max_token_usage"
     REQUIRE_APPROVAL = "require_approval"
 
 
 @dataclass
-class RoleCapability:
-    """A specific capability that a role possesses."""
-    type: CapabilityType
-    parameters: Dict[str, Any] = field(default_factory=dict)
+class ToolGroupOptions:
+    """Options that can be applied to a tool group (Roo Code-inspired)."""
+    file_regex: Optional[str] = None
     description: Optional[str] = None
     
-    @classmethod
-    def from_string(cls, capability_str: str) -> 'RoleCapability':
-        """Create capability from string like 'file_read' or 'spawn_tasks:max_depth=3'."""
-        if ':' in capability_str:
-            cap_type, params_str = capability_str.split(':', 1)
-            params = {}
-            for param in params_str.split(','):
-                key, value = param.split('=', 1)
-                # Try to convert to appropriate type
-                try:
-                    params[key] = int(value)
-                except ValueError:
-                    try:
-                        params[key] = float(value)
-                    except ValueError:
-                        params[key] = value
-        else:
-            cap_type = capability_str
-            params = {}
-            
-        return cls(
-            type=CapabilityType(cap_type),
-            parameters=params
-        )
+    def __post_init__(self):
+        """Validate regex pattern if provided."""
+        if self.file_regex:
+            try:
+                re.compile(self.file_regex)
+            except re.error as e:
+                raise ValueError(f"Invalid regex pattern '{self.file_regex}': {e}")
+    
+    def matches_file(self, file_path: str) -> bool:
+        """Check if a file path matches the regex pattern."""
+        if not self.file_regex:
+            return True
+        try:
+            return bool(re.match(self.file_regex, file_path))
+        except re.error:
+            return False
+
+
+# Tool group entry can be just the group or group with options
+ToolGroupEntry = Union[ToolGroup, tuple[ToolGroup, ToolGroupOptions]]
+
+
 
 
 @dataclass 
@@ -111,9 +111,9 @@ class RoleRestriction:
 @dataclass
 class Role:
     """
-    A role definition with capabilities, restrictions, and LLM associations.
+    A role definition with tool groups, restrictions, and LLM associations.
     
-    Inspired by Roo Code's role system but enhanced for the Vespera architecture.
+    Enhanced with Roo Code's tool group approach for better capability management.
     """
     name: str
     display_name: str
@@ -124,8 +124,8 @@ class Role:
     preferred_llm: str  # e.g., "local:ollama:llama3"
     fallback_llms: List[str] = field(default_factory=list)
     
-    # Capability System (Roo Code-inspired)
-    capabilities: List[RoleCapability] = field(default_factory=list)
+    # Tool Group System (Roo Code-inspired)
+    tool_groups: List[ToolGroupEntry] = field(default_factory=list)
     restrictions: List[RoleRestriction] = field(default_factory=list)
     
     # Context Requirements
@@ -142,11 +142,40 @@ class Role:
     created_by: Optional[str] = None
     tags: List[str] = field(default_factory=list)
     
-    def has_capability(self, capability: Union[CapabilityType, str]) -> bool:
-        """Check if role has a specific capability."""
-        if isinstance(capability, str):
-            capability = CapabilityType(capability)
-        return any(cap.type == capability for cap in self.capabilities)
+    def has_tool_group(self, tool_group: Union[ToolGroup, str]) -> bool:
+        """Check if role has access to a specific tool group."""
+        if isinstance(tool_group, str):
+            tool_group = ToolGroup(tool_group)
+        
+        for group_entry in self.tool_groups:
+            if isinstance(group_entry, ToolGroup):
+                if group_entry == tool_group:
+                    return True
+            elif isinstance(group_entry, tuple):
+                if group_entry[0] == tool_group:
+                    return True
+        return False
+    
+    def get_tool_group_options(self, tool_group: Union[ToolGroup, str]) -> Optional[ToolGroupOptions]:
+        """Get options for a specific tool group."""
+        if isinstance(tool_group, str):
+            tool_group = ToolGroup(tool_group)
+        
+        for group_entry in self.tool_groups:
+            if isinstance(group_entry, tuple) and group_entry[0] == tool_group:
+                return group_entry[1]
+        return None
+    
+    def can_edit_file(self, file_path: str) -> bool:
+        """Check if role can edit a specific file based on tool group restrictions."""
+        if not self.has_tool_group(ToolGroup.EDIT):
+            return False
+        
+        options = self.get_tool_group_options(ToolGroup.EDIT)
+        if options:
+            return options.matches_file(file_path)
+        return True
+    
     
     def get_restriction(self, restriction_type: Union[RestrictionType, str]) -> Optional[RoleRestriction]:
         """Get a specific restriction by type."""
@@ -168,6 +197,21 @@ class Role:
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert role to dictionary for serialization."""
+        # Convert tool groups to serializable format
+        tool_groups_data = []
+        for group_entry in self.tool_groups:
+            if isinstance(group_entry, ToolGroup):
+                tool_groups_data.append(group_entry.value)
+            elif isinstance(group_entry, tuple):
+                group, options = group_entry
+                tool_groups_data.append([
+                    group.value,
+                    {
+                        "file_regex": options.file_regex,
+                        "description": options.description
+                    }
+                ])
+        
         return {
             'name': self.name,
             'display_name': self.display_name,
@@ -175,7 +219,7 @@ class Role:
             'system_prompt': self.system_prompt,
             'preferred_llm': self.preferred_llm,
             'fallback_llms': self.fallback_llms,
-            'capabilities': [cap.type.value for cap in self.capabilities],
+            'tool_groups': tool_groups_data,
             'restrictions': [
                 f"{rest.type.value}: {rest.value}" 
                 for rest in self.restrictions
@@ -193,10 +237,19 @@ class Role:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Role':
         """Create role from dictionary."""
-        capabilities = [
-            RoleCapability.from_string(cap) 
-            for cap in data.get('capabilities', [])
-        ]
+        # Parse tool groups
+        tool_groups = []
+        for group_data in data.get('tool_groups', []):
+            if isinstance(group_data, str):
+                tool_groups.append(ToolGroup(group_data))
+            elif isinstance(group_data, list) and len(group_data) == 2:
+                group_name, options_data = group_data
+                options = ToolGroupOptions(
+                    file_regex=options_data.get('file_regex'),
+                    description=options_data.get('description')
+                )
+                tool_groups.append((ToolGroup(group_name), options))
+        
         restrictions = [
             RoleRestriction.from_string(rest)
             for rest in data.get('restrictions', [])
@@ -209,7 +262,7 @@ class Role:
             system_prompt=data['system_prompt'],
             preferred_llm=data['preferred_llm'],
             fallback_llms=data.get('fallback_llms', []),
-            capabilities=capabilities,
+            tool_groups=tool_groups,
             restrictions=restrictions,
             context_requirements=data.get('context_requirements', []),
             task_types=data.get('task_types', []),

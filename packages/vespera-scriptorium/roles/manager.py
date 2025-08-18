@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set, Union
 import yaml
 
-from .definitions import Role, CapabilityType, RestrictionType, RoleCapability, RoleRestriction
+from .definitions import Role, ToolGroup, ToolGroupOptions, ToolGroupEntry, RestrictionType, RoleRestriction
 
 
 logger = logging.getLogger(__name__)
@@ -55,6 +55,16 @@ class RoleManager:
     
     def _load_global_roles(self) -> None:
         """Load built-in role templates."""
+        # Try to load the enhanced roles file first
+        enhanced_roles_file = self.global_roles_path / "enhanced_roles.yaml"
+        if enhanced_roles_file.exists():
+            try:
+                self._load_role_file(enhanced_roles_file, source="global")
+                return
+            except Exception as e:
+                logger.error(f"Failed to load enhanced roles: {e}")
+        
+        # Fall back to other YAML files or create defaults
         if not self.global_roles_path.exists():
             logger.warning(f"Global roles path not found: {self.global_roles_path}")
             self._create_default_roles()
@@ -105,14 +115,14 @@ class RoleManager:
                 system_prompt="You are a Task Orchestrator focused on breaking down complex tasks into manageable subtasks and coordinating their execution.",
                 preferred_llm="local:ollama:llama3",
                 fallback_llms=["claude-3-5-sonnet", "gpt-4"],
-                capabilities=[
-                    RoleCapability.from_string("spawn_tasks"),
-                    RoleCapability.from_string("agent_coordination"),
-                    RoleCapability.from_string("file_read"),
-                    RoleCapability.from_string("database_read"),
-                    RoleCapability.from_string("database_write")
+                tool_groups=[
+                    ToolGroup.READ,
+                    ToolGroup.COORDINATION,
+                    ToolGroup.MCP
                 ],
-                restrictions=[],
+                restrictions=[
+                    RoleRestriction.from_string("max_task_depth: 5")
+                ],
                 task_types=["coordination", "planning", "breakdown"],
                 tags=["management", "coordination"]
             ),
@@ -124,11 +134,10 @@ class RoleManager:
                 system_prompt="You are a Code Implementation Specialist focused on writing clean, efficient code following specifications.",
                 preferred_llm="local:ollama:codellama",
                 fallback_llms=["claude-3-5-sonnet", "gpt-4"],
-                capabilities=[
-                    RoleCapability.from_string("file_read"),
-                    RoleCapability.from_string("file_write"),
-                    RoleCapability.from_string("file_create"),
-                    RoleCapability.from_string("code_execution")
+                tool_groups=[
+                    ToolGroup.READ,
+                    ToolGroup.EDIT,
+                    ToolGroup.COMMAND
                 ],
                 restrictions=[
                     RoleRestriction.from_string("max_file_changes: 5"),
@@ -147,10 +156,10 @@ class RoleManager:
                 system_prompt="You are a Research and Analysis Specialist focused on gathering and synthesizing information.",
                 preferred_llm="claude-3-5-sonnet",
                 fallback_llms=["gpt-4", "local:ollama:llama3"],
-                capabilities=[
-                    RoleCapability.from_string("file_read"),
-                    RoleCapability.from_string("network_access"),
-                    RoleCapability.from_string("database_read")
+                tool_groups=[
+                    ToolGroup.READ,
+                    ToolGroup.BROWSER,
+                    ToolGroup.MCP
                 ],
                 restrictions=[
                     RoleRestriction.from_string("read_only_database: true"),
@@ -167,10 +176,10 @@ class RoleManager:
                 system_prompt="You are a Testing and Validation Specialist focused on ensuring code quality and correctness.",
                 preferred_llm="local:ollama:llama3",
                 fallback_llms=["claude-3-5-sonnet", "gpt-4"],
-                capabilities=[
-                    RoleCapability.from_string("file_read"),
-                    RoleCapability.from_string("file_write"),
-                    RoleCapability.from_string("code_execution")
+                tool_groups=[
+                    ToolGroup.READ,
+                    (ToolGroup.EDIT, ToolGroupOptions(file_regex=r".*test.*\.py$", description="Test files only")),
+                    ToolGroup.COMMAND
                 ],
                 restrictions=[
                     RoleRestriction.from_string("max_file_changes: 3")
@@ -188,9 +197,9 @@ class RoleManager:
                 system_prompt="You are a Code Review and Quality Specialist focused on ensuring code quality and security.",
                 preferred_llm="claude-3-5-sonnet",
                 fallback_llms=["gpt-4", "local:ollama:llama3"],
-                capabilities=[
-                    RoleCapability.from_string("file_read"),
-                    RoleCapability.from_string("database_read")
+                tool_groups=[
+                    ToolGroup.READ,
+                    ToolGroup.MCP
                 ],
                 restrictions=[
                     RoleRestriction.from_string("read_only_database: true"),
@@ -234,13 +243,14 @@ class RoleManager:
             parent_role = self.roles[role.parent_role]
             self._apply_inheritance(role.parent_role, visited.copy())
             
-            # Merge capabilities from parent (child overrides parent)
-            parent_cap_types = {cap.type for cap in parent_role.capabilities}
-            child_cap_types = {cap.type for cap in role.capabilities}
+            # Merge tool groups from parent (child overrides parent)
+            parent_groups = {self._get_tool_group_key(tg) for tg in parent_role.tool_groups}
+            child_groups = {self._get_tool_group_key(tg) for tg in role.tool_groups}
             
-            for parent_cap in parent_role.capabilities:
-                if parent_cap.type not in child_cap_types:
-                    role.capabilities.append(parent_cap)
+            for parent_group in parent_role.tool_groups:
+                parent_key = self._get_tool_group_key(parent_group)
+                if parent_key not in child_groups:
+                    role.tool_groups.append(parent_group)
             
             # Merge context requirements
             role.context_requirements = list(set(
@@ -254,6 +264,14 @@ class RoleManager:
         
         visited.remove(role_name)
     
+    def _get_tool_group_key(self, tool_group_entry: ToolGroupEntry) -> str:
+        """Get a unique key for a tool group entry for comparison."""
+        if isinstance(tool_group_entry, ToolGroup):
+            return tool_group_entry.value
+        elif isinstance(tool_group_entry, tuple):
+            return tool_group_entry[0].value
+        return str(tool_group_entry)
+    
     def get_role(self, role_name: str) -> Optional[Role]:
         """Get a role by name."""
         return self.roles.get(role_name)
@@ -262,12 +280,12 @@ class RoleManager:
         """Get list of all available role names."""
         return list(self.roles.keys())
     
-    def get_roles_by_capability(self, capability: Union[CapabilityType, str]) -> List[Role]:
-        """Get all roles that have a specific capability."""
-        if isinstance(capability, str):
-            capability = CapabilityType(capability)
+    def get_roles_by_tool_group(self, tool_group: Union[ToolGroup, str]) -> List[Role]:
+        """Get all roles that have access to a specific tool group."""
+        if isinstance(tool_group, str):
+            tool_group = ToolGroup(tool_group)
         
-        return [role for role in self.roles.values() if role.has_capability(capability)]
+        return [role for role in self.roles.values() if role.has_tool_group(tool_group)]
     
     def get_roles_by_task_type(self, task_type: str) -> List[Role]:
         """Get all roles suitable for a specific task type."""
@@ -276,14 +294,14 @@ class RoleManager:
             if task_type in role.task_types
         ]
     
-    def validate_role_assignment(self, role_name: str, required_capabilities: List[str]) -> bool:
-        """Validate that a role has all required capabilities for a task."""
+    def validate_role_assignment(self, role_name: str, required_tool_groups: List[str]) -> bool:
+        """Validate that a role has all required tool groups for a task."""
         role = self.get_role(role_name)
         if not role:
             return False
         
-        for required_cap in required_capabilities:
-            if not role.has_capability(required_cap):
+        for required_group in required_tool_groups:
+            if not role.has_tool_group(required_group):
                 return False
         
         return True
@@ -316,7 +334,7 @@ class RoleManager:
                 'display_name': role.display_name,
                 'description': role.description,
                 'preferred_llm': role.preferred_llm,
-                'capabilities': [cap.type.value for cap in role.capabilities],
+                'tool_groups': [group.value if isinstance(group, ToolGroup) else (group[0].value if isinstance(group, tuple) else str(group)) for group in role.tool_groups],
                 'restrictions': len(role.restrictions),
                 'task_types': role.task_types,
                 'tags': role.tags

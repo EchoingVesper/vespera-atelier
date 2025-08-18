@@ -11,7 +11,7 @@ import subprocess
 import requests
 from pathlib import Path
 
-from .definitions import Role, CapabilityType, RestrictionType
+from .definitions import Role, ToolGroup, RestrictionType
 
 
 logger = logging.getLogger(__name__)
@@ -63,8 +63,8 @@ class RoleValidator:
         # Basic structure validation
         self._validate_basic_structure(role)
         
-        # Capability/restriction consistency
-        self._validate_capabilities_and_restrictions(role)
+        # Tool group/restriction consistency
+        self._validate_tool_groups_and_restrictions(role)
         
         # LLM availability
         self._validate_llm_configuration(role)
@@ -101,31 +101,30 @@ class RoleValidator:
                 "Role name must contain only alphanumeric characters, underscores, and hyphens"
             )
     
-    def _validate_capabilities_and_restrictions(self, role: Role) -> None:
-        """Validate capability and restriction consistency."""
-        # Check for conflicting capabilities/restrictions
-        if role.has_capability(CapabilityType.FILE_WRITE):
-            if role.is_restricted(RestrictionType.NO_DESTRUCTIVE_OPERATIONS):
-                max_changes = role.get_restriction(RestrictionType.MAX_FILE_CHANGES)
-                if not max_changes or max_changes.value > 0:
-                    self.validation_warnings.append(
-                        "Role has file_write capability but no_destructive_operations restriction. "
-                        "Consider adding max_file_changes restriction."
-                    )
-        
-        # Check for database write without restrictions
-        if role.has_capability(CapabilityType.DATABASE_WRITE):
-            if not role.is_restricted(RestrictionType.READ_ONLY_DATABASE):
+    def _validate_tool_groups_and_restrictions(self, role: Role) -> None:
+        """Validate tool group and restriction consistency."""
+        # Check for conflicting tool groups/restrictions
+        if role.has_tool_group(ToolGroup.EDIT):
+            max_changes = role.get_restriction(RestrictionType.MAX_FILE_CHANGES)
+            if not max_changes:
                 self.validation_warnings.append(
-                    "Role has database_write capability without read_only_database restriction. "
-                    "Consider adding database restrictions for safety."
+                    "Role has EDIT tool group but no max_file_changes restriction. "
+                    "Consider adding max_file_changes restriction for safety."
                 )
         
-        # Check for spawn_tasks without depth restriction
-        if role.has_capability(CapabilityType.SPAWN_TASKS):
+        # Check for command execution without restrictions
+        if role.has_tool_group(ToolGroup.COMMAND):
+            if not role.is_restricted(RestrictionType.REQUIRE_APPROVAL):
+                self.validation_warnings.append(
+                    "Role has COMMAND tool group without require_approval restriction. "
+                    "Consider adding approval requirements for command execution safety."
+                )
+        
+        # Check for coordination without depth restriction
+        if role.has_tool_group(ToolGroup.COORDINATION):
             if not role.is_restricted(RestrictionType.MAX_TASK_DEPTH):
                 self.validation_warnings.append(
-                    "Role has spawn_tasks capability without max_task_depth restriction. "
+                    "Role has COORDINATION tool group without max_task_depth restriction. "
                     "Consider adding task depth limits to prevent infinite recursion."
                 )
     
@@ -265,7 +264,7 @@ class RoleValidator:
         suggestions = []
         
         # Common alternatives by category
-        if role.has_capability(CapabilityType.CODE_EXECUTION):
+        if role.has_tool_group(ToolGroup.COMMAND):
             suggestions.extend([
                 "local:ollama:codellama",
                 "local:ollama:deepseek-coder", 
