@@ -5,7 +5,10 @@ Archon-inspired task orchestration with role-based execution and real-time updat
 Replaces simple session-based approach with robust hierarchical task trees.
 """
 
-from .models import Task, TaskStatus, TaskPriority, TaskRelation, TaskMetadata
+from .models import (
+    Task, TaskStatus, TaskPriority, TaskRelation, TaskMetadata, TaskExecution,
+    SyncStatus, TripleDBCoordination
+)
 from .service import TaskService
 from .manager import TaskManager
 from .executor import TaskExecutor
@@ -16,6 +19,9 @@ __all__ = [
     'TaskPriority',
     'TaskRelation',
     'TaskMetadata',
+    'TaskExecution',
+    'SyncStatus',
+    'TripleDBCoordination',
     'TaskService',
     'TaskManager',
     'TaskExecutor'

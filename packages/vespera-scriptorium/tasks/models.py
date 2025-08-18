@@ -2,7 +2,8 @@
 Task Models for Hierarchical Task Management System
 
 Defines the data structures for hierarchical tasks inspired by Archon's proven
-task management patterns with enhanced tree structures and role integration.
+task management patterns with enhanced tree structures, role integration,
+and triple-database coordination (SQLite + Chroma + KuzuDB).
 """
 
 from dataclasses import dataclass, field
@@ -10,6 +11,7 @@ from typing import List, Dict, Optional, Any, Union, Set
 from enum import Enum
 from datetime import datetime, timedelta
 import uuid
+import hashlib
 
 
 class TaskStatus(Enum):
@@ -39,6 +41,84 @@ class TaskRelation(Enum):
     BLOCKS = "blocks"                   # Blocking relationship
     RELATES_TO = "relates_to"           # General association
     DUPLICATE_OF = "duplicate_of"       # Duplicate task marker
+
+
+class SyncStatus(Enum):
+    """Synchronization status across triple databases."""
+    PENDING = "pending"                 # Awaiting synchronization
+    SYNCING = "syncing"                # Currently being synchronized
+    SYNCED = "synced"                  # Successfully synchronized
+    ERROR = "error"                    # Synchronization failed
+    PARTIAL = "partial"                # Some databases synced, others failed
+
+
+@dataclass
+class TripleDBCoordination:
+    """Triple database coordination metadata for task synchronization."""
+    # Chroma Integration
+    embedding_id: Optional[str] = None                    # Reference to Chroma document
+    content_hash: Optional[str] = None                    # SHA256 of content for change detection
+    last_embedded: Optional[datetime] = None              # Last embedding generation time
+    embedding_version: int = 1                            # Embedding model version
+    
+    # KuzuDB Integration
+    graph_node_id: Optional[str] = None                   # Reference to KuzuDB node
+    last_graph_sync: Optional[datetime] = None            # Last graph synchronization
+    graph_version: int = 1                                # Graph schema version
+    
+    # Synchronization Status
+    sync_status: SyncStatus = SyncStatus.PENDING          # Overall sync status
+    last_indexed: Optional[datetime] = None               # Last full indexing across all DBs
+    sync_error: Optional[str] = None                      # Error message if sync failed
+    
+    # Sync flags for individual databases
+    chroma_synced: bool = False
+    kuzu_synced: bool = False
+    
+    def generate_content_hash(self, task_content: str) -> str:
+        """Generate SHA256 hash of task content for change detection."""
+        return hashlib.sha256(task_content.encode()).hexdigest()
+    
+    def mark_content_changed(self, task_content: str) -> None:
+        """Mark content as changed and update hash."""
+        self.content_hash = self.generate_content_hash(task_content)
+        self.sync_status = SyncStatus.PENDING
+        self.chroma_synced = False
+        # Note: graph sync might not be needed for pure content changes
+    
+    def mark_structure_changed(self) -> None:
+        """Mark task structure as changed (affects graph)."""
+        self.sync_status = SyncStatus.PENDING
+        self.kuzu_synced = False
+    
+    def mark_chroma_synced(self, embedding_id: str) -> None:
+        """Mark as successfully synced to Chroma."""
+        self.embedding_id = embedding_id
+        self.last_embedded = datetime.now()
+        self.chroma_synced = True
+        self._update_overall_sync_status()
+    
+    def mark_kuzu_synced(self, node_id: str) -> None:
+        """Mark as successfully synced to KuzuDB."""
+        self.graph_node_id = node_id
+        self.last_graph_sync = datetime.now()
+        self.kuzu_synced = True
+        self._update_overall_sync_status()
+    
+    def mark_sync_error(self, error_message: str) -> None:
+        """Mark synchronization as failed."""
+        self.sync_status = SyncStatus.ERROR
+        self.sync_error = error_message
+    
+    def _update_overall_sync_status(self) -> None:
+        """Update overall sync status based on individual database sync states."""
+        if self.chroma_synced and self.kuzu_synced:
+            self.sync_status = SyncStatus.SYNCED
+            self.last_indexed = datetime.now()
+            self.sync_error = None
+        elif self.chroma_synced or self.kuzu_synced:
+            self.sync_status = SyncStatus.PARTIAL
+        # Otherwise keep current status (PENDING, SYNCING, or ERROR)
 
 
 @dataclass
@@ -148,6 +228,9 @@ class Task:
     # Enhanced metadata and execution
     metadata: TaskMetadata = field(default_factory=TaskMetadata)
     execution: TaskExecution = field(default_factory=TaskExecution)
+    
+    # Triple database coordination
+    triple_db: TripleDBCoordination = field(default_factory=TripleDBCoordination)
     
     # Project and feature association
     project_id: Optional[str] = None
@@ -269,6 +352,37 @@ class Task:
             return False
         return datetime.now() > self.due_date
     
+    # Triple database coordination methods
+    def mark_content_changed(self) -> None:
+        """Mark task content as changed for re-synchronization."""
+        content = f"{self.title}|{self.description}|{self.status.value}|{self.priority.value}"
+        self.triple_db.mark_content_changed(content)
+        self.updated_at = datetime.now()
+    
+    def mark_structure_changed(self) -> None:
+        """Mark task structure as changed (relationships, hierarchy)."""
+        self.triple_db.mark_structure_changed()
+        self.updated_at = datetime.now()
+    
+    def is_sync_pending(self) -> bool:
+        """Check if task needs synchronization."""
+        return self.triple_db.sync_status in [SyncStatus.PENDING, SyncStatus.ERROR]
+    
+    def is_fully_synced(self) -> bool:
+        """Check if task is fully synchronized across all databases."""
+        return self.triple_db.sync_status == SyncStatus.SYNCED
+    
+    def get_sync_status_summary(self) -> Dict[str, Any]:
+        """Get summary of synchronization status."""
+        return {
+            "overall_status": self.triple_db.sync_status.value,
+            "chroma_synced": self.triple_db.chroma_synced,
+            "kuzu_synced": self.triple_db.kuzu_synced,
+            "last_indexed": self.triple_db.last_indexed.isoformat() if self.triple_db.last_indexed else None,
+            "content_hash": self.triple_db.content_hash,
+            "sync_error": self.triple_db.sync_error
+        }
+    
     # Serialization
     def to_dict(self) -> Dict[str, Any]:
         """Convert task to dictionary for serialization."""
@@ -312,6 +426,20 @@ class Task:
                 "max_retries": self.execution.max_retries,
                 "last_error": self.execution.last_error,
                 "execution_context": self.execution.execution_context
+            },
+            "triple_db": {
+                "embedding_id": self.triple_db.embedding_id,
+                "content_hash": self.triple_db.content_hash,
+                "last_embedded": self.triple_db.last_embedded.isoformat() if self.triple_db.last_embedded else None,
+                "embedding_version": self.triple_db.embedding_version,
+                "graph_node_id": self.triple_db.graph_node_id,
+                "last_graph_sync": self.triple_db.last_graph_sync.isoformat() if self.triple_db.last_graph_sync else None,
+                "graph_version": self.triple_db.graph_version,
+                "sync_status": self.triple_db.sync_status.value,
+                "last_indexed": self.triple_db.last_indexed.isoformat() if self.triple_db.last_indexed else None,
+                "sync_error": self.triple_db.sync_error,
+                "chroma_synced": self.triple_db.chroma_synced,
+                "kuzu_synced": self.triple_db.kuzu_synced
             }
         }
     
@@ -349,6 +477,27 @@ class Task:
             execution_context=execution_data.get("execution_context", {})
         )
         
+        # Create triple database coordination state
+        triple_db_data = data.get("triple_db", {})
+        last_embedded = datetime.fromisoformat(triple_db_data["last_embedded"]) if triple_db_data.get("last_embedded") else None
+        last_graph_sync = datetime.fromisoformat(triple_db_data["last_graph_sync"]) if triple_db_data.get("last_graph_sync") else None
+        last_indexed = datetime.fromisoformat(triple_db_data["last_indexed"]) if triple_db_data.get("last_indexed") else None
+        
+        triple_db = TripleDBCoordination(
+            embedding_id=triple_db_data.get("embedding_id"),
+            content_hash=triple_db_data.get("content_hash"),
+            last_embedded=last_embedded,
+            embedding_version=triple_db_data.get("embedding_version", 1),
+            graph_node_id=triple_db_data.get("graph_node_id"),
+            last_graph_sync=last_graph_sync,
+            graph_version=triple_db_data.get("graph_version", 1),
+            sync_status=SyncStatus(triple_db_data.get("sync_status", "pending")),
+            last_indexed=last_indexed,
+            sync_error=triple_db_data.get("sync_error"),
+            chroma_synced=triple_db_data.get("chroma_synced", False),
+            kuzu_synced=triple_db_data.get("kuzu_synced", False)
+        )
+        
         # Parse relationships
         related_task_ids = {}
         for relation_str, task_id_list in data.get("related_task_ids", {}).items():
@@ -377,7 +526,8 @@ class Task:
             assignee=data.get("assignee", "User"),
             creator=data.get("creator", "System"),
             metadata=metadata,
-            execution=execution
+            execution=execution,
+            triple_db=triple_db
         )
         
         return task
