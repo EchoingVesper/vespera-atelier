@@ -69,44 +69,44 @@ jobs:
         flags: vespera-scriptorium
         name: codecov-umbrella
 
-  # Test vespera-utilities package  
-  test-vespera-utilities:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      matrix:
-        node-version: ['18', '20', '21']
-    
-    steps:
-    - uses: actions/checkout@v5
-      with:
-        fetch-depth: 0
-    
-    - name: Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-    
-    - name: Install pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: 8.15.0
-    
-    - name: Install dependencies
-      working-directory: vespera-utilities
-      run: pnpm install
-    
-    - name: Run linting
-      working-directory: vespera-utilities
-      run: pnpm run lint
-    
-    - name: Run type checking
-      working-directory: vespera-utilities
-      run: pnpm run type-check
-    
-    - name: Run tests
-      working-directory: vespera-utilities
-      run: pnpm test
+  # Test vespera-utilities package (DISABLED - package not yet implemented)
+  # test-vespera-utilities:
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 15
+  #   strategy:
+  #     matrix:
+  #       node-version: ['18', '20', '21']
+  #   
+  #   steps:
+  #   - uses: actions/checkout@v5
+  #     with:
+  #       fetch-depth: 0
+  #   
+  #   - name: Setup Node.js ${{ matrix.node-version }}
+  #     uses: actions/setup-node@v4
+  #     with:
+  #       node-version: ${{ matrix.node-version }}
+  #   
+  #   - name: Install pnpm
+  #     uses: pnpm/action-setup@v4
+  #     with:
+  #       version: 8.15.0
+  #   
+  #   - name: Install dependencies
+  #     working-directory: packages/vespera-utilities
+  #     run: pnpm install
+  #   
+  #   - name: Run linting
+  #     working-directory: packages/vespera-utilities
+  #     run: pnpm run lint
+  #   
+  #   - name: Run type checking
+  #     working-directory: packages/vespera-utilities
+  #     run: pnpm run type-check
+  #   
+  #   - name: Run tests
+  #     working-directory: packages/vespera-utilities
+  #     run: pnpm test
 
   # Test Obsidian plugin
   test-obsidian-plugin:
@@ -230,7 +230,7 @@ jobs:
   build-packages:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [test-vespera-scriptorium, test-vespera-utilities, test-obsidian-plugin]
+    needs: [test-vespera-scriptorium, test-obsidian-plugin]  # vespera-utilities removed until implemented
     
     steps:
     - uses: actions/checkout@v5
@@ -264,11 +264,12 @@ jobs:
       with:
         node-version: '20'
     
-    - name: Build utilities package
-      working-directory: vespera-utilities
-      run: |
-        pnpm install
-        pnpm run build
+    # Build utilities package (DISABLED - package not yet implemented)
+    # - name: Build utilities package
+    #   working-directory: packages/vespera-utilities
+    #   run: |
+    #     pnpm install
+    #     pnpm run build
     
     - name: Build Obsidian plugin
       working-directory: plugins/Obsidian/Vespera-Scriptorium
@@ -285,5 +286,5 @@ jobs:
           packages/vespera-scriptorium/tasks/
           packages/vespera-scriptorium/mcp_server_v2.py
           packages/vespera-scriptorium/requirements.txt
-          vespera-utilities/dist/
+          # packages/vespera-utilities/dist/  # Disabled until implemented
           plugins/Obsidian/Vespera-Scriptorium/dist/
