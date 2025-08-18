@@ -7,6 +7,8 @@ mcp[cli]>=1.13.0
 # Our additional dependencies
 PyYAML>=6.0.2
 requests>=2.32.4
+copier>=9.0.0
+jinja2>=3.1.0
 
 # MCP Core dependencies (automatically included with mcp[cli], listed for reference)
 # anyio>=4.5

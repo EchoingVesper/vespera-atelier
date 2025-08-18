@@ -1,0 +1,37 @@
+# Copier configuration for basic meta-PRP template
+_templates_suffix: .jinja
+
+# Template variables (Copier will prompt for these)
+project_name:
+  type: str
+  help: What is your project name?
+  default: "My Project"
+
+project_description:
+  type: str
+  help: Brief description of your project
+  default: "A new project"
+
+feature_area:
+  type: str
+  help: What feature area are you working on?
+  default: "core"
+
+assignee:
+  type: str
+  help: Who is the primary assignee?
+  default: "User"
+
+priority_level:
+  type: str
+  help: What priority level for this project?
+  choices:
+    - high
+    - normal
+    - low
+  default: normal
+
+include_security_review:
+  type: bool
+  help: Include security review phase?
+  default: true

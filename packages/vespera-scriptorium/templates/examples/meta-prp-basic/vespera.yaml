@@ -1,0 +1,134 @@
+# V2 Template Configuration for Meta-PRP Basic
+name: "Basic Meta-PRP Workflow"
+description: "Creates a comprehensive meta-PRP workflow with research, architecture, implementation, and testing phases"
+category: "meta_prp"
+version: "1.0.0"
+
+# Root coordination task
+root_task:
+  template_id: "meta_prp_coordination"
+  title_template: "{{project_name}} Meta-PRP Coordination"
+  description_template: "Orchestrate the complete meta-PRP creation process for {{project_name}}. {{project_description}}"
+  priority: "high"
+  required_role: "orchestrator"
+  estimated_effort: "2-3 hours"
+  template_variables: ["project_name", "project_description"]
+
+# Hierarchical task structure
+task_hierarchy:
+  - template_id: "research_phase"
+    title_template: "{{project_name}} Research & Analysis"
+    description_template: "Conduct comprehensive research for {{project_name}}. Analyze existing patterns, identify requirements, and establish foundation knowledge."
+    priority: "high"
+    required_role: "researcher"
+    estimated_effort: "1-2 hours"
+    template_variables: ["project_name"]
+    context_references: ["requirements.md", "existing_patterns.md"]
+
+  - template_id: "architecture_phase"
+    title_template: "{{project_name}} Architecture Design"
+    description_template: "Design the system architecture for {{project_name}}. Create comprehensive technical specifications and interface definitions."
+    priority: "high"
+    required_role: "architect"
+    estimated_effort: "2-3 hours"
+    template_variables: ["project_name"]
+    depends_on: ["research_phase"]
+
+  - template_id: "implementation_phase"
+    title_template: "{{project_name}} Implementation"
+    description_template: "Implement the core functionality for {{project_name}} in the {{feature_area}} feature area."
+    priority: "{{priority_level}}"
+    required_role: "coder"
+    estimated_effort: "4-6 hours"
+    template_variables: ["project_name", "feature_area", "priority_level"]
+    depends_on: ["architecture_phase"]
+
+  - template_id: "testing_phase"
+    title_template: "{{project_name}} Testing & Validation"
+    description_template: "Create comprehensive test suite for {{project_name}}. Ensure quality and reliability standards are met."
+    priority: "high"
+    required_role: "tester"
+    estimated_effort: "2-3 hours"
+    template_variables: ["project_name"]
+    depends_on: ["implementation_phase"]
+
+  - template_id: "security_review"
+    title_template: "{{project_name}} Security Review"
+    description_template: "Conduct security analysis and review for {{project_name}}. Identify and address potential vulnerabilities."
+    priority: "high"
+    required_role: "reviewer"
+    estimated_effort: "1-2 hours"
+    template_variables: ["project_name"]
+    depends_on: ["testing_phase"]
+
+# Task dependencies
+dependencies:
+  research_phase: []
+  architecture_phase: ["research_phase"]
+  implementation_phase: ["architecture_phase"]
+  testing_phase: ["implementation_phase"]
+  security_review: ["testing_phase"]
+
+# Role assignments for each task
+role_assignments:
+  meta_prp_coordination: "orchestrator"
+  research_phase: "researcher"
+  architecture_phase: "architect"
+  implementation_phase: "coder"
+  testing_phase: "tester"
+  security_review: "reviewer"
+
+# Template variables that will be prompted by Copier
+template_variables:
+  - "project_name"
+  - "project_description" 
+  - "feature_area"
+  - "assignee"
+  - "priority_level"
+  - "include_security_review"
+
+# Executive dysfunction support
+executive_dysfunction_support:
+  decision_elimination:
+    - choice: "role_assignment"
+      predefined: "automatic_based_on_task_type"
+    - choice: "task_ordering"  
+      predefined: "sequential_dependency_based"
+    - choice: "priority_setting"
+      predefined: "research_and_architecture_high_priority"
+      
+  progress_tracking:
+    granularities: ["task_level", "phase_level", "milestone_level"]
+    auto_preservation: "git_commits_every_completion"
+    momentum_preservation: "clear_next_actions"
+
+# Validation gates
+validation_gates:
+  - milestone: "research_complete"
+    required_artifacts: ["research_summary.md", "requirements_analysis.md"]
+    quality_targets:
+      completeness: 8
+      accuracy: 9
+    assigned_role: "reviewer"
+    
+  - milestone: "architecture_complete"
+    required_artifacts: ["architecture_design.md", "technical_specs.md"]
+    quality_targets:
+      consistency: 9
+      security: 8
+      maintainability: 8
+    assigned_role: "reviewer"
+    
+  - milestone: "implementation_complete"
+    required_artifacts: ["working_code", "unit_tests"]
+    quality_targets:
+      functionality: 9
+      code_quality: 8
+      test_coverage: 7
+    assigned_role: "reviewer"
+
+# Copier integration settings
+copier_config:
+  min_copier_version: "9.0.0"
+  create_envrc: false
+  create_gitignore: false
