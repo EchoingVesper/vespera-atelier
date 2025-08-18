@@ -74,53 +74,53 @@ jobs:
       run: |
         python -c "from tasks.models import Task; from roles.definitions import ToolGroup; print('V2 imports successful')"
 
-  # Test Obsidian plugin
-  test-obsidian-plugin:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      matrix:
-        node-version: ['18', '20']
-    
-    steps:
-    - uses: actions/checkout@v5
-      with:
-        fetch-depth: 0
-    
-    - name: Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-    
-    - name: Install pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: 8.15.0
-    
-    - name: Install dependencies
-      working-directory: plugins/Obsidian/Vespera-Scriptorium
-      run: |
-        pnpm install || npm install
-    
-    - name: Run linting
-      working-directory: plugins/Obsidian/Vespera-Scriptorium
-      run: |
-        pnpm run lint || npm run lint || echo "Linting not configured"
-    
-    - name: Run type checking
-      working-directory: plugins/Obsidian/Vespera-Scriptorium
-      run: |
-        pnpm run type-check || npm run type-check || echo "Type checking not configured"
-    
-    - name: Run tests
-      working-directory: plugins/Obsidian/Vespera-Scriptorium
-      run: |
-        pnpm test || npm test || echo "Tests not configured"
+  # Test Obsidian plugin (DISABLED - plugin not yet implemented)
+  # test-obsidian-plugin:
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 15
+  #   strategy:
+  #     matrix:
+  #       node-version: ['18', '20']
+  #   
+  #   steps:
+  #   - uses: actions/checkout@v5
+  #     with:
+  #       fetch-depth: 0
+  #   
+  #   - name: Setup Node.js ${{ matrix.node-version }}
+  #     uses: actions/setup-node@v4
+  #     with:
+  #       node-version: ${{ matrix.node-version }}
+  #   
+  #   - name: Install pnpm
+  #     uses: pnpm/action-setup@v4
+  #     with:
+  #       version: 8.15.0
+  #   
+  #   - name: Install dependencies
+  #     working-directory: plugins/Obsidian/Vespera-Scriptorium
+  #     run: |
+  #       pnpm install || npm install
+  #   
+  #   - name: Run linting
+  #     working-directory: plugins/Obsidian/Vespera-Scriptorium
+  #     run: |
+  #       pnpm run lint || npm run lint || echo "Linting not configured"
+  #   
+  #   - name: Run type checking
+  #     working-directory: plugins/Obsidian/Vespera-Scriptorium
+  #     run: |
+  #       pnpm run type-check || npm run type-check || echo "Type checking not configured"
+  #   
+  #   - name: Run tests
+  #     working-directory: plugins/Obsidian/Vespera-Scriptorium
+  #     run: |
+  #       pnpm test || npm test || echo "Tests not configured"
 
   # Build and verify
   build:
     runs-on: ubuntu-latest
-    needs: [test-vespera-scriptorium, test-obsidian-plugin]
+    needs: [test-vespera-scriptorium]  # Only depends on scriptorium tests now
     timeout-minutes: 20
     
     steps:
@@ -143,16 +143,17 @@ jobs:
         pip install -r requirements.txt
         python -c "from tasks.models import Task; from roles.definitions import ToolGroup; from hooks import HookEngine; print('V2 imports successful')"
     
-    - name: Setup Node.js for Obsidian build
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-    
-    - name: Build Obsidian plugin
-      working-directory: plugins/Obsidian/Vespera-Scriptorium
-      run: |
-        npm install || pnpm install
-        npm run build || pnpm run build || echo "Build not configured"
+    # Obsidian plugin build (DISABLED - plugin not yet implemented)
+    # - name: Setup Node.js for Obsidian build
+    #   uses: actions/setup-node@v4
+    #   with:
+    #     node-version: '20'
+    # 
+    # - name: Build Obsidian plugin
+    #   working-directory: plugins/Obsidian/Vespera-Scriptorium
+    #   run: |
+    #     npm install || pnpm install
+    #     npm run build || pnpm run build || echo "Build not configured"
     
     - name: Upload V2 build artifacts
       uses: actions/upload-artifact@v4
@@ -165,4 +166,3 @@ jobs:
           packages/vespera-scriptorium/templates/
           packages/vespera-scriptorium/mcp_server_v2.py
           packages/vespera-scriptorium/requirements.txt
-          plugins/Obsidian/Vespera-Scriptorium/dist/
