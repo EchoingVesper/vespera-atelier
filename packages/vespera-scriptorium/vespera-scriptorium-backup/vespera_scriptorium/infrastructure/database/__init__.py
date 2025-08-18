@@ -1,0 +1,41 @@
+"""
+Database infrastructure implementations.
+
+This package contains concrete implementations of the repository interfaces
+defined in the domain layer, along with database-specific utilities.
+
+The database layer supports multiple storage backends:
+- Operational databases (SQLite, PostgreSQL) for transactional data
+- Vector databases (ChromaDB, Pinecone) for embeddings and semantic search [PRODUCTION READY]
+- Graph databases (Neo4j - EXPERIMENTAL) for relationships - prefer Obsidian Graph view for Codex
+"""
+
+from .base import (
+    DatabaseAdapter,
+    DatabaseAdapterFactory,
+    DatabaseType,
+    GraphDatabaseAdapter,
+    OperationalDatabaseAdapter,
+    VectorDatabaseAdapter,
+)
+
+# Legacy imports for backward compatibility
+from .connection_manager import DatabaseConnectionManager
+from .repository_factory import RepositoryFactory, create_repository_factory
+from .unified_manager import UnifiedDatabaseManager, create_unified_manager
+
+__all__ = [
+    # Modern multi-database architecture
+    "DatabaseType",
+    "DatabaseAdapter",
+    "OperationalDatabaseAdapter",
+    "VectorDatabaseAdapter",
+    "GraphDatabaseAdapter",
+    "DatabaseAdapterFactory",
+    "UnifiedDatabaseManager",
+    "create_unified_manager",
+    # Legacy compatibility
+    "DatabaseConnectionManager",
+    "RepositoryFactory",
+    "create_repository_factory",
+]
