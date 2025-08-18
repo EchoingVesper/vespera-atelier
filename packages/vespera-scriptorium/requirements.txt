@@ -9,6 +9,7 @@ PyYAML>=6.0.2
 requests>=2.32.4
 copier>=9.0.0
 jinja2>=3.1.0
+watchfiles>=0.24.0
 
 # MCP Core dependencies (automatically included with mcp[cli], listed for reference)
 # anyio>=4.5
