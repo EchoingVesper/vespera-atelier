@@ -35,10 +35,13 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual environments (keep mcp_venv)
+# Virtual environments - all should be ignored
 venv/
 env/
 ENV/
+mcp_venv/
+*venv/
+*_venv/
 
 # IDE files
 .vscode/

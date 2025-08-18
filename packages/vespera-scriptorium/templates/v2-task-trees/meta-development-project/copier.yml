@@ -1,0 +1,68 @@
+_templates_suffix: .jinja
+
+# Basic Project Configuration
+project_name:
+  type: str
+  help: "Name of the development project"
+  default: "my-project"
+
+project_description:
+  type: str
+  help: "Brief description of the project"
+  default: "A development project"
+
+# Simple choices - test if this works
+complexity_level:
+  type: str
+  help: "Project complexity level"
+  default: "moderate"
+
+# Primary technologies
+primary_technologies:
+  type: str
+  help: "Primary technologies/frameworks used"
+  default: "Python, FastAPI"
+
+# Basic boolean options
+enable_git_hooks:
+  type: bool
+  help: "Enable git operation hooks"
+  default: true
+
+enable_testing_hooks:
+  type: bool
+  help: "Enable testing hooks"
+  default: true
+
+# Phase selection
+include_research_phase:
+  type: bool
+  help: "Include research phase"
+  default: true
+
+include_design_phase:
+  type: bool
+  help: "Include design phase"
+  default: true
+
+include_implementation_phase:
+  type: bool
+  help: "Include implementation phase"
+  default: true
+
+include_validation_phase:
+  type: bool
+  help: "Include validation phase"
+  default: false
+
+# Git options
+use_feature_branch:
+  type: bool
+  help: "Create feature branch"
+  default: true
+
+# Executive dysfunction support
+preserve_executive_dysfunction_support:
+  type: bool
+  help: "Enable executive dysfunction support patterns"
+  default: true

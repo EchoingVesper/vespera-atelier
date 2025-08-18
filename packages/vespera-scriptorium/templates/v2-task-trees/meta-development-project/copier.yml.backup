@@ -1,0 +1,123 @@
+_templates_suffix: .jinja
+_envops:
+  block_start_string: "{%"
+  block_end_string: "%}"
+  variable_start_string: "{{"
+  variable_end_string: "}}"
+  comment_start_string: "{#"
+  comment_end_string: "#}"
+
+# Project Configuration
+project_name:
+  type: str
+  help: "Name of the development project (will be used for task IDs and file names)"
+  placeholder: "my-awesome-feature"
+
+project_description:
+  type: str
+  help: "Brief description of what this project accomplishes"
+  placeholder: "Implement comprehensive user authentication system"
+
+# Executive Dysfunction Support Options
+complexity_level:
+  type: str
+  help: "Project complexity level (affects task breakdown granularity)"
+  choices:
+    simple: "Simple (3-5 main tasks)"
+    moderate: "Moderate (6-10 main tasks with subtasks)"
+    complex: "Complex (10+ tasks with detailed breakdown)"
+    comprehensive: "Comprehensive (Full meta-PRP style with all phases)"
+  default: "moderate"
+
+# Hook Integration Preferences
+enable_git_hooks:
+  type: bool
+  help: "Enable git operation hooks (branch creation, commit reminders, PR prompts)"
+  default: true
+
+enable_testing_hooks:
+  type: bool
+  help: "Enable automated testing reminder hooks"
+  default: true
+
+enable_documentation_hooks:
+  type: bool
+  help: "Enable documentation update reminder hooks"
+  default: true
+
+enable_security_hooks:
+  type: bool
+  help: "Enable security audit and validation hooks"
+  default: true
+
+# Phase Selection (mirrors V1 meta-PRP phases)
+include_research_phase:
+  type: bool
+  help: "Include comprehensive research phase (V1 meta-PRP style)"
+  default: true
+
+include_design_phase:
+  type: bool
+  help: "Include architecture design phase"
+  default: true
+
+include_implementation_phase:
+  type: bool
+  help: "Include implementation phase with multiple components"
+  default: true
+
+include_validation_phase:
+  type: bool
+  help: "Include comprehensive testing and validation phase"
+  default: true
+
+# Technical Details
+primary_technologies:
+  type: str
+  help: "Primary technologies/frameworks used (comma-separated)"
+  placeholder: "Python, FastAPI, SQLite, MCP"
+
+target_roles:
+  type: str
+  help: "Comma-separated list of roles needed from our role system"
+  placeholder: "developer, tester, technical_writer, security_auditor"
+
+# Git Integration
+use_feature_branch:
+  type: bool
+  help: "Create feature branch for this project"
+  default: true
+
+feature_branch_prefix:
+  type: str
+  help: "Prefix for feature branch name"
+  default: "feature/"
+  when: "{{ use_feature_branch }}"
+
+# Task Hierarchy Preferences
+max_task_depth:
+  type: int
+  help: "Maximum task nesting depth (1-4, affects executive dysfunction support)"
+  default: 3
+  validator: "{% if max_task_depth < 1 or max_task_depth > 4 %}Invalid depth{% endif %}"
+
+# Hook Reminder Preferences
+hook_reminder_frequency:
+  type: str
+  help: "How frequently should hooks provide status reminders"
+  choices:
+    minimal: "Only on critical milestones"
+    normal: "Regular progress checkpoints"
+    detailed: "Frequent progress and guidance reminders"
+  default: "normal"
+
+# Integration with existing V2 systems
+integrate_with_mcp:
+  type: bool
+  help: "Integrate with V2 MCP task management tools"
+  default: true
+
+preserve_executive_dysfunction_support:
+  type: bool  
+  help: "Enable executive dysfunction support patterns (pre-structured tasks, clear numbering)"
+  default: true
