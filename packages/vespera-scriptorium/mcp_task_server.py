@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 
-from mcp.server import Server
+from mcp.server import Server, InitializationOptions
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
@@ -409,7 +409,12 @@ Examples:
     
     # Run the server
     async with stdio_server() as (read_stream, write_stream):
-        await server.run(read_stream, write_stream)
+        initialization_options = InitializationOptions(
+            server_name="vespera-v2-tasks",
+            server_version="2.0.0",
+            capabilities={}
+        )
+        await server.run(read_stream, write_stream, initialization_options)
 
 
 if __name__ == "__main__":
