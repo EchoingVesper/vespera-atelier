@@ -1,3 +1,3 @@
 #!/bin/bash
 cd "$(dirname "$0")"
-python __main__.py --server
+./mcp_venv/bin/python mcp_server_v2.py
