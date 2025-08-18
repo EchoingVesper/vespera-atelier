@@ -162,5 +162,7 @@ Cargo.lock
 reference/
 
 # Vespera V2 session files (auto-generated)
+.vespera_v2/
+**/.vespera_v2/
 **/session_context.json
 **/.session_context.json

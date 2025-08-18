@@ -1,8 +1,0 @@
-{
-  "last_active": "2025-08-18T07:22:20.067328",
-  "current_branch": "main",
-  "modified_files": 3,
-  "current_task": "none",
-  "last_commit": "feat(templates): implement V2 template system with Copier integration",
-  "project_root": "/home/aya/dev/monorepo/vespera-atelier/packages/vespera-scriptorium"
-}
