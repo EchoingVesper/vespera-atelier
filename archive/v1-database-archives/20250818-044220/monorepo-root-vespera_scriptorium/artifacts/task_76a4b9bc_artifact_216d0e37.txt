@@ -1,0 +1,23 @@
+## Priority 1: Critical System Bugs - COMPLETED
+
+### 1. Missing watchfiles dependency
+- **Issue**: Import error for watchfiles module
+- **Fix**: Added watchfiles>=0.21.0 to dependencies in pyproject.toml
+- **Impact**: Server restart functionality now works
+
+### 2. Handler migration mapping issues
+- **Issue**: orchestrator_plan_task was removed from migration config, causing routing issues
+- **Fix**: Updated TemplateEngine to properly use TemplateStorageManager for template resolution
+- **Impact**: Template instantiation now searches category directories correctly
+
+### 3. Task session lookup failures  
+- **Issue**: Task completion failing to find sessions
+- **Fix**: Enhanced error handling and session lookup logic
+- **Impact**: complete_task handler now works reliably
+
+### 4. Template instantiation bug
+- **Issue**: Templates not found due to directory structure mismatch
+- **Fix**: Updated TemplateEngine to use storage manager with fallback to direct file lookup
+- **Impact**: Template system now resolves templates from builtin/, user/, and shared/ directories
+
+All fixes tested and committed to main branch.

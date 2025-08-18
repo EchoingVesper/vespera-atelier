@@ -1,0 +1,296 @@
+# Legacy Test Investigation & Architecture Analysis Report
+
+## Executive Summary
+
+Comprehensive analysis of legacy test suite failures reveals **6 major categories of broken tests** with **200+ incomplete/broken imports**, **pre-clean-architecture assumptions**, and **systematic architectural mismatches**. The legacy tests are fundamentally incompatible with current Clean Architecture implementation.
+
+## 1. Legacy Test Analysis - The "Hanging" Tests
+
+### Test Categories Identified:
+
+**Category 1: Main Legacy Tests (6 primary hanging tests)**
+- `/tests/test_simple_tools.py` - Module import failures, expects 17 tools but architecture changed  
+- `/tests/test_server.py` - Expects `server.orchestrator` attribute that no longer exists
+- `/tests/test_initialization.py` - Hard-coded Windows paths, pre-refactor StateManager assumptions
+- `/tests/test_file_tracking.py` - References non-existent file tracking integration modules
+- `/tests/test_enhanced_integration.py` - Disabled via @pytest.mark.skip, references non-existent enhanced orchestrator
+- `/tests/test_rebuilt_package.py` - Expects DIEnabledMCPServer that was refactored
+
+**Category 2: Incomplete Import Tests (200+ broken imports)**
+- 32 files with "# TODO: Complete this import" comments
+- Missing modules that were never implemented or removed during refactor
+- Security, template system, and orchestrator integration modules referenced but not implemented
+
+**Category 3: Pre-Clean Architecture Tests**
+- Hard-coded import paths from pre-refactor structure
+- Direct attribute access patterns incompatible with Clean Architecture
+- Orchestrator initialization patterns from legacy single-file implementation
+
+**Category 4: Infrastructure Mismatch Tests**  
+- Tests expecting monolithic server.py structure (1407 lines → 150 lines)
+- Missing MCP handler integration expecting old handler structure
+- Database persistence patterns from before repository pattern implementation
+
+**Category 5: Platform-Specific Legacy Tests**
+- Windows-specific hard-coded paths (E:\My Work\Programming\)
+- Environment variable assumptions from development machine
+- File system assumptions incompatible with cross-platform design
+
+**Category 6: Mock/Placeholder Tests**
+- Tests referencing modules marked as "DISABLED: Module does not exist"
+- Placeholder functionality that was never implemented
+- Template and security systems with incomplete test implementations
+
+## 2. Architecture Gap Analysis
+
+### Pre-Clean Architecture (Legacy Expectations)
+```
+Legacy Structure:
+- server.py (1407 lines, monolithic)
+- Direct attribute access: server.orchestrator, server.app, server.state_manager
+- Single-file initialization patterns
+- Direct import from root modules
+- Windows-specific file paths
+- 17-tool expectation with get_all_tools()
+```
+
+### Current Clean Architecture (Post-Refactor)
+```
+Clean Architecture Structure:
+├── domain/ (entities, value_objects, repositories, services)
+├── application/ (usecases, dto, interfaces)  
+├── infrastructure/ (mcp, database, external, monitoring)
+└── presentation/ (cli, mcp_server)
+
+Key Changes:
+- server.py: 150 lines, clean entry point
+- Dependency injection container
+- Repository pattern for data access
+- Domain services for business logic
+- MCP handler separation with tool routing
+- Cross-platform file system abstraction
+```
+
+### Architectural Mismatches:
+1. **Import Structure**: Legacy tests import from pre-refactor paths
+2. **Initialization Patterns**: Expect monolithic server initialization vs. DI container
+3. **Attribute Access**: Direct attribute access vs. clean interfaces
+4. **Tool Definitions**: Expect 17 static tools vs. dynamic tool registration  
+5. **State Management**: Expect single StateManager vs. domain service architecture
+6. **File System**: Hard-coded paths vs. cross-platform abstraction
+
+## 3. Clean Architecture Layer Mapping
+
+### Domain Layer Testing Requirements:
+```
+Domain Entities:
+- Task, TaskStatus, TaskType, ComplexityLevel
+- Specialist, SpecialistType  
+- Template models, Lifecycle models
+
+Domain Services:
+- TaskService, OrchestrationCoordinator
+- SpecialistAssignmentService
+- ProgressTrackingService, ResultSynthesisService
+
+Value Objects:
+- ArtifactReference, ExecutionResult
+- TimeWindow, FlexibleSpecialistType
+
+Test Coverage Needed:
+- Entity validation and business rules
+- Domain service business logic  
+- Value object immutability and validation
+- Cross-entity relationship integrity
+```
+
+### Application Layer Testing Requirements:
+```
+Use Cases:
+- CompleteTask, ExecuteTask, ManageTasks
+- ManageSpecialists, OrchestateTask, TrackProgress
+
+DTOs:
+- TaskDTOs, ProgressDTOs, ErrorResponses
+
+Test Coverage Needed:
+- Use case orchestration logic
+- DTO validation and transformation
+- External interface contract compliance
+- Error handling and validation flows
+```
+
+### Infrastructure Layer Testing Requirements:
+```
+MCP Integration:
+- Tool definitions, Tool router, Error handling
+- Protocol adapters, Server integration
+
+Database:
+- Repository implementations
+- Migration system, Persistence layer
+- Connection management
+
+External Systems:
+- API clients, Notification service
+- Artifact storage, Monitoring
+
+Test Coverage Needed:
+- MCP protocol compliance
+- Database repository contracts
+- External system integration
+- Infrastructure service reliability
+```
+
+## 4. Pattern Recognition - Testing Infrastructure Needs
+
+### Legacy Test Patterns (Broken):
+```python
+# Legacy Pattern - Direct Import & Attribute Access
+from vespera_scriptorium import server
+assert server.orchestrator is not None
+assert server.app is not None
+
+# Legacy Pattern - Monolithic Tool Expectations  
+tools = get_all_tools()
+assert len(tools) == 17  # Hard-coded expectation
+
+# Legacy Pattern - Platform-Specific Paths
+os.environ["DB_PATH"] = r"E:\My Work\Programming\vespera_scriptorium.db"
+```
+
+### Required Clean Architecture Test Patterns:
+```python
+# Clean Architecture Pattern - DI Container Testing
+container = DIContainer()
+orchestrator = container.get(TaskOrchestrator)
+
+# Clean Architecture Pattern - Repository Testing
+task_repo = container.get(TaskRepository) 
+task = await task_repo.create(task_data)
+
+# Clean Architecture Pattern - Use Case Testing
+use_case = container.get(CompleteTaskUseCase)
+result = await use_case.execute(task_id, completion_data)
+
+# Clean Architecture Pattern - Domain Service Testing
+task_service = TaskService(task_repo, specialist_repo)
+validation_result = task_service.validate_task_completion(task)
+```
+
+### Infrastructure Testing Framework Requirements:
+
+**1. Clean Architecture Test Base Classes**
+- DomainTestCase: For testing domain entities and services
+- ApplicationTestCase: For testing use cases and DTOs
+- InfrastructureTestCase: For testing repositories and external integrations
+- IntegrationTestCase: For testing cross-layer interactions
+
+**2. Mock/Stub Infrastructure**
+- MockTaskRepository, MockSpecialistRepository  
+- StubExternalApiClient, StubNotificationService
+- Test database fixtures with migration support
+- MCP protocol test harness
+
+**3. Test Data Builders**
+- TaskBuilder, SpecialistBuilder for test data creation
+- Scenario builders for complex test cases
+- Fixture factories aligned with domain models
+
+**4. Assertion Frameworks**
+- Domain-specific assertions for business rules
+- MCP protocol compliance assertions
+- Database state verification utilities
+- Performance and reliability test utilities
+
+## 5. Infrastructure Requirements Analysis
+
+### Current Test Infrastructure Gaps:
+
+**Missing Test Foundation:**
+1. **No Clean Architecture test base classes** - Tests try to import from legacy paths
+2. **No DI container test integration** - Tests expect manual instance creation
+3. **No repository test utilities** - Tests expect direct database access
+4. **No MCP protocol test harness** - Tests expect monolithic server responses
+
+**Missing Test Categories:**
+1. **Domain Layer Tests**: No systematic testing of business rules and domain services
+2. **Application Layer Tests**: No use case testing framework  
+3. **Infrastructure Layer Tests**: Fragmented testing of repositories and external systems
+4. **Integration Tests**: Limited cross-layer testing capabilities
+
+**Missing Test Utilities:**
+1. **Test data builders** for domain entities
+2. **Mock object factories** for external dependencies
+3. **Database migration test support** for repository testing
+4. **MCP tool testing framework** for protocol compliance
+
+### Required Test Infrastructure Implementation:
+
+**Phase 1: Foundation Infrastructure**
+- Clean Architecture test base classes
+- DI container integration for testing
+- Test database management with migrations
+- Basic domain entity test builders
+
+**Phase 2: Layer-Specific Testing**  
+- Domain service testing framework
+- Use case testing utilities
+- Repository integration testing
+- MCP protocol test harness
+
+**Phase 3: Advanced Testing Capabilities**
+- Performance testing infrastructure
+- Security testing framework  
+- End-to-end workflow testing
+- Automated test validation hooks
+
+## 6. Systematic Failure Analysis
+
+### Root Causes of Legacy Test Failures:
+
+**1. Architectural Paradigm Shift**
+- From monolithic to Clean Architecture
+- From direct coupling to dependency injection
+- From platform-specific to cross-platform design
+
+**2. Module Structure Changes**  
+- 200+ incomplete imports referencing non-existent modules
+- Security, template, and integration modules never fully implemented
+- Pre-refactor import paths hard-coded in tests
+
+**3. Interface Contract Changes**
+- Server object no longer exposes orchestrator, app, state_manager attributes
+- Tool registration changed from static list to dynamic registration
+- Initialization patterns completely restructured
+
+**4. Development Environment Dependencies**
+- Hard-coded Windows file paths
+- Development machine specific environment variables
+- Platform-specific assumptions throughout legacy tests
+
+## 7. Recommendations
+
+### Immediate Actions:
+1. **Archive all legacy tests** - Preserve in `/tests/archives/legacy/` for reference
+2. **Remove broken imports** - Clean up 200+ incomplete import statements
+3. **Create test infrastructure foundation** - Implement Clean Architecture test base classes
+4. **Establish test data builders** - Create domain-aligned test fixtures
+
+### Implementation Strategy:
+1. **Research-First Approach**: Complete this analysis before any test implementation
+2. **Infrastructure-First**: Build foundational test infrastructure before feature tests
+3. **Layer-by-Layer**: Implement testing starting with domain layer, then application, then infrastructure
+4. **Hook Integration**: Build automated test validation to prevent regression introduction
+
+### Success Criteria:
+- 95%+ test coverage across all Clean Architecture layers
+- Zero legacy test dependencies or import references
+- Automated test validation preventing future architectural drift
+- Clear testing patterns documented for future development
+
+## Conclusion
+
+The legacy test suite is fundamentally incompatible with the current Clean Architecture implementation. The **6 "hanging" tests** represent broader systematic failures requiring **complete test suite replacement** rather than incremental fixes. **200+ broken imports** and **pre-clean-architecture assumptions** make legacy test repair impractical.
+
+**Recommendation**: Proceed with comprehensive test suite replacement following the systematic approach outlined, building Clean Architecture-aligned test infrastructure from foundation up.

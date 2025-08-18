@@ -1,0 +1,42 @@
+Successfully completed systematic cleanup of obsolete repository content:
+
+**ARCHIVED TO archive/v1-reference/:**
+- docs/ (old maintenance docs)
+- plugins/Obsidian/Vespera-Scriptorium/ (obsolete v1 plugin)
+- PRPs/completed/vespera-scriptorium-* (v1 orchestrator-specific PRPs)
+- PRPs/completed/infrastructure/ (v1 CI/CD and test suite fixes)
+- PRPs/draft/obsidian-backend-integration/ (no longer applicable for v2)
+
+**PRESERVED ON MAIN BRANCH:**
+- PRPs/templates/ (proven meta-PRP system)
+- PRPs/ai_docs/ (valuable patterns and guides)
+- PRPs/in-progress/vespera-v2-ground-up-rewrite/ (current v2 project)
+- PRPs/completed/ (universal PRPs like code-review-command)
+- packages/vespera-scriptorium/ (active orchestrator with backup)
+- .claude/ directory (needs minor cleanup but functional)
+
+**CREATED CLEAN STRUCTURE:**
+- plugins/Obsidian/ (empty, ready for v2 plugin development)
+- archive/v1-reference/ with organized subdirectories:
+  - archive/v1-reference/docs/ (old maintenance docs)
+  - archive/v1-reference/plugins/ (v1 Obsidian plugin)
+  - archive/v1-reference/PRPs/completed-v1-specific/ (v1-era PRPs)
+
+**IMPORTANT NOTE - VENV PATH:**
+The Python venv is now located at:
+`packages/vespera-scriptorium/vespera-scriptorium-backup/venv/`
+
+Claude Code may need configuration update to use this path instead of the old 
+`packages/vespera-scriptorium/venv/` location.
+
+**REMAINING CLEANUP CANDIDATES:**
+- .claude/ directory has some old configs that could be streamlined
+- Some archived PRPs in completed/ might need further review
+
+**GIT STATUS:**
+- 695 files changed in systematic cleanup
+- All obsolete content preserved in organized archive structure
+- Main branch now significantly cleaner while retaining all reference material
+- Repository ready for v2 development with clear separation
+
+The repository is now much cleaner while preserving all valuable content for reference. The v1 orchestrator remains functional with proper backup structure.

@@ -1,0 +1,13 @@
+{
+  "artifact_id": "artifact_f47288be",
+  "task_id": "documenter_2b392c",
+  "summary": "Created comprehensive strategic CLAUDE.md documentation system across the monorepo",
+  "artifact_type": "documentation",
+  "file_paths": [],
+  "mirrored_paths": [
+    "E:\\My Work\\Programming\\MCP Servers\\vespera-utilities\\.task_orchestrator\\artifacts\\documenter_2b392c\\artifact_f47288be.md"
+  ],
+  "created_at": "2025-06-06T11:26:39.430860",
+  "primary_file": "E:\\My Work\\Programming\\MCP Servers\\vespera-utilities\\.task_orchestrator\\artifacts\\documenter_2b392c\\artifact_f47288be.md",
+  "relative_path": "documenter_2b392c\\artifact_f47288be.md"
+}

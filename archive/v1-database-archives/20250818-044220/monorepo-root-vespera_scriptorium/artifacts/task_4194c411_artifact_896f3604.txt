@@ -1,0 +1,60 @@
+## Quality Workflow Configuration Fix Complete
+
+### Changes Made
+
+Updated `.github/workflows/quality.yml` to include comprehensive linting and TypeScript checking:
+
+#### 1. **Added Python Linting Job** (lines 18-48):
+- **Black formatting check**: `black --check vespera_scriptorium/`
+- **isort import sorting**: `isort --check-only vespera_scriptorium/`
+- **Flake8 linting**: `flake8 vespera_scriptorium/`
+- **MyPy type checking**: `mypy vespera_scriptorium/` (with continue-on-error)
+- **Python3 compatibility**: Uses `python3 -m pip install --upgrade pip || python -m pip install --upgrade pip`
+
+#### 2. **Added TypeScript Checking Job** (lines 50-89):
+- **Node.js 20 setup**: Latest LTS version
+- **pnpm package manager**: Latest version for workspace support
+- **Workspace dependency installation**: `pnpm install` at root level
+- **Utilities TypeScript check**: Checks for type-check/typecheck scripts
+- **Obsidian plugin TypeScript**: Validates via build process
+- **Error tolerance**: Uses continue-on-error for gradual adoption
+
+### Key Features
+
+#### Monorepo Compatibility
+- **Working directories**: Proper paths for each package
+- **Workspace awareness**: pnpm workspace commands
+- **Package discovery**: Conditional checks for TypeScript configurations
+
+#### Error Handling
+- **Graceful degradation**: Jobs continue even if specific checks fail
+- **Informative output**: Clear messages when configurations are missing
+- **Progressive adoption**: Allows tools to be gradually configured
+
+#### Quality Gates
+- **Python code style**: Black and isort for consistent formatting
+- **Python quality**: Flake8 for code quality issues
+- **Python types**: MyPy for type safety
+- **TypeScript validation**: Build-based validation for TS packages
+
+### Validation Results
+
+- ✅ YAML syntax validation passed
+- ✅ Python linting tools properly configured
+- ✅ TypeScript checking with workspace support
+- ✅ Proper working directory configuration
+- ✅ Error handling and graceful degradation
+
+### Files Modified
+
+- `.github/workflows/quality.yml`: Added linting and typescript-checks jobs
+
+### Impact
+
+- Quality workflow now includes standard Python linting tools
+- TypeScript packages are validated across the workspace
+- Monorepo structure properly supported
+- Quality gates established for Python and TypeScript code
+- Addresses GitHub Issue #17
+
+This fix establishes comprehensive code quality validation for both Python and TypeScript components of the monorepo.

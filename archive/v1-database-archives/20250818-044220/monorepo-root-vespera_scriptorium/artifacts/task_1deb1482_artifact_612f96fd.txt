@@ -1,0 +1,37 @@
+## Root Cause Analysis
+
+**Issue**: Infinite recursion in root package.json:
+```json
+"postinstall": "pnpm install:workspaces",
+"install:workspaces": "pnpm install --recursive --filter=!.",
+```
+
+**Problem Flow**:
+1. `pnpm install` triggers `postinstall`
+2. `postinstall` runs `pnpm install:workspaces` 
+3. `install:workspaces` runs `pnpm install --recursive`
+4. This triggers `postinstall` again → infinite loop → timeout
+
+## Solution Applied
+
+**Fixed by removing the recursive postinstall script**:
+- Removed: `"postinstall": "pnpm install:workspaces",`
+- Kept: `"install:workspaces": "pnpm install --recursive --filter=!.",` (for manual use)
+
+**Rationale**:
+- GitHub Actions workflow already installs dependencies correctly per workspace
+- postinstall scripts should not trigger recursive installations
+- Manual workspace installation still available via `pnpm run install:workspaces`
+
+## Validation
+
+- GitHub Actions workflow uses direct `pnpm install` in workspace directories
+- No monorepo-level postinstall needed (workspaces handle their own dependencies)
+- Follows pnpm best practices for CI/CD environments
+
+## Impact
+
+- Eliminates 30+ minute timeouts in GitHub Actions
+- Fixes exit code 143 (process termination) errors
+- Enables proper CI/CD pipeline execution
+- Maintains proper dependency management across workspaces

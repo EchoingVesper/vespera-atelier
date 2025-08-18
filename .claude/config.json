@@ -4,11 +4,10 @@
   "mcp": {
     "servers": {
       "vespera-scriptorium": {
-        "command": "python",
-        "args": ["-m", "mcp_task_orchestrator.server"],
+        "command": "/home/aya/dev/monorepo/vespera-atelier/packages/vespera-scriptorium/mcp_venv/bin/python",
+        "args": ["/home/aya/dev/monorepo/vespera-atelier/packages/vespera-scriptorium/mcp_server_v2.py"],
         "cwd": "packages/vespera-scriptorium",
         "env": {
-          "MCP_TASK_ORCHESTRATOR_USE_DI": "true",
           "PYTHONPATH": "${workspaceFolder}/packages/vespera-scriptorium"
         }
       }

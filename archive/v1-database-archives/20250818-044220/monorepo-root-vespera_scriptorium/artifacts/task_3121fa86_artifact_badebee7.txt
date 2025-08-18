@@ -1,0 +1,37 @@
+## CI Pipeline Python Commands Fix Complete
+
+### Changes Made
+
+Updated `.github/workflows/ci.yml` to use `python3` commands with fallback to `python` for Ubuntu runner compatibility:
+
+1. **Dependencies Installation** (lines 38, 150, 186, 225):
+   - Changed: `python -m pip install --upgrade pip`
+   - To: `python3 -m pip install --upgrade pip || python -m pip install --upgrade pip`
+
+2. **CLI Testing** (line 167):
+   - Changed: `python -m vespera_scriptorium_cli --help`
+   - To: `python3 -m vespera_scriptorium_cli --help || python -m vespera_scriptorium_cli --help`
+
+3. **Package Building** (line 226):
+   - Changed: `python -m build`
+   - To: `python3 -m build || python -m build`
+
+### Validation Results
+
+- ✅ YAML syntax validation passed
+- ✅ All Python commands now use `python3` with `python` fallback
+- ✅ Virtual environment creation compatibility maintained
+- ✅ Package installation commands updated
+
+### Files Modified
+
+- `.github/workflows/ci.yml`: 5 command updates applied
+
+### Impact
+
+- CI pipeline will now work correctly on Ubuntu runners
+- Fallback ensures compatibility across different environments
+- All Python-related workflow steps will use correct commands
+- Addresses GitHub Issue #16
+
+This fix resolves the critical Python command compatibility issue preventing CI pipeline execution.

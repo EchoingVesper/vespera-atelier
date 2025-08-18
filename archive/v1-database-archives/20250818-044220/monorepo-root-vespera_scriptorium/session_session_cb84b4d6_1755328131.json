@@ -1,0 +1,33 @@
+{
+  "session_id": "session_cb84b4d6_1755328131",
+  "working_directory": "/home/aya/dev/monorepo/vespera-atelier",
+  "created_at": 1755328131.3669283,
+  "initialized": true,
+  "capabilities": {
+    "hot_reload": false,
+    "task_orchestration": true,
+    "domain_services": true,
+    "database_persistence": true,
+    "template_system": true
+  },
+  "database_status": "connected",
+  "database_health": {
+    "overall_status": "healthy",
+    "databases": {
+      "operational": {
+        "status": "healthy",
+        "database_type": "operational",
+        "path": "/home/aya/dev/monorepo/vespera-atelier/.vespera_scriptorium/databases/operational/tasks.db",
+        "size_bytes": 4096,
+        "size_mb": 0.0,
+        "journal_mode": "WAL",
+        "synchronous": "NORMAL",
+        "timestamp": "2025-08-16T07:08:51.377729"
+      }
+    },
+    "timestamp": "2025-08-16T07:08:51.377787"
+  },
+  "available_databases": [
+    "SQLite (operational)"
+  ]
+}

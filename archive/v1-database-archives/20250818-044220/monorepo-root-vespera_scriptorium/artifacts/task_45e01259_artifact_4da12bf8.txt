@@ -1,0 +1,30 @@
+Successfully archived remaining v1 legacy code from main branch:
+
+**REMOVED FROM MAIN BRANCH:**
+- packages/vespera-scriptorium/ (old orchestrator implementation) 
+- vespera-atelier/ (old monorepo structure with duplicate files)
+- vespera-utilities/ (old utilities package)
+
+**PRESERVED ON MAIN BRANCH:**
+- PRPs/ directory (complete PRP system)
+- plugins/Obsidian/Vespera-Scriptorium/ (current Obsidian plugin)
+- VESPERA_VISION_PLANNING_WORKSHEET.md (v2 planning decisions)
+- CLAUDE.md (main repository guidance)
+- Core documentation structure
+
+**SAFETY MEASURES:**
+- Created backup at /tmp/vespera-scriptorium-backup before removal
+- archive/v1-legacy branch already exists with full v1 codebase
+- All deleted files committed to git history (commit 404f16b)
+
+**COMMIT DETAILS:**
+- 945 files removed totaling 326,098 lines
+- Clean git commit message documenting the archival
+- Working tree clean after operation
+
+**VERIFICATION:**
+- Main branch now clean of v1 legacy code structure
+- Orchestrator session still functional (using backup from /tmp/)
+- Ready for v2 clean architecture implementation
+
+The repository is now prepared for implementing the new v2 modular microservices architecture based on the vision planning worksheet decisions.

@@ -1,0 +1,135 @@
+# Vespera-Scriptorium Task Management Tools Audit Report
+
+## Executive Summary
+Audited 7 task management tools and found **6 critical bugs** that prevent normal operation. Only 3 tools are fully functional, while 4 have significant issues.
+
+## Tool-by-Tool Analysis
+
+### ✅ WORKING TOOLS (3/7)
+
+#### 1. `orchestrator_plan_task` - ✅ FUNCTIONAL
+- **Status**: Fully working
+- **Testing**: Successfully created multiple test tasks
+- **Issues**: Minor parameter mapping (complexity/specialist_type defaults)
+- **Handler**: Uses current Pydantic handlers
+- **Architecture**: ✅ Should remain MCP tool (core user interface)
+
+#### 2. `orchestrator_execute_task` - ✅ FUNCTIONAL  
+- **Status**: Fully working
+- **Testing**: Successfully executed tasks and retrieved context
+- **Issues**: None found
+- **Handler**: Uses current Pydantic handlers
+- **Architecture**: ✅ Should remain MCP tool (core user interface)
+
+#### 3. `orchestrator_complete_task` - ✅ FUNCTIONAL
+- **Status**: Fully working
+- **Testing**: Successfully completed tasks with artifacts
+- **Issues**: None found
+- **Handler**: Uses current Pydantic handlers
+- **Architecture**: ✅ Should remain MCP tool (core user interface)
+
+### ❌ BROKEN TOOLS (4/7)
+
+#### 4. `orchestrator_query_tasks` - ❌ CRITICAL BUG
+- **Status**: Completely broken
+- **Bug**: Multiple issues:
+  - Array parameters fail: "type 'list' is not supported"
+  - Date formatting error: "'str' object has no attribute 'isoformat'"
+  - Cannot execute even basic queries
+- **Handler**: Migration issue between old/new handlers
+- **Priority**: **CRITICAL** - Core functionality for task discovery
+- **Architecture**: ✅ Should remain MCP tool (essential for users)
+
+#### 5. `orchestrator_update_task` - ❌ CRITICAL BUG
+- **Status**: Completely broken
+- **Bug**: Handler error: "'str' object is not a mapping"
+- **Handler**: Migration issue - appears to be receiving wrong data format
+- **Priority**: **HIGH** - Important for task lifecycle management
+- **Architecture**: ✅ Should remain MCP tool (users need task editing)
+
+#### 6. `orchestrator_delete_task` - ❌ CRITICAL BUG  
+- **Status**: Completely broken
+- **Bug**: Same handler error as update: "'str' object is not a mapping"
+- **Handler**: Same migration issue as update tool
+- **Priority**: **MEDIUM** - Less critical, archiving may be sufficient
+- **Architecture**: ⚠️ Could be background automation for cleanup
+
+#### 7. `orchestrator_cancel_task` - ✅ FUNCTIONAL
+- **Status**: Fully working  
+- **Testing**: Successfully cancelled test task with proper status updates
+- **Issues**: None found
+- **Handler**: Uses current Pydantic handlers
+- **Architecture**: ✅ Should remain MCP tool (user-initiated action)
+
+### ❌ MISSING TOOL (1/8)
+
+#### 8. `orchestrator_create_generic_task` - ❌ NOT FOUND
+- **Status**: Tool does not exist as MCP endpoint
+- **Issue**: Referenced in audit scope but not available
+- **Handler**: Unknown - may be internal function only
+- **Priority**: **LOW** - `orchestrator_plan_task` covers this functionality
+- **Architecture**: ⚠️ May be intended as internal API only
+
+## Handler Migration Analysis
+
+### Migration Status:
+- **New Pydantic Handlers**: 3 tools (plan, execute, complete, cancel)
+- **Broken Migration**: 2 tools (query, update, delete) 
+- **Missing**: 1 tool (create_generic_task)
+
+### Migration Issues:
+1. **Data Type Conversion**: Old handlers expect different data structures
+2. **Array Parameter Handling**: List parameters not properly converted
+3. **Date/Time Handling**: String vs datetime object confusion
+4. **Parameter Mapping**: Object structure mismatch between old/new formats
+
+## Architecture Review
+
+### Should Remain MCP Tools (5/7):
+- `orchestrator_plan_task` - Core user interface for task creation
+- `orchestrator_execute_task` - Core user interface for starting work
+- `orchestrator_complete_task` - Core user interface for finishing work  
+- `orchestrator_cancel_task` - User-initiated action
+- `orchestrator_query_tasks` - Essential for task discovery (once fixed)
+
+### Could Be Background Automation (1/7):
+- `orchestrator_delete_task` - Could be automatic cleanup process
+
+### Need Architecture Decision (1/7):
+- `orchestrator_update_task` - Could be split: UI updates vs automatic status updates
+
+## Critical Bugs Summary
+
+1. **`orchestrator_query_tasks`**: Array parameters and date formatting broken
+2. **`orchestrator_update_task`**: Handler data mapping broken  
+3. **`orchestrator_delete_task`**: Handler data mapping broken
+4. **`orchestrator_create_generic_task`**: Tool missing entirely
+5. **Parameter Defaults**: Minor issues with complexity/specialist_type mapping
+6. **Error Handling**: Good for invalid IDs, broken for data format issues
+
+## Recommendations
+
+### Immediate Fixes Needed:
+1. **Fix `orchestrator_query_tasks`** - Critical for task discovery
+2. **Fix `orchestrator_update_task`** - Important for task management
+3. **Fix `orchestrator_delete_task`** - Or convert to background process
+4. **Investigate missing `orchestrator_create_generic_task`**
+
+### Architecture Improvements:
+1. **Consolidate Creation**: Single `orchestrator_plan_task` is sufficient
+2. **Background Cleanup**: Consider automatic deletion/archiving
+3. **Status Updates**: Split user updates from system updates
+4. **Handler Migration**: Complete migration to Pydantic handlers
+
+### Testing Coverage:
+- ✅ Core workflow: Create → Execute → Complete (works)
+- ❌ Query and discovery: Completely broken
+- ❌ Lifecycle management: Update/delete broken  
+- ✅ Error handling: Good for invalid IDs
+- ❌ Edge cases: Array parameters broken
+
+## Conclusion
+
+The task management system has a **60% failure rate** (4/7 tools broken). The core workflow works but task discovery and lifecycle management are severely compromised. Priority should be fixing the query tool first, then the update/delete tools.
+
+The handler migration system appears to have fundamental data structure compatibility issues that need immediate attention.

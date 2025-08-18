@@ -1,0 +1,15 @@
+## Priority 2: Workflow-Breaking Bugs - COMPLETED
+
+### 1. Query_tasks array parameter failure
+- **Issue**: orchestrator_query_tasks failing when using array parameters for filtering
+- **Fix**: Updated SQLite repository to handle arrays for status, specialist_type, complexity, task_type
+- **Implementation**: Added array detection and SQL IN clause generation for array filters
+- **Impact**: Task querying with multiple filter values now works correctly
+
+### 2. Missing tool registration for orchestrator_create_generic_task
+- **Issue**: Tool not found error when calling orchestrator_create_generic_task
+- **Fix**: Added tool registration as alias for orchestrator_plan_task in tool_definitions.py
+- **Implementation**: Duplicated orchestrator_plan_task definition with create_generic_task name
+- **Impact**: Backward compatibility maintained for existing code using the old tool name
+
+Both fixes enable proper task management workflows that were previously broken.

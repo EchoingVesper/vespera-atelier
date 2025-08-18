@@ -1,0 +1,13 @@
+{
+  "artifact_id": "artifact_b12a8e04",
+  "task_id": "implementer_69238c",
+  "summary": "Successfully migrated vespera-utilities into workspace structure with proper configuration updates",
+  "artifact_type": "code",
+  "file_paths": [],
+  "mirrored_paths": [
+    "E:\\My Work\\Programming\\MCP Servers\\vespera-utilities\\.task_orchestrator\\artifacts\\implementer_69238c\\artifact_b12a8e04.md"
+  ],
+  "created_at": "2025-06-06T11:13:08.793898",
+  "primary_file": "E:\\My Work\\Programming\\MCP Servers\\vespera-utilities\\.task_orchestrator\\artifacts\\implementer_69238c\\artifact_b12a8e04.md",
+  "relative_path": "implementer_69238c\\artifact_b12a8e04.md"
+}

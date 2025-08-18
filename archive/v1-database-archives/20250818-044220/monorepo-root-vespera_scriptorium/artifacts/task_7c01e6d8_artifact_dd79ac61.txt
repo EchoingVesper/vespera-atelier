@@ -1,0 +1,80 @@
+## Priority 2: Workspace Configuration Fixes - Complete Implementation
+
+### 🔧 Package.json Workspace Configuration
+**File Updated:** `package.json`
+
+**Workspace Configuration Enhanced:**
+- Added `packages/*` to workspaces array to include all packages in packages/ directory
+- Maintained existing `vespera-utilities` and `plugins/Obsidian/Vespera-Scriptorium` references
+- Fixed workspace path structure to match actual monorepo organization
+
+**Before:**
+```json
+"workspaces": [
+  "vespera-utilities",
+  "plugins/Obsidian/Vespera-Scriptorium"
+]
+```
+
+**After:**
+```json
+"workspaces": [
+  "packages/*",
+  "vespera-utilities", 
+  "plugins/Obsidian/Vespera-Scriptorium"
+]
+```
+
+### 📦 PNPM Workspace Configuration
+**File Updated:** `pnpm-workspace.yaml`
+
+**Improvements Made:**
+- Added `packages/*` pattern to include all packages in packages/ directory
+- Updated documentation to clarify Python package handling
+- Maintained compatibility with existing Node.js packages
+
+**Enhanced Configuration:**
+```yaml
+packages:
+  # All packages in packages/ directory (includes both Node.js and Python packages)
+  - 'packages/*'
+  
+  # Additional Node.js packages that can be managed by pnpm workspaces
+  - 'vespera-utilities'
+  - 'plugins/Obsidian/Vespera-Scriptorium'
+  
+  # Note: packages/vespera-scriptorium is a Python package and managed separately via pip
+  # It's included in the monorepo structure for consistency but pip handles its dependencies
+```
+
+### 🎯 Addresses GitHub Issue
+- **Issue #13**: Monorepo Workspace Configuration Issues - ✅ RESOLVED
+  - Package.json workspace configuration corrected to include packages/*
+  - PNPM workspace paths verified and updated
+  - Workspace path structure now matches actual directory organization
+  - Both Node.js and Python packages properly included in workspace
+
+### 🔍 Validation Results
+- Workspace configuration now includes all packages in packages/ directory
+- PNPM workspace configuration properly structured for monorepo management
+- Path references are consistent with actual directory structure
+- Maintained backward compatibility with existing configuration
+
+### 📂 Directory Structure Validated
+- Confirmed `packages/vespera-scriptorium/` exists (Python package)
+- Confirmed `vespera-utilities/` exists at root level (Node.js package)
+- Confirmed `plugins/Obsidian/Vespera-Scriptorium/` exists (Node.js package)
+- All workspace paths verified against actual repository structure
+
+### 🚀 Next Steps for CI Working Directories
+This fix resolves the workspace configuration issues. CI working directory issues will be addressed through:
+1. Enhanced maintenance workflow (already implemented in Priority 1)
+2. Proper build script environment setup (being addressed in Priority 3)
+3. Updated GitHub Actions workflow paths to use correct working directories
+
+### 🛠️ Build System Compatibility
+The workspace configuration changes ensure:
+- All packages are discoverable by pnpm workspace commands
+- Python packages are properly handled separately via pip
+- Node.js packages can use workspace dependencies correctly
+- Monorepo commands work across all package types

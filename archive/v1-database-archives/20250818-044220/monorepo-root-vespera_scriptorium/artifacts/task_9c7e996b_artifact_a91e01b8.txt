@@ -1,0 +1,29 @@
+Created extensive meta-PRP document "PRPs/obsidian-backend-integration-meta-prp.md" that provides comprehensive research and planning framework for modernizing the Obsidian plugin and integrating it with the vespera-scriptorium backend.
+
+Key deliverables:
+
+1. **Vision Statement**: Hierarchical multi-model AI orchestration system that intelligently routes between local LLMs (8GB VRAM), medium models, and large models for optimal cost/performance.
+
+2. **Research Phase Structure** (3 weeks, research only):
+   - Phase 1: Current State Analysis (plugin architecture, backend capabilities, gap analysis)
+   - Phase 2: Integration Architecture Design (multi-model orchestration, plugin-backend integration, security framework)
+   - Phase 3: Implementation Planning (modernization roadmap, Discord processing plan, migration strategy)
+
+3. **Local LLM Optimization Strategy**:
+   - ✅ Local LLM tasks: Message classification, extraction, format standardization
+   - 🟡 Medium model tasks: Conversation summarization, character profiles, component refactoring
+   - 🔴 Large model tasks: Creative analysis, architecture decisions, complex integration
+
+4. **Multi-Agent Research Coordination**: 9 specialized agents across 3 phases using orchestrator task breakdown with proper dependencies and deliverables.
+
+5. **Discord Log Processing Pipeline**: Hierarchical processing designed to extract story/setting information from nearly a year of unorganized chat logs.
+
+6. **Critical Prerequisite**: Meta-PRP execution blocked until CI fixes from atomic-ci-fixes-meta-prp.md are completed (CI/CD stability required for development environment).
+
+7. **Success Criteria**: Comprehensive validation framework with 5-stage validation process and specific deliverables for each research phase.
+
+8. **Risk Assessment**: Identified high-risk areas (plugin compatibility, local LLM constraints, Discord log scale) with specific mitigation strategies.
+
+9. **Implementation Readiness**: Detailed next steps for transitioning from research to implementation phases with proper handoff criteria.
+
+The meta-PRP establishes foundation for transforming legacy Obsidian plugin into modern frontend for sophisticated AI orchestration system while maintaining Clean Architecture principles and security-first design throughout.

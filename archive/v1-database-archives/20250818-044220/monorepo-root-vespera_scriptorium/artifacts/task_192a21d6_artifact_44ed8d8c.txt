@@ -1,0 +1,173 @@
+# Core Orchestration Tools Audit Results
+
+## Executive Summary
+
+Completed systematic testing of all 8 core vespera-scriptorium orchestration tools. Found 3 critical issues, 2 architectural concerns, and identified 1 tool that should be converted to background automation.
+
+## Tool-by-Tool Analysis
+
+### 1. `orchestrator_initialize_session` ✅ FUNCTIONAL
+**Status:** Fully functional
+**Testing Results:**
+- Default initialization: ✅ Works correctly
+- Custom working directory: ✅ Works correctly
+- Returns proper session metadata, capabilities, and database status
+- Session files created correctly in `.vespera_scriptorium/` directory
+
+**Architecture Review:** Should remain as MCP tool - user-initiated session management is appropriate
+
+### 2. `orchestrator_get_status` ✅ FUNCTIONAL
+**Status:** Fully functional
+**Testing Results:**
+- Default status retrieval: ✅ Works correctly
+- `include_completed` parameter: ✅ Works correctly
+- Returns comprehensive system status with task counts, database health, metrics
+- Response time: ~1.3-1.7ms (excellent performance)
+
+**Architecture Review:** Should remain as MCP tool - essential for user monitoring and debugging
+
+### 3. `orchestrator_list_sessions` ✅ FUNCTIONAL
+**Status:** Fully functional
+**Testing Results:**
+- Default session listing: ✅ Works correctly
+- Parameter variations (`include_completed`, `limit`): ✅ Works correctly
+- Returns detailed session metadata including capabilities and status
+
+**Architecture Review:** Should remain as MCP tool - user needs visibility into available sessions
+
+### 4. `orchestrator_session_status` ❌ CRITICAL BUG
+**Status:** BROKEN - Cannot find sessions that exist
+**Testing Results:**
+- Existing session ID `session_5d62773e_1755318225`: ❌ Returns "Session file not found"
+- Invalid session ID: ❌ Same error (correct behavior but indicates systemic issue)
+
+**Bug Details:**
+- Session is listed in `orchestrator_list_sessions` but cannot be retrieved by `orchestrator_session_status`
+- Suggests file path resolution or session lookup logic is broken
+- This is a critical bug blocking session management workflows
+
+**Architecture Review:** Should remain as MCP tool after bug fix
+
+### 5. `orchestrator_resume_session` ❌ CRITICAL BUG
+**Status:** BROKEN - Same issue as session_status
+**Testing Results:**
+- Existing session ID: ❌ Returns "Session file not found" 
+- Invalid session ID: ❌ Same error
+
+**Bug Details:**
+- Connected to the same underlying issue as `orchestrator_session_status`
+- Session resumption is completely non-functional
+- Critical for workflow continuity
+
+**Architecture Review:** Should remain as MCP tool after bug fix
+
+### 6. `orchestrator_synthesize_results` ❌ CRITICAL BUG
+**Status:** BROKEN - Cannot find any tasks
+**Testing Results:**
+- Valid task ID from get_status: ❌ Returns "Parent task not found"
+- Invalid task ID: ❌ Same error
+
+**Bug Details:**
+- Even tasks that are clearly visible in `orchestrator_get_status` cannot be found
+- Suggests task lookup/retrieval logic is fundamentally broken
+- No synthesis operations are possible
+
+**Architecture Review:** Should remain as MCP tool after bug fix - synthesis is user-controlled workflow step
+
+### 7. `orchestrator_maintenance_coordinator` ⚠️ PARTIALLY FUNCTIONAL
+**Status:** Works but reveals serious system issues
+**Testing Results:**
+- `scan_cleanup`: ✅ Works, finds no issues
+- `validate_structure`: ⚠️ Works but identifies 5 critical system issues
+- `prepare_handover`: ✅ Works but finds 1 issue
+
+**Issues Identified by Tool:**
+1. Hot-reload validation error: No module named 'watchfiles'
+2. Missing module: mcp_task_orchestrator.domain
+3. Missing module: mcp_task_orchestrator.application  
+4. Missing module: mcp_task_orchestrator.infrastructure
+5. Missing module: mcp_task_orchestrator.reboot.orchestrator
+
+**Architecture Review:** 
+- ✅ Should remain as MCP tool for manual maintenance
+- ❌ RECOMMENDATION: Convert `scan_cleanup` to background automation
+- Some maintenance actions should run automatically on session init
+
+### 8. `orchestrator_cleanup_sessions` ✅ FUNCTIONAL
+**Status:** Fully functional
+**Testing Results:**
+- Dry-run mode: ✅ Works correctly, identifies 2 sessions available for cleanup
+- Different cleanup types: ✅ All work correctly (`completed`, `old`, `all`)
+- Safe cleanup logic with proper preview functionality
+
+**Architecture Review:** ❌ SHOULD BE BACKGROUND AUTOMATION
+- Session cleanup should be automatic based on age/completion
+- Manual cleanup tools are rarely needed by users
+- Could be converted to configuration settings (auto-cleanup after N days)
+
+## Critical System Issues Discovered
+
+### 1. Module Import Failures (HIGH PRIORITY)
+The maintenance coordinator revealed 5 missing modules in the `mcp_task_orchestrator` package:
+- `mcp_task_orchestrator.domain`
+- `mcp_task_orchestrator.application`
+- `mcp_task_orchestrator.infrastructure`
+- `mcp_task_orchestrator.reboot.orchestrator`
+
+This suggests the package structure or installation is broken.
+
+### 2. Task/Session Lookup Broken (CRITICAL PRIORITY)
+Three tools cannot find tasks/sessions that clearly exist:
+- `orchestrator_session_status`
+- `orchestrator_resume_session`  
+- `orchestrator_synthesize_results`
+
+This suggests a fundamental issue with database queries or file path resolution.
+
+### 3. Missing Dependencies (MEDIUM PRIORITY)
+- `watchfiles` module missing (affects hot-reload functionality)
+
+## Architecture Recommendations
+
+### Keep as MCP Tools (6 tools):
+1. `orchestrator_initialize_session` - User-initiated workflow
+2. `orchestrator_get_status` - Essential monitoring
+3. `orchestrator_list_sessions` - User needs visibility
+4. `orchestrator_session_status` - After bug fix
+5. `orchestrator_resume_session` - After bug fix
+6. `orchestrator_synthesize_results` - After bug fix
+
+### Convert to Background Automation (1 tool):
+1. `orchestrator_cleanup_sessions` - Should auto-cleanup based on configuration
+
+### Hybrid Approach (1 tool):
+1. `orchestrator_maintenance_coordinator` - Keep for manual maintenance, but add automatic `scan_cleanup` on session init
+
+## Priority Fix Rankings
+
+### Priority 1 (CRITICAL - System Unusable):
+1. Fix task/session lookup logic affecting 3 tools
+2. Resolve missing `mcp_task_orchestrator` modules
+
+### Priority 2 (HIGH - Missing Functionality): 
+1. Install missing `watchfiles` dependency
+2. Implement background session cleanup
+
+### Priority 3 (MEDIUM - Improvements):
+1. Add automatic maintenance scans
+2. Improve error messages for debugging
+
+## Testing Methodology Notes
+
+- Tested each tool with multiple parameter combinations
+- Verified error handling with invalid inputs
+- Cross-referenced results between tools to identify inconsistencies
+- Used existing system state to test with real data
+- Documented response times and performance characteristics
+
+## Next Steps
+
+1. **Immediate:** Fix the task/session lookup bug - this blocks core functionality
+2. **Short-term:** Resolve module import issues and missing dependencies  
+3. **Medium-term:** Implement architecture changes (background automation)
+4. **Long-term:** Add comprehensive error recovery and system health monitoring

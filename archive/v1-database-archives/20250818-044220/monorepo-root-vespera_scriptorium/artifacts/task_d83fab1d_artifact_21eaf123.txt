@@ -1,0 +1,75 @@
+## Codebase Analysis Results for Enhanced Code Review Command
+
+### Existing Code Review Commands Analysis
+
+1. **Current Commands**:
+   - `review-general.md`: Basic 94-line review with Python/Pydantic focus
+   - `review-staged-unstaged.md`: Similar structure, focuses on git staging area
+   - `refactor-simple.md`: Quick refactoring check (34 lines)
+
+2. **Current Limitations**:
+   - Basic structure lacking comprehensive methodology
+   - Limited security checklist (only 4 basic items)  
+   - No severity categorization framework
+   - No cross-language support
+   - Simple output format without actionable guidance
+   - No systematic validation approach
+
+### Testing and Validation Patterns Found
+
+1. **Testing Structure**:
+   - **Unit tests**: `tests/unit/` with markers (@pytest.mark.unit, @pytest.mark.integration)
+   - **Security tests**: `tests/security/` with comprehensive security validation
+   - **Performance tests**: `tests/performance/` for benchmarking
+   - **Validation framework**: `tests/validation_gates/` with systematic validation
+
+2. **Security Testing Patterns**:
+   - XSS prevention testing with payload validation
+   - Input validation with comprehensive sanitization
+   - SQL injection prevention patterns
+   - Path traversal protection
+   - Information disclosure prevention
+
+3. **Linting and Quality Tools**:
+   - **Black** for code formatting (line-length: 88)
+   - **isort** for import sorting (profile: "black")
+   - **pytest** with asyncio support and coverage
+   - **mypy** for type checking (when configured)
+   - Resource cleanup validation to prevent warnings
+
+### Quality and Architecture Patterns
+
+1. **Clean Architecture Implementation**:
+   - Domain/Application/Infrastructure/Presentation layers
+   - Repository pattern with abstract interfaces
+   - Dependency injection container
+   - Error handling with severity levels
+   - Resource management with context managers
+
+2. **File Organization**:
+   - Status tagging system for lifecycle management
+   - PRPs framework for systematic development
+   - Validation framework at `PRPs/validation/`
+   - AI documentation system at `PRPs/ai_docs/`
+
+3. **Git and Development Patterns**:
+   - Mandatory git commit after every task
+   - Descriptive commit messages with scope
+   - Pre-commit hooks for validation
+   - Status tag compliance checking
+
+### Command Structure Patterns
+
+1. **Argument Handling**: `$ARGUMENTS` variable for flexible scope
+2. **Structured Output**: Markdown reports with severity categorization
+3. **File References**: `file:line` format for precise issue location
+4. **Report Storage**: `PRPs/code_reviews/` directory with numbered reports
+
+### Recommendations for Enhanced Command
+
+1. **Adopt Comprehensive Methodology**: Integrate systematic approaches from external research
+2. **Implement Severity Framework**: Critical/Important/Minor with actionable guidance
+3. **Add Security-First Design**: Comprehensive security checklist integration
+4. **Multi-Language Support**: Language-agnostic patterns while maintaining Python specifics
+5. **Validation Integration**: Connect with existing validation framework
+6. **Enhanced Reporting**: Detailed reports with context and remediation steps

@@ -1,0 +1,284 @@
+{
+  "templates": {
+    "software_project_setup": {
+      "category": "builtin",
+      "metadata": {
+        "name": "Software Project Setup",
+        "version": "1.0.0",
+        "description": "Comprehensive software project initialization with modern tooling",
+        "category": "development",
+        "tags": [
+          "project-setup",
+          "initialization",
+          "development",
+          "tooling"
+        ],
+        "author": "Task Orchestrator",
+        "complexity": "moderate",
+        "estimated_duration": "4-6 hours"
+      },
+      "storage": {
+        "template_id": "software_project_setup",
+        "category": "builtin",
+        "stored_at": "2025-08-16T00:31:37.011453",
+        "storage_version": "1.0",
+        "storage_uuid": "47efdd13-303b-4719-8575-771146e4c043"
+      },
+      "last_updated": "2025-08-16T00:31:37.011860"
+    },
+    "feature_development_workflow": {
+      "category": "builtin",
+      "metadata": {
+        "name": "Feature Development Workflow",
+        "version": "1.0.0",
+        "description": "End-to-end workflow for developing and deploying new features",
+        "category": "development",
+        "tags": [
+          "feature",
+          "development",
+          "workflow",
+          "agile"
+        ],
+        "author": "Task Orchestrator",
+        "complexity": "moderate",
+        "estimated_duration": "1-3 weeks"
+      },
+      "storage": {
+        "template_id": "feature_development_workflow",
+        "category": "builtin",
+        "stored_at": "2025-08-16T00:31:37.019667",
+        "storage_version": "1.0",
+        "storage_uuid": "86142e57-c64a-47a5-9c19-c0f7d9c6ff19"
+      },
+      "last_updated": "2025-08-16T00:31:37.020070"
+    },
+    "market_research_analysis": {
+      "category": "builtin",
+      "metadata": {
+        "name": "Market Research Analysis",
+        "version": "1.0.0",
+        "description": "Systematic approach to market research and competitive analysis",
+        "category": "research",
+        "tags": [
+          "market-research",
+          "competitive-analysis",
+          "business-intelligence"
+        ],
+        "author": "Task Orchestrator",
+        "complexity": "moderate",
+        "estimated_duration": "2-4 weeks"
+      },
+      "storage": {
+        "template_id": "market_research_analysis",
+        "category": "builtin",
+        "stored_at": "2025-08-16T00:31:37.028032",
+        "storage_version": "1.0",
+        "storage_uuid": "af0e822d-4490-4cc5-b6af-e1dd81984d94"
+      },
+      "last_updated": "2025-08-16T00:31:37.028385"
+    },
+    "orchestrator_feature_development": {
+      "category": "builtin",
+      "metadata": {
+        "name": "Orchestrator Feature Development",
+        "version": "1.0.0",
+        "description": "Template for developing new features in the Task Orchestrator system",
+        "category": "self-development",
+        "tags": [
+          "orchestrator",
+          "feature",
+          "development",
+          "clean-architecture"
+        ],
+        "author": "Task Orchestrator",
+        "complexity": "complex",
+        "estimated_duration": "1-4 weeks"
+      },
+      "storage": {
+        "template_id": "orchestrator_feature_development",
+        "category": "builtin",
+        "stored_at": "2025-08-16T00:31:37.034508",
+        "storage_version": "1.0",
+        "storage_uuid": "151a04a1-a08b-470e-b4a4-0bbdf5bb9728"
+      },
+      "last_updated": "2025-08-16T00:31:37.034919"
+    },
+    "content_creation_workflow": {
+      "category": "builtin",
+      "metadata": {
+        "name": "Content Creation Workflow",
+        "version": "1.0.0",
+        "description": "End-to-end content creation process from ideation to publication",
+        "category": "creative",
+        "tags": [
+          "content",
+          "writing",
+          "creative",
+          "marketing",
+          "publishing"
+        ],
+        "author": "Task Orchestrator",
+        "complexity": "moderate",
+        "estimated_duration": "1-2 weeks"
+      },
+      "storage": {
+        "template_id": "content_creation_workflow",
+        "category": "builtin",
+        "stored_at": "2025-08-16T00:31:37.041626",
+        "storage_version": "1.0",
+        "storage_uuid": "2ed00441-7c66-48d5-92c6-f24889187e89"
+      },
+      "last_updated": "2025-08-16T00:31:37.041984"
+    },
+    "design_project_workflow": {
+      "category": "builtin",
+      "metadata": {
+        "name": "Design Project Workflow",
+        "version": "1.0.0",
+        "description": "Complete design process workflow for digital and visual design projects",
+        "category": "creative",
+        "tags": [
+          "design",
+          "creative",
+          "visual",
+          "user-experience",
+          "branding"
+        ],
+        "author": "Task Orchestrator",
+        "complexity": "complex",
+        "estimated_duration": "2-6 weeks"
+      },
+      "storage": {
+        "template_id": "design_project_workflow",
+        "category": "builtin",
+        "stored_at": "2025-08-16T00:31:37.048019",
+        "storage_version": "1.0",
+        "storage_uuid": "19b8b48f-4135-4bb2-9cf8-9938aa6d9125"
+      },
+      "last_updated": "2025-08-16T00:31:37.048381"
+    },
+    "project_planning_template": {
+      "category": "builtin",
+      "metadata": {
+        "name": "Project Planning and Management",
+        "version": "1.0.0",
+        "description": "Complete project planning workflow from initiation to closure",
+        "category": "business",
+        "tags": [
+          "project-management",
+          "planning",
+          "business",
+          "coordination"
+        ],
+        "author": "Task Orchestrator",
+        "complexity": "complex",
+        "estimated_duration": "2-8 weeks"
+      },
+      "storage": {
+        "template_id": "project_planning_template",
+        "category": "builtin",
+        "stored_at": "2025-08-16T00:31:37.055582",
+        "storage_version": "1.0",
+        "storage_uuid": "e211664b-273f-46ca-92f9-733d6195e0bc"
+      },
+      "last_updated": "2025-08-16T00:31:37.055958"
+    },
+    "code_review_process": {
+      "category": "shared",
+      "metadata": {
+        "name": "Code Review Process",
+        "version": "1.1.0",
+        "description": "Comprehensive code review workflow with security and quality checks",
+        "author": "Vespera Scriptorium",
+        "category": "quality-assurance",
+        "tags": [
+          "code-review",
+          "quality",
+          "security",
+          "testing"
+        ]
+      },
+      "storage": {
+        "template_id": "code_review_process",
+        "category": "shared",
+        "stored_at": "2025-08-16T00:32:48.332127",
+        "storage_version": "1.0",
+        "storage_uuid": "48212b37-a240-489f-9514-5c03e122aead"
+      },
+      "last_updated": "2025-08-16T00:32:48.332425"
+    },
+    "bug_investigation": {
+      "category": "shared",
+      "metadata": {
+        "name": "Bug Investigation Process",
+        "version": "1.0.0",
+        "description": "Structured workflow for investigating and fixing bugs",
+        "author": "Vespera Scriptorium",
+        "category": "debugging",
+        "tags": [
+          "bug",
+          "investigation",
+          "debugging",
+          "resolution"
+        ]
+      },
+      "storage": {
+        "template_id": "bug_investigation",
+        "category": "shared",
+        "stored_at": "2025-08-16T00:32:48.334989",
+        "storage_version": "1.0",
+        "storage_uuid": "43e370e0-963e-48d0-93d1-b783feca8bad"
+      },
+      "last_updated": "2025-08-16T00:32:48.335403"
+    },
+    "research_base": {
+      "category": "shared",
+      "metadata": {
+        "name": "Research Base Template",
+        "version": "1.0.0",
+        "description": "Base template for research and analysis tasks",
+        "author": "Vespera Scriptorium",
+        "category": "research",
+        "tags": [
+          "research",
+          "analysis",
+          "base"
+        ]
+      },
+      "storage": {
+        "template_id": "research_base",
+        "category": "shared",
+        "stored_at": "2025-08-16T00:32:48.337811",
+        "storage_version": "1.0",
+        "storage_uuid": "7255f360-1680-439a-ac93-bb7b0b0c7963"
+      },
+      "last_updated": "2025-08-16T00:32:48.338144"
+    },
+    "market_research": {
+      "category": "shared",
+      "metadata": {
+        "name": "Market Research Analysis",
+        "version": "1.0.0",
+        "description": "Comprehensive market research and competitive analysis",
+        "author": "Vespera Scriptorium",
+        "category": "business",
+        "tags": [
+          "market",
+          "research",
+          "competitive-analysis",
+          "business"
+        ],
+        "extends": "research_base"
+      },
+      "storage": {
+        "template_id": "market_research",
+        "category": "shared",
+        "stored_at": "2025-08-16T00:32:48.340360",
+        "storage_version": "1.0",
+        "storage_uuid": "b588621b-f254-4c55-971b-a36b1b3c7b43"
+      },
+      "last_updated": "2025-08-16T00:32:48.340782"
+    }
+  },
+  "last_updated": "2025-08-16T00:33:00.023289"
+}
