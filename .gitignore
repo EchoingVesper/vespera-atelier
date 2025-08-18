@@ -157,3 +157,6 @@ Cargo.lock
 *.sqlite-wal
 *.db-shm
 *.db-wal
+
+# Reference repositories - all contents ignored
+reference/
