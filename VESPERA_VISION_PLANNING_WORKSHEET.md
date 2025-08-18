@@ -563,7 +563,7 @@ How will we know this implementation succeeded?
 
 ### **Development Phases**
 
-**Phase 1: Foundation (2-3 months)**
+#### **Phase 1: Foundation (2-3 months)**
 
 - [ ] Modular backend architecture
 - [ ] Role system with capability restrictions (Roo Code-inspired)
@@ -571,7 +571,7 @@ How will we know this implementation succeeded?
 - [ ] Essential CLI interface
 - [ ] Database abstraction layer
 
-**Phase 2: Intelligence (2-3 months)**  
+#### **Phase 2: Intelligence (2-3 months)**  
 
 - [ ] Document linking and hooks
 - [ ] Vector search integration (Chroma)
@@ -579,14 +579,14 @@ How will we know this implementation succeeded?
 - [ ] Workflow automation
 - [ ] Plugin APIs
 
-**Phase 3: Interfaces (3-4 months)**
+#### **Phase 3: Interfaces (3-4 months)**
 
 - [ ] Obsidian plugin development
 - [ ] VS Code extension development
 - [ ] Cross-plugin communication
 - [ ] User workflow testing
 
-**Phase 4: Expansion**
+#### **Phase 4: Expansion**
 
 - [ ] Asset management
 - [ ] Real-time collaboration
