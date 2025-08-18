@@ -1,196 +1,368 @@
 # Vespera Atelier V2 Architecture
 
-**Status**: Ground-up rewrite in progress  
-**V1 Archive**: `archive/v1-legacy` branch (tag: `v1-archive-20250818`)  
-**Active Session**: `session_16affafc_1755499003`  
-**Last Updated**: 2025-08-18
+**Version**: 2.0 Ground-Up Rewrite  
+**Status**: Foundation Phase (Week 1-2)  
+**Philosophy**: Clean Architecture + Domain-Driven Design + Executive Dysfunction Awareness
 
-## 🎯 Transition Strategy
+## 🏛️ Architectural Principles
 
-### Orchestrator Preservation Protocol
-
-**Critical Insight**: The current V1 orchestrator system remains active to coordinate the V2 rewrite process, ensuring no loss of task management capabilities during the transition.
-
-#### Preservation Approach
-1. **V1 Orchestrator Active**: Current session `session_16affafc_1755499003` manages V2 development
-2. **Archive Safety**: V1 codebase preserved in `archive/v1-legacy` branch  
-3. **Continuous Coordination**: V1 orchestrator tools coordinate V2 implementation
-4. **Pattern Migration**: Proven V1 patterns systematically integrated into V2
-5. **No Downtime**: Project management capabilities maintained throughout transition
-
-## 🏗️ V2 Architecture Overview
-
-### Core Vision
-Building a **"repository of information with automatic organization"** and **"Discord for LLMs"** that enables seamless management of creative projects.
-
-### Clean Architecture Implementation
+### Clean Architecture Layers
 
 ```
-scriptorium/                    # V2 Core Backend
-├── domain/                     # Business Logic (Pure)
-│   ├── entities/              # Core business objects
-│   │   ├── task.py           # Task hierarchy system
-│   │   ├── role.py           # Role with capability restrictions
-│   │   ├── artifact.py       # Comprehensive artifact tracking
-│   │   └── project.py        # Project orchestration
-│   ├── value_objects/         # Immutable domain concepts
-│   ├── repositories/          # Abstract data contracts
-│   └── services/              # Domain business rules
-│
-├── application/                # Use Cases & Workflows
-│   ├── use_cases/            # Application business logic
-│   ├── services/             # Application coordination
-│   ├── dtos/                 # Data transfer objects
-│   └── interfaces/           # External system contracts
-│
-├── infrastructure/            # External Concerns
-│   ├── databases/            # Triple database system
-│   │   ├── sqlite/           # Transactional data
-│   │   ├── chroma/          # Vector embeddings
-│   │   └── kuzu/            # Graph relationships
-│   ├── llm/                  # LLM integration
-│   │   ├── local/           # Ollama, LM Studio
-│   │   └── api/             # Claude, GPT, Gemini
-│   ├── plugins/              # Plugin communication
-│   └── external/            # File system, Git, etc.
-│
-└── presentation/              # User Interfaces
-    ├── api/                  # REST API for plugins
-    ├── cli/                  # Command-line interface
-    └── mcp/                  # MCP server implementation
+┌─────────────────────────────────────────────────┐
+│                    UI Layer                     │
+│        (Obsidian Plugin, VS Code Extension)     │
+├─────────────────────────────────────────────────┤
+│               Application Layer                 │
+│     (Use Cases, Orchestration, Workflows)      │
+├─────────────────────────────────────────────────┤
+│                 Domain Layer                    │
+│         (Business Logic, Entities)              │
+├─────────────────────────────────────────────────┤
+│              Infrastructure Layer               │
+│    (Databases, External APIs, File System)     │
+└─────────────────────────────────────────────────┘
 ```
 
-### Database Architecture
+### Domain-Driven Design
 
-#### Triple Database System
-- **SQLite**: Core transactional data (tasks, roles, sessions)
-- **KuzuDB**: Graph relationships (embedded, Cypher support)
-- **Chroma**: Vector embeddings (semantic search, document similarity)
+**Core Domains:**
+- **Task Orchestration**: Hierarchical task management with role-based execution
+- **Document Intelligence**: Semantic organization and automatic linking
+- **Creative Workflows**: Multi-modal project coordination
+- **Agent Coordination**: LLM role management with capability restrictions
 
-#### Benefits
-- **All Embedded**: No external service dependencies
-- **Specialized**: Each database optimized for its use case
-- **Scalable**: Can handle large creative projects with complex relationships
-- **Local-First**: Works offline with optional cloud sync
+**Bounded Contexts:**
+- `vespera-scriptorium`: Core orchestration and task management
+- `vespera-atelier`: Platform services and integrations
+- `vespera-utilities`: Shared domain concepts and utilities
+
+## 🗃️ Database Architecture
+
+### Triple Database Ecosystem
+
+#### 1. SQLite - Operational Data Store
+**Purpose**: Core application data, transactions, sessions
+```sql
+-- Task management
+tasks (id, title, description, status, parent_id, created_at, ...)
+sessions (id, name, status, metadata, created_at, ...)
+artifacts (id, task_id, type, content, file_path, ...)
+
+-- User management  
+users (id, name, preferences, ...)
+roles (id, name, capabilities, restrictions, ...)
+```
+
+#### 2. KuzuDB - Graph Database
+**Purpose**: Relationships, dependencies, project structure
+```cypher
+// Task relationships
+(task1)-[:DEPENDS_ON]->(task2)
+(task)-[:CREATES]->(artifact)
+(artifact)-[:REFERENCES]->(document)
+
+// Document relationships
+(doc1)-[:IMPLEMENTS]->(spec)
+(test)-[:VALIDATES]->(code)
+(doc)-[:INSPIRES]->(creative_work)
+```
+
+#### 3. Chroma - Vector Database
+**Purpose**: Semantic search, document discovery, context building
+```python
+# Document embeddings for semantic search
+documents = chroma_client.get_collection("project_documents")
+similar_docs = documents.query(
+    query_texts=["task description"],
+    n_results=5
+)
+```
+
+### Database Integration Patterns
+
+**Single Source of Truth**: SQLite for operational queries
+**Enriched Queries**: KuzuDB for complex relationships
+**Discovery**: Chroma for semantic similarity and context suggestions
+
+## 🔧 Package Architecture
+
+### packages/vespera-scriptorium
+**Role**: Core orchestration engine
+```
+vespera-scriptorium/
+├── core/
+│   ├── database/          # Triple database management
+│   ├── orchestrator/      # Task coordination engine
+│   └── session/          # Session management
+├── roles/
+│   ├── definitions/       # Role templates and schemas
+│   ├── capabilities/      # Permission and restriction system
+│   └── execution/        # Role-based LLM spawning
+├── tasks/
+│   ├── hierarchy/        # Parent-child task management
+│   ├── lifecycle/        # Task state management
+│   └── scheduling/       # Dependency resolution
+└── api/
+    ├── rest/             # HTTP API for plugins
+    ├── mcp/              # MCP server implementation
+    └── websocket/        # Real-time updates
+```
+
+### packages/vespera-atelier
+**Role**: Platform coordination and intelligence
+```
+vespera-atelier/
+├── automation/
+│   ├── hooks/            # File type and event hooks
+│   ├── workflows/        # Template-driven automation
+│   └── triggers/         # Event detection system
+├── intelligence/
+│   ├── vector/           # Chroma integration
+│   ├── graph/            # KuzuDB integration
+│   └── semantic/         # Context engineering
+└── integration/
+    ├── creative-tools/   # ComfyUI, Blender, DAWs
+    ├── editors/          # VS Code, Obsidian
+    └── llm-providers/    # Ollama, Claude, GPT
+```
+
+### packages/vespera-utilities
+**Role**: Shared utilities and types
+```
+vespera-utilities/
+├── shared/
+│   ├── validation/       # Input validation
+│   ├── serialization/    # Data transformation
+│   └── configuration/    # Config management
+└── types/
+    ├── domain/           # Domain entity types
+    ├── api/              # API contract types
+    └── integration/      # External system types
+```
+
+## 🤖 Role System Architecture
+
+### Capability-Based Permissions (Roo Code Inspired)
+
+```yaml
+# Role definition example
+coder:
+  display_name: "Code Implementation Specialist"
+  description: "Implements code following specifications"
+  preferred_llm: "local:ollama:llama3"
+  fallback_llms: ["claude-3-5-sonnet", "gpt-4"]
+  capabilities:
+    - "file_read"
+    - "file_write" 
+    - "code_execution"
+    - "spawn_tasks"
+  restrictions:
+    - "max_file_changes: 5"
+    - "single_codeblock_only: true"
+    - "no_database_modifications"
+  context_requirements:
+    - "coding_standards"
+    - "api_documentation"
+    - "existing_patterns"
+  validation_rules:
+    - "code_compiles"
+    - "tests_pass"
+    - "follows_style_guide"
+```
+
+### Role Hierarchy and Inheritance
+
+```
+orchestrator (root)
+├── researcher
+│   ├── code_researcher
+│   └── market_researcher
+├── implementer  
+│   ├── coder
+│   ├── designer
+│   └── writer
+├── validator
+│   ├── tester
+│   ├── reviewer  
+│   └── security_auditor
+└── coordinator
+    ├── project_manager
+    └── release_manager
+```
+
+## 🔄 Task Management Architecture
+
+### Hierarchical Task System
+
+**Replaces sessions with recursive task breakdown:**
+
+```
+Meta-Task: "Implement user authentication"
+├── Task: "Design authentication architecture"
+│   ├── Subtask: "Research OAuth 2.0 patterns"
+│   └── Subtask: "Design database schema"
+├── Task: "Implement backend authentication"
+│   ├── Subtask: "Create user model"
+│   ├── Subtask: "Implement JWT handling"
+│   └── Subtask: "Add password hashing"
+└── Task: "Create frontend integration"
+    ├── Subtask: "Design login component"
+    └── Subtask: "Implement auth state management"
+```
+
+### Task Lifecycle States
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending
+    Pending --> Active : Assigned
+    Active --> InProgress : Started
+    InProgress --> Blocked : Dependency
+    Blocked --> InProgress : Unblocked
+    InProgress --> Completed : Finished
+    InProgress --> Failed : Error
+    Failed --> Pending : Reset
+    Completed --> [*]
+```
 
 ## 🔌 Plugin Architecture
 
 ### Dual Plugin Strategy
 
 #### Obsidian Plugin
-- **Knowledge Management**: Document-centric workflows
-- **Visual Task Management**: Kanban boards, mind maps
-- **Creative Project Oversight**: Multi-modal project tracking
-- **Graph Visualization**: Relationship mapping
+- **Current**: Active development in `plugins/Obsidian/Vespera-Scriptorium/`
+- **Focus**: Document-centric workflows, knowledge management
+- **Communication**: REST API + WebSocket for real-time updates
 
 #### VS Code Extension  
-- **Development Workflows**: Code-centric task management
-- **Integrated Terminal**: CLI tool access
-- **File Management**: Direct scriptorium integration
-- **Debug Integration**: Task-aware debugging
+- **Status**: Planned for Phase 3
+- **Focus**: Development workflows, code management
+- **Communication**: Language Server Protocol + Custom extension API
 
-## 📊 Artifact System
+### Plugin Communication Protocol
 
-### Comprehensive Tracking
-
-#### Scope (from completed worksheet)
-- **All LLM Messages**: Complete conversation history
-- **All File Changes**: Version-controlled artifact storage
-- **User Interactions**: Decision tracking and learning
-- **System Actions**: Automation audit trail
-
-#### Organization Structure
-```
-.vespera_scriptorium/
-├── artifacts/
-│   ├── by-task/          # Task-based organization
-│   ├── by-date/          # Chronological access
-│   ├── by-type/          # Type-based (code, docs, creative)
-│   └── by-id/            # Database reference
-├── databases/
-│   ├── core.db           # SQLite core data
-│   ├── vector/           # Chroma database
-│   └── graph/            # KuzuDB database
-└── config/
-    ├── roles/            # Role templates
-    ├── templates/        # Task templates
-    └── hooks/            # Automation configurations
+```typescript
+interface PluginAPI {
+  // Task management
+  createTask(task: TaskDefinition): Promise<Task>
+  queryTasks(filters: TaskFilters): Promise<Task[]>
+  
+  // Document intelligence
+  findRelatedDocuments(content: string): Promise<Document[]>
+  createDocumentLinks(from: string, to: string, type: LinkType): Promise<void>
+  
+  // Real-time updates
+  subscribeToTasks(callback: (task: Task) => void): Subscription
+  subscribeToDocuments(callback: (doc: Document) => void): Subscription
+}
 ```
 
-## 🚀 Implementation Phases
+## 🎨 Creative Workflows Architecture
 
-### Phase 1: Foundation (Weeks 1-2)
-**Status**: In Progress via Meta-PRP coordination
+### Multi-Modal Project Support
 
-#### Deliverables
-- [ ] Clean Architecture directory structure
-- [ ] Database abstraction layer (triple database)
-- [ ] Core domain entities (Task, Role, Artifact, Project)
-- [ ] Plugin communication protocol design
-- [ ] Basic CLI interface structure
+**Supported Creative Modalities:**
+- **Writing**: Novels, screenplays, technical documentation
+- **Visual**: Concept art, 3D models, animations
+- **Audio**: Music production, sound design, podcasts
+- **Interactive**: Games, web applications, user experiences
 
-#### V1 Orchestrator Role
-- Coordinates specialist agent spawning
-- Manages task breakdown and dependencies
-- Preserves work artifacts across development sessions
-- Provides continuous project oversight
+### Asset Management System
 
-### Phase 2: Core Systems (Weeks 3-4)
-#### Deliverables
-- [ ] Role system with capability restrictions (Roo Code-inspired)
-- [ ] Local LLM integration (Ollama, LM Studio)
-- [ ] Task hierarchy implementation
-- [ ] Session → Task migration utilities
-- [ ] Basic artifact tracking system
+```
+creative_project/
+├── assets/
+│   ├── audio/           # Music, sound effects, voiceovers
+│   ├── visual/          # Images, 3D models, textures
+│   ├── documents/       # Scripts, specs, notes
+│   └── code/            # Interactive elements
+├── workflows/
+│   ├── production/      # Creation workflows
+│   ├── review/          # Feedback and iteration
+│   └── publishing/      # Output and distribution
+└── metadata/
+    ├── relationships/   # Asset dependencies (KuzuDB)
+    ├── versions/        # Version history (SQLite)
+    └── semantics/       # Content analysis (Chroma)
+```
 
-### Phase 3: Intelligence Layer (Weeks 5-6)
-#### Deliverables
-- [ ] Chroma vector database integration
-- [ ] KuzuDB graph database implementation
-- [ ] Document linking with file-type hooks
-- [ ] Workflow automation engine
-- [ ] Template system overhaul
+## 🔒 Security Architecture
 
-### Phase 4: Plugin Development (Weeks 7-8)
-#### Deliverables
-- [ ] Obsidian plugin MVP
-- [ ] VS Code extension MVP
-- [ ] Cross-plugin communication
-- [ ] User workflow testing
-- [ ] Integration test suite
+### Capability-Based Security
 
-## 📈 Performance Targets
+**Principle**: Each role has explicit, minimal permissions
+**Implementation**: Whitelist-based capability system
+**Validation**: Runtime permission checks before each operation
 
-### Startup Performance
-- **< 5 seconds**: Basic functionality available
-- **< 10 seconds**: Full system ready including databases
-- **< 2 seconds**: Plugin connection establishment
+### Data Protection
 
-### Runtime Performance  
-- **10-50 concurrent tasks**: Target capacity for individual users
-- **50+ concurrent tasks**: Scalable for large creative projects
-- **< 100ms**: API response times for standard operations
-- **< 500ms**: Complex search operations (vector + graph)
+**Embedded Databases**: No external service dependencies
+**Local Processing**: Sensitive content never leaves user's machine
+**Encryption**: At-rest encryption for sensitive artifacts
+**Audit Trail**: Complete operation logging for security analysis
 
-### Resource Usage
-- **2-8GB RAM**: Reasonable for local development
-- **10GB+ storage**: Large creative projects with assets
-- **Minimal CPU**: Background operations should not impact system
+## 🚀 Deployment Architecture
 
-## 🔄 Migration Strategy
+### Single-Binary Distribution
 
-### Data Migration
-- [ ] Task hierarchy conversion from V1 sessions
-- [ ] Artifact preservation and organization  
-- [ ] Role definition migration
-- [ ] Template system enhancement
+**Target**: Embedded executable with all databases included
+**Dependencies**: Minimal external requirements
+**Platforms**: Windows, macOS, Linux (desktop focus)
+**Installation**: Single installer with guided setup
 
-### Feature Parity
-- [ ] All V1 MCP tools functional in V2
-- [ ] Enhanced capabilities where architecturally sound
-- [ ] Improved reliability through Clean Architecture
-- [ ] Maintained backward compatibility for critical workflows
+### Development vs Production
+
+#### Development Mode
+- Hot-reload enabled
+- Detailed logging
+- Debug interfaces
+- Performance profiling
+
+#### Production Mode  
+- Optimized performance
+- Minimal logging
+- User-friendly interfaces
+- Automatic error recovery
+
+## 📊 Performance Considerations
+
+### Database Optimization
+
+**SQLite**: WAL mode, connection pooling, prepared statements
+**KuzuDB**: Optimized for embedded use, NetworkX integration
+**Chroma**: Persistent storage, efficient embedding updates
+
+### Memory Management
+
+**Target**: 2-8GB for large creative projects
+**Strategy**: Lazy loading, intelligent caching, cleanup routines
+**Monitoring**: Memory usage tracking and optimization
+
+### Concurrency
+
+**Model**: Actor-based concurrency for task execution
+**Coordination**: Event-driven architecture for loose coupling
+**Scaling**: Horizontal scaling through task distribution
+
+## 🔮 Future Architecture Evolution
+
+### Phase 2: Intelligence Layer
+- Advanced semantic analysis
+- Automated workflow discovery  
+- Predictive task suggestions
+
+### Phase 3: Collaboration Layer
+- Real-time multi-user coordination
+- Conflict resolution systems
+- Distributed project management
+
+### Phase 4: Extensibility Layer
+- Plugin marketplace
+- Custom role definitions
+- Third-party integrations
 
 ---
 
-**Next Steps**: Execute Phase 1 via active meta-PRP coordination while maintaining V1 orchestrator session continuity.
+**Architecture Status**: ✅ **Planned and Ready for Implementation**
+**Next Phase**: Begin foundation development with modular microservices approach

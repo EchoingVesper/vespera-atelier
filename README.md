@@ -1,43 +1,49 @@
-# Vespera Atelier
+# Vespera Atelier - Creative Suite Monorepo
 
-> 🚧 **V2 GROUND-UP REWRITE IN PROGRESS** (2025-08-18) 🚧  
-> **Major Architectural Transition**: V2 represents a complete rewrite based on lessons learned. V1 is archived but functional. **Current V1 orchestrator session active** - see transition strategy below.
+**Status**: 🚧 **Under Heavy Development - V2 Ground-Up Rewrite** 🚧
 
-**An intelligent platform for document-centric orchestration, task management, and creative workflows.**
+**Current Phase**: Foundation Architecture (Week 1-2 of 6-9 month timeline)
 
-## ⚠️ Transition Status
+## 🎯 Vision
 
-**Current State**: V1 fully functional, V2 rewrite active via meta-PRP coordination  
-**V1 Archive**: Branch `archive/v1-legacy` (tag: `v1-archive-20250818`)  
-**Active Session**: `session_16affafc_1755499003` coordinating V2 development  
-**Orchestrator**: V1 orchestrator managing V2 transition to preserve continuity
+Vespera Atelier is building a comprehensive "repository of information with automatic organization" and "Discord for LLMs" that enables seamless management of creative projects through intelligent task orchestration, document linking, and multi-LLM coordination.
 
-### Preservation Strategy
+**Key Differentiators:**
+- **Local-First**: All databases embedded (SQLite + KuzuDB + Chroma)
+- **Role-Based AI**: Capability restrictions inspired by Roo Code
+- **Executive Dysfunction Aware**: Pre-structured workflows eliminate decision paralysis  
+- **Creative Suite Integration**: ComfyUI, Blender, DAWs, and creative tools
+- **Dual Plugin Strategy**: Obsidian + VS Code for maximum reach
 
-The V1 orchestrator system remains active to coordinate the V2 rewrite process. This ensures:
-- Current orchestrator session continues managing transition tasks
-- No loss of active task coordination during rewrite
-- Systematic migration of proven patterns to V2 architecture
-- Continuous project management capabilities
+## 🏗️ Architecture
 
-## Overview
+### V2 Clean Architecture Implementation
 
-Vespera Atelier is transitioning from V1 (hybrid architecture) to V2 (Clean Architecture with modular microservices). V2 implements a "repository of information with automatic organization" and "Discord for LLMs" based on comprehensive planning and lessons learned.
+```
+vespera-atelier/
+├── packages/
+│   ├── vespera-scriptorium/    # 🧠 Core backend orchestrator
+│   │   ├── core/              # Database management layer
+│   │   ├── roles/             # Role system with capability restrictions
+│   │   ├── tasks/             # Hierarchical task management
+│   │   └── api/               # REST API for plugins
+│   ├── vespera-atelier/        # 🔧 Platform coordination services  
+│   │   ├── automation/        # Workflow automation hooks
+│   │   ├── intelligence/      # Vector/Graph database services
+│   │   └── integration/       # External tool integrations
+│   └── vespera-utilities/      # 🛠️ Shared utility functions
+├── plugins/
+│   ├── Obsidian/             # 📝 Obsidian plugin (active development)
+│   └── VSCode/               # 💻 VS Code extension (planned)
+├── apps/                     # 🚀 Standalone applications (future)
+└── PRPs/                     # 📋 Proven meta-PRP system (preserved)
+```
 
-## Architecture Transition
+### Triple Database Ecosystem
 
-### V1 Architecture (Current - archive/v1-legacy)
-- **Packages**: `vespera-scriptorium` (hybrid architecture)
-- **Status**: Archived but functional, managing V2 transition
-- **Orchestrator**: Active session coordinating rewrite
-
-### V2 Architecture (Target - In Development)
-- **Clean Architecture**: Domain/Application/Infrastructure layers
-- **Modular Backend**: `scriptorium/` with microservices
-- **Triple Database**: SQLite + KuzuDB (graph) + Chroma (vector)
-- **Dual Plugins**: Obsidian + VS Code integration
-- **Role System**: Capability restrictions (Roo Code-inspired)
-- **Local-First**: Embedded databases, local LLMs preferred
+- **SQLite**: Core task and session management
+- **KuzuDB**: Graph relationships (18-188x faster than Neo4j, embedded)
+- **Chroma**: Vector embeddings for semantic document discovery
 
 ## Quick Start
 
