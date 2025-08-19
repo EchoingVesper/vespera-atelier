@@ -146,7 +146,6 @@ class TaskCreateInput(BaseModel):
     feature: Optional[str] = Field(None, description="Feature area")
     role: Optional[str] = Field(None, description="Assigned role")
     priority: Optional[str] = Field("normal", description="Task priority")
-    auto_embed: bool = Field(True, description="Automatically create embeddings")
 
 
 class SemanticSearchInput(BaseModel):
@@ -168,7 +167,13 @@ class GraphAnalysisInput(BaseModel):
 # Core task management tools (enhanced with triple-DB)
 @mcp.tool()
 async def create_task(task_input: TaskCreateInput) -> Dict[str, Any]:
-    """Create a new task with automatic embedding and graph sync."""
+    """Create a new task with automatic background processing.
+    
+    The task will be automatically processed by background services for:
+    - Embedding generation (if enabled)
+    - Graph synchronization (if enabled)
+    - Dependency cycle detection (if dependencies exist)
+    """
     triple_db_service, chroma_service, kuzu_service, sync_coordinator = get_services()
     
     try:
@@ -178,6 +183,7 @@ async def create_task(task_input: TaskCreateInput) -> Dict[str, Any]:
             priority = TaskPriority(task_input.priority.lower())
         
         # Create task in triple database service
+        # Background services will automatically handle embedding and sync
         success, result = await triple_db_service.create_task(
             title=task_input.title,
             description=task_input.description,
@@ -188,15 +194,22 @@ async def create_task(task_input: TaskCreateInput) -> Dict[str, Any]:
             role_name=task_input.role
         )
         
-        if success and task_input.auto_embed:
-            # Task is automatically synced via TripleDBService
+        if success:
             task_dict = result["task"]
-            logger.info(f"Created task with auto-sync: {task_dict['id']}")
+            logger.info(f"Created task with automatic background processing: {task_dict['id']}")
+            
+            message = "Task created successfully. Background services will handle embedding and synchronization."
+            
+            # Check if background services are available
+            if triple_db_service.background_service_manager:
+                message += " Background services are active."
+            else:
+                message += " Background services not available - manual sync may be required."
         
         return {
             "success": success,
             "task": result.get("task") if success else None,
-            "message": "Task created with semantic embedding and graph sync" if success else result.get("error", "Failed to create task")
+            "message": message if success else result.get("error", "Failed to create task")
         }
         
     except Exception as e:
@@ -345,17 +358,42 @@ async def analyze_task_dependencies_graph(analysis_input: GraphAnalysisInput) ->
 
 @mcp.tool()
 async def detect_dependency_cycles() -> Dict[str, Any]:
-    """Detect circular dependencies in the task graph."""
+    """Manually trigger dependency cycle detection.
+    
+    Note: Cycle detection now runs automatically when dependencies are added.
+    Use this tool for manual audits or when automatic detection is disabled.
+    """
     triple_db_service, chroma_service, kuzu_service, sync_coordinator = get_services()
     
     try:
+        # Try background service first
+        if triple_db_service.background_service_manager:
+            from .service_config import ServiceType, ServicePriority
+            
+            operation_id = await triple_db_service.background_service_manager.schedule_operation(
+                ServiceType.CYCLE_DETECTION,
+                "full_cycle_check",
+                "manual_audit",
+                {"triggered_by": "user", "timestamp": datetime.now().isoformat()},
+                ServicePriority.HIGH
+            )
+            
+            return {
+                "success": True,
+                "operation_id": operation_id,
+                "message": "Dependency cycle detection scheduled via background services",
+                "method": "background_service"
+            }
+        
+        # Fallback to direct KuzuDB query
         cycles = await kuzu_service.detect_circular_dependencies()
         
         return {
             "success": True,
             "cycles_found": len(cycles),
             "cycles": cycles,
-            "message": f"Found {len(cycles)} circular dependencies" if cycles else "No circular dependencies detected"
+            "message": f"Found {len(cycles)} circular dependencies" if cycles else "No circular dependencies detected",
+            "method": "direct_query"
         }
         
     except Exception as e:
@@ -559,16 +597,155 @@ async def triple_db_health_check() -> Dict[str, Any]:
 
 @mcp.tool()
 async def force_full_resync() -> Dict[str, Any]:
-    """Force full resynchronization of all tasks across databases."""
+    """Force full resynchronization of all tasks across databases.
+    
+    Note: This operation is now primarily handled by background services.
+    Use get_background_service_status() to monitor automatic sync operations.
+    """
     try:
+        # Try background service first
+        triple_db_service = get_services()[0]
+        
+        if triple_db_service.background_service_manager:
+            # Schedule high-priority full sync via background services
+            from .service_config import ServiceType, ServicePriority
+            
+            operation_id = await triple_db_service.background_service_manager.schedule_operation(
+                ServiceType.INCREMENTAL_SYNC,
+                "full_resync",
+                "all_tasks",
+                {"triggered_by": "user", "force": True},
+                ServicePriority.HIGH
+            )
+            
+            return {
+                "success": True,
+                "operation_id": operation_id,
+                "message": "Full resync scheduled via background services",
+                "method": "background_service"
+            }
+        
+        # Fallback to legacy sync coordinator
         if not _sync_coordinator:
-            return {"success": False, "error": "Sync coordinator not initialized"}
+            return {"success": False, "error": "Neither background services nor sync coordinator available"}
         
         result = await _sync_coordinator.force_full_resync()
+        result["method"] = "legacy_sync_coordinator"
         return result
         
     except Exception as e:
         logger.exception("Error in full resync")
+        return {"success": False, "error": str(e)}
+
+
+# Background service management tools
+@mcp.tool()
+async def get_background_service_status() -> Dict[str, Any]:
+    """Get status and metrics for all background services."""
+    triple_db_service = get_services()[0]
+    
+    try:
+        status = await triple_db_service.get_background_service_status()
+        return {
+            "success": True,
+            "background_services": status
+        }
+        
+    except Exception as e:
+        logger.exception("Error getting background service status")
+        return {"success": False, "error": str(e)}
+
+
+@mcp.tool()
+async def configure_background_service(
+    service_type: str,
+    enabled: bool
+) -> Dict[str, Any]:
+    """Enable or disable a specific background service.
+    
+    Args:
+        service_type: One of 'auto_embedding', 'cycle_detection', 'incremental_sync', 'index_optimization'
+        enabled: True to enable, False to disable
+    """
+    triple_db_service = get_services()[0]
+    
+    try:
+        from .service_config import ServiceType
+        
+        # Convert string to ServiceType enum
+        service_type_map = {
+            "auto_embedding": ServiceType.AUTO_EMBEDDING,
+            "cycle_detection": ServiceType.CYCLE_DETECTION,
+            "incremental_sync": ServiceType.INCREMENTAL_SYNC,
+            "index_optimization": ServiceType.INDEX_OPTIMIZATION
+        }
+        
+        if service_type not in service_type_map:
+            return {
+                "success": False,
+                "error": f"Invalid service type. Must be one of: {list(service_type_map.keys())}"
+            }
+        
+        service_enum = service_type_map[service_type]
+        result = await triple_db_service.configure_background_service(service_enum, enabled)
+        
+        return result
+        
+    except Exception as e:
+        logger.exception("Error configuring background service")
+        return {"success": False, "error": str(e)}
+
+
+@mcp.tool()
+async def trigger_index_optimization() -> Dict[str, Any]:
+    """Manually trigger database index optimization.
+    
+    This operation normally runs automatically based on configuration,
+    but can be triggered manually for maintenance purposes.
+    """
+    triple_db_service = get_services()[0]
+    
+    try:
+        result = await triple_db_service.trigger_index_optimization()
+        return result
+        
+    except Exception as e:
+        logger.exception("Error triggering index optimization")
+        return {"success": False, "error": str(e)}
+
+
+@mcp.tool()
+async def force_task_embedding(task_id: str) -> Dict[str, Any]:
+    """Manually force embedding generation for a specific task.
+    
+    Args:
+        task_id: ID of the task to embed
+    """
+    triple_db_service = get_services()[0]
+    
+    try:
+        if not triple_db_service.background_service_manager:
+            return {"success": False, "error": "Background services not available"}
+        
+        from .service_config import ServiceType, ServicePriority
+        
+        operation_id = await triple_db_service.background_service_manager.schedule_operation(
+            ServiceType.AUTO_EMBEDDING,
+            "embed_task",
+            task_id,
+            {"triggered_by": "user", "force": True},
+            ServicePriority.HIGH
+        )
+        
+        return {
+            "success": True,
+            "operation_id": operation_id,
+            "task_id": task_id,
+            "message": f"Embedding generation scheduled for task {task_id}"
+        }
+        
+    except Exception as e:
+        logger.exception("Error forcing task embedding")
         return {"success": False, "error": str(e)}
 
 

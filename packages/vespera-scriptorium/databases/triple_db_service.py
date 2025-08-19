@@ -18,6 +18,10 @@ from dataclasses import dataclass, field
 from tasks.service import TaskService
 from tasks.models import Task, TaskStatus, TaskPriority, TaskRelation
 
+# Background services
+from .background_services import BackgroundServiceManager
+from .service_config import BackgroundServiceConfig, ServiceType, ServicePriority
+
 # Third-party database clients
 try:
     import chromadb
@@ -103,6 +107,10 @@ class TripleDBService:
         self._initialized = False
         self._sync_lock = asyncio.Lock()
         
+        # Background services
+        self.background_service_manager: Optional[BackgroundServiceManager] = None
+        self._background_services_enabled = True
+        
         logger.info(f"Initialized TripleDBService with data directory: {config.data_dir}")
     
     async def initialize(self) -> bool:
@@ -126,6 +134,10 @@ class TripleDBService:
                 await self._init_kuzu()
             elif self.config.kuzu_enabled:
                 logger.warning("KuzuDB requested but not available. Install kuzu package.")
+            
+            # Initialize background services if enabled
+            if self._background_services_enabled:
+                await self._init_background_services()
             
             self._initialized = True
             logger.info("Triple database service initialized successfully")
@@ -155,6 +167,11 @@ class TripleDBService:
                 # KuzuDB handles cleanup automatically
                 self.kuzu_database = None
                 self.status.kuzu_connected = False
+            
+            # Background services cleanup
+            if self.background_service_manager:
+                await self.background_service_manager.stop()
+                self.background_service_manager = None
             
             self._initialized = False
             logger.info("Triple database service cleaned up successfully")
@@ -336,6 +353,64 @@ class TripleDBService:
         finally:
             connection.close()
     
+    async def _init_background_services(self) -> None:
+        """Initialize background services for automatic operations."""
+        try:
+            # Load configuration
+            config = BackgroundServiceConfig(data_dir=self.config.data_dir)
+            
+            # Create and initialize background service manager
+            self.background_service_manager = BackgroundServiceManager(config)
+            
+            # Inject database services into background services
+            await self._inject_services_into_background_manager()
+            
+            # Initialize and start background services
+            success = await self.background_service_manager.initialize()
+            if success:
+                await self.background_service_manager.start()
+                logger.info("Background services started successfully")
+            else:
+                logger.warning("Failed to initialize background services")
+                self.background_service_manager = None
+                
+        except Exception as e:
+            logger.error(f"Failed to initialize background services: {e}")
+            self.background_service_manager = None
+    
+    async def _inject_services_into_background_manager(self) -> None:
+        """Inject database services into background service manager."""
+        if not self.background_service_manager:
+            return
+        
+        # Get the specific background services and inject dependencies
+        services = self.background_service_manager.services
+        
+        # Inject Chroma service for embedding operations
+        if ServiceType.AUTO_EMBEDDING in services:
+            embedding_service = services[ServiceType.AUTO_EMBEDDING]
+            embedding_service.chroma_client = self.chroma_client
+            embedding_service.task_service = self.task_service
+        
+        # Inject KuzuDB service for cycle detection
+        if ServiceType.CYCLE_DETECTION in services:
+            cycle_service = services[ServiceType.CYCLE_DETECTION]
+            cycle_service.kuzu_database = self.kuzu_database
+        
+        # Inject sync coordinator for incremental sync
+        if ServiceType.INCREMENTAL_SYNC in services:
+            sync_service = services[ServiceType.INCREMENTAL_SYNC]
+            sync_service.task_service = self.task_service
+            sync_service.chroma_client = self.chroma_client
+            sync_service.kuzu_database = self.kuzu_database
+        
+        # Inject database connections for index optimization
+        if ServiceType.INDEX_OPTIMIZATION in services:
+            index_service = services[ServiceType.INDEX_OPTIMIZATION]
+            index_service.task_service = self.task_service
+            index_service.chroma_client = self.chroma_client
+            index_service.kuzu_database = self.kuzu_database
+    
     # Task operations with triple-DB coordination
     async def create_task(self, task: Task) -> Tuple[bool, Dict[str, Any]]:
         """Create a task with coordination across all databases."""
@@ -367,8 +442,27 @@ class TripleDBService:
             # 2. Generate content hash for change tracking
             content_hash = self._generate_content_hash(created_task)
             
-            # 3. Schedule async synchronization with other databases
-            if self.config.auto_sync_enabled:
+            # 3. Schedule background services for automatic operations
+            if self.background_service_manager:
+                # Schedule automatic embedding generation
+                await self.background_service_manager.schedule_operation(
+                    ServiceType.AUTO_EMBEDDING,
+                    "embed_task",
+                    created_task.id,
+                    {"task_data": created_task_dict, "content_hash": content_hash},
+                    ServicePriority.NORMAL
+                )
+                
+                # Schedule incremental sync
+                await self.background_service_manager.schedule_operation(
+                    ServiceType.INCREMENTAL_SYNC,
+                    "sync_task",
+                    created_task.id,
+                    {"operation": "create", "task_data": created_task_dict},
+                    ServicePriority.NORMAL
+                )
+            elif self.config.auto_sync_enabled:
+                # Fallback to legacy sync if background services unavailable
                 asyncio.create_task(self._sync_task_to_other_dbs(created_task, content_hash))
             
             return True, {"task": created_task_dict, "content_hash": content_hash}
@@ -404,8 +498,27 @@ class TripleDBService:
             # 2. Generate new content hash
             content_hash = self._generate_content_hash(updated_task)
             
-            # 3. Schedule async synchronization if content changed
-            if self.config.auto_sync_enabled:
+            # 3. Schedule background services for automatic operations
+            if self.background_service_manager:
+                # Schedule automatic embedding update
+                await self.background_service_manager.schedule_operation(
+                    ServiceType.AUTO_EMBEDDING,
+                    "embed_task",
+                    updated_task.id,
+                    {"task_data": updated_task_dict, "content_hash": content_hash},
+                    ServicePriority.NORMAL
+                )
+                
+                # Schedule incremental sync
+                await self.background_service_manager.schedule_operation(
+                    ServiceType.INCREMENTAL_SYNC,
+                    "sync_task",
+                    updated_task.id,
+                    {"operation": "update", "task_data": updated_task_dict, "updates": updates},
+                    ServicePriority.NORMAL
+                )
+            elif self.config.auto_sync_enabled:
+                # Fallback to legacy sync if background services unavailable
                 asyncio.create_task(self._sync_task_to_other_dbs(updated_task, content_hash))
             
             return True, {"task": updated_task_dict, "content_hash": content_hash}
@@ -431,9 +544,20 @@ class TripleDBService:
             if not success:
                 return False, result
             
-            # 3. Schedule async cleanup from other databases
+            # 3. Schedule background cleanup operations
             deleted_task_ids = result.get("deleted_tasks", [task_id])
-            if self.config.auto_sync_enabled:
+            if self.background_service_manager:
+                # Schedule cleanup via incremental sync service
+                for deleted_id in deleted_task_ids:
+                    await self.background_service_manager.schedule_operation(
+                        ServiceType.INCREMENTAL_SYNC,
+                        "cleanup_task",
+                        deleted_id,
+                        {"operation": "delete"},
+                        ServicePriority.HIGH
+                    )
+            elif self.config.auto_sync_enabled:
+                # Fallback to legacy cleanup if background services unavailable
                 asyncio.create_task(self._cleanup_deleted_tasks(deleted_task_ids))
             
             return True, result
@@ -670,13 +794,120 @@ class TripleDBService:
             health["overall_status"] = "degraded"
         
         return health
+    
+    # Background service management
+    async def add_task_dependency(self, task_id: str, depends_on_id: str) -> Tuple[bool, Dict[str, Any]]:
+        """Add a task dependency and trigger automatic cycle detection."""
+        if not self._initialized:
+            await self.initialize()
+        
+        try:
+            # Add dependency via task service
+            success, result = await self.task_service.add_dependency(task_id, depends_on_id)
+            
+            if success and self.background_service_manager:
+                # Schedule automatic cycle detection
+                await self.background_service_manager.schedule_operation(
+                    ServiceType.CYCLE_DETECTION,
+                    "check_cycles",
+                    task_id,
+                    {"dependency_added": depends_on_id, "affected_tasks": [task_id, depends_on_id]},
+                    ServicePriority.HIGH
+                )
+            
+            return success, result
+            
+        except Exception as e:
+            logger.error(f"Failed to add task dependency: {e}")
+            return False, {"error": str(e)}
+    
+    async def remove_task_dependency(self, task_id: str, depends_on_id: str) -> Tuple[bool, Dict[str, Any]]:
+        """Remove a task dependency."""
+        if not self._initialized:
+            await self.initialize()
+        
+        try:
+            # Remove dependency via task service
+            success, result = await self.task_service.remove_dependency(task_id, depends_on_id)
+            
+            # Note: Cycle detection usually not needed when removing dependencies,
+            # but could be configured via service settings
+            
+            return success, result
+            
+        except Exception as e:
+            logger.error(f"Failed to remove task dependency: {e}")
+            return False, {"error": str(e)}
+    
+    async def trigger_index_optimization(self) -> Dict[str, Any]:
+        """Manually trigger index optimization."""
+        if not self.background_service_manager:
+            return {"success": False, "error": "Background services not available"}
+        
+        try:
+            operation_id = await self.background_service_manager.schedule_operation(
+                ServiceType.INDEX_OPTIMIZATION,
+                "optimize_indices",
+                "manual_trigger",
+                {"triggered_by": "user", "timestamp": datetime.now().isoformat()},
+                ServicePriority.HIGH
+            )
+            
+            return {
+                "success": True,
+                "operation_id": operation_id,
+                "message": "Index optimization scheduled"
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to trigger index optimization: {e}")
+            return {"success": False, "error": str(e)}
+    
+    async def get_background_service_status(self) -> Dict[str, Any]:
+        """Get status of all background services."""
+        if not self.background_service_manager:
+            return {
+                "enabled": False,
+                "status": "not_available",
+                "message": "Background services not initialized"
+            }
+        
+        try:
+            return await self.background_service_manager.get_overall_status()
+        except Exception as e:
+            logger.error(f"Failed to get background service status: {e}")
+            return {"error": str(e)}
+    
+    async def configure_background_service(self, service_type: ServiceType, enabled: bool) -> Dict[str, Any]:
+        """Enable or disable a specific background service."""
+        if not self.background_service_manager:
+            return {"success": False, "error": "Background services not available"}
+        
+        try:
+            service = self.background_service_manager.services.get(service_type)
+            if not service:
+                return {"success": False, "error": f"Service {service_type.value} not found"}
+            
+            service.enabled = enabled
+            
+            return {
+                "success": True,
+                "service_type": service_type.value,
+                "enabled": enabled,
+                "message": f"Service {service_type.value} {'enabled' if enabled else 'disabled'}"
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to configure background service: {e}")
+            return {"success": False, "error": str(e)}
 
 
 # Context manager for easy lifecycle management
 @asynccontextmanager
-async def triple_db_lifespan(config: DatabaseConfig):
+async def triple_db_lifespan(config: DatabaseConfig, enable_background_services: bool = True):
     """Context manager for TripleDBService lifecycle."""
     service = TripleDBService(config)
+    service._background_services_enabled = enable_background_services
     try:
         await service.initialize()
         yield service
