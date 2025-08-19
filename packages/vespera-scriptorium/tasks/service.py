@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 
 from .models import Task, TaskStatus, TaskPriority, TaskRelation, TaskMetadata, TaskExecution
+from vector import VectorService
 
 logger = logging.getLogger(__name__)
 
@@ -28,11 +29,20 @@ class TaskService:
     VALID_STATUSES = [status.value for status in TaskStatus]
     VALID_PRIORITIES = [priority.value for priority in TaskPriority]
     
-    def __init__(self, db_path: Optional[Path] = None):
-        """Initialize with optional database path."""
+    def __init__(self, db_path: Optional[Path] = None, vector_service: Optional[VectorService] = None):
+        """Initialize with optional database path and vector service."""
         self.db_path = db_path or Path.cwd() / ".vespera_scriptorium" / "tasks.db"
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_database()
+        
+        # Initialize vector service for semantic search
+        if vector_service:
+            self.vector_service = vector_service
+        else:
+            vector_dir = self.db_path.parent / "embeddings"
+            self.vector_service = VectorService(persist_directory=vector_dir)
+        
+        logger.info("TaskService initialized with vector database support")
     
     def _init_database(self) -> None:
         """Initialize the task database with schema."""
@@ -151,6 +161,38 @@ class TaskService:
                 parent_updated = await self._add_parent_child_relationship(parent_id, task.id)
                 if not parent_updated:
                     logger.warning(f"Failed to update parent relationship for task {task.id}")
+            
+            # Add to vector database for semantic search
+            try:
+                # Filter out None values for Chroma compatibility
+                metadata = {}
+                if task.status:
+                    metadata['status'] = task.status.value
+                if task.priority:
+                    metadata['priority'] = task.priority.value
+                if task.project_id:
+                    metadata['project_id'] = task.project_id
+                if task.feature:
+                    metadata['feature'] = task.feature
+                if task.assignee:
+                    metadata['assignee'] = task.assignee
+                if task.created_at:
+                    metadata['created_at'] = task.created_at.isoformat()
+                
+                await self.vector_service.embed_task(
+                    task_id=task.id,
+                    title=task.title,
+                    description=task.description,
+                    metadata=metadata
+                )
+                # Update triple DB coordination
+                task.triple_db.embedding_id = task.id
+                task.triple_db.last_embedded = datetime.utcnow()
+                task.triple_db.chroma_synced = True
+                logger.debug(f"Task {task.id} embedded in vector database")
+            except Exception as e:
+                logger.warning(f"Failed to embed task {task.id} in vector database: {e}")
+                # Don't fail the entire operation for vector embedding issues
             
             logger.info(f"Created task '{task.title}' with ID {task.id}")
             return True, {"task": task.to_dict()}
@@ -755,3 +797,98 @@ class TaskService:
                 conn.commit()
         except Exception as e:
             logger.error(f"Failed to delete relationships for task {task_id}: {e}")
+    
+    # Vector Database Integration Methods
+    
+    async def search_tasks_semantic(self, 
+                                   query: str, 
+                                   limit: int = 10,
+                                   filter_metadata: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+        """
+        Search for tasks using semantic similarity via vector database.
+        
+        Args:
+            query: Natural language search query
+            limit: Maximum number of results
+            filter_metadata: Optional metadata filters
+            
+        Returns:
+            List of matching tasks with similarity scores and full task data
+        """
+        try:
+            # Get semantic matches from vector database
+            matches = await self.vector_service.search_tasks(
+                query=query, 
+                limit=limit, 
+                filter_metadata=filter_metadata
+            )
+            
+            # Enrich with full task data from SQLite
+            enriched_results = []
+            for match in matches:
+                task_id = match['id']
+                task = await self.get_task(task_id)
+                if task:
+                    try:
+                        enriched_results.append({
+                            'task': task.to_dict(),
+                            'similarity_score': match['score'],
+                            'matched_content': match['content'],
+                            'vector_metadata': match['metadata']
+                        })
+                    except Exception as e:
+                        logger.error(f"Failed to convert task {task_id} to dict: {e}")
+                        continue
+            
+            logger.info(f"Semantic search '{query}' returned {len(enriched_results)} results")
+            return enriched_results
+            
+        except Exception as e:
+            logger.error(f"Semantic task search failed: {e}")
+            return []
+    
+    async def get_related_tasks(self, task_id: str, limit: int = 5) -> List[Dict[str, Any]]:
+        """
+        Find tasks semantically related to the given task.
+        
+        Args:
+            task_id: Source task ID
+            limit: Maximum number of related tasks
+            
+        Returns:
+            List of related tasks with similarity scores
+        """
+        try:
+            # Get related tasks from vector database
+            related = await self.vector_service.get_related_tasks(task_id, limit)
+            
+            # Enrich with full task data
+            enriched_results = []
+            for match in related:
+                related_task_id = match['id']
+                task = await self.get_task(related_task_id)
+                if task:
+                    try:
+                        enriched_results.append({
+                            'task': task.to_dict(),
+                            'similarity_score': match['score'],
+                            'matched_content': match['content']
+                        })
+                    except Exception as e:
+                        logger.error(f"Failed to convert related task {related_task_id} to dict: {e}")
+                        continue
+            
+            logger.debug(f"Found {len(enriched_results)} related tasks for {task_id}")
+            return enriched_results
+            
+        except Exception as e:
+            logger.error(f"Failed to find related tasks: {e}")
+            return []
+    
+    async def get_vector_stats(self) -> Dict[str, Any]:
+        """Get vector database statistics and health info."""
+        try:
+            return await self.vector_service.get_collection_stats()
+        except Exception as e:
+            logger.error(f"Failed to get vector stats: {e}")
+            return {"error": str(e)}

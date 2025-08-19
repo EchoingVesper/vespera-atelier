@@ -393,11 +393,11 @@ class Task:
             "parent_id": self.parent_id,
             "child_ids": list(self.child_ids),
             "related_task_ids": {
-                relation.value: list(task_ids) 
+                relation.value if hasattr(relation, 'value') else relation: list(task_ids) 
                 for relation, task_ids in self.related_task_ids.items()
             },
-            "status": self.status.value,
-            "priority": self.priority.value,
+            "status": self.status.value if hasattr(self.status, 'value') else self.status,
+            "priority": self.priority.value if hasattr(self.priority, 'value') else self.priority,
             "task_order": self.task_order,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
@@ -435,7 +435,7 @@ class Task:
                 "graph_node_id": self.triple_db.graph_node_id,
                 "last_graph_sync": self.triple_db.last_graph_sync.isoformat() if self.triple_db.last_graph_sync else None,
                 "graph_version": self.triple_db.graph_version,
-                "sync_status": self.triple_db.sync_status.value,
+                "sync_status": self.triple_db.sync_status.value if hasattr(self.triple_db.sync_status, 'value') else self.triple_db.sync_status,
                 "last_indexed": self.triple_db.last_indexed.isoformat() if self.triple_db.last_indexed else None,
                 "sync_error": self.triple_db.sync_error,
                 "chroma_synced": self.triple_db.chroma_synced,
