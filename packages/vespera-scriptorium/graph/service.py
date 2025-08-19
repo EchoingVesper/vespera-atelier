@@ -387,7 +387,39 @@ class KuzuService:
                 task.triple_db.content_hash or ""
             )
             
-            self.connection.execute(insert_query)
+            try:
+                # Try to create the node
+                self.connection.execute(insert_query)
+                logger.debug(f"Created new task node {task.id} in graph")
+            except Exception as create_error:
+                if "duplicated primary key" in str(create_error):
+                    # Node exists, update it instead
+                    update_query = """MATCH (t:Task {{id: '{}'}}) SET t.title = '{}', t.description = '{}', t.status = '{}', t.priority = '{}', t.task_order = {}, t.complexity = '{}', t.estimated_effort = '{}', t.actual_effort = '{}', t.project_id = '{}', t.feature = '{}', t.milestone = '{}', t.assignee = '{}', t.creator = '{}', t.updated_at = '{}', t.due_date = '{}', t.started_at = '{}', t.completed_at = '{}', t.sync_status = '{}', t.content_hash = '{}'""".format(
+                        task.id,
+                        task.title.replace("'", "''"),
+                        task.description.replace("'", "''") if task.description else "",
+                        task.status.value if hasattr(task.status, 'value') else task.status,
+                        task.priority.value if hasattr(task.priority, 'value') else task.priority,
+                        task.task_order,
+                        task.metadata.complexity if task.metadata else "moderate",
+                        task.metadata.estimated_effort if task.metadata and task.metadata.estimated_effort else "",
+                        task.metadata.actual_effort if task.metadata and task.metadata.actual_effort else "",
+                        task.project_id or "",
+                        task.feature or "",
+                        task.milestone or "",
+                        task.assignee,
+                        task.creator,
+                        task.updated_at.isoformat(),
+                        task.due_date.isoformat() if task.due_date else "",
+                        task.started_at.isoformat() if task.started_at else "",
+                        task.completed_at.isoformat() if task.completed_at else "",
+                        task.triple_db.sync_status.value if hasattr(task.triple_db.sync_status, 'value') else task.triple_db.sync_status,
+                        task.triple_db.content_hash or ""
+                    )
+                    self.connection.execute(update_query)
+                    logger.debug(f"Updated existing task node {task.id} in graph")
+                else:
+                    raise create_error
             
             # Update triple_db coordination
             task.triple_db.graph_node_id = task.id
@@ -395,7 +427,7 @@ class KuzuService:
             task.triple_db.kuzu_synced = True
             task.triple_db._update_overall_sync_status()
             
-            logger.debug(f"Added task node {task.id} to graph")
+            logger.debug(f"Synced task node {task.id} to graph")
             return True
             
         except Exception as e:
