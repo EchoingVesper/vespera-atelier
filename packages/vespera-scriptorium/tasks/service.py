@@ -987,7 +987,7 @@ class TaskService:
         """Sync vector similarity relationships to graph database."""
         try:
             # Get similar tasks from vector database
-            similar_tasks = await self.find_tasks_by_similarity(task_id, limit=20, min_similarity=0.7)
+            similar_tasks = await self.get_related_tasks(task_id, limit=20)
             
             # Convert to graph format and sync
             graph_similar = []
