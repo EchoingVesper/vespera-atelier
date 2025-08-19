@@ -465,6 +465,7 @@ Then we can build the plugin interfaces and creative integrations on solid groun
 Located at: `/home/user/.claude/.credentials.json`
 
 Structure:
+
 ```json
 {
   "claudeAiOauth": {
@@ -478,6 +479,7 @@ Structure:
 ```
 
 **Investigation needed**:
+
 - OAuth refresh mechanism (expiresAt timestamp suggests automatic renewal)
 - API endpoints these tokens work with
 - Legal/ToS implications of using these tokens programmatically
@@ -486,18 +488,21 @@ Structure:
 ### **Existing Solutions to Leverage**
 
 #### **crawl4ai-rag** (Already in reference/)
+
 - Knowledge graph generation from codebases
 - Web crawling for documentation
 - RAG implementation patterns
 - Vector database integration examples
 
 #### **context7** (Already in reference/)
+
 - Library documentation fetching
 - Context management for LLMs
 - Efficient token usage patterns
 - Documentation search optimization
 
 #### **Additional Repos to Research**
+
 - **ComfyUI API**: Check for official Python API or WebSocket interface
 - **PeerJS/WebRTC libraries**: For P2P collaboration infrastructure
 - **Conflict-free replicated data types (CRDTs)**: For real-time collaborative editing
@@ -507,12 +512,14 @@ Structure:
 ### **"Don't Reinvent the Wheel" Strategy**
 
 **Before implementing any major component**:
+
 1. Search for existing Python/TypeScript packages
 2. Check GitHub for similar projects (even if incomplete)
 3. Look for academic papers with reference implementations
 4. Consider forking and modifying rather than starting from scratch
 
 **Key areas where existing solutions likely exist**:
+
 - Vector similarity search algorithms
 - Graph database query optimization
 - WebRTC signaling servers
@@ -527,6 +534,7 @@ Structure:
 ### **Immediate Research Phase (This Week)**
 
 1. **Update Reference Repositories**
+
    ```bash
    cd reference/roo-code && git pull
    cd ../crawl4ai-rag && git pull  
@@ -563,6 +571,7 @@ Structure:
 ### **Ready to Start?**
 
 If this plan looks good, we can:
+
 1. Create implementation branches
 2. Set up detailed task tracking
 3. Begin with the reference repository updates
