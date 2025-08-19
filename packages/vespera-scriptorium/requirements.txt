@@ -1,8 +1,15 @@
-# Vespera V2 MCP Server Dependencies
+# Vespera V2 MCP Server & REST API Dependencies
 # Based on MCP Python SDK requirements
 
 # Core MCP dependencies
 mcp[cli]>=1.13.0
+
+# REST API dependencies
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+websockets>=12.0
+python-multipart>=0.0.6
+PyJWT>=2.8.0
 
 # Our additional dependencies
 PyYAML>=6.0.2
