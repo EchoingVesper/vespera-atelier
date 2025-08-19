@@ -456,6 +456,59 @@ class ChromaService:
         
         return stats
     
+    async def get_all_embeddings(self, 
+                               filters: Optional[Dict[str, Any]] = None,
+                               min_tasks: int = 1) -> List[Dict[str, Any]]:
+        """
+        Get all task embeddings for clustering analysis.
+        
+        Args:
+            filters: Metadata filters to apply
+            min_tasks: Minimum number of tasks required
+            
+        Returns:
+            List of embeddings with task IDs and metadata
+        """
+        if not self._initialized or "tasks_content" not in self.collections:
+            return []
+        
+        try:
+            collection = self.collections["tasks_content"]
+            
+            # Get total count first
+            total_count = collection.count()
+            if total_count < min_tasks:
+                return []
+            
+            # Query all embeddings
+            results = collection.get(
+                where=filters,
+                include=["embeddings", "metadatas", "documents"],
+                limit=total_count  # Get all available documents
+            )
+            
+            # Process results
+            embeddings = []
+            if results["embeddings"] and results["metadatas"]:
+                for i, embedding in enumerate(results["embeddings"]):
+                    metadata = results["metadatas"][i]
+                    task_id = metadata.get("task_id", "")
+                    
+                    if task_id:  # Only include if we have a valid task ID
+                        embeddings.append({
+                            "task_id": task_id,
+                            "embedding": embedding,
+                            "metadata": metadata,
+                            "content": results["documents"][i] if results["documents"] else ""
+                        })
+            
+            logger.debug(f"Retrieved {len(embeddings)} embeddings for clustering")
+            return embeddings
+            
+        except Exception as e:
+            logger.error(f"Failed to get all embeddings: {e}")
+            return []
+    
     async def cleanup(self) -> None:
         """Clean up ChromaDB resources."""
         self.collections.clear()

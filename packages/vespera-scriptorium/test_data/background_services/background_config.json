@@ -1,0 +1,50 @@
+{
+  "enabled": true,
+  "worker_count": 2,
+  "max_queue_size": 10000,
+  "operation_timeout_seconds": 300,
+  "error_retry_limit": 3,
+  "error_retry_backoff": 2.0,
+  "data_dir": "test_data/background_services",
+  "log_level": "INFO",
+  "metrics_enabled": true,
+  "metrics_retention_hours": 168,
+  "embedding": {
+    "enabled": true,
+    "batch_size": 5,
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "max_content_length": 8192,
+    "embedding_timeout_seconds": 30,
+    "auto_embed_on_create": true,
+    "auto_embed_on_update": true,
+    "embed_delay_seconds": 0.5
+  },
+  "cycle_detection": {
+    "enabled": true,
+    "check_on_dependency_add": true,
+    "check_on_dependency_remove": false,
+    "max_detection_depth": 50,
+    "detection_timeout_seconds": 10,
+    "check_delay_seconds": 1.0
+  },
+  "incremental_sync": {
+    "enabled": true,
+    "sync_on_task_create": true,
+    "sync_on_task_update": true,
+    "sync_on_relationship_change": true,
+    "batch_size": 10,
+    "sync_timeout_seconds": 60,
+    "sync_delay_seconds": 2.0,
+    "max_pending_operations": 1000
+  },
+  "index_optimization": {
+    "enabled": true,
+    "optimize_interval_hours": 6,
+    "optimize_on_large_changes": true,
+    "large_change_threshold": 20,
+    "optimization_timeout_seconds": 300,
+    "vacuum_sqlite": true,
+    "optimize_chroma_indices": true,
+    "optimize_kuzu_indices": true
+  }
+}

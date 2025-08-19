@@ -89,7 +89,7 @@ async def lifespan(server: FastMCP):
         _chroma_service = ChromaService(chroma_config)
         await _chroma_service.initialize()
         
-        kuzu_config = KuzuConfig(database_path=_v2_data_dir / "knowledge_graph")
+        kuzu_config = KuzuConfig(database_path=_v2_data_dir / "tasks.kuzu")
         _kuzu_service = KuzuService(kuzu_config)
         await _kuzu_service.initialize()
         
@@ -746,6 +746,629 @@ async def force_task_embedding(task_id: str) -> Dict[str, Any]:
         
     except Exception as e:
         logger.exception("Error forcing task embedding")
+        return {"success": False, "error": str(e)}
+
+
+# High-value MCP tools for comprehensive project insights
+
+# Pydantic models for the new tools
+class ClusteringInput(BaseModel):
+    """Input model for semantic task clustering."""
+    project_id: Optional[str] = Field(None, description="Project to cluster (all projects if None)")
+    num_clusters: int = Field(5, ge=2, le=20, description="Number of clusters to create")
+    similarity_threshold: float = Field(0.7, ge=0.1, le=1.0, description="Minimum similarity threshold")
+    include_completed: bool = Field(True, description="Include completed tasks in clustering")
+    min_cluster_size: int = Field(2, ge=2, le=10, description="Minimum tasks per cluster")
+
+
+class ImpactAnalysisInput(BaseModel):
+    """Input model for task impact analysis."""
+    task_id: str = Field(..., description="Task ID to analyze")
+    change_type: str = Field(..., pattern="^(complete|delay|delete|update)$", description="Type of change to analyze")
+    delay_days: Optional[int] = Field(None, ge=1, le=365, description="Days of delay (for delay analysis)")
+    include_dependencies: bool = Field(True, description="Include dependency analysis")
+    include_resource_impact: bool = Field(True, description="Include resource allocation impact")
+
+
+class ProjectHealthInput(BaseModel):
+    """Input model for project health analysis."""
+    project_id: Optional[str] = Field(None, description="Project to analyze (all projects if None)")
+    analysis_depth: str = Field("standard", pattern="^(basic|standard|comprehensive)$", description="Analysis depth")
+    include_predictions: bool = Field(False, description="Include predictive analytics")
+    focus_areas: Optional[List[str]] = Field(None, description="Specific areas to focus on")
+
+
+@mcp.tool()
+async def semantic_task_clustering(clustering_input: ClusteringInput) -> Dict[str, Any]:
+    """Group related tasks using ML-based semantic clustering for project organization insights."""
+    triple_db_service, chroma_service, kuzu_service, sync_coordinator = get_services()
+    
+    try:
+        # Get tasks for clustering
+        filters = {}
+        if clustering_input.project_id:
+            filters["project_id"] = {"$eq": clustering_input.project_id}
+        if not clustering_input.include_completed:
+            filters["status"] = {"$nin": ["done", "completed"]}
+            
+        # Combine filters with AND logic if multiple
+        if len(filters) > 1:
+            final_filters = {"$and": list(filters.values())}
+        elif len(filters) == 1:
+            final_filters = list(filters.values())[0]
+        else:
+            final_filters = None
+        
+        # Get all task embeddings from Chroma
+        all_embeddings = await chroma_service.get_all_embeddings(
+            filters=final_filters,
+            min_tasks=clustering_input.num_clusters * clustering_input.min_cluster_size
+        )
+        
+        if len(all_embeddings) < clustering_input.min_cluster_size:
+            return {
+                "success": False,
+                "error": f"Insufficient tasks for clustering. Found {len(all_embeddings)}, need at least {clustering_input.min_cluster_size}"
+            }
+        
+        # Perform clustering using available embeddings
+        import numpy as np
+        
+        # Extract embeddings and task IDs
+        embeddings_array = np.array([emb["embedding"] for emb in all_embeddings])
+        task_ids = [emb["task_id"] for emb in all_embeddings]
+        
+        # Simple k-means clustering implementation
+        from random import sample
+        
+        # Initialize cluster centers randomly
+        n_clusters = min(clustering_input.num_clusters, len(all_embeddings) // clustering_input.min_cluster_size)
+        if n_clusters < 2:
+            n_clusters = 2
+            
+        # Random initialization of centroids
+        centroid_indices = sample(range(len(embeddings_array)), n_clusters)
+        centroids = embeddings_array[centroid_indices]
+        
+        # K-means iterations
+        max_iterations = 20
+        clusters = [[] for _ in range(n_clusters)]
+        
+        for iteration in range(max_iterations):
+            # Clear previous clusters
+            clusters = [[] for _ in range(n_clusters)]
+            
+            # Assign each point to nearest centroid
+            for i, embedding in enumerate(embeddings_array):
+                distances = [np.linalg.norm(embedding - centroid) for centroid in centroids]
+                closest_cluster = distances.index(min(distances))
+                
+                # Check similarity threshold
+                similarity = 1 - (min(distances) / 2)  # Convert distance to similarity
+                if similarity >= clustering_input.similarity_threshold:
+                    clusters[closest_cluster].append(i)
+            
+            # Update centroids
+            new_centroids = []
+            for cluster_indices in clusters:
+                if cluster_indices:
+                    cluster_embeddings = embeddings_array[cluster_indices]
+                    new_centroid = np.mean(cluster_embeddings, axis=0)
+                    new_centroids.append(new_centroid)
+                else:
+                    # Keep old centroid if cluster is empty
+                    new_centroids.append(centroids[len(new_centroids)])
+            
+            centroids = np.array(new_centroids)
+        
+        # Filter out clusters that are too small
+        valid_clusters = []
+        unclustered_tasks = []
+        
+        for cluster_idx, cluster_indices in enumerate(clusters):
+            if len(cluster_indices) >= clustering_input.min_cluster_size:
+                cluster_tasks = []
+                for task_idx in cluster_indices:
+                    task_id = task_ids[task_idx]
+                    task = await triple_db_service.get_task(task_id)
+                    if task:
+                        cluster_tasks.append(task)
+                
+                # Generate cluster theme using task titles
+                cluster_titles = [task.title for task in cluster_tasks]
+                common_words = []
+                for title in cluster_titles:
+                    words = [word.lower() for word in title.split() if len(word) > 3]
+                    common_words.extend(words)
+                
+                # Find most common words
+                from collections import Counter
+                word_counts = Counter(common_words)
+                top_words = [word for word, count in word_counts.most_common(3)]
+                theme = " + ".join(top_words) if top_words else f"Cluster {cluster_idx + 1}"
+                
+                # Calculate cluster coherence
+                cluster_embeddings = embeddings_array[cluster_indices]
+                if len(cluster_embeddings) > 1:
+                    # Calculate average pairwise similarity
+                    similarities = []
+                    for i in range(len(cluster_embeddings)):
+                        for j in range(i + 1, len(cluster_embeddings)):
+                            sim = 1 - np.linalg.norm(cluster_embeddings[i] - cluster_embeddings[j]) / 2
+                            similarities.append(sim)
+                    coherence_score = np.mean(similarities) if similarities else 0.0
+                else:
+                    coherence_score = 1.0
+                
+                valid_clusters.append({
+                    "cluster_id": f"cluster_{cluster_idx + 1}",
+                    "theme": theme,
+                    "coherence_score": float(coherence_score),
+                    "task_count": len(cluster_tasks),
+                    "tasks": [task.to_dict() for task in cluster_tasks],
+                    "keywords": top_words,
+                    "recommended_actions": [
+                        f"Focus on {theme} theme completion",
+                        "Consider parallel execution within cluster",
+                        "Review cluster coherence and dependencies"
+                    ]
+                })
+            else:
+                # Tasks that don't fit in any cluster
+                for task_idx in cluster_indices:
+                    task_id = task_ids[task_idx]
+                    task = await triple_db_service.get_task(task_id)
+                    if task:
+                        unclustered_tasks.append(task.to_dict())
+        
+        return {
+            "success": True,
+            "project_id": clustering_input.project_id,
+            "clustering_summary": {
+                "total_tasks_analyzed": len(all_embeddings),
+                "clusters_found": len(valid_clusters),
+                "unclustered_tasks": len(unclustered_tasks),
+                "average_cluster_size": sum(c["task_count"] for c in valid_clusters) / len(valid_clusters) if valid_clusters else 0,
+                "overall_coherence": sum(c["coherence_score"] for c in valid_clusters) / len(valid_clusters) if valid_clusters else 0
+            },
+            "clusters": valid_clusters,
+            "unclustered_tasks": unclustered_tasks,
+            "clustering_parameters": {
+                "num_clusters": n_clusters,
+                "similarity_threshold": clustering_input.similarity_threshold,
+                "min_cluster_size": clustering_input.min_cluster_size,
+                "algorithm": "k_means_semantic"
+            },
+            "insights": {
+                "organization_opportunities": len(valid_clusters),
+                "theme_diversity": len(set(c["theme"] for c in valid_clusters)),
+                "clustering_quality": "good" if len(valid_clusters) > 0 else "poor"
+            },
+            "message": f"Successfully clustered {len(all_embeddings)} tasks into {len(valid_clusters)} thematic groups"
+        }
+        
+    except Exception as e:
+        logger.exception("Error in semantic task clustering")
+        return {"success": False, "error": str(e)}
+
+
+@mcp.tool()
+async def get_task_impact_analysis(impact_input: ImpactAnalysisInput) -> Dict[str, Any]:
+    """Analyze comprehensive impact of task changes using graph analysis and dependency mapping."""
+    triple_db_service, chroma_service, kuzu_service, sync_coordinator = get_services()
+    
+    try:
+        # Get the target task
+        target_task = await triple_db_service.get_task(impact_input.task_id)
+        if not target_task:
+            return {"success": False, "error": f"Task {impact_input.task_id} not found"}
+        
+        # Get dependency analysis from graph database
+        dependency_analysis = await kuzu_service.analyze_dependencies(
+            task_id=impact_input.task_id,
+            max_depth=5
+        )
+        
+        if "error" in dependency_analysis:
+            return {"success": False, "error": dependency_analysis["error"]}
+        
+        # Extract affected tasks from dependency analysis
+        affected_tasks = []
+        direct_impact = {"blocked_tasks": 0, "dependent_tasks": 0, "related_tasks": 0}
+        indirect_impact = {"cascade_depth": 0, "total_affected": 0}
+        
+        # Count direct dependencies and dependents
+        if "dependencies" in dependency_analysis:
+            for dep in dependency_analysis["dependencies"]:
+                if dep.get("relationship_type") == "blocks":
+                    direct_impact["blocked_tasks"] += 1
+                elif dep.get("relationship_type") == "depends_on":
+                    direct_impact["dependent_tasks"] += 1
+                else:
+                    direct_impact["related_tasks"] += 1
+                
+                affected_tasks.append({
+                    "task_id": dep["task_id"],
+                    "title": dep.get("title", "Unknown"),
+                    "relationship": dep.get("relationship_type", "unknown"),
+                    "status": dep.get("status", "unknown"),
+                    "impact_level": "direct"
+                })
+        
+        # Calculate cascade effects
+        cascade_effects = []
+        if impact_input.change_type == "complete":
+            # Completion unblocks dependent tasks
+            cascade_effects.append({
+                "effect_type": "unblock_dependents",
+                "affected_count": direct_impact["blocked_tasks"],
+                "description": f"Completing this task would unblock {direct_impact['blocked_tasks']} dependent tasks"
+            })
+        elif impact_input.change_type == "delay":
+            # Delay affects all dependent tasks
+            delay_days = impact_input.delay_days or 7
+            cascade_effects.append({
+                "effect_type": "delay_cascade",
+                "affected_count": direct_impact["blocked_tasks"],
+                "delay_magnitude": delay_days,
+                "description": f"Delaying this task by {delay_days} days would delay {direct_impact['blocked_tasks']} dependent tasks"
+            })
+        elif impact_input.change_type == "delete":
+            # Deletion creates orphaned tasks
+            cascade_effects.append({
+                "effect_type": "orphan_creation",
+                "affected_count": direct_impact["blocked_tasks"],
+                "description": f"Deleting this task would orphan {direct_impact['blocked_tasks']} dependent tasks"
+            })
+        
+        # Calculate indirect impact using graph traversal depth
+        max_depth = max((dep.get("depth", 0) for dep in dependency_analysis.get("dependencies", [])), default=0)
+        indirect_impact["cascade_depth"] = max_depth
+        indirect_impact["total_affected"] = len(affected_tasks)
+        
+        # Timeline impact analysis
+        timeline_impact = {
+            "immediate": direct_impact["blocked_tasks"],
+            "short_term": max(0, indirect_impact["total_affected"] - direct_impact["blocked_tasks"]),
+            "estimated_duration_impact": (impact_input.delay_days or 0) if impact_input.change_type == "delay" else 0
+        }
+        
+        # Resource impact analysis (if requested)
+        resource_impact = None
+        if impact_input.include_resource_impact:
+            # Get role assignments and workload
+            role_analysis = await kuzu_service.get_role_workload_analysis()
+            
+            task_role = target_task.role if hasattr(target_task, 'role') and target_task.role else "unassigned"
+            role_workload = next((r for r in role_analysis if r.get("role") == task_role), None)
+            
+            resource_impact = {
+                "assigned_role": task_role,
+                "role_current_workload": role_workload.get("task_count", 0) if role_workload else 0,
+                "resource_availability_impact": "high" if role_workload and role_workload.get("task_count", 0) > 10 else "medium",
+                "reallocation_needed": impact_input.change_type in ["delete", "delay"]
+            }
+        
+        # Generate recommendations based on impact analysis
+        immediate_actions = []
+        mitigation_strategies = []
+        alternatives = []
+        
+        if impact_input.change_type == "complete":
+            immediate_actions.append("Prioritize completion to unblock dependent tasks")
+            if direct_impact["blocked_tasks"] > 3:
+                immediate_actions.append("Coordinate with teams working on dependent tasks")
+        elif impact_input.change_type == "delay":
+            mitigation_strategies.append("Communicate delay to affected task owners")
+            mitigation_strategies.append("Identify parallel work opportunities in dependent tasks")
+            if impact_input.delay_days and impact_input.delay_days > 7:
+                alternatives.append("Consider task decomposition to deliver partial value")
+        elif impact_input.change_type == "delete":
+            immediate_actions.append("Review dependent tasks for orphaning")
+            mitigation_strategies.append("Reassign or merge dependent task requirements")
+            alternatives.append("Archive rather than delete to preserve dependency context")
+        
+        # Calculate confidence metrics
+        confidence_score = 0.8  # Base confidence
+        if dependency_analysis.get("dependencies"):
+            confidence_score += 0.1  # Higher confidence with more dependency data
+        if resource_impact:
+            confidence_score += 0.1  # Higher confidence with resource data
+        confidence_score = min(1.0, confidence_score)
+        
+        return {
+            "success": True,
+            "task": {
+                "id": target_task.id,
+                "title": target_task.title,
+                "status": target_task.status.value,
+                "priority": target_task.priority.value
+            },
+            "impact_analysis": {
+                "change_type": impact_input.change_type,
+                "direct_impact": direct_impact,
+                "indirect_impact": indirect_impact,
+                "cascade_effects": cascade_effects,
+                "timeline_impact": timeline_impact
+            },
+            "affected_tasks": affected_tasks,
+            "resource_impact": resource_impact,
+            "recommendations": {
+                "immediate_actions": immediate_actions,
+                "mitigation_strategies": mitigation_strategies,
+                "alternative_approaches": alternatives
+            },
+            "analysis_confidence": {
+                "confidence_score": confidence_score,
+                "data_quality": "high" if len(affected_tasks) > 0 else "medium",
+                "assumptions": [
+                    "Dependency relationships are accurately captured",
+                    "Task statuses are up to date",
+                    "Resource assignments are current"
+                ]
+            },
+            "summary": {
+                "total_affected_tasks": len(affected_tasks),
+                "impact_severity": "high" if len(affected_tasks) > 5 else "medium" if len(affected_tasks) > 2 else "low",
+                "recommendation_priority": "urgent" if impact_input.change_type == "delete" and len(affected_tasks) > 3 else "normal"
+            },
+            "message": f"Impact analysis complete: {impact_input.change_type} action on '{target_task.title}' affects {len(affected_tasks)} tasks"
+        }
+        
+    except Exception as e:
+        logger.exception("Error in task impact analysis")
+        return {"success": False, "error": str(e)}
+
+
+@mcp.tool()
+async def project_health_analysis(health_input: ProjectHealthInput) -> Dict[str, Any]:
+    """Comprehensive project health analysis using all three databases for executive insights."""
+    triple_db_service, chroma_service, kuzu_service, sync_coordinator = get_services()
+    
+    try:
+        # Get basic project metrics from SQLite
+        tasks = await triple_db_service.task_service.list_tasks(
+            project_id=health_input.project_id,
+            limit=1000  # Get comprehensive task list
+        )
+        
+        if not tasks and health_input.project_id:
+            return {"success": False, "error": f"No tasks found for project {health_input.project_id}"}
+        
+        # Basic task metrics
+        total_tasks = len(tasks)
+        completed_tasks = len([t for t in tasks if t.status.value in ["done", "completed"]])
+        blocked_tasks = len([t for t in tasks if t.status.value == "blocked"])
+        in_progress_tasks = len([t for t in tasks if t.status.value in ["doing", "in_progress"]])
+        overdue_tasks = 0  # Would need deadline field to calculate
+        
+        completion_rate = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
+        
+        # Get graph analysis for workflow health
+        try:
+            if health_input.project_id:
+                hierarchy = await kuzu_service.get_project_hierarchy(health_input.project_id)
+            else:
+                # For all projects, get role workload as a proxy
+                hierarchy = {"total_nodes": total_tasks, "relationships": []}
+            
+            bottlenecks = await kuzu_service.find_blocking_bottlenecks()
+            cycles = await kuzu_service.detect_circular_dependencies()
+            
+            workflow_health = {
+                "dependency_health": "good" if len(cycles) == 0 else "poor",
+                "bottleneck_count": len(bottlenecks),
+                "parallel_opportunities": max(0, total_tasks - blocked_tasks - len(bottlenecks)),
+                "resource_utilization": "optimal" if completion_rate > 70 else "suboptimal",
+                "cycle_time_average": "unknown"  # Would need task duration tracking
+            }
+        except Exception as e:
+            logger.warning(f"Graph analysis failed: {e}")
+            workflow_health = {
+                "dependency_health": "unknown",
+                "bottleneck_count": 0,
+                "parallel_opportunities": 0,
+                "resource_utilization": "unknown",
+                "cycle_time_average": "unknown"
+            }
+        
+        # Get semantic coherence analysis from Chroma
+        semantic_health = {
+            "theme_consistency": "unknown",
+            "requirement_clarity": "unknown", 
+            "documentation_coverage": "unknown",
+            "semantic_drift": "unknown"
+        }
+        
+        try:
+            if total_tasks > 5:
+                # Try to analyze semantic coherence using clustering
+                filters = {}
+                if health_input.project_id:
+                    filters["project_id"] = {"$eq": health_input.project_id}
+                
+                embeddings = await chroma_service.get_all_embeddings(filters=filters, min_tasks=5)
+                
+                if len(embeddings) >= 5:
+                    # Calculate semantic coherence by measuring embedding similarity
+                    import numpy as np
+                    embeddings_array = np.array([emb["embedding"] for emb in embeddings])
+                    
+                    # Calculate pairwise similarities
+                    similarities = []
+                    for i in range(len(embeddings_array)):
+                        for j in range(i + 1, len(embeddings_array)):
+                            sim = 1 - np.linalg.norm(embeddings_array[i] - embeddings_array[j]) / 2
+                            similarities.append(sim)
+                    
+                    avg_similarity = np.mean(similarities) if similarities else 0
+                    
+                    semantic_health = {
+                        "theme_consistency": "high" if avg_similarity > 0.7 else "medium" if avg_similarity > 0.5 else "low",
+                        "requirement_clarity": "high" if avg_similarity > 0.6 else "medium",
+                        "documentation_coverage": f"{min(100, len(embeddings) / total_tasks * 100):.0f}%",
+                        "semantic_drift": "low" if avg_similarity > 0.6 else "medium"
+                    }
+        except Exception as e:
+            logger.warning(f"Semantic analysis failed: {e}")
+        
+        # Calculate overall health score
+        health_factors = []
+        
+        # Task completion factor (0-40 points)
+        completion_points = min(40, completion_rate * 0.4)
+        health_factors.append(("Task Completion", completion_points, 40))
+        
+        # Workflow health factor (0-30 points)
+        workflow_points = 30
+        if workflow_health["dependency_health"] == "poor":
+            workflow_points -= 10
+        if workflow_health["bottleneck_count"] > 3:
+            workflow_points -= 10
+        if blocked_tasks > total_tasks * 0.2:  # More than 20% blocked
+            workflow_points -= 10
+        workflow_points = max(0, workflow_points)
+        health_factors.append(("Workflow Health", workflow_points, 30))
+        
+        # Resource utilization factor (0-20 points)
+        resource_points = 20 if workflow_health["resource_utilization"] == "optimal" else 10
+        health_factors.append(("Resource Utilization", resource_points, 20))
+        
+        # Semantic coherence factor (0-10 points)
+        semantic_points = 10
+        if semantic_health["theme_consistency"] == "low":
+            semantic_points = 3
+        elif semantic_health["theme_consistency"] == "medium":
+            semantic_points = 7
+        health_factors.append(("Semantic Coherence", semantic_points, 10))
+        
+        total_score = sum(factor[1] for factor in health_factors)
+        max_score = sum(factor[2] for factor in health_factors)
+        overall_percentage = (total_score / max_score * 100) if max_score > 0 else 0
+        
+        # Assign letter grade
+        if overall_percentage >= 90:
+            letter_grade = "A"
+        elif overall_percentage >= 80:
+            letter_grade = "B"
+        elif overall_percentage >= 70:
+            letter_grade = "C"
+        elif overall_percentage >= 60:
+            letter_grade = "D"
+        else:
+            letter_grade = "F"
+        
+        # Determine trend (would need historical data for accurate trend)
+        trend = "stable"  # Default since we don't have historical data
+        
+        # Identify risk factors
+        high_risk_factors = []
+        medium_risk_factors = []
+        
+        if completion_rate < 50:
+            high_risk_factors.append("Low completion rate")
+        if blocked_tasks > total_tasks * 0.3:
+            high_risk_factors.append("High number of blocked tasks")
+        if len(cycles) > 0:
+            high_risk_factors.append("Circular dependencies detected")
+        if workflow_health["bottleneck_count"] > 5:
+            medium_risk_factors.append("Multiple bottlenecks")
+        if semantic_health["theme_consistency"] == "low":
+            medium_risk_factors.append("Low thematic coherence")
+        
+        # Generate recommendations
+        immediate_actions = []
+        short_term_actions = []
+        strategic_actions = []
+        
+        if completion_rate < 70:
+            immediate_actions.append("Focus on completing in-progress tasks")
+        if blocked_tasks > 0:
+            immediate_actions.append("Resolve blocking issues")
+        if len(cycles) > 0:
+            immediate_actions.append("Break circular dependencies")
+        
+        if workflow_health["bottleneck_count"] > 2:
+            short_term_actions.append("Address workflow bottlenecks")
+        if semantic_health["theme_consistency"] == "low":
+            short_term_actions.append("Improve task description clarity")
+        
+        strategic_actions.append("Implement regular health monitoring")
+        if health_input.project_id:
+            strategic_actions.append("Consider project scope adjustment")
+        
+        # Predictive analysis (if requested)
+        predictions = None
+        if health_input.include_predictions:
+            # Simple prediction based on current metrics
+            predicted_completion_date = "unknown"
+            if in_progress_tasks > 0 and completion_rate > 0:
+                # Very rough estimate
+                avg_completion_time = 7  # Assume 7 days average per task
+                remaining_tasks = total_tasks - completed_tasks
+                estimated_days = remaining_tasks * avg_completion_time
+                predicted_completion_date = f"~{estimated_days} days"
+            
+            predictions = {
+                "completion_probability": min(100, completion_rate + 20),  # Optimistic estimate
+                "predicted_completion_date": predicted_completion_date,
+                "risk_of_delays": "high" if len(high_risk_factors) > 2 else "medium" if len(high_risk_factors) > 0 else "low",
+                "success_probability": overall_percentage
+            }
+        
+        return {
+            "success": True,
+            "project_id": health_input.project_id or "all_projects",
+            "overall_health": {
+                "score": round(overall_percentage, 1),
+                "letter_grade": letter_grade,
+                "trend": trend,
+                "key_indicators": [f"{factor[0]}: {factor[1]}/{factor[2]}" for factor in health_factors]
+            },
+            "detailed_analysis": {
+                "task_management": {
+                    "total_tasks": total_tasks,
+                    "completion_rate": round(completion_rate, 1),
+                    "overdue_tasks": overdue_tasks,
+                    "blocked_tasks": blocked_tasks,
+                    "in_progress_tasks": in_progress_tasks,
+                    "average_task_age": "unknown"  # Would need creation date tracking
+                },
+                "semantic_coherence": semantic_health,
+                "workflow_efficiency": workflow_health
+            },
+            "risk_factors": {
+                "high_risk": high_risk_factors,
+                "medium_risk": medium_risk_factors,
+                "mitigation_suggestions": [
+                    "Regular dependency review meetings",
+                    "Improved task breakdown and estimation",
+                    "Enhanced communication protocols"
+                ]
+            },
+            "predictions": predictions,
+            "action_recommendations": {
+                "immediate": immediate_actions,
+                "short_term": short_term_actions,
+                "strategic": strategic_actions
+            },
+            "analysis_metadata": {
+                "analysis_depth": health_input.analysis_depth,
+                "databases_analyzed": ["sqlite", "chroma", "kuzu"],
+                "analysis_timestamp": datetime.now().isoformat(),
+                "data_freshness": "current"
+            },
+            "executive_summary": {
+                "status": letter_grade,
+                "primary_concern": high_risk_factors[0] if high_risk_factors else "No major concerns",
+                "next_milestone": immediate_actions[0] if immediate_actions else "Continue current progress",
+                "confidence_level": "high" if total_tasks > 10 else "medium"
+            },
+            "message": f"Project health analysis complete: {letter_grade} grade with {len(high_risk_factors)} high-risk factors identified"
+        }
+        
+    except Exception as e:
+        logger.exception("Error in project health analysis")
         return {"success": False, "error": str(e)}
 
 

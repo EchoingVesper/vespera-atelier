@@ -530,10 +530,53 @@ class TaskService:
     
     def _row_to_task(self, row: tuple) -> Task:
         """Convert database row to Task object."""
-        (id, title, description, parent_id, status, priority, task_order,
-         project_id, feature, milestone, assignee, creator,
-         created_at, updated_at, due_date, started_at, completed_at,
-         metadata_json, execution_json) = row
+        # Handle both old (19 columns) and new (31 columns) schema
+        if len(row) == 19:
+            # Old schema
+            (id, title, description, parent_id, status, priority, task_order,
+             project_id, feature, milestone, assignee, creator,
+             created_at, updated_at, due_date, started_at, completed_at,
+             metadata_json, execution_json) = row
+            
+            # Initialize triple-DB fields with defaults
+            triple_db_dict = {
+                "embedding_id": None,
+                "content_hash": None,
+                "last_embedded": None,
+                "embedding_version": 1,
+                "graph_node_id": None,
+                "last_graph_sync": None,
+                "graph_version": 1,
+                "sync_status": "pending",
+                "last_indexed": None,
+                "sync_error": None,
+                "chroma_synced": False,
+                "kuzu_synced": False
+            }
+        else:
+            # New schema with triple-DB fields
+            (id, title, description, parent_id, status, priority, task_order,
+             project_id, feature, milestone, assignee, creator,
+             created_at, updated_at, due_date, started_at, completed_at,
+             metadata_json, execution_json,
+             embedding_id, content_hash, last_embedded, embedding_version,
+             graph_node_id, last_graph_sync, graph_version,
+             sync_status, last_indexed, sync_error, chroma_synced, kuzu_synced) = row
+            
+            triple_db_dict = {
+                "embedding_id": embedding_id,
+                "content_hash": content_hash,
+                "last_embedded": datetime.fromisoformat(last_embedded) if last_embedded else None,
+                "embedding_version": embedding_version or 1,
+                "graph_node_id": graph_node_id,
+                "last_graph_sync": datetime.fromisoformat(last_graph_sync) if last_graph_sync else None,
+                "graph_version": graph_version or 1,
+                "sync_status": sync_status or "pending",
+                "last_indexed": datetime.fromisoformat(last_indexed) if last_indexed else None,
+                "sync_error": sync_error,
+                "chroma_synced": bool(chroma_synced),
+                "kuzu_synced": bool(kuzu_synced)
+            }
         
         # Parse datetime fields
         created_at = datetime.fromisoformat(created_at)
@@ -549,6 +592,10 @@ class TaskService:
         # Create objects
         metadata = TaskMetadata(**metadata_dict)
         execution = TaskExecution(**execution_dict)
+        
+        # Create triple_db coordination object
+        from tasks.models import TripleDBCoordination
+        triple_db = TripleDBCoordination(**triple_db_dict)
         
         task = Task(
             id=id,
@@ -569,7 +616,8 @@ class TaskService:
             started_at=started_at,
             completed_at=completed_at,
             metadata=metadata,
-            execution=execution
+            execution=execution,
+            triple_db=triple_db
         )
         
         return task
