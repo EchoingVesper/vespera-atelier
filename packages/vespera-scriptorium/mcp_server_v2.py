@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel, Field
 
-from tasks import TaskManager, TaskStatus, TaskPriority, TaskRelation, TaskMetadata
+from tasks import TaskManager, TaskService, TaskStatus, TaskPriority, TaskRelation, TaskMetadata
 from roles import RoleManager
 
 # Configure logging
@@ -43,11 +43,14 @@ def get_managers():
         _v2_data_dir.mkdir(parents=True, exist_ok=True)
         
         _role_manager = RoleManager(project_root)
-        _task_manager = TaskManager(project_root, _role_manager)
         
-        # Use V2 directory for database
-        _task_manager.task_service.db_path = _v2_data_dir / "tasks.db"
-        _task_manager.task_service._init_database()
+        # Create TaskService with V2 database path first
+        task_service = TaskService(_v2_data_dir / "tasks.db")
+        
+        # Initialize TaskManager with role manager
+        _task_manager = TaskManager(project_root, _role_manager)
+        # Override the default task service with our V2 version
+        _task_manager.task_service = task_service
         
         logger.info(f"Initialized Vespera V2 with data directory: {_v2_data_dir}")
     
