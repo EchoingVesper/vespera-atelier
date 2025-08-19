@@ -1,0 +1,95 @@
+{
+  "timestamp": "2025-08-19T00:23:07.168845",
+  "summary": {
+    "total_tests": 6,
+    "passed": 0,
+    "failed": 6,
+    "success_rate": 0.0
+  },
+  "performance": {
+    "total_execution_time": 1.3048384189605713,
+    "test_count": 6,
+    "passed_count": 0,
+    "failed_count": 6,
+    "average_test_time": 0.21743114789326987,
+    "fastest_test": 0.20014619827270508,
+    "slowest_test": 0.24028754234313965,
+    "total_test_time": 1.3045868873596191
+  },
+  "test_results": [
+    {
+      "test_file": "/home/aya/dev/monorepo/vespera-atelier/packages/vespera-scriptorium/tests/unit/test_error_handling.py",
+      "success": false,
+      "execution_time": 0.24028754234313965,
+      "exit_code": 1,
+      "memory_usage": 0.0
+    },
+    {
+      "test_file": "/home/aya/dev/monorepo/vespera-atelier/packages/vespera-scriptorium/tests/unit/test_background_services.py",
+      "success": false,
+      "execution_time": 0.20014619827270508,
+      "exit_code": 1,
+      "memory_usage": 0.0
+    },
+    {
+      "test_file": "/home/aya/dev/monorepo/vespera-atelier/packages/vespera-scriptorium/tests/unit/test_sync_coordinator.py",
+      "success": false,
+      "execution_time": 0.23547124862670898,
+      "exit_code": 1,
+      "memory_usage": 0.0
+    },
+    {
+      "test_file": "/home/aya/dev/monorepo/vespera-atelier/packages/vespera-scriptorium/tests/unit/test_api_layer.py",
+      "success": false,
+      "execution_time": 0.20491981506347656,
+      "exit_code": 1,
+      "memory_usage": 0.0
+    },
+    {
+      "test_file": "/home/aya/dev/monorepo/vespera-atelier/packages/vespera-scriptorium/tests/unit/test_new_mcp_tools.py",
+      "success": false,
+      "execution_time": 0.21065115928649902,
+      "exit_code": 1,
+      "memory_usage": 0.0
+    },
+    {
+      "test_file": "/home/aya/dev/monorepo/vespera-atelier/packages/vespera-scriptorium/tests/unit/test_triple_db_service.py",
+      "success": false,
+      "execution_time": 0.21311092376708984,
+      "exit_code": 1,
+      "memory_usage": 0.0
+    }
+  ],
+  "failed_tests": [
+    {
+      "test_file": "/home/aya/dev/monorepo/vespera-atelier/packages/vespera-scriptorium/tests/unit/test_error_handling.py",
+      "exit_code": 1,
+      "error_output": ""
+    },
+    {
+      "test_file": "/home/aya/dev/monorepo/vespera-atelier/packages/vespera-scriptorium/tests/unit/test_background_services.py",
+      "exit_code": 1,
+      "error_output": ""
+    },
+    {
+      "test_file": "/home/aya/dev/monorepo/vespera-atelier/packages/vespera-scriptorium/tests/unit/test_sync_coordinator.py",
+      "exit_code": 1,
+      "error_output": ""
+    },
+    {
+      "test_file": "/home/aya/dev/monorepo/vespera-atelier/packages/vespera-scriptorium/tests/unit/test_api_layer.py",
+      "exit_code": 1,
+      "error_output": ""
+    },
+    {
+      "test_file": "/home/aya/dev/monorepo/vespera-atelier/packages/vespera-scriptorium/tests/unit/test_new_mcp_tools.py",
+      "exit_code": 1,
+      "error_output": ""
+    },
+    {
+      "test_file": "/home/aya/dev/monorepo/vespera-atelier/packages/vespera-scriptorium/tests/unit/test_triple_db_service.py",
+      "exit_code": 1,
+      "error_output": ""
+    }
+  ]
+}
