@@ -14,6 +14,7 @@ from pathlib import Path
 
 from .models import Task, TaskStatus, TaskPriority, TaskRelation, TaskMetadata, TaskExecution
 from vector import VectorService
+from graph import KuzuService
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +30,9 @@ class TaskService:
     VALID_STATUSES = [status.value for status in TaskStatus]
     VALID_PRIORITIES = [priority.value for priority in TaskPriority]
     
-    def __init__(self, db_path: Optional[Path] = None, vector_service: Optional[VectorService] = None):
-        """Initialize with optional database path and vector service."""
-        self.db_path = db_path or Path.cwd() / ".vespera_scriptorium" / "tasks.db"
+    def __init__(self, db_path: Optional[Path] = None, vector_service: Optional[VectorService] = None, graph_service: Optional[KuzuService] = None):
+        """Initialize with optional database path, vector service, and graph service."""
+        self.db_path = db_path or Path.cwd() / ".vespera_v2" / "tasks.db"
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_database()
         
@@ -42,7 +43,14 @@ class TaskService:
             vector_dir = self.db_path.parent / "embeddings"
             self.vector_service = VectorService(persist_directory=vector_dir)
         
-        logger.info("TaskService initialized with vector database support")
+        # Initialize graph service for relationship management
+        if graph_service:
+            self.graph_service = graph_service
+        else:
+            graph_dir = self.db_path.parent / "graph.kuzu"
+            self.graph_service = KuzuService(db_path=graph_dir)
+        
+        logger.info("TaskService initialized with triple database architecture (SQLite + ChromaDB + KuzuDB)")
     
     def _init_database(self) -> None:
         """Initialize the task database with schema."""
@@ -194,6 +202,18 @@ class TaskService:
                 logger.warning(f"Failed to embed task {task.id} in vector database: {e}")
                 # Don't fail the entire operation for vector embedding issues
             
+            # Add to graph database for relationship management
+            try:
+                graph_success = await self.graph_service.add_task_node(task)
+                if graph_success:
+                    # Update triple DB coordination is handled in KuzuService.add_task_node
+                    logger.debug(f"Task {task.id} added to graph database")
+                else:
+                    logger.warning(f"Failed to add task {task.id} to graph database")
+            except Exception as e:
+                logger.warning(f"Failed to add task {task.id} to graph database: {e}")
+                # Don't fail the entire operation for graph database issues
+            
             logger.info(f"Created task '{task.title}' with ID {task.id}")
             return True, {"task": task.to_dict()}
             
@@ -263,6 +283,13 @@ class TaskService:
             # Save to database
             success = await self._save_task_to_db(task)
             if success:
+                # Sync to graph database
+                try:
+                    await self.graph_service.add_task_node(task)  # Uses UPSERT logic
+                    logger.debug(f"Task {task_id} synced to graph database")
+                except Exception as e:
+                    logger.warning(f"Failed to sync task {task_id} to graph database: {e}")
+                
                 logger.info(f"Updated task {task_id}")
                 return True, {"task": task.to_dict()}
             else:
@@ -469,6 +496,15 @@ class TaskService:
             # Update task objects
             source_task.add_relation(relationship, target_task_id)
             await self._save_task_to_db(source_task)
+            
+            # Add to graph database
+            try:
+                await self.graph_service.add_task_relationship(
+                    source_task_id, target_task_id, relationship
+                )
+                logger.debug(f"Added {relationship.value} relationship to graph: {source_task_id} -> {target_task_id}")
+            except Exception as e:
+                logger.warning(f"Failed to add relationship to graph database: {e}")
             
             logger.info(f"Added {relationship.value} relationship: {source_task_id} -> {target_task_id}")
             return True
@@ -892,3 +928,147 @@ class TaskService:
         except Exception as e:
             logger.error(f"Failed to get vector stats: {e}")
             return {"error": str(e)}
+    
+    # Graph Database Integration Methods
+    
+    async def get_task_dependencies_graph(self, task_id: str) -> List[Dict[str, Any]]:
+        """Get task dependencies using graph database queries."""
+        try:
+            return await self.graph_service.get_task_dependencies(task_id)
+        except Exception as e:
+            logger.error(f"Failed to get graph dependencies for {task_id}: {e}")
+            return []
+    
+    async def get_blocking_tasks_graph(self, task_id: str) -> List[Dict[str, Any]]:
+        """Get tasks blocked by the given task using graph database."""
+        try:
+            return await self.graph_service.get_blocking_tasks(task_id)
+        except Exception as e:
+            logger.error(f"Failed to get blocking tasks for {task_id}: {e}")
+            return []
+    
+    async def get_task_hierarchy_graph(self, root_task_id: str, max_depth: int = 5) -> Dict[str, Any]:
+        """Get hierarchical task structure using graph database."""
+        try:
+            return await self.graph_service.get_task_hierarchy(root_task_id, max_depth)
+        except Exception as e:
+            logger.error(f"Failed to get task hierarchy for {root_task_id}: {e}")
+            return {}
+    
+    async def get_similar_tasks_graph(self, task_id: str, min_similarity: float = 0.7) -> List[Dict[str, Any]]:
+        """Get similar tasks using graph database semantic relationships."""
+        try:
+            return await self.graph_service.get_similar_tasks(task_id, min_similarity)
+        except Exception as e:
+            logger.error(f"Failed to get similar tasks for {task_id}: {e}")
+            return []
+    
+    async def analyze_task_dependencies_full(self, task_id: str) -> Dict[str, Any]:
+        """Complete dependency analysis including cycles and blocking chains."""
+        try:
+            return await self.graph_service.analyze_dependency_chain(task_id)
+        except Exception as e:
+            logger.error(f"Failed to analyze dependencies for {task_id}: {e}")
+            return {}
+    
+    async def sync_task_to_graph(self, task_id: str) -> bool:
+        """Manually sync a task to the graph database."""
+        try:
+            task = await self.get_task(task_id)
+            if not task:
+                return False
+            
+            return await self.graph_service.sync_task_from_sqlite(task)
+        except Exception as e:
+            logger.error(f"Failed to sync task {task_id} to graph: {e}")
+            return False
+    
+    async def sync_similarity_to_graph(self, task_id: str) -> bool:
+        """Sync vector similarity relationships to graph database."""
+        try:
+            # Get similar tasks from vector database
+            similar_tasks = await self.get_related_tasks(task_id, limit=20)
+            
+            # Convert to graph format and sync
+            graph_similar = []
+            for similar in similar_tasks:
+                graph_similar.append({
+                    'id': similar['task']['id'],
+                    'similarity_score': similar['similarity_score'],
+                    'content_type': 'vector_embedding',
+                    'vector_model': 'chromadb_default'
+                })
+            
+            return await self.graph_service.sync_similarity_from_chromadb(task_id, graph_similar)
+        except Exception as e:
+            logger.error(f"Failed to sync similarity to graph for {task_id}: {e}")
+            return False
+    
+    async def get_graph_stats(self) -> Dict[str, Any]:
+        """Get graph database statistics and health info."""
+        try:
+            return await self.graph_service.get_graph_stats()
+        except Exception as e:
+            logger.error(f"Failed to get graph stats: {e}")
+            return {"error": str(e)}
+    
+    async def health_check_all_databases(self) -> Dict[str, Any]:
+        """Comprehensive health check for all three databases."""
+        try:
+            results = {
+                "sqlite": {"status": "healthy", "tasks_count": 0},
+                "chromadb": {"status": "unknown"},
+                "kuzu": {"status": "unknown"},
+                "overall_status": "checking"
+            }
+            
+            # SQLite health check
+            try:
+                with sqlite3.connect(self.db_path) as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT COUNT(*) FROM tasks")
+                    count = cursor.fetchone()[0]
+                    results["sqlite"]["tasks_count"] = count
+                    results["sqlite"]["status"] = "healthy"
+            except Exception as e:
+                results["sqlite"]["status"] = "unhealthy"
+                results["sqlite"]["error"] = str(e)
+            
+            # ChromaDB health check
+            try:
+                chroma_stats = await self.get_vector_stats()
+                if "error" not in chroma_stats:
+                    results["chromadb"]["status"] = "healthy"
+                    results["chromadb"].update(chroma_stats)
+                else:
+                    results["chromadb"]["status"] = "unhealthy"
+                    results["chromadb"]["error"] = chroma_stats["error"]
+            except Exception as e:
+                results["chromadb"]["status"] = "unhealthy"
+                results["chromadb"]["error"] = str(e)
+            
+            # KuzuDB health check
+            try:
+                kuzu_health = await self.graph_service.health_check()
+                results["kuzu"] = kuzu_health
+            except Exception as e:
+                results["kuzu"]["status"] = "unhealthy"
+                results["kuzu"]["error"] = str(e)
+            
+            # Overall status
+            all_healthy = all(
+                db.get("status") == "healthy" 
+                for db in [results["sqlite"], results["chromadb"], results["kuzu"]]
+            )
+            results["overall_status"] = "healthy" if all_healthy else "degraded"
+            results["timestamp"] = datetime.now().isoformat()
+            
+            return results
+            
+        except Exception as e:
+            logger.error(f"Failed to perform health check: {e}")
+            return {
+                "overall_status": "error",
+                "error": str(e),
+                "timestamp": datetime.now().isoformat()
+            }
