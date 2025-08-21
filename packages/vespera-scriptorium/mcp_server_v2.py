@@ -58,8 +58,8 @@ def get_managers():
 
 
 # Pydantic models for structured input
-class TaskCreateInput(BaseModel):
-    """Input model for task creation."""
+class TaskInput(BaseModel):
+    """Unified input model for task creation with optional subtasks."""
     title: str = Field(..., description="Task title")
     description: str = Field("", description="Task description")
     parent_id: Optional[str] = Field(None, description="Parent task ID")
@@ -67,24 +67,11 @@ class TaskCreateInput(BaseModel):
     feature: Optional[str] = Field(None, description="Feature area")
     role: Optional[str] = Field(None, description="Assigned role")
     priority: Optional[str] = Field("normal", description="Task priority")
-
-
-class SubtaskInput(BaseModel):
-    """Input model for subtask definition."""
-    title: str = Field(..., description="Subtask title")
-    description: str = Field("", description="Subtask description")
-    role: Optional[str] = Field(None, description="Assigned role")
-    priority: Optional[str] = Field("normal", description="Task priority")
     order: Optional[int] = Field(None, description="Task order")
+    subtasks: List['TaskInput'] = Field([], description="List of subtasks (recursive)")
 
-
-class TaskTreeInput(BaseModel):
-    """Input model for task tree creation."""
-    title: str = Field(..., description="Root task title")
-    description: str = Field("", description="Root task description")
-    project_id: Optional[str] = Field(None, description="Project identifier")
-    feature: Optional[str] = Field(None, description="Feature area")
-    subtasks: List[SubtaskInput] = Field([], description="List of subtasks")
+# Enable forward references for recursive TaskInput
+TaskInput.model_rebuild()
 
 
 class TaskUpdateInput(BaseModel):
@@ -98,76 +85,105 @@ class TaskUpdateInput(BaseModel):
 
 
 # Core task management tools
-@mcp.tool()
-async def create_task(task_input: TaskCreateInput) -> Dict[str, Any]:
-    """Create a new task."""
-    task_manager, _ = get_managers()
-    
+async def _create_task_recursive(
+    task_input: TaskInput, 
+    task_manager: TaskManager, 
+    parent_id: Optional[str] = None
+) -> Dict[str, Any]:
+    """Recursively create a task and its subtasks."""
     try:
         # Convert priority string to enum
         priority = TaskPriority.NORMAL
         if task_input.priority:
             priority = TaskPriority(task_input.priority.lower())
         
+        # Use parent_id from parameter if provided, otherwise from input
+        actual_parent_id = parent_id or task_input.parent_id
+        
+        # Validate role if provided
+        validated_role = None
+        if task_input.role:
+            _, role_manager = get_managers()
+            role_names = role_manager.list_roles()  # Returns List[str]
+            
+            if task_input.role not in role_names:
+                return {
+                    "success": False, 
+                    "error": f"Invalid role '{task_input.role}'. Available roles: {', '.join(role_names)}"
+                }
+            validated_role = task_input.role
+        
+        # Create the main task
         success, result = await task_manager.task_service.create_task(
             title=task_input.title,
             description=task_input.description,
-            parent_id=task_input.parent_id,
+            parent_id=actual_parent_id,
             priority=priority,
             project_id=task_input.project_id,
             feature=task_input.feature,
-            role_name=task_input.role
+            role_name=validated_role
         )
         
+        if not success:
+            return {"success": False, "error": result.get("message", "Failed to create task")}
+        
+        created_task = result["task"]
+        task_id = created_task["id"]
+        subtasks_created = []
+        total_created = 1  # Count this task
+        
+        # Recursively create subtasks if any
+        for subtask_input in task_input.subtasks:
+            subtask_result = await _create_task_recursive(
+                subtask_input, 
+                task_manager, 
+                parent_id=task_id
+            )
+            
+            if subtask_result["success"]:
+                subtasks_created.append(subtask_result["task"])
+                total_created += subtask_result.get("total_created", 1)
+            else:
+                # Continue creating other subtasks even if one fails
+                logger.warning(f"Failed to create subtask: {subtask_result.get('error')}")
+        
         return {
-            "success": success,
-            "task": result["task"] if success else None,  # task is already a dict from service
-            "message": result.get("message", "Task created successfully" if success else "Failed to create task")
+            "success": True,
+            "task": created_task,
+            "subtasks": subtasks_created,
+            "total_created": total_created,
+            "message": f"Task '{task_input.title}' created with {len(subtasks_created)} subtasks"
         }
+        
+    except Exception as e:
+        logger.exception("Error in recursive task creation")
+        return {"success": False, "error": str(e)}
+
+
+@mcp.tool()
+async def create_task(task_input: TaskInput) -> Dict[str, Any]:
+    """Create a new task with optional subtasks (unified interface)."""
+    task_manager, _ = get_managers()
+    
+    try:
+        result = await _create_task_recursive(task_input, task_manager)
+        
+        # Simplify response for simple tasks (no subtasks)
+        if not task_input.subtasks:
+            return {
+                "success": result["success"],
+                "task": result.get("task"),
+                "message": result.get("message", "Task created successfully" if result["success"] else "Failed to create task")
+            }
+        
+        # Full response for hierarchical tasks
+        return result
         
     except Exception as e:
         logger.exception("Error creating task")
         return {"success": False, "error": str(e)}
 
 
-@mcp.tool()
-async def create_task_tree(tree_input: TaskTreeInput) -> Dict[str, Any]:
-    """Create a hierarchical task tree with subtasks."""
-    task_manager, _ = get_managers()
-    
-    try:
-        # Convert subtasks to the format expected by create_task_tree
-        subtasks_data = []
-        for subtask in tree_input.subtasks:
-            subtask_dict = {
-                "title": subtask.title,
-                "description": subtask.description,
-                "role": subtask.role,
-                "priority": subtask.priority or "normal"
-            }
-            if subtask.order is not None:
-                subtask_dict["order"] = subtask.order
-            subtasks_data.append(subtask_dict)
-        
-        success, result = await task_manager.create_task_tree(
-            title=tree_input.title,
-            description=tree_input.description,
-            subtasks=subtasks_data,
-            project_id=tree_input.project_id,
-            feature=tree_input.feature,
-            auto_assign_roles=True
-        )
-        
-        return {
-            "success": success,
-            "root_task": result.get("root_task") if success and result.get("root_task") else None,
-            "total_created": result.get("total_created", 0),
-            "message": result.get("message", "Task tree created successfully" if success else "Failed to create task tree")
-        }
-        
-    except Exception as e:
-        logger.exception("Error creating task tree")
-        return {"success": False, "error": str(e)}
 
 
 @mcp.tool()
@@ -260,6 +276,16 @@ async def update_task(update_input: TaskUpdateInput) -> Dict[str, Any]:
         if update_input.priority is not None:
             updates["priority"] = update_input.priority
         if update_input.role is not None:
+            # Validate role exists
+            _, role_manager = get_managers()
+            role_names = role_manager.list_roles()  # Returns List[str]
+            
+            if update_input.role not in role_names:
+                return {
+                    "success": False,
+                    "error": f"Invalid role '{update_input.role}'. Available roles: {', '.join(role_names)}"
+                }
+            
             updates["execution"] = {"assigned_role": update_input.role}
         
         success, result = await task_manager.task_service.update_task(
