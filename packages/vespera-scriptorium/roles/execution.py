@@ -321,8 +321,31 @@ class RoleExecutor:
         enforcer = ToolGroupEnforcer(role)
         
         try:
-            # For now, use enhanced simulation until Claude executor is stabilized
-            # TODO: Integrate real Claude CLI execution after testing
+            # Enable real Claude CLI execution
+            from .claude_executor import ClaudeExecutor, ClaudeExecutionConfig
+            
+            # Initialize Claude executor
+            claude_config = ClaudeExecutionConfig(
+                working_directory=str(self.project_root),
+                timeout=300,  # 5 minute timeout
+                claude_binary="claude"  # Assumes 'claude' is in PATH
+            )
+            executor = ClaudeExecutor(self.project_root, claude_config)
+            
+            # Execute with real Claude CLI
+            import asyncio
+            task_id = f"exec_{int(time.time() * 1000)}"
+            
+            try:
+                # Run async execution
+                result = asyncio.run(
+                    executor.execute_task_with_claude(execution_context, task_id, dry_run=False)
+                )
+                return result
+            except Exception as claude_error:
+                # Fallback to enhanced simulation if Claude execution fails
+                logger.warning(f"Claude execution failed, using simulation: {claude_error}")
+                execution_time = time.time() - start_time
             
             execution_time = time.time() - start_time
             
