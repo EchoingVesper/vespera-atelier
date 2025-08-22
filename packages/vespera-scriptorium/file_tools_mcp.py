@@ -221,8 +221,19 @@ class CodeValidator:
                     
                     # Check against function patterns
                     if 'function' in description.lower() or '()' in matched_text:
-                        func_name = re.sub(r'[^\w.]', '', matched_text.split('(')[0])
-                        should_ignore = self.validation_config.should_ignore('function', func_name)
+                        # More robust function name extraction
+                        try:
+                            # Handle complex patterns like os.system(), app.get(), etc.
+                            func_part = matched_text.split('(')[0].strip()
+                            # Remove common prefixes and clean the name
+                            func_name = re.sub(r'^[^a-zA-Z_]*', '', func_part)
+                            func_name = re.sub(r'[^\w.]', '', func_name)
+                            if func_name:
+                                should_ignore = self.validation_config.should_ignore('function', func_name)
+                        except (IndexError, AttributeError):
+                            # Fallback to simple extraction
+                            func_name = re.sub(r'[^\w.]', '', matched_text.split('(')[0])
+                            should_ignore = self.validation_config.should_ignore('function', func_name)
                     
                     # Check against import patterns
                     elif 'import' in description.lower():
@@ -388,6 +399,7 @@ class FileToolsMCP:
             'error': None
         }
         
+        temp_path = None
         try:
             # Optional pre-write validation
             if validate:
@@ -399,9 +411,6 @@ class FileToolsMCP:
                 
                 validation_result = self.validator.validate_file(temp_path)
                 result['validation'] = validation_result
-                
-                # Clean up temp file
-                temp_path.unlink()
                 
                 # Check for high-severity issues
                 high_severity_issues = [
@@ -427,6 +436,15 @@ class FileToolsMCP:
         except Exception as e:
             result['error'] = str(e)
             logger.error(f"Error writing file {file_path}: {e}")
+        
+        finally:
+            # Ensure temporary file is always cleaned up
+            if temp_path and temp_path.exists():
+                try:
+                    temp_path.unlink()
+                    logger.debug(f"Cleaned up temporary file: {temp_path}")
+                except Exception as cleanup_error:
+                    logger.warning(f"Failed to cleanup temporary file {temp_path}: {cleanup_error}")
         
         return result
     

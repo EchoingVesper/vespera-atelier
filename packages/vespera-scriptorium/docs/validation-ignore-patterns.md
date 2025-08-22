@@ -96,18 +96,44 @@ The system supports several pattern syntaxes:
 - `*` - Matches any characters
 - `?` - Matches single character
 - `test_*` → `^test_.*$` (regex)
+- `*_helper` → `^.*_helper$` (regex)
+- `get_*_data` → `^get_.*_data$` (regex)
 
 #### Decorator Patterns
 - `@app.*` → `^@app\..*$` (regex)
-- Handles the `@` symbol specially
+- `@pytest.*` → `^@pytest\..*$` (regex)
+- `@router.get` → `^@router\.get$` (regex)
+- Handles the `@` symbol specially for Python decorators
 
 #### Module Patterns
 - `fastapi.*` → `^fastapi\..*$` (regex)
-- Escapes dots in module names
+- `pydantic.models.*` → `^pydantic\.models\..*$` (regex)
+- `sqlalchemy.orm.*` → `^sqlalchemy\.orm\..*$` (regex)
+- Escapes dots in module names properly
+
+#### Complex Attribute Patterns
+- `*.config` → `^.*\.config$` (matches any object's config attribute)
+- `app.get` → `^app\.get$` (exact match for app.get method)
+- `session.query` → `^session\.query$` (exact SQLAlchemy session query)
+- `*.metadata.*` → `^.*\.metadata\..*$` (any metadata sub-attribute)
+
+#### File Pattern Examples
+- `test_*.py` → matches `test_user.py`, `test_auth.py`
+- `**/migrations/*.py` → matches `db/migrations/001_init.py`
+- `conftest.py` → exact match for pytest configuration
+- `*_test.py` → matches `user_test.py`, `auth_test.py`
 
 #### Exact Patterns
 - `BaseModel` → `^BaseModel$` (regex)
-- Simple strings become exact matches
+- `HTTPException` → `^HTTPException$` (regex)
+- Simple strings become exact matches with anchoring
+
+#### Regex Special Characters
+The system automatically escapes special regex characters:
+- Dots (`.`) are escaped except in wildcard contexts
+- Question marks (`?`) become single character matches
+- Asterisks (`*`) become multi-character matches
+- Other regex chars (`[](){}^$+|\`) are escaped
 
 ## Usage
 
@@ -246,9 +272,24 @@ def test_with_params(input, expected):  # Ignored by function pattern
 
 ### Pattern Design
 1. **Be Specific**: Use specific patterns to avoid false positives
+   - Good: `@app.get`, `@app.post`
+   - Bad: `@*` (too broad)
 2. **Use Wildcards Wisely**: `fastapi.*` is better than just `*`
-3. **Test Patterns**: Verify patterns work with example code
-4. **Document Custom Patterns**: Add comments for non-obvious patterns
+   - Good: `fastapi.security.*`
+   - Bad: `*` (matches everything)
+3. **Layer Patterns**: Combine specific and wildcard patterns
+   - Specific: `HTTPException`, `BaseModel`
+   - Wildcard: `test_*`, `*_fixture`
+4. **Test Patterns**: Verify patterns work with example code
+   ```python
+   # Test your patterns
+   config = get_validation_config()
+   assert config.should_ignore('function', '@app.get')
+   assert not config.should_ignore('function', 'dangerous_exec')
+   ```
+5. **Document Custom Patterns**: Add comments for non-obvious patterns
+6. **Avoid Over-Escaping**: The system handles regex escaping automatically
+7. **Use Anchoring**: Patterns are automatically anchored with `^` and `$`
 
 ### Configuration Management
 1. **Version Control**: Include `.vespera/validation_config.json` in VCS
@@ -306,6 +347,20 @@ print(f"Pattern matched: {result}")
 # Check compiled pattern
 for pattern in matcher.compiled_patterns['functions']:
     print(f"Compiled: {pattern.pattern}")
+    # Test manual matching
+    print(f"Manual test: {pattern.match('@app.get')}")
+
+# Test different input variations
+test_cases = ['@app.get', 'app.get', '@app.post', '@router.get']
+for test in test_cases:
+    result = matcher.should_ignore_function(test)
+    print(f"'{test}' -> {result}")
+
+# Validate pattern syntax
+from validation_config import ValidationConfigManager
+manager = ValidationConfigManager()
+valid = manager._validate_pattern_syntax('functions', '@app.*')
+print(f"Pattern syntax valid: {valid}")
 ```
 
 #### Performance Issues
