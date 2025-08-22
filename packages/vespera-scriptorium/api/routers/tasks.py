@@ -309,8 +309,8 @@ async def create_task_tree(
     """
     Create a hierarchical task tree with a root task and subtasks.
     
-    Creates a parent task and all specified subtasks in a single operation.
-    Automatically handles parent-child relationships and role assignments.
+    DEPRECATED: Use POST /tasks with subtasks instead.
+    This endpoint is maintained for backward compatibility.
     """
     try:
         # Convert subtasks to the format expected by MCP bridge

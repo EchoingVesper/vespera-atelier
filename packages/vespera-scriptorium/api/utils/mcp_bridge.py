@@ -282,11 +282,25 @@ class MCPBridge:
             return {"success": False, "error": str(e)}
     
     async def create_task_tree(self, **kwargs) -> Dict[str, Any]:
-        """Bridge to create_task_tree MCP tool."""
+        """Bridge to create_task_tree MCP tool (DEPRECATED - use create_task with subtasks)."""
         try:
             if not self._initialized:
                 return {"success": False, "error": "MCP bridge not initialized"}
             
+            # Convert to unified create_task format
+            subtasks_data = kwargs.get("subtasks", [])
+            converted_subtasks = []
+            for subtask in subtasks_data:
+                converted_subtasks.append({
+                    "title": subtask.get("title", ""),
+                    "description": subtask.get("description", ""),
+                    "role": subtask.get("role"),
+                    "priority": subtask.get("priority", "normal"),
+                    "order": subtask.get("order"),
+                    "subtasks": []  # No nested subtasks in legacy format
+                })
+            
+            # Use the unified create_task with the TaskManager's create_task_tree for now
             success, result = await self.task_manager.create_task_tree(**kwargs)
             
             return {
