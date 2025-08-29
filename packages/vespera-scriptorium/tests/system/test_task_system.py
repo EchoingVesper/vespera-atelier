@@ -35,12 +35,18 @@ async def test_task_system():
     
     # Test basic task creation
     print("\n2. Testing Task Creation...")
-    success, result = await task_manager.create_task_tree(
+    # Note: Using the unified create_task interface instead of create_task_tree
+    success, result = await task_manager.task_service.create_task(
         title="Implement Authentication System",
         description="Create a secure authentication system with JWT tokens",
         project_id="test-project-1",
-        feature="authentication",
-        subtasks=[
+        feature="authentication"
+    )
+    
+    if success:
+        root_task = result["task"]
+        # Create subtasks manually to test the same functionality
+        subtasks_data = [
             {
                 "title": "Design authentication schema",
                 "description": "Design database schema for users and authentication",

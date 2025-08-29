@@ -19,7 +19,7 @@ Vespera V2 provides 14 specialized MCP tools that enable seamless integration wi
 | Category | Tools | Purpose |
 |----------|--------|---------|
 | **Task Management** | `create_task`, `get_task`, `update_task`, `delete_task`, `list_tasks` | Core CRUD operations |
-| **Task Hierarchy** | `create_task_tree`, `get_task_tree`, `analyze_task_dependencies`, `add_task_dependency` | Hierarchical organization |
+| **Task Hierarchy** | `create_task` (with subtasks), `get_task_tree`, `analyze_task_dependencies`, `add_task_dependency` | Hierarchical organization |
 | **Task Execution** | `execute_task`, `complete_task` | Role-based execution |
 | **Role Management** | `list_roles`, `assign_role_to_task` | Capability management |
 | **Analytics** | `get_task_dashboard` | Project insights |
@@ -100,11 +100,13 @@ create_task({
 - Assign appropriate roles based on required capabilities
 - Set realistic priorities based on business impact
 
-### 2. create_task_tree
+### 2. create_task (Unified Interface)
 
-Create hierarchical task structures in a single operation.
+Create simple tasks or hierarchical task structures in a single operation.
 
-**Purpose**: Rapidly set up complex project structures with parent-child relationships and role assignments.
+**Purpose**: Single interface for all task creation - from simple todos to complex project hierarchies.
+
+**Note**: The `create_task` tool now supports hierarchical task creation through the `subtasks` parameter, eliminating the need for a separate `create_task_tree` tool.
 
 **Input Schema**:
 ```json
@@ -129,8 +131,8 @@ Create hierarchical task structures in a single operation.
 
 **Example Usage**:
 ```python
-create_task_tree({
-    "tree_input": {
+create_task({
+    "task_input": {
         "title": "User Management System",
         "description": "Complete user registration, authentication, and profile management",
         "project_id": "user-platform",
@@ -1141,8 +1143,8 @@ def setup_new_project(project_name, features):
     
     # Create feature hierarchies
     for feature in features:
-        feature_tree = create_task_tree({
-            "tree_input": {
+        feature_tree = create_task({
+            "task_input": {
                 "title": f"{feature} Implementation",
                 "parent_id": main_task["task"]["task_id"],
                 "project_id": project_name.lower(),
@@ -1283,7 +1285,7 @@ def bulk_role_assignment(assignments):
 
 | Use Case | Recommended Tools | Reasoning |
 |----------|------------------|-----------|
-| **Project Setup** | `create_task_tree`, `get_task_dashboard` | Efficient hierarchy creation + overview |
+| **Project Setup** | `create_task` (with subtasks), `get_task_dashboard` | Efficient hierarchy creation + overview |
 | **Daily Management** | `list_tasks`, `update_task`, `complete_task` | Core workflow operations |
 | **Analysis & Planning** | `analyze_task_dependencies`, `get_task_dashboard` | Strategic insights |
 | **Role Management** | `list_roles`, `assign_role_to_task` | Capability-based assignment |
