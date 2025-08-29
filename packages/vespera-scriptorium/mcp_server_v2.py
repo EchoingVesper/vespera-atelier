@@ -411,17 +411,58 @@ async def complete_task(
 
 
 @mcp.tool()
-async def get_task_dashboard(project_id: Optional[str] = None) -> Dict[str, Any]:
-    """Get dashboard with task statistics and insights."""
+async def get_task_dashboard(
+    project_id: Optional[str] = None, 
+    max_recent_tasks: int = 10,
+    max_task_details: int = 50
+) -> Dict[str, Any]:
+    """Get dashboard with task statistics and insights.
+    
+    Args:
+        project_id: Optional project filter
+        max_recent_tasks: Limit recent tasks list (default 10)
+        max_task_details: Limit detailed task info (default 50)
+    """
     task_manager, _ = get_managers()
     
     try:
-        dashboard = await task_manager.get_task_dashboard(project_id)
+        # Get basic task counts instead of full dashboard to stay under token limit
+        tasks = await task_manager.task_service.list_tasks(project_id=project_id, limit=50)
+        
+        # Calculate basic statistics only
+        stats = {
+            "total_tasks": len(tasks),
+            "todo": len([t for t in tasks if str(t.status) == "TaskStatus.TODO"]),
+            "doing": len([t for t in tasks if str(t.status) == "TaskStatus.DOING"]),
+            "review": len([t for t in tasks if str(t.status) == "TaskStatus.REVIEW"]),
+            "done": len([t for t in tasks if str(t.status) == "TaskStatus.DONE"]),
+            "blocked": len([t for t in tasks if str(t.status) == "TaskStatus.BLOCKED"])
+        }
+        
+        # Get just a few recent task titles for context
+        recent_tasks = []
+        for task in sorted(tasks, key=lambda t: t.created_at, reverse=True)[:5]:
+            recent_tasks.append({
+                "id": task.id,
+                "title": task.title[:50] + ("..." if len(task.title) > 50 else ""),
+                "status": str(task.status).replace("TaskStatus.", "")
+            })
+        
+        dashboard = {
+            "statistics": stats,
+            "recent_tasks": recent_tasks,
+            "project_id": project_id,
+            "note": "Limited dashboard to reduce token usage"
+        }
         
         return {
             "success": True,
             "dashboard": dashboard,
-            "generated_at": datetime.now().isoformat()
+            "generated_at": datetime.now().isoformat(),
+            "limits_applied": {
+                "max_recent_tasks": max_recent_tasks,
+                "max_task_details": max_task_details
+            }
         }
         
     except Exception as e:
@@ -618,13 +659,8 @@ async def server_lifespan(server: FastMCP) -> AsyncIterator[Dict[str, Any]]:
 
 
 if __name__ == "__main__":
-    # Create FastMCP server with lifespan management
-    mcp_with_lifespan = FastMCP("vespera-v2-tasks", lifespan=server_lifespan)
-    
-    # Copy all tools from the original mcp instance to the new one
-    mcp_with_lifespan._tools = mcp._tools
-    mcp_with_lifespan._resources = mcp._resources
-    mcp_with_lifespan._prompts = mcp._prompts
+    # Apply lifespan management to existing mcp instance
+    mcp.dependencies.append(server_lifespan)
     
     # Run the FastMCP server with proper lifecycle management
-    mcp_with_lifespan.run()
+    mcp.run()
