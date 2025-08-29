@@ -1,0 +1,11 @@
+{
+	"id": "vespera-scriptorium",
+	"name": "Vespera Scriptorium",
+	"version": "0.1.0",
+	"minAppVersion": "0.15.0",
+	"description": "Intelligent task orchestration and MCP integration for knowledge workflows. Connects Obsidian to the revolutionary Vespera Scriptorium system with Context7 documentation validation.",
+	"author": "EchoingVesper",
+	"authorUrl": "https://github.com/EchoingVesper/vespera-atelier",
+	"fundingUrl": "https://github.com/sponsors/EchoingVesper",
+	"isDesktopOnly": false
+}
