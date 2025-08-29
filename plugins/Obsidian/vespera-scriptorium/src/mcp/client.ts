@@ -332,10 +332,10 @@ export class MCPClient extends EventEmitter implements VesperaMCPClient {
         });
     }
 
-    async invokeTool(name: string, arguments: any): Promise<ToolResult> {
+    async invokeTool(name: string, args: any): Promise<ToolResult> {
         const result = await this.request('tools/call', {
             name,
-            arguments
+            arguments: args
         });
 
         return {

@@ -1,7 +1,7 @@
 import { App, Editor, MarkdownView, Notice, Plugin, PluginSettingTab, Setting, WorkspaceLeaf, View } from 'obsidian';
-import { VesperaMCPClient } from './src/mcp/client';
+import { MCPClient } from './src/mcp/client';
 import { TaskManagerView, TASK_MANAGER_VIEW_TYPE } from './src/ui/TaskManagerView';
-import { ObsidianVaultAdapter } from './src/adapters/obsidian-adapter';
+import { ObsidianVesperaAdapter } from './src/adapters/obsidian-adapter';
 
 interface VesperaScriptoriumSettings {
 	mcpServerUrl: string;
@@ -21,23 +21,41 @@ const DEFAULT_SETTINGS: VesperaScriptoriumSettings = {
 
 export default class VesperaScriptoriumPlugin extends Plugin {
 	settings: VesperaScriptoriumSettings;
-	mcpClient: VesperaMCPClient;
-	vaultAdapter: ObsidianVaultAdapter;
+	mcpClient: MCPClient;
+	vaultAdapter: ObsidianVesperaAdapter;
 	statusBarItem: HTMLElement;
 
 	async onload() {
 		console.log('Loading Vespera Scriptorium plugin...');
 		await this.loadSettings();
 
-		// Initialize vault adapter
-		this.vaultAdapter = new ObsidianVaultAdapter(this.app, this);
-
-		// Initialize MCP client
-		this.mcpClient = new VesperaMCPClient({
-			serverUrl: this.settings.mcpServerUrl,
-			timeout: 30000,
-			retryAttempts: 3
+		// Initialize MCP client first
+		this.mcpClient = new MCPClient({
+			connection: {
+				transport: {
+					type: 'websocket',
+					endpoint: this.settings.mcpServerUrl,
+					timeout: 30000,
+					reconnectDelay: 5000,
+					maxReconnectAttempts: 3
+				},
+				clientInfo: {
+					name: 'vespera-obsidian-plugin',
+					version: '1.0.0'
+				},
+				capabilities: {
+					tools: [],
+					resources: [],
+					prompts: []
+				},
+				timeout: 30000
+			},
+			debug: false,
+			logLevel: 'info'
 		});
+
+		// Initialize vault adapter
+		this.vaultAdapter = new ObsidianVesperaAdapter(this.app, this.mcpClient);
 
 		// Register task manager view
 		this.registerView(
