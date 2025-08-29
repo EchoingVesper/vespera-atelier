@@ -398,6 +398,100 @@ export class MCPClient extends EventEmitter implements VesperaMCPClient {
         return [];
     }
 
+    // Task Management Methods - Essential for plugin integration
+    async createTask(taskData: {
+        title: string;
+        description?: string;
+        priority?: string;
+        project_id?: string;
+        feature?: string;
+        metadata?: any;
+    }): Promise<{ success: boolean; task?: any; error?: string }> {
+        try {
+            const result = await this.request('mcp__vespera-scriptorium__create_task', {
+                task_input: taskData
+            });
+            return { success: true, task: result.task };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    async listTasks(options?: {
+        status_filter?: string;
+        project_id?: string;
+        limit?: number;
+    }): Promise<{ success: boolean; tasks?: any[]; error?: string }> {
+        try {
+            const result = await this.request('mcp__vespera-scriptorium__list_tasks', options || {});
+            return { success: true, tasks: result.tasks || [] };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    async updateTask(taskId: string, updates: {
+        title?: string;
+        description?: string;
+        status?: string;
+        priority?: string;
+        project_id?: string;
+    }): Promise<{ success: boolean; task?: any; error?: string }> {
+        try {
+            const result = await this.request('mcp__vespera-scriptorium__update_task', {
+                update_input: {
+                    task_id: taskId,
+                    ...updates
+                }
+            });
+            return { success: true, task: result.task };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    async deleteTask(taskId: string): Promise<{ success: boolean; error?: string }> {
+        try {
+            await this.request('mcp__vespera-scriptorium__delete_task', {
+                task_id: taskId,
+                recursive: true
+            });
+            return { success: true };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    async getDashboard(options?: {
+        project_id?: string;
+        max_recent_tasks?: number;
+        max_task_details?: number;
+    }): Promise<{ success: boolean; dashboard?: any; error?: string }> {
+        try {
+            const result = await this.request('mcp__vespera-scriptorium__get_task_dashboard', options || {});
+            return { success: true, dashboard: result.dashboard };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    async executeTask(taskId: string, dryRun: boolean = false): Promise<{ success: boolean; result?: any; error?: string }> {
+        try {
+            const result = await this.request('mcp__vespera-scriptorium__execute_task', {
+                task_id: taskId,
+                dry_run: dryRun
+            });
+            return { success: true, result };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Connection status check for plugin integration
+    isConnected(): boolean {
+        return this.connectionInfo.state === MCPConnectionState.CONNECTED;
+    }
+
     // Real-time subscription methods (simplified)
     async subscribeToTaskUpdates(callback: (task: any) => void): Promise<void> {
         this.on('notification', (message) => {
