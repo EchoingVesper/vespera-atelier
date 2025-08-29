@@ -9,6 +9,8 @@ import subprocess
 import json
 import tempfile
 import asyncio
+import shlex
+import re
 from typing import Dict, List, Optional, Any, Tuple
 from pathlib import Path
 from dataclasses import dataclass
@@ -18,6 +20,15 @@ from .definitions import Role, ToolGroup, RestrictionType
 from .execution import ExecutionContext, ExecutionResult, ExecutionStatus
 
 logger = logging.getLogger(__name__)
+
+# Security constants
+ALLOWED_TOOL_PATTERN = re.compile(r'^[a-zA-Z][a-zA-Z0-9_-]*$')
+MAX_TASK_ID_LENGTH = 64
+MAX_WORKING_DIR_DEPTH = 10
+ALLOWED_CLAUDE_TOOLS = {
+    'read', 'write', 'edit', 'bash', 'grep', 'find', 
+    'webfetch', 'websearch', 'mcp', 'glob', 'ls'
+}
 
 
 @dataclass
@@ -40,9 +51,108 @@ class ClaudeExecutor:
     """
     
     def __init__(self, project_root: Path, config: Optional[ClaudeExecutionConfig] = None):
-        self.project_root = project_root
+        self.project_root = self._validate_project_root(project_root)
         self.config = config or ClaudeExecutionConfig()
         self.active_processes: Dict[str, subprocess.Popen] = {}
+    
+    def _validate_project_root(self, project_root: Path) -> Path:
+        """Validate and sanitize project root path."""
+        if not isinstance(project_root, Path):
+            project_root = Path(project_root)
+        
+        # Resolve to absolute path to prevent traversal
+        project_root = project_root.resolve()
+        
+        # Ensure it exists and is a directory
+        if not project_root.exists():
+            raise ValueError(f"Project root does not exist: {project_root}")
+        if not project_root.is_dir():
+            raise ValueError(f"Project root is not a directory: {project_root}")
+        
+        # Check path depth to prevent deeply nested directories
+        if len(project_root.parts) > MAX_WORKING_DIR_DEPTH:
+            raise ValueError(f"Project root path too deep (max {MAX_WORKING_DIR_DEPTH} levels)")
+        
+        return project_root
+    
+    def _validate_task_id(self, task_id: str) -> str:
+        """Validate and sanitize task ID."""
+        if not isinstance(task_id, str):
+            raise ValueError("Task ID must be a string")
+        
+        if len(task_id) > MAX_TASK_ID_LENGTH:
+            raise ValueError(f"Task ID too long (max {MAX_TASK_ID_LENGTH} characters)")
+        
+        # Allow only alphanumeric, hyphens, and underscores
+        if not re.match(r'^[a-zA-Z0-9_-]+$', task_id):
+            raise ValueError("Task ID contains invalid characters")
+        
+        return task_id
+    
+    def _validate_tools(self, tools: List[str]) -> List[str]:
+        """Validate and sanitize tool names."""
+        validated_tools = []
+        
+        for tool in tools:
+            if not isinstance(tool, str):
+                logger.warning(f"Skipping non-string tool: {tool}")
+                continue
+            
+            # Check against allowed pattern
+            if not ALLOWED_TOOL_PATTERN.match(tool):
+                logger.warning(f"Skipping invalid tool name: {tool}")
+                continue
+            
+            # Check against whitelist
+            if tool not in ALLOWED_CLAUDE_TOOLS:
+                logger.warning(f"Skipping disallowed tool: {tool}")
+                continue
+            
+            validated_tools.append(tool)
+        
+        return validated_tools
+    
+    def _validate_working_directory(self, working_dir: str) -> Path:
+        """Validate and sanitize working directory."""
+        if not working_dir:
+            return self.project_root
+        
+        working_path = Path(working_dir).resolve()
+        
+        # Ensure it's within project root (prevent path traversal)
+        try:
+            working_path.relative_to(self.project_root)
+        except ValueError:
+            raise ValueError(f"Working directory outside project root: {working_path}")
+        
+        # Ensure it exists and is a directory
+        if not working_path.exists():
+            raise ValueError(f"Working directory does not exist: {working_path}")
+        if not working_path.is_dir():
+            raise ValueError(f"Working directory is not a directory: {working_path}")
+        
+        return working_path
+    
+    def _setup_process_limits(self):
+        """Set resource limits for Claude subprocess (Unix only)."""
+        try:
+            import resource
+            
+            # Set memory limit (1GB)
+            resource.setrlimit(resource.RLIMIT_AS, (1024 * 1024 * 1024, 1024 * 1024 * 1024))
+            
+            # Set CPU time limit (10 minutes)  
+            resource.setrlimit(resource.RLIMIT_CPU, (600, 600))
+            
+            # Set file size limit (100MB)
+            resource.setrlimit(resource.RLIMIT_FSIZE, (100 * 1024 * 1024, 100 * 1024 * 1024))
+            
+            # Set maximum number of processes
+            resource.setrlimit(resource.RLIMIT_NPROC, (10, 10))
+            
+        except (ImportError, OSError) as e:
+            # Resource limits not available on this platform
+            logger.debug(f"Process limits not set: {e}")
         
     async def execute_task_with_claude(
         self,
@@ -64,6 +174,9 @@ class ClaudeExecutor:
         start_time = time.time()
         
         try:
+            # Validate inputs first
+            task_id = self._validate_task_id(task_id)
+            
             # Prepare Claude CLI command
             claude_command, prompt_file = self._prepare_claude_command(context, task_id)
             
@@ -125,14 +238,25 @@ class ClaudeExecutor:
         
         # Add role-based tool restrictions using correct Claude CLI format
         allowed_tools = self._get_allowed_tools(context.role)
-        if allowed_tools:
-            command.extend(["--allowed-tools"] + allowed_tools)
+        validated_tools = self._validate_tools(allowed_tools)
+        if validated_tools:
+            # Use shlex.quote to prevent command injection
+            command.extend(["--allowed-tools"] + [shlex.quote(tool) for tool in validated_tools])
         
-        # Add additional directory access if needed
-        if self.config.working_directory and Path(self.config.working_directory).exists():
-            command.extend(["--add-dir", str(self.config.working_directory)])
-        elif self.project_root and self.project_root.exists():
-            command.extend(["--add-dir", str(self.project_root)])
+        # Add additional directory access if needed (with validation)
+        working_dir = None
+        if self.config.working_directory:
+            try:
+                working_dir = self._validate_working_directory(self.config.working_directory)
+            except ValueError as e:
+                logger.warning(f"Invalid working directory in config: {e}")
+                working_dir = self.project_root
+        else:
+            working_dir = self.project_root
+        
+        if working_dir and working_dir.exists():
+            # Use shlex.quote to prevent path injection
+            command.extend(["--add-dir", shlex.quote(str(working_dir))])
         
         # Note: prompt will be sent via stdin, not as command line argument
         
@@ -216,13 +340,23 @@ class ClaudeExecutor:
     
     def _create_prompt_file(self, content: str, task_id: str) -> Path:
         """Create a temporary file with the prompt content."""
+        # Validate task_id is already sanitized
+        task_id = self._validate_task_id(task_id)
+        
+        # Create secure temporary directory
         temp_dir = Path(tempfile.gettempdir()) / "vespera-claude-prompts"
-        temp_dir.mkdir(exist_ok=True)
+        temp_dir.mkdir(mode=0o700, exist_ok=True)  # Restrict permissions
         
-        prompt_file = temp_dir / f"task_{task_id}_{int(time.time())}.md"
+        # Use secure filename pattern
+        timestamp = int(time.time())
+        prompt_file = temp_dir / f"task_{task_id}_{timestamp}.md"
         
+        # Write with restricted permissions
         with open(prompt_file, 'w', encoding='utf-8') as f:
             f.write(content)
+        
+        # Set secure file permissions
+        prompt_file.chmod(0o600)  # Owner read/write only
         
         return prompt_file
     
@@ -246,14 +380,20 @@ class ClaudeExecutor:
                 raise FileNotFoundError(f"Prompt file does not exist: {prompt_file}")
             logger.info(f"Prompt file size: {prompt_file.stat().st_size} bytes")
             
-            # Start Claude process
+            # Validate and prepare working directory
+            working_dir = self.config.working_directory or str(self.project_root)
+            validated_working_dir = self._validate_working_directory(working_dir)
+            
+            # Start Claude process with security restrictions
             logger.info("Creating subprocess...")
             process = await asyncio.create_subprocess_exec(
                 *command,
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
-                cwd=self.config.working_directory or self.project_root
+                cwd=validated_working_dir,
+                # Add process limits (available on Unix-like systems)
+                preexec_fn=self._setup_process_limits if hasattr(__import__('os'), 'setrlimit') else None
             )
             logger.info(f"Subprocess created with PID: {process.pid}")
             

@@ -1,85 +1,123 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, Editor, MarkdownView, Notice, Plugin, PluginSettingTab, Setting, WorkspaceLeaf, View } from 'obsidian';
+import { VesperaMCPClient } from './src/mcp/client';
+import { TaskManagerView, TASK_MANAGER_VIEW_TYPE } from './src/ui/TaskManagerView';
+import { ObsidianVaultAdapter } from './src/adapters/obsidian-adapter';
 
-// Remember to rename these classes and interfaces!
-
-interface MyPluginSettings {
-	mySetting: string;
+interface VesperaScriptoriumSettings {
+	mcpServerUrl: string;
+	mcpServerPort: number;
+	autoConnect: boolean;
+	showStatusBar: boolean;
+	defaultWorkingDirectory: string;
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
+const DEFAULT_SETTINGS: VesperaScriptoriumSettings = {
+	mcpServerUrl: 'ws://localhost:8000',
+	mcpServerPort: 8000,
+	autoConnect: true,
+	showStatusBar: true,
+	defaultWorkingDirectory: ''
 }
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class VesperaScriptoriumPlugin extends Plugin {
+	settings: VesperaScriptoriumSettings;
+	mcpClient: VesperaMCPClient;
+	vaultAdapter: ObsidianVaultAdapter;
+	statusBarItem: HTMLElement;
 
 	async onload() {
+		console.log('Loading Vespera Scriptorium plugin...');
 		await this.loadSettings();
 
-		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
+		// Initialize vault adapter
+		this.vaultAdapter = new ObsidianVaultAdapter(this.app, this);
+
+		// Initialize MCP client
+		this.mcpClient = new VesperaMCPClient({
+			serverUrl: this.settings.mcpServerUrl,
+			timeout: 30000,
+			retryAttempts: 3
 		});
-		// Perform additional things with the ribbon
-		ribbonIconEl.addClass('my-plugin-ribbon-class');
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
+		// Register task manager view
+		this.registerView(
+			TASK_MANAGER_VIEW_TYPE,
+			(leaf) => new TaskManagerView(leaf, this.mcpClient, this.vaultAdapter)
+		);
 
-		// This adds a simple command that can be triggered anywhere
+		// Add ribbon icon for task manager
+		const ribbonIconEl = this.addRibbonIcon('checklist', 'Vespera Task Manager', () => {
+			this.activateTaskManagerView();
+		});
+		ribbonIconEl.addClass('vespera-scriptorium-ribbon-class');
+
+		// Add status bar if enabled
+		if (this.settings.showStatusBar) {
+			this.statusBarItem = this.addStatusBarItem();
+			this.updateStatusBar('Disconnected');
+		}
+
+		// Add commands
 		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
+			id: 'open-task-manager',
+			name: 'Open Task Manager',
 			callback: () => {
-				new SampleModal(this.app).open();
+				this.activateTaskManagerView();
 			}
 		});
-		// This adds an editor command that can perform some operation on the current editor instance
+
 		this.addCommand({
-			id: 'sample-editor-command',
-			name: 'Sample editor command',
+			id: 'create-task-from-note',
+			name: 'Create Task from Current Note',
 			editorCallback: (editor: Editor, view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection('Sample Editor Command');
+				this.createTaskFromCurrentNote(editor, view);
 			}
 		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
+
 		this.addCommand({
-			id: 'open-sample-modal-complex',
-			name: 'Open sample modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
-
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
+			id: 'connect-mcp-server',
+			name: 'Connect to MCP Server',
+			callback: async () => {
+				await this.connectToMCPServer();
 			}
 		});
 
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
+		this.addCommand({
+			id: 'disconnect-mcp-server', 
+			name: 'Disconnect from MCP Server',
+			callback: () => {
+				this.disconnectFromMCPServer();
+			}
 		});
 
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+		// Add settings tab
+		this.addSettingTab(new VesperaScriptoriumSettingTab(this.app, this));
+
+		// Setup MCP client event handlers
+		this.setupMCPEventHandlers();
+
+		// Auto-connect if enabled
+		if (this.settings.autoConnect) {
+			setTimeout(() => this.connectToMCPServer(), 1000);
+		}
+
+		console.log('Vespera Scriptorium plugin loaded successfully');
 	}
 
-	onunload() {
-
+	async onunload() {
+		console.log('Unloading Vespera Scriptorium plugin...');
+		
+		// Disconnect from MCP server
+		if (this.mcpClient) {
+			await this.mcpClient.disconnect();
+		}
+		
+		// Clean up vault adapter
+		if (this.vaultAdapter) {
+			this.vaultAdapter.cleanup();
+		}
+		
+		console.log('Vespera Scriptorium plugin unloaded');
 	}
 
 	async loadSettings() {
@@ -89,28 +127,133 @@ export default class MyPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
+
+	// Task Manager View Management
+	async activateTaskManagerView() {
+		const { workspace } = this.app;
+		
+		let leaf: WorkspaceLeaf | null = null;
+		const leaves = workspace.getLeavesOfType(TASK_MANAGER_VIEW_TYPE);
+		
+		if (leaves.length > 0) {
+			// If task manager view already exists, activate it
+			leaf = leaves[0];
+		} else {
+			// Create new task manager view in right sidebar
+			leaf = workspace.getRightLeaf(false);
+			await leaf.setViewState({ type: TASK_MANAGER_VIEW_TYPE, active: true });
+		}
+		
+		workspace.revealLeaf(leaf);
+	}
+
+	// MCP Connection Management
+	async connectToMCPServer() {
+		try {
+			this.updateStatusBar('Connecting...');
+			await this.mcpClient.connect();
+			this.updateStatusBar('Connected');
+			new Notice('Connected to Vespera Scriptorium server');
+		} catch (error) {
+			this.updateStatusBar('Connection Failed');
+			new Notice(`Failed to connect to server: ${error.message}`, 5000);
+			console.error('MCP connection failed:', error);
+		}
+	}
+
+	disconnectFromMCPServer() {
+		if (this.mcpClient) {
+			this.mcpClient.disconnect();
+			this.updateStatusBar('Disconnected');
+			new Notice('Disconnected from Vespera Scriptorium server');
+		}
+	}
+
+	setupMCPEventHandlers() {
+		this.mcpClient.on('connected', () => {
+			this.updateStatusBar('Connected');
+		});
+
+		this.mcpClient.on('disconnected', () => {
+			this.updateStatusBar('Disconnected');
+		});
+
+		this.mcpClient.on('error', (error: Error) => {
+			this.updateStatusBar('Error');
+			new Notice(`MCP Error: ${error.message}`, 5000);
+		});
+
+		this.mcpClient.on('task-updated', (taskData: any) => {
+			// Refresh task manager view if open
+			const leaves = this.app.workspace.getLeavesOfType(TASK_MANAGER_VIEW_TYPE);
+			leaves.forEach(leaf => {
+				const view = leaf.view as TaskManagerView;
+				view.refreshTasks();
+			});
+		});
+	}
+
+	updateStatusBar(status: string) {
+		if (this.statusBarItem) {
+			this.statusBarItem.setText(`Vespera: ${status}`);
+		}
+	}
+
+	// Task Creation from Current Note
+	async createTaskFromCurrentNote(editor: Editor, view: MarkdownView) {
+		if (!this.mcpClient.isConnected()) {
+			new Notice('Not connected to Vespera Scriptorium server');
+			return;
+		}
+
+		const file = view.file;
+		if (!file) {
+			new Notice('No active file to create task from');
+			return;
+		}
+
+		const selection = editor.getSelection();
+		const taskDescription = selection || `Task based on note: ${file.basename}`;
+		
+		try {
+			// Get current file context
+			const fileContext = await this.vaultAdapter.getFileContext(file);
+			
+			// Create task through MCP client
+			const result = await this.mcpClient.createTask({
+				title: `Task from ${file.basename}`,
+				description: taskDescription,
+				project_id: this.vaultAdapter.getProjectIdFromPath(file.path),
+				feature: 'vault-integration',
+				metadata: {
+					source_file: file.path,
+					vault_path: this.app.vault.adapter.basePath,
+					file_context: fileContext
+				}
+			});
+
+			if (result.success) {
+				new Notice(`Task created: ${result.task.title}`);
+				
+				// Optionally add task link to note
+				if (selection) {
+					const taskLink = `[[Task: ${result.task.id}]]`;
+					editor.replaceSelection(`${selection}\n\n${taskLink}`);
+				}
+			} else {
+				new Notice(`Failed to create task: ${result.error}`);
+			}
+		} catch (error) {
+			new Notice(`Error creating task: ${error.message}`);
+			console.error('Task creation error:', error);
+		}
+	}
 }
 
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
+class VesperaScriptoriumSettingTab extends PluginSettingTab {
+	plugin: VesperaScriptoriumPlugin;
 
-	onOpen() {
-		const {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
-	}
-}
-
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
-
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: VesperaScriptoriumPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -120,15 +263,90 @@ class SampleSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
+		containerEl.createEl('h2', {text: 'Vespera Scriptorium Settings'});
+
+		// MCP Server Connection Settings
+		containerEl.createEl('h3', {text: 'MCP Server Connection'});
+
 		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
+			.setName('Server URL')
+			.setDesc('WebSocket URL for the Vespera Scriptorium MCP server')
 			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
+				.setPlaceholder('ws://localhost:8000')
+				.setValue(this.plugin.settings.mcpServerUrl)
 				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
+					this.plugin.settings.mcpServerUrl = value;
 					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Auto-connect on startup')
+			.setDesc('Automatically connect to MCP server when Obsidian starts')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.autoConnect)
+				.onChange(async (value) => {
+					this.plugin.settings.autoConnect = value;
+					await this.plugin.saveSettings();
+				}));
+
+		// UI Settings
+		containerEl.createEl('h3', {text: 'User Interface'});
+
+		new Setting(containerEl)
+			.setName('Show status bar')
+			.setDesc('Display connection status in the status bar')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.showStatusBar)
+				.onChange(async (value) => {
+					this.plugin.settings.showStatusBar = value;
+					await this.plugin.saveSettings();
+					
+					// Update status bar visibility
+					if (value && !this.plugin.statusBarItem) {
+						this.plugin.statusBarItem = this.plugin.addStatusBarItem();
+						this.plugin.updateStatusBar('Disconnected');
+					} else if (!value && this.plugin.statusBarItem) {
+						this.plugin.statusBarItem.remove();
+						this.plugin.statusBarItem = null;
+					}
+				}));
+
+		new Setting(containerEl)
+			.setName('Default working directory')
+			.setDesc('Default directory for task execution (relative to vault root)')
+			.addText(text => text
+				.setPlaceholder('Leave empty to use vault root')
+				.setValue(this.plugin.settings.defaultWorkingDirectory)
+				.onChange(async (value) => {
+					this.plugin.settings.defaultWorkingDirectory = value;
+					await this.plugin.saveSettings();
+				}));
+
+		// Connection Test Button
+		new Setting(containerEl)
+			.setName('Test Connection')
+			.setDesc('Test connection to the MCP server')
+			.addButton(button => button
+				.setButtonText('Test Connection')
+				.setCta()
+				.onClick(async () => {
+					button.setButtonText('Testing...');
+					button.setDisabled(true);
+					
+					try {
+						await this.plugin.connectToMCPServer();
+						button.setButtonText('✓ Connected');
+						setTimeout(() => {
+							button.setButtonText('Test Connection');
+							button.setDisabled(false);
+						}, 2000);
+					} catch (error) {
+						button.setButtonText('✗ Failed');
+						setTimeout(() => {
+							button.setButtonText('Test Connection');
+							button.setDisabled(false);
+						}, 2000);
+					}
 				}));
 	}
 }
