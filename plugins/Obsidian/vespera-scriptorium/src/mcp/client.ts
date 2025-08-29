@@ -102,6 +102,79 @@ class WebSocketTransport implements MCPTransport {
 }
 
 /**
+ * HTTP/SSE Transport Implementation for MCP
+ * Used when connecting to FastMCP SSE endpoint
+ */
+class HTTPTransport implements MCPTransport {
+    private messageCallbacks: ((message: MCPMessage) => void)[] = [];
+    private errorCallbacks: ((error: Error) => void)[] = [];
+    private disconnectCallbacks: (() => void)[] = [];
+    private connected: boolean = false;
+
+    constructor(private endpoint: string) {}
+
+    async connect(): Promise<void> {
+        try {
+            // Test connectivity with a simple HTTP request
+            const response = await fetch(this.endpoint.replace('/sse/', '/health'));
+            if (response.ok) {
+                this.connected = true;
+                return;
+            }
+            throw new Error(`HTTP connection failed: ${response.status} ${response.statusText}`);
+        } catch (error) {
+            throw new Error(`HTTP connection failed: ${error.message}`);
+        }
+    }
+
+    async disconnect(): Promise<void> {
+        this.connected = false;
+    }
+
+    async send(message: MCPMessage): Promise<void> {
+        if (!this.connected) {
+            throw new Error('HTTP transport not connected');
+        }
+        
+        try {
+            const response = await fetch(this.endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(message)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP request failed: ${response.status} ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            // Simulate response callback
+            this.messageCallbacks.forEach(callback => callback(result));
+        } catch (error) {
+            this.errorCallbacks.forEach(callback => callback(error));
+        }
+    }
+
+    onMessage(callback: (message: MCPMessage) => void): void {
+        this.messageCallbacks.push(callback);
+    }
+
+    onError(callback: (error: Error) => void): void {
+        this.errorCallbacks.push(callback);
+    }
+
+    onDisconnect(callback: () => void): void {
+        this.disconnectCallbacks.push(callback);
+    }
+
+    isConnected(): boolean {
+        return this.connected;
+    }
+}
+
+/**
  * stdio Transport Implementation for MCP
  * Used when connecting to local MCP server process
  */
@@ -182,6 +255,11 @@ export class MCPClient extends EventEmitter implements VesperaMCPClient {
                 config.connection.transport.command,
                 config.connection.transport.args
             );
+        } else if (config.connection.transport.type === 'http') {
+            if (!config.connection.transport.endpoint) {
+                throw new Error('HTTP endpoint required');
+            }
+            this.transport = new HTTPTransport(config.connection.transport.endpoint);
         } else {
             throw new Error(`Unsupported transport type: ${config.connection.transport.type}`);
         }

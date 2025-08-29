@@ -662,5 +662,14 @@ if __name__ == "__main__":
     # Apply lifespan management to existing mcp instance
     mcp.dependencies.append(server_lifespan)
     
-    # Run the FastMCP server with proper lifecycle management
-    mcp.run()
+    # Run the FastMCP server with SSE transport for HTTP/WebSocket compatibility
+    # This allows the Obsidian plugin to connect via HTTP
+    import os
+    import uvicorn
+    
+    # For testing, we'll use SSE transport which runs over HTTP
+    print("🚀 Starting Vespera V2 MCP Server with SSE transport on port 8000...")
+    print("   Accessible at: http://localhost:8000/sse/vespera-v2-tasks")
+    
+    # Run with SSE transport
+    mcp.run(transport="sse")

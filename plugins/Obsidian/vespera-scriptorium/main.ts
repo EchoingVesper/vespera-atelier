@@ -12,7 +12,7 @@ interface VesperaScriptoriumSettings {
 }
 
 const DEFAULT_SETTINGS: VesperaScriptoriumSettings = {
-	mcpServerUrl: 'ws://localhost:8000',
+	mcpServerUrl: 'http://localhost:8000/sse/vespera-v2-tasks',
 	mcpServerPort: 8000,
 	autoConnect: true,
 	showStatusBar: true,
@@ -33,7 +33,7 @@ export default class VesperaScriptoriumPlugin extends Plugin {
 		this.mcpClient = new MCPClient({
 			connection: {
 				transport: {
-					type: 'websocket',
+					type: 'http',
 					endpoint: this.settings.mcpServerUrl,
 					timeout: 30000,
 					reconnectDelay: 5000,
