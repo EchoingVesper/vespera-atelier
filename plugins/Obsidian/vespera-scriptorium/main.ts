@@ -153,11 +153,33 @@ export default class VesperaScriptoriumPlugin extends Plugin {
 			this.updateStatusBar('Connecting...');
 			await this.mcpClient.connect();
 			this.updateStatusBar('Connected');
-			new Notice('Connected to Vespera Scriptorium server');
+			new Notice('✅ Connected to Vespera Scriptorium server');
 		} catch (error) {
 			this.updateStatusBar('Connection Failed');
-			new Notice(`Failed to connect to server: ${error.message}`, 5000);
-			console.error('MCP connection failed:', error);
+			
+			// Provide more detailed error feedback
+			let errorMessage = 'Failed to connect to server';
+			let duration = 8000; // Longer duration for error messages
+			
+			if (error.message.includes('ECONNREFUSED')) {
+				errorMessage = '❌ Server not running - Start Vespera Scriptorium MCP server first';
+			} else if (error.message.includes('timeout')) {
+				errorMessage = '⏰ Connection timeout - Check server URL and network';
+			} else if (error.message.includes('WebSocket')) {
+				errorMessage = `🌐 WebSocket error: ${error.message}`;
+			} else if (error.message.includes('unauthorized') || error.message.includes('403')) {
+				errorMessage = '🔒 Authentication failed - Check server credentials';
+			} else {
+				errorMessage = `❌ Connection failed: ${error.message}`;
+			}
+			
+			new Notice(errorMessage, duration);
+			console.error('MCP connection failed:', {
+				error: error.message,
+				stack: error.stack,
+				serverUrl: this.settings.mcpServerUrl,
+				timestamp: new Date().toISOString()
+			});
 		}
 	}
 

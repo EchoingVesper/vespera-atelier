@@ -235,34 +235,54 @@ export class MCPClient extends EventEmitter implements VesperaMCPClient {
     }
 
     async connect(): Promise<void> {
-        this.connectionInfo.state = MCPConnectionState.CONNECTING;
-        this.emit('state-change', this.connectionInfo.state);
-
-        try {
-            await this.transport.connect();
-            
-            // Perform handshake
-            const serverInfo = await this.request('initialize', {
-                clientInfo: this.config.connection.clientInfo,
-                capabilities: this.config.connection.capabilities
-            });
-
-            this.connectionInfo = {
-                state: MCPConnectionState.CONNECTED,
-                serverInfo: serverInfo.serverInfo,
-                capabilities: serverInfo.capabilities,
-                connectTime: new Date()
-            };
-
-            this.serverCapabilities = serverInfo.capabilities;
-            this.emit('connect');
+        const maxRetries = this.config.connection.transport.maxReconnectAttempts || 3;
+        const baseDelay = this.config.connection.transport.reconnectDelay || 1000;
+        
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            this.connectionInfo.state = MCPConnectionState.CONNECTING;
             this.emit('state-change', this.connectionInfo.state);
 
-        } catch (error) {
-            this.connectionInfo.state = MCPConnectionState.ERROR;
-            this.connectionInfo.lastError = error as Error;
-            this.emit('state-change', this.connectionInfo.state);
-            throw error;
+            try {
+                await this.transport.connect();
+                
+                // Perform handshake
+                const serverInfo = await this.request('initialize', {
+                    clientInfo: this.config.connection.clientInfo,
+                    capabilities: this.config.connection.capabilities
+                });
+
+                this.connectionInfo = {
+                    state: MCPConnectionState.CONNECTED,
+                    serverInfo: serverInfo.serverInfo,
+                    capabilities: serverInfo.capabilities,
+                    connectTime: new Date()
+                };
+
+                this.serverCapabilities = serverInfo.capabilities;
+                this.emit('connect');
+                this.emit('state-change', this.connectionInfo.state);
+                return; // Success!
+
+            } catch (error) {
+                this.connectionInfo.lastError = error as Error;
+                
+                if (attempt === maxRetries) {
+                    // Final attempt failed
+                    this.connectionInfo.state = MCPConnectionState.ERROR;
+                    this.emit('state-change', this.connectionInfo.state);
+                    throw new Error(`Connection failed after ${maxRetries} attempts: ${error.message}`);
+                }
+                
+                // Exponential backoff with jitter
+                const delay = Math.min(baseDelay * Math.pow(2, attempt - 1), 30000);
+                const jitter = Math.random() * 0.1 * delay;
+                const totalDelay = delay + jitter;
+                
+                console.log(`Connection attempt ${attempt}/${maxRetries} failed, retrying in ${Math.round(totalDelay)}ms:`, error.message);
+                this.emit('retry', { attempt, maxRetries, delay: totalDelay, error });
+                
+                await new Promise(resolve => setTimeout(resolve, totalDelay));
+            }
         }
     }
 

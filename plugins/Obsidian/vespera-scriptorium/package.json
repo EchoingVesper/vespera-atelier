@@ -6,8 +6,11 @@
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"build:verify": "npm run build && npm run test:build && npm run bundle:analyze",
 		"test": "vitest",
 		"test:integration": "vitest --run tests/integration/",
+		"test:build": "node tests/build-verification.mjs",
+		"bundle:analyze": "node scripts/bundle-analyzer.mjs",
 		"version": "node version-bump.mjs && git add manifest.json versions.json"
 	},
 	"keywords": [],

@@ -260,6 +260,241 @@ export class ObsidianVesperaAdapter implements ObsidianMCPIntegration {
         }
     }
 
+    /**
+     * Get comprehensive context for a file - Enhanced version
+     */
+    async getFileContext(file: TFile): Promise<string> {
+        try {
+            const content = await this.app.vault.read(file);
+            const metadata = this.app.metadataCache.getFileCache(file);
+            
+            // Extract frontmatter
+            const frontmatter = metadata?.frontmatter || {};
+            
+            // Get backlinks and forward links
+            const resolvedLinks = this.app.metadataCache.resolvedLinks[file.path] || {};
+            const backlinks = Object.keys(this.app.metadataCache.resolvedLinks)
+                .filter(path => this.app.metadataCache.resolvedLinks[path][file.path])
+                .slice(0, 10); // Limit to 10 backlinks
+            
+            // Extract sections and blocks
+            const sections = metadata?.sections?.map(section => ({
+                type: section.type,
+                position: section.position
+            })) || [];
+            
+            // Analyze content patterns
+            const codeBlocks = (content.match(/```[\s\S]*?```/g) || []).length;
+            const mathBlocks = (content.match(/\$\$[\s\S]*?\$\$/g) || []).length;
+            const taskCount = (content.match(/^[\s]*- \[[ x]\]/gm) || []).length;
+            
+            // Get related files based on content similarity
+            const relatedFiles = await this.findRelatedFiles(file, content);
+            
+            // Extract key phrases and concepts
+            const keyPhrases = this.extractKeyPhrases(content);
+            
+            const context = {
+                // Basic file info
+                path: file.path,
+                basename: file.basename,
+                extension: file.extension,
+                size: file.stat.size,
+                created: new Date(file.stat.ctime).toISOString(),
+                modified: new Date(file.stat.mtime).toISOString(),
+                
+                // Content analysis
+                content: content.substring(0, 1500), // First 1500 chars
+                contentPreview: this.createContentPreview(content),
+                wordCount: content.split(/\s+/).filter(word => word.length > 0).length,
+                lineCount: content.split('\n').length,
+                charCount: content.length,
+                
+                // Structure analysis
+                headings: metadata?.headings?.map(h => ({ 
+                    level: h.level, 
+                    heading: h.heading,
+                    line: h.position.start.line 
+                })) || [],
+                sections: sections,
+                codeBlocks: codeBlocks,
+                mathBlocks: mathBlocks,
+                taskCount: taskCount,
+                
+                // Links and relationships
+                links: metadata?.links?.map(link => link.link) || [],
+                backlinks: backlinks,
+                forwardLinks: Object.keys(resolvedLinks),
+                relatedFiles: relatedFiles,
+                
+                // Metadata
+                frontmatter: frontmatter,
+                tags: this.extractTags(content, metadata),
+                keyPhrases: keyPhrases,
+                
+                // Vault context
+                folderPath: file.parent?.path || '',
+                vaultPath: this.app.vault.adapter.path || '',
+                
+                // Quality indicators
+                isStub: content.length < 100,
+                hasStructure: (metadata?.headings?.length || 0) > 0,
+                isWellLinked: (Object.keys(resolvedLinks).length + backlinks.length) > 2,
+                lastEditedDaysAgo: Math.floor((Date.now() - file.stat.mtime) / (1000 * 60 * 60 * 24))
+            };
+            
+            return JSON.stringify(context, null, 2);
+        } catch (error) {
+            return `Error reading file context: ${error.message}`;
+        }
+    }
+
+    /**
+     * Create a smart content preview highlighting key information
+     */
+    private createContentPreview(content: string): string {
+        const lines = content.split('\n');
+        const preview: string[] = [];
+        
+        // Include first few non-empty lines
+        for (let i = 0; i < Math.min(lines.length, 5); i++) {
+            const line = lines[i].trim();
+            if (line && !line.startsWith('---')) { // Skip frontmatter
+                preview.push(line);
+                if (preview.join(' ').length > 300) break;
+            }
+        }
+        
+        // Add any headings from middle/end
+        const laterHeadings = lines
+            .slice(5)
+            .filter(line => line.match(/^#+\s/))
+            .slice(0, 3);
+        
+        if (laterHeadings.length > 0) {
+            preview.push('...', ...laterHeadings);
+        }
+        
+        return preview.join('\n');
+    }
+
+    /**
+     * Find files related to the current file based on content similarity
+     */
+    private async findRelatedFiles(currentFile: TFile, content: string): Promise<string[]> {
+        try {
+            const allFiles = this.app.vault.getMarkdownFiles()
+                .filter(file => file.path !== currentFile.path)
+                .slice(0, 50); // Limit for performance
+            
+            const currentTags = this.extractTags(content, null);
+            const currentWords = this.extractKeyPhrases(content);
+            
+            const similarities: { file: string; score: number }[] = [];
+            
+            for (const file of allFiles) {
+                try {
+                    const otherContent = await this.app.vault.read(file);
+                    const otherTags = this.extractTags(otherContent, null);
+                    const otherWords = this.extractKeyPhrases(otherContent);
+                    
+                    let score = 0;
+                    
+                    // Tag similarity
+                    const commonTags = currentTags.filter(tag => otherTags.includes(tag));
+                    score += commonTags.length * 2;
+                    
+                    // Key phrase similarity  
+                    const commonWords = currentWords.filter(word => otherWords.includes(word));
+                    score += commonWords.length;
+                    
+                    // Folder proximity
+                    if (file.parent?.path === currentFile.parent?.path) {
+                        score += 1;
+                    }
+                    
+                    if (score > 0) {
+                        similarities.push({ file: file.path, score });
+                    }
+                } catch (error) {
+                    // Skip files that can't be read
+                    continue;
+                }
+            }
+            
+            return similarities
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 5)
+                .map(item => item.file);
+                
+        } catch (error) {
+            return [];
+        }
+    }
+
+    /**
+     * Extract key phrases and concepts from content
+     */
+    private extractKeyPhrases(content: string): string[] {
+        // Remove markdown formatting
+        const cleanContent = content
+            .replace(/[#*_`\[\]()]/g, ' ')
+            .replace(/https?:\/\/[^\s]+/g, ' ')
+            .toLowerCase();
+        
+        // Extract significant words (3+ chars, not common words)
+        const commonWords = new Set(['the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how', 'its', 'may', 'new', 'now', 'old', 'see', 'two', 'way', 'who', 'boy', 'did', 'man', 'end', 'few', 'got', 'let', 'put', 'say', 'she', 'too', 'use']);
+        
+        const words = cleanContent
+            .split(/\s+/)
+            .filter(word => word.length >= 3 && !commonWords.has(word))
+            .filter(word => /^[a-zA-Z]+$/.test(word)); // Only letters
+        
+        // Count word frequency
+        const wordCounts: { [key: string]: number } = {};
+        words.forEach(word => {
+            wordCounts[word] = (wordCounts[word] || 0) + 1;
+        });
+        
+        // Return most frequent words
+        return Object.entries(wordCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10)
+            .map(entry => entry[0]);
+    }
+
+    /**
+     * Extract tags from content and metadata
+     */
+    private extractTags(content: string, metadata: any): string[] {
+        const tags = new Set<string>();
+        
+        // From frontmatter
+        if (metadata?.frontmatter?.tags) {
+            const frontmatterTags = Array.isArray(metadata.frontmatter.tags) 
+                ? metadata.frontmatter.tags 
+                : [metadata.frontmatter.tags];
+            frontmatterTags.forEach((tag: string) => tags.add(tag));
+        }
+        
+        // From metadata tags
+        if (metadata?.tags) {
+            metadata.tags.forEach((tagRef: any) => {
+                tags.add(tagRef.tag.replace('#', ''));
+            });
+        }
+        
+        // From content hashtags
+        const hashtagMatches = content.match(/#[\w-]+/g);
+        if (hashtagMatches) {
+            hashtagMatches.forEach(match => {
+                tags.add(match.replace('#', ''));
+            });
+        }
+        
+        return Array.from(tags);
+    }
+
     // ObsidianMCPIntegration interface implementation
 
     async syncVaultWithTasks(): Promise<void> {
