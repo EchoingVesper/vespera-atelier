@@ -75,8 +75,7 @@ class ClaudeExecutor:
                     execution_time=time.time() - start_time,
                     tool_groups_used=[self._extract_tool_groups(context.role)],
                     restrictions_violated=[],
-                    files_modified=[],
-                    claude_command=claude_command
+                    files_modified=[]
                 )
             
             # Execute Claude CLI process
@@ -135,8 +134,7 @@ class ClaudeExecutor:
         elif self.project_root and self.project_root.exists():
             command.extend(["--add-dir", str(self.project_root)])
         
-        # Add the prompt as the final argument (Claude CLI takes prompt as argument, not from file)
-        command.append(prompt_content)
+        # Note: prompt will be sent via stdin, not as command line argument
         
         return command, prompt_file
     
@@ -252,6 +250,7 @@ class ClaudeExecutor:
             logger.info("Creating subprocess...")
             process = await asyncio.create_subprocess_exec(
                 *command,
+                stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 cwd=self.config.working_directory or self.project_root
@@ -260,11 +259,15 @@ class ClaudeExecutor:
             
             self.active_processes[task_id] = process
             
+            # Send prompt via stdin and wait for completion
+            logger.info("Sending prompt via stdin...")
+            prompt_content = prompt_file.read_text(encoding='utf-8')
+            
             # Wait for completion with timeout
             logger.info(f"Waiting for subprocess completion (timeout: {self.config.timeout}s)...")
             try:
                 stdout, stderr = await asyncio.wait_for(
-                    process.communicate(),
+                    process.communicate(input=prompt_content.encode('utf-8')),
                     timeout=self.config.timeout
                 )
                 logger.info(f"Subprocess completed with return code: {process.returncode}")
@@ -316,8 +319,7 @@ class ClaudeExecutor:
                 tool_groups_used=[self._extract_tool_groups(context.role)],
                 restrictions_violated=[],  # Would need to parse from output
                 files_modified=files_modified,
-                error_message=error_message,
-                claude_return_code=process.returncode
+                error_message=error_message
             )
             
         except Exception as e:
