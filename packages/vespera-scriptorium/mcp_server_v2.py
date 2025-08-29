@@ -7,9 +7,14 @@ FastMCP-based server for hierarchical task management system.
 
 import sys
 import logging
+import signal
+import asyncio
+import atexit
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from datetime import datetime
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 # Add the package to path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -538,11 +543,88 @@ async def assign_role_to_task(task_id: str, role_name: str) -> Dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 
-if __name__ == "__main__":
-    # Initialize managers on startup
+@asynccontextmanager
+async def server_lifespan(server: FastMCP) -> AsyncIterator[Dict[str, Any]]:
+    """Manage server startup and shutdown lifecycle with proper cleanup."""
     logger.info("🚀 Starting Vespera V2 Task Management MCP Server")
-    get_managers()
+    
+    # Initialize managers and resources on startup
+    task_manager, role_manager = get_managers()
+    
+    # Store managers for cleanup
+    cleanup_context = {
+        "task_manager": task_manager,
+        "role_manager": role_manager
+    }
+    
     logger.info("✅ Vespera V2 MCP Server ready!")
     
-    # Run the FastMCP server
-    mcp.run()
+    try:
+        yield cleanup_context
+    finally:
+        # Cleanup on shutdown
+        logger.info("🔄 Shutting down Vespera V2 MCP Server...")
+        
+        # Cleanup any active Claude processes
+        try:
+            # Import here to avoid circular imports during startup
+            from roles.claude_executor import ClaudeExecutor
+            
+            # Check for any global executor instances that need cleanup
+            # Since executors are created per-task, we'll rely on SIGTERM handling
+            # to clean up any running processes
+            logger.info("✅ Claude executor cleanup initiated")
+            
+            # Force cleanup any remaining processes via system signal handling
+            import os
+            current_pid = os.getpid()
+            child_processes = []
+            
+            # Find any Claude child processes
+            import subprocess
+            try:
+                result = subprocess.run(
+                    ["pgrep", "-P", str(current_pid), "claude"],
+                    capture_output=True, text=True, timeout=2
+                )
+                if result.returncode == 0 and result.stdout.strip():
+                    child_pids = result.stdout.strip().split('\n')
+                    for pid in child_pids:
+                        try:
+                            os.kill(int(pid), signal.SIGTERM)
+                            logger.info(f"✅ Terminated Claude process {pid}")
+                        except (ProcessLookupError, ValueError):
+                            pass  # Process already gone
+                    logger.info(f"✅ Cleaned up {len(child_pids)} Claude processes")
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                # pgrep not available or timeout, skip process cleanup
+                pass
+        except Exception as e:
+            logger.error(f"⚠️ Error cleaning up Claude executor: {e}")
+        
+        # Cleanup database connections  
+        try:
+            if task_manager and hasattr(task_manager, 'task_service'):
+                # Close any database connections
+                if hasattr(task_manager.task_service, 'close'):
+                    await task_manager.task_service.close()
+                elif hasattr(task_manager.task_service, 'cleanup'):
+                    task_manager.task_service.cleanup()
+                logger.info("✅ Database connections closed")
+        except Exception as e:
+            logger.error(f"⚠️ Error closing database connections: {e}")
+        
+        logger.info("🛑 Vespera V2 MCP Server shutdown complete")
+
+
+if __name__ == "__main__":
+    # Create FastMCP server with lifespan management
+    mcp_with_lifespan = FastMCP("vespera-v2-tasks", lifespan=server_lifespan)
+    
+    # Copy all tools from the original mcp instance to the new one
+    mcp_with_lifespan._tools = mcp._tools
+    mcp_with_lifespan._resources = mcp._resources
+    mcp_with_lifespan._prompts = mcp._prompts
+    
+    # Run the FastMCP server with proper lifecycle management
+    mcp_with_lifespan.run()
