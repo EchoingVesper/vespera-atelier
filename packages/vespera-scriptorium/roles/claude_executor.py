@@ -117,41 +117,26 @@ class ClaudeExecutor:
         prompt_content = self._build_role_aware_prompt(context, task_id)
         prompt_file = self._create_prompt_file(prompt_content, task_id)
         
-        # Base Claude command
-        command = [self.config.claude_binary]
-        
-        # Add working directory
-        if self.config.working_directory:
-            command.extend(["-C", self.config.working_directory])
-        elif context.role.file_restrictions:
-            # Use project root if role has file restrictions
-            command.extend(["-C", str(self.project_root)])
+        # Base Claude command with --print flag for non-interactive execution
+        command = [self.config.claude_binary, "--print"]
         
         # Add model configuration
         if self.config.model:
             command.extend(["--model", self.config.model])
         
-        # Add token limits
-        if self.config.max_tokens:
-            command.extend(["--max-tokens", str(self.config.max_tokens)])
-        
-        # Add temperature
-        if self.config.temperature:
-            command.extend(["--temperature", str(self.config.temperature)])
-        
-        # Add role-based tool restrictions
+        # Add role-based tool restrictions using correct Claude CLI format
         allowed_tools = self._get_allowed_tools(context.role)
         if allowed_tools:
-            command.extend(["--tools", ",".join(allowed_tools)])
+            command.extend(["--allowed-tools"] + allowed_tools)
         
-        # Add file pattern restrictions
-        file_patterns = self._get_file_restrictions(context.role)
-        if file_patterns:
-            for pattern in file_patterns:
-                command.extend(["--restrict-files", pattern])
+        # Add additional directory access if needed
+        if self.config.working_directory and Path(self.config.working_directory).exists():
+            command.extend(["--add-dir", str(self.config.working_directory)])
+        elif self.project_root and self.project_root.exists():
+            command.extend(["--add-dir", str(self.project_root)])
         
-        # Add prompt file
-        command.extend(["-f", str(prompt_file)])
+        # Add the prompt as the final argument (Claude CLI takes prompt as argument, not from file)
+        command.append(prompt_content)
         
         return command, prompt_file
     
@@ -255,24 +240,36 @@ class ClaudeExecutor:
         
         try:
             logger.info(f"Executing Claude command for task {task_id}: {' '.join(command)}")
+            logger.info(f"Working directory: {self.config.working_directory or self.project_root}")
+            logger.info(f"Prompt file: {prompt_file}")
+            
+            # Verify prompt file exists and is readable
+            if not prompt_file.exists():
+                raise FileNotFoundError(f"Prompt file does not exist: {prompt_file}")
+            logger.info(f"Prompt file size: {prompt_file.stat().st_size} bytes")
             
             # Start Claude process
+            logger.info("Creating subprocess...")
             process = await asyncio.create_subprocess_exec(
                 *command,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 cwd=self.config.working_directory or self.project_root
             )
+            logger.info(f"Subprocess created with PID: {process.pid}")
             
             self.active_processes[task_id] = process
             
             # Wait for completion with timeout
+            logger.info(f"Waiting for subprocess completion (timeout: {self.config.timeout}s)...")
             try:
                 stdout, stderr = await asyncio.wait_for(
                     process.communicate(),
                     timeout=self.config.timeout
                 )
+                logger.info(f"Subprocess completed with return code: {process.returncode}")
             except asyncio.TimeoutError:
+                logger.error(f"Subprocess timed out after {self.config.timeout} seconds")
                 process.kill()
                 await process.wait()
                 raise TimeoutError(f"Claude execution timed out after {self.config.timeout} seconds")
@@ -286,13 +283,21 @@ class ClaudeExecutor:
             output = stdout.decode('utf-8') if stdout else ""
             error_output = stderr.decode('utf-8') if stderr else ""
             
+            logger.info(f"Subprocess output length: {len(output)} chars")
+            logger.info(f"Subprocess error length: {len(error_output)} chars")
+            
+            if error_output:
+                logger.error(f"Claude subprocess stderr: {error_output[:500]}...")
+            
             # Determine status
             if process.returncode == 0:
                 status = ExecutionStatus.COMPLETED
                 error_message = None
+                logger.info("Claude subprocess completed successfully")
             else:
                 status = ExecutionStatus.FAILED
                 error_message = error_output or f"Claude process exited with code {process.returncode}"
+                logger.error(f"Claude subprocess failed: {error_message}")
             
             # Extract file modifications (would need to parse Claude's output)
             files_modified = self._extract_file_modifications(output)

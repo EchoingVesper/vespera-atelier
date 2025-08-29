@@ -338,13 +338,46 @@ class RoleExecutor:
             
             try:
                 # Run async execution
+                logger.info(f"Attempting real Claude CLI execution for task {task_id}")
+                logger.info(f"Claude binary: {claude_config.claude_binary}")
+                logger.info(f"Working directory: {claude_config.working_directory}")
+                logger.info(f"Timeout: {claude_config.timeout}s")
+                
                 result = asyncio.run(
                     executor.execute_task_with_claude(execution_context, task_id, dry_run=False)
                 )
+                
+                logger.info(f"Claude CLI execution succeeded for task {task_id}")
                 return result
+                
             except Exception as claude_error:
-                # Fallback to enhanced simulation if Claude execution fails
-                logger.warning(f"Claude execution failed, using simulation: {claude_error}")
+                # Enhanced error logging before fallback to simulation
+                logger.error(f"Claude CLI execution failed for task {task_id}")
+                logger.error(f"Error type: {type(claude_error).__name__}")
+                logger.error(f"Error message: {str(claude_error)}")
+                logger.error(f"Role: {role_name}")
+                logger.error(f"Task prompt: {task_prompt[:100]}...")
+                
+                # Log additional context for debugging
+                import traceback
+                logger.error(f"Full traceback:\n{traceback.format_exc()}")
+                
+                # Check if Claude binary is accessible
+                import subprocess
+                try:
+                    subprocess_result = subprocess.run(
+                        [claude_config.claude_binary, "--version"], 
+                        capture_output=True, 
+                        text=True, 
+                        timeout=5
+                    )
+                    logger.error(f"Claude binary test - returncode: {subprocess_result.returncode}")
+                    logger.error(f"Claude binary test - stdout: {subprocess_result.stdout}")
+                    logger.error(f"Claude binary test - stderr: {subprocess_result.stderr}")
+                except Exception as subprocess_error:
+                    logger.error(f"Failed to test Claude binary: {subprocess_error}")
+                
+                logger.warning("Falling back to enhanced simulation mode")
                 execution_time = time.time() - start_time
             
             execution_time = time.time() - start_time
