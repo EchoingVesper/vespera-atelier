@@ -17,6 +17,11 @@ vespera-atelier/
 │       └── Vespera-Scriptorium/ # Obsidian plugin frontend
 ├── apps/                        # Future applications
 ├── PRPs/                        # Product Requirement Prompts
+├── docs/                        # Comprehensive architecture documentation
+│   ├── DYNAMIC_AUTOMATION_ARCHITECTURE.md  # Revolutionary automation system
+│   ├── examples/               # Automation rule examples
+│   ├── technical/              # Technical specifications
+│   └── user-guides/            # User documentation
 └── .claude/                     # Claude Code configuration
 ```
 
@@ -239,11 +244,16 @@ python test_mcp_fastmcp.py         # MCP server tests
 - **Vespera Scriptorium**: `packages/vespera-scriptorium/CLAUDE.md`
 - **PRPs Framework**: `PRPs/CLAUDE.md`
 - **Meta-PRP Transition**: `PRPs/vespera-scriptorium-transition/README.md`
+- **🔥 Dynamic Automation Architecture**: `docs/DYNAMIC_AUTOMATION_ARCHITECTURE.md` (Revolutionary new system)
+- **Architecture Documentation Hub**: `docs/README.md`
 
 ### Key Concepts
 
-- **Task Orchestrator**: Core orchestration engine for AI agent coordination
+- **🔥 Dynamic Automation System**: Revolutionary tag-driven automation with LLM-assisted rule creation
+- **Event-Driven Architecture**: Real-time reactive content workflows and cross-codex automation chains
+- **Task Orchestrator**: Core orchestration engine for AI agent coordination (V2 with triple database)
 - **PRP Framework**: Product Requirement Prompts for systematic development
+- **Codex Protocol**: Virtual content organization with multiple viewing perspectives
 - **Executive Dysfunction Support**: Design patterns for momentum preservation
 - **Git Worktree Strategy**: Isolated development environments
 
@@ -288,9 +298,24 @@ python test_mcp_fastmcp.py         # MCP server tests
    # - get_task_dashboard, list_tasks, list_roles
    ```
 
-## 🎨 Vision
+## 🎨 Vision: Revolutionary Automation Architecture
 
-The Vespera Atelier is an ecosystem of intelligent tools for creative professionals, researchers, and knowledge workers. Each package serves a specific role while working together through shared interfaces and the central orchestration engine.
+The Vespera Atelier is an ecosystem of intelligent tools for creative professionals, researchers, and knowledge workers. The revolutionary **Dynamic Automation and Tag-Driven Systems** transform static content into reactive, intelligent ecosystems.
+
+### Core Innovation: Magical Content Workflows
+
+- **Tag-Driven Automation**: Content responds to tag changes with intelligent automation (e.g., scene mood `#peaceful` → `#tense` automatically changes music)
+- **LLM-Assisted Setup**: Natural language automation creation ("When Alice gets scared, change the music")
+- **Cross-Codex Chains**: Cascading automation across different content types (scene completion → character updates → task creation)
+- **Real-Time Reactive Content**: Live UI updates and background automation execution
+
+### Architecture Documentation
+
+**📚 Comprehensive Documentation**: See `/docs/` directory for complete technical specifications:
+- **[Dynamic Automation Architecture](docs/DYNAMIC_AUTOMATION_ARCHITECTURE.md)**: Core revolutionary system design
+- **[Event System Specification](docs/technical/EVENT_SYSTEM_SPECIFICATION.md)**: Real-time event processing architecture  
+- **[Automation Examples](docs/examples/AUTOMATION_RULE_EXAMPLES.md)**: Concrete automation rule examples
+- **[User Getting Started Guide](docs/user-guides/GETTING_STARTED_AUTOMATION.md)**: Step-by-step automation setup
 
 ## 📝 Important Notes
 
