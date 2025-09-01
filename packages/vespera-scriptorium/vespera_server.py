@@ -757,6 +757,14 @@ class VesperaServer:
             if update_input.priority is not None:
                 updates["priority"] = update_input.priority.lower()  # TaskService handles string conversion
             if update_input.role is not None:
+                # Validate role exists
+                role_names = self.role_manager.list_roles()
+                if update_input.role not in role_names:
+                    return {
+                        "success": False,
+                        "error": f"Invalid role '{update_input.role}'. Available roles: {', '.join(role_names)}",
+                        "project": self.project_root.name
+                    }
                 updates["execution"] = {"assigned_role": update_input.role}
             
             success, result = await self.task_manager.task_service.update_task(update_input.task_id, updates)

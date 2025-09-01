@@ -11,6 +11,7 @@ import tempfile
 import asyncio
 import shlex
 import re
+import platform
 from typing import Dict, List, Optional, Any, Tuple
 from pathlib import Path
 from dataclasses import dataclass
@@ -134,25 +135,58 @@ class ClaudeExecutor:
         return working_path
     
     def _setup_process_limits(self):
-        """Set resource limits for Claude subprocess (Unix only)."""
-        try:
-            import resource
-            
-            # Set memory limit (1GB)
-            resource.setrlimit(resource.RLIMIT_AS, (1024 * 1024 * 1024, 1024 * 1024 * 1024))
-            
-            # Set CPU time limit (10 minutes)  
-            resource.setrlimit(resource.RLIMIT_CPU, (600, 600))
-            
-            # Set file size limit (100MB)
-            resource.setrlimit(resource.RLIMIT_FSIZE, (100 * 1024 * 1024, 100 * 1024 * 1024))
-            
-            # Set maximum number of processes
-            resource.setrlimit(resource.RLIMIT_NPROC, (10, 10))
-            
-        except (ImportError, OSError) as e:
-            # Resource limits not available on this platform
-            logger.debug(f"Process limits not set: {e}")
+        """Set resource limits for Claude subprocess (cross-platform)."""
+        system = platform.system()
+        
+        if system in ["Linux", "Darwin", "FreeBSD"]:
+            # Unix-like systems: Use resource module
+            try:
+                import resource
+                
+                # Set memory limit (1GB)
+                resource.setrlimit(resource.RLIMIT_AS, (1024 * 1024 * 1024, 1024 * 1024 * 1024))
+                
+                # Set CPU time limit (10 minutes)  
+                resource.setrlimit(resource.RLIMIT_CPU, (600, 600))
+                
+                # Set file size limit (100MB)
+                resource.setrlimit(resource.RLIMIT_FSIZE, (100 * 1024 * 1024, 100 * 1024 * 1024))
+                
+                # Set maximum number of processes
+                resource.setrlimit(resource.RLIMIT_NPROC, (10, 10))
+                
+                logger.debug(f"Unix resource limits applied on {system}")
+                
+            except (ImportError, OSError) as e:
+                logger.warning(f"Unix resource limits failed: {e}")
+                
+        elif system == "Windows":
+            # Windows: Use job objects for process constraints
+            try:
+                import ctypes
+                from ctypes import wintypes
+                
+                # Windows job object creation would go here
+                # For now, log that Windows constraints are limited
+                logger.warning("Windows resource limits: Using timeout-based constraints only. "
+                             "Memory limits require job objects (not implemented yet)")
+                             
+            except ImportError as e:
+                logger.warning(f"Windows resource control libraries unavailable: {e}")
+                
+        else:
+            logger.warning(f"Resource limits not supported on {system}")
+    
+    def _get_platform_timeout(self) -> int:
+        """Get platform-appropriate timeout for process execution."""
+        system = platform.system()
+        
+        if system == "Windows":
+            # Windows: Rely more heavily on timeout since resource limits are limited
+            return min(self.config.timeout, 300)  # Max 5 minutes on Windows
+        else:
+            # Unix: Can use resource limits + timeout
+            return self.config.timeout
         
     async def execute_task_with_claude(
         self,
@@ -258,7 +292,7 @@ class ClaudeExecutor:
         # Add model configuration (template-driven)
         model = context.role.preferred_llm if hasattr(context.role, 'preferred_llm') else self.config.model
         if model:
-            command.extend(["--model", model])
+            command.extend(["--model", shlex.quote(str(model))])
         
         # Add role-based tool restrictions (template-driven from role files)
         allowed_tools = self._get_allowed_tools(context.role)
@@ -266,17 +300,17 @@ class ClaudeExecutor:
         if validated_tools:
             # Join tools with commas as expected by Claude CLI
             tools_str = ",".join(validated_tools)
-            command.extend(["--allowed-tools", tools_str])
+            command.extend(["--allowed-tools", shlex.quote(tools_str)])
         
         # Use --append-system-prompt for role-specific system instructions
         system_prompt = self._build_role_system_prompt(context)
         if system_prompt:
-            command.extend(["--append-system-prompt", system_prompt])
+            command.extend(["--append-system-prompt", shlex.quote(system_prompt)])
         
         # Add working directory access
         working_dir = self._get_validated_working_directory()
         if working_dir != self.project_root:
-            command.extend(["--add-dir", str(working_dir)])
+            command.extend(["--add-dir", shlex.quote(str(working_dir))])
         
         # Build user prompt (task description) - this goes to stdin
         user_prompt = self._build_user_prompt(context, task_id)
@@ -477,7 +511,7 @@ class ClaudeExecutor:
                 stderr=asyncio.subprocess.PIPE,
                 cwd=validated_working_dir,
                 # Add process limits (available on Unix-like systems)
-                preexec_fn=self._setup_process_limits if hasattr(__import__('os'), 'setrlimit') else None
+                preexec_fn=self._setup_process_limits
             )
             
             log_progress("SPAWNING", 15, f"Subprocess created with PID: {process.pid}")
@@ -489,12 +523,13 @@ class ClaudeExecutor:
             log_progress("EXECUTING", 25, "Sending task prompt to Claude CLI")
             logger.info(f"User prompt: {user_prompt[:200]}...")
             
-            log_progress("EXECUTING", 30, f"Waiting for Claude response (timeout: {self.config.timeout}s)")
+            platform_timeout = self._get_platform_timeout()
+            log_progress("EXECUTING", 30, f"Waiting for Claude response (timeout: {platform_timeout}s)")
             # Wait for completion with extended timeout for LLM processing
             try:
                 # Monitor execution with progress updates
                 execution_start = time.time()
-                timeout_increment = self.config.timeout / 10  # Update every 10% of timeout
+                timeout_increment = platform_timeout / 10  # Update every 10% of timeout
                 
                 # Use a loop to provide progress updates during long execution
                 communication_task = asyncio.create_task(
@@ -505,13 +540,13 @@ class ClaudeExecutor:
                 progress_step = 35
                 while not communication_task.done():
                     elapsed = time.time() - execution_start
-                    if elapsed > self.config.timeout:
+                    if elapsed > platform_timeout:
                         communication_task.cancel()
                         raise asyncio.TimeoutError()
                     
                     # Update progress based on elapsed time
                     if progress_step < 75:  # Cap at 75% during execution
-                        execution_progress = min(int((elapsed / self.config.timeout) * 40), 40)
+                        execution_progress = min(int((elapsed / platform_timeout) * 40), 40)
                         current_progress = 35 + execution_progress
                         if current_progress >= progress_step:
                             log_progress("EXECUTING", progress_step, f"Claude processing... ({elapsed:.1f}s elapsed)")
@@ -523,11 +558,11 @@ class ClaudeExecutor:
                 log_progress("EXECUTING", 80, f"Claude execution completed (return code: {process.returncode})")
                 
             except asyncio.TimeoutError:
-                log_progress("EXECUTING", -1, f"TIMEOUT after {self.config.timeout} seconds")
-                logger.error(f"Subprocess timed out after {self.config.timeout} seconds")
+                log_progress("EXECUTING", -1, f"TIMEOUT after {platform_timeout} seconds")
+                logger.error(f"Subprocess timed out after {platform_timeout} seconds")
                 process.kill()
                 await process.wait()
-                raise TimeoutError(f"Claude execution timed out after {self.config.timeout} seconds")
+                raise TimeoutError(f"Claude execution timed out after {platform_timeout} seconds")
             
             # Phase 3: Processing (80-95%)
             log_progress("PROCESSING", 82, "Cleaning up subprocess")
