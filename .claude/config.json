@@ -5,7 +5,7 @@
     "servers": {
       "vespera-scriptorium": {
         "command": "/home/aya/dev/monorepo/vespera-atelier/packages/vespera-scriptorium/mcp_venv/bin/python",
-        "args": ["/home/aya/dev/monorepo/vespera-atelier/packages/vespera-scriptorium/project_aware_server.py", "--mode", "mcp", "--cwd", "${workspaceFolder}"],
+        "args": ["/home/aya/dev/monorepo/vespera-atelier/packages/vespera-scriptorium/vespera_server.py", "--mode", "mcp", "--cwd", "${workspaceFolder}"],
         "cwd": "packages/vespera-scriptorium",
         "env": {
           "PYTHONPATH": "${workspaceFolder}/packages/vespera-scriptorium"
