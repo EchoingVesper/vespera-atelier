@@ -309,11 +309,11 @@ class ClaudeExecutor:
             quoted_prompt = shlex.quote(system_prompt)
             estimated_command_length = len(" ".join(command)) + len(" --append-system-prompt ") + len(quoted_prompt)
             
-            if estimated_command_length > 32000:  # Conservative Unix command line limit
-                logger.warning(f"Command line too long ({estimated_command_length} chars), truncating system prompt for role {context.role.name}")
-                # Use a much shorter system prompt
-                short_prompt = f"You are operating as a {context.role.display_name}. {context.role.system_prompt[:500]}..."
-                command.extend(["--append-system-prompt", shlex.quote(short_prompt)])
+            if estimated_command_length > 16000:  # Very conservative limit for Bun v1.2.19
+                logger.warning(f"Command line too long ({estimated_command_length} chars), using minimal system prompt for role {context.role.name}")
+                # Use minimal system prompt for maximum Bun compatibility
+                minimal_prompt = f"You are a {context.role.display_name}. Complete the given task."
+                command.extend(["--append-system-prompt", shlex.quote(minimal_prompt)])
             else:
                 command.extend(["--append-system-prompt", quoted_prompt])
         
@@ -333,7 +333,10 @@ class ClaudeExecutor:
         Implements length limits to prevent CLI crashes in WSL2/Bun environments.
         """
         # Maximum system prompt length to prevent CLI crashes
-        MAX_SYSTEM_PROMPT_LENGTH = 8000  # Conservative limit for CLI stability
+        # Ultra-conservative limit for Bun v1.2.19 in WSL2 environment
+        import platform
+        is_wsl = "microsoft" in platform.uname().release.lower()
+        MAX_SYSTEM_PROMPT_LENGTH = 1000 if is_wsl else 2000  # Extra conservative for WSL2
         
         system_parts = [
             f"You are operating as a {context.role.display_name}.",
@@ -366,9 +369,10 @@ class ClaudeExecutor:
             logger.warning(f"System prompt too long ({len(full_prompt)} chars), using fallback for role {context.role.name}")
             
             # Fallback to minimal essential prompt
+            max_role_prompt = 500 if is_wsl else 1000  # Very short for WSL2
             fallback_parts = [
                 f"You are operating as a {context.role.display_name}.",
-                context.role.system_prompt[:2000] + "..." if len(context.role.system_prompt) > 2000 else context.role.system_prompt,
+                context.role.system_prompt[:max_role_prompt] + "..." if len(context.role.system_prompt) > max_role_prompt else context.role.system_prompt,
                 "",
                 "# Essential Tool Access",
             ]
