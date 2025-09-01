@@ -751,6 +751,838 @@ interface TemplateAwarePersistenceLayer {
 - **Template Satisfaction**: User satisfaction scores increase compared to hardcoded system
 - **Template Adoption**: 80% of users create at least 1 custom template; 60% use 3+ different template types
 
+## 7. Template-as-Programming-Language Framework
+
+### 7.1 Behavioral Template Programming System
+
+The Vespera Codex System extends beyond data templates to **executable behavioral programming environments** where templates define complete logic flows, conditionals, and runtime behavior:
+
+```json5
+// Enhanced template with behavioral programming
+{
+  template_id: "smart_task_orchestrator",
+  behavioral_programming: {
+    runtime_engine: "codex_template_vm",
+    execution_modes: ["programmatic", "llm_driven", "hybrid", "template_driven"],
+    
+    // Template functions with parameters and logic
+    functions: {
+      "auto_prioritize": {
+        parameters: ["urgency", "importance", "deadline", "dependencies"],
+        returns: "priority_level",
+        logic: {
+          conditionals: [
+            {
+              condition: "deadline < now() + 24h AND importance >= 0.8",
+              action: "set_priority('critical')",
+              side_effects: ["notify_assignee", "escalate_to_manager"]
+            },
+            {
+              condition: "dependencies.all_complete() AND urgency > 0.7", 
+              action: "set_priority('high')",
+              side_effects: ["move_to_active_sprint", "allocate_resources"]
+            }
+          ],
+          default_action: "calculate_weighted_priority(urgency * 0.4 + importance * 0.6)"
+        }
+      },
+      
+      "workflow_progression": {
+        parameters: ["current_status", "completion_criteria", "team_capacity"],
+        returns: "next_actions",
+        logic: {
+          state_machine: {
+            states: ["planning", "active", "review", "completed", "blocked"],
+            transitions: [
+              {
+                from: "planning",
+                to: "active", 
+                condition: "completion_criteria.defined() AND team_capacity.available()",
+                actions: ["assign_team_members", "create_subtasks", "start_timer"]
+              },
+              {
+                from: "active",
+                to: "review",
+                condition: "subtasks.all_complete() OR manual_trigger('ready_for_review')",
+                actions: ["request_reviewer", "generate_summary", "pause_timer"]
+              }
+            ]
+          }
+        }
+      }
+    },
+    
+    // Template inheritance with method overrides
+    inheritance: {
+      extends: "base_smart_component",
+      overrides: {
+        "handle_status_change": {
+          super_call: true,
+          additional_logic: {
+            condition: "new_status == 'completed'",
+            actions: [
+              "trigger_dependent_tasks",
+              "update_project_metrics",
+              "llm_analyze_completion_quality"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### 7.2 Three-Mode Component Architecture
+
+Components operate in multiple intelligence modes simultaneously, adapting their behavior based on context and user preferences:
+
+```typescript
+interface ThreeModeComponent {
+  // Component behavior configuration
+  behavior: ComponentBehavior
+  
+  // Intelligence mode management
+  activeModes: Set<IntelligenceMode>
+  modeTransitions: ModeTransitionRule[]
+  
+  // Mode-specific capabilities
+  programmaticCapabilities: ProgrammaticCapabilities
+  llmCapabilities: LLMCapabilities
+  hybridCapabilities: HybridCapabilities
+  templateDrivenCapabilities: TemplateDrivenCapabilities
+}
+
+interface ComponentBehavior {
+  programmatic: boolean    // Standard game-like component behavior
+  llmDriven: boolean      // LLM watching and responding to context
+  hybrid: boolean         // Combination of both approaches  
+  templateDriven: boolean // All behavior defined by user templates
+  
+  // Dynamic mode switching
+  modeSelection: 'user_controlled' | 'context_adaptive' | 'performance_optimized'
+  fallbackMode: IntelligenceMode
+  
+  // Cross-mode communication
+  modeInteraction: {
+    programmatic_to_llm: CommunicationProtocol
+    llm_to_template: CommunicationProtocol
+    template_to_programmatic: CommunicationProtocol
+  }
+}
+
+enum IntelligenceMode {
+  PROGRAMMATIC = "programmatic",      // Fast, deterministic, game-like
+  LLM_DRIVEN = "llm_driven",         // Intelligent, contextual, adaptive
+  HYBRID = "hybrid",                 // Best of both worlds
+  TEMPLATE_DRIVEN = "template_driven" // User-defined behavioral templates
+}
+
+interface ProgrammaticCapabilities {
+  // Game-like component behavior
+  update(deltaTime: number): void
+  handleEvent(event: ComponentEvent): void
+  processCollisions(other: Component): void
+  
+  // Deterministic state management
+  state: ComponentState
+  transitions: StateTransition[]
+  
+  // Performance optimized operations
+  batchProcessing: boolean
+  vectorizedOperations: boolean
+}
+
+interface LLMCapabilities {
+  // Contextual understanding
+  analyzeEnvironmentalContext(): ContextAnalysis
+  adaptBehaviorToSituation(context: ContextAnalysis): BehaviorModification
+  
+  // Natural language interaction
+  respondToUserQuery(query: string): Promise<string>
+  generateContextualContent(): Promise<GeneratedContent>
+  
+  // Learning and adaptation
+  learnFromUserBehavior(interactions: UserInteraction[]): void
+  updateBehaviorModel(feedback: UserFeedback): void
+}
+
+interface HybridCapabilities {
+  // Combined intelligence
+  llmInformedProgrammaticBehavior: boolean
+  programmaticConstrainedLLMDecisions: boolean
+  
+  // Seamless mode transitions
+  transitionToProgrammatic(trigger: TransitionTrigger): void
+  transitionToLLM(context: ContextRequirement): void
+  
+  // Shared state management
+  synchronizeIntelligenceModes(): void
+  resolveIntelligenceConflicts(): ConflictResolution
+}
+
+interface TemplateDrivenCapabilities {
+  // Template-based behavior execution
+  executeTemplate(templateId: string, parameters: Record<string, any>): Promise<ExecutionResult>
+  compileTemplate(template: BehavioralTemplate): CompiledBehavior
+  
+  // Template function system
+  callTemplateFunction(functionName: string, args: any[]): any
+  registerTemplateMethod(name: string, implementation: TemplateMethod): void
+  
+  // Runtime template modification
+  updateBehaviorTemplate(templateUpdates: TemplateUpdates): void
+  hotSwapTemplate(newTemplateId: string): Promise<void>
+}
+```
+
+### 7.3 Template Compilation Architecture
+
+Templates are compiled into executable behaviors at runtime, enabling user-defined programming within the Codex system:
+
+```typescript
+interface TemplateCompilationEngine {
+  // Template compilation pipeline
+  compile(template: BehavioralTemplate): Promise<CompiledBehavior>
+  validateTemplate(template: BehavioralTemplate): TemplateValidationResult
+  optimizeTemplate(template: BehavioralTemplate): OptimizedTemplate
+  
+  // Runtime execution
+  executeCompiledBehavior(behavior: CompiledBehavior, context: ExecutionContext): Promise<ExecutionResult>
+  debugTemplateBehavior(behaviorId: string, breakpoints: Breakpoint[]): DebugSession
+  
+  // Template function compilation
+  compileTemplateFunction(functionDef: TemplateFunctionDefinition): CompiledFunction
+  registerTemplateLibrary(library: TemplateLibrary): void
+  
+  // Meta-template compilation
+  compileMetaTemplate(metaTemplate: MetaTemplate): TemplateGenerator
+  generateTemplatesFromMeta(generator: TemplateGenerator, params: MetaParameters): BehavioralTemplate[]
+}
+
+interface BehavioralTemplate {
+  // Template identity
+  template_id: string
+  version: string
+  extends?: string
+  
+  // Behavioral programming definition
+  behavioral_programming: {
+    runtime_engine: string
+    execution_modes: IntelligenceMode[]
+    
+    // Template functions with full programming capabilities
+    functions: Record<string, TemplateFunctionDefinition>
+    
+    // State machines and workflow definitions
+    state_machines: StateMachineDefinition[]
+    workflows: WorkflowDefinition[]
+    
+    // Event handling and triggers
+    event_handlers: EventHandlerDefinition[]
+    automation_triggers: AutomationTriggerDefinition[]
+    
+    // Component lifecycle management
+    lifecycle_hooks: LifecycleHookDefinition[]
+    initialization: InitializationScript
+    cleanup: CleanupScript
+    
+    // Cross-component communication
+    message_passing: MessagePassingDefinition
+    component_relationships: ComponentRelationshipDefinition[]
+  }
+  
+  // Template inheritance and composition
+  inheritance: {
+    extends: string
+    overrides: Record<string, FunctionOverride>
+    mixins: string[]
+  }
+  
+  // Runtime configuration
+  runtime_config: {
+    performance_mode: 'optimized' | 'debug' | 'learning'
+    memory_management: MemoryManagementConfig
+    error_handling: ErrorHandlingConfig
+    logging: LoggingConfig
+  }
+}
+
+interface TemplateFunctionDefinition {
+  parameters: Parameter[]
+  returns: ReturnTypeDefinition
+  logic: FunctionLogic
+  
+  // Advanced programming constructs
+  conditionals: ConditionalBranch[]
+  loops: LoopDefinition[]
+  recursion?: RecursionDefinition
+  
+  // Side effects and external interactions
+  side_effects: SideEffectDefinition[]
+  external_calls: ExternalCallDefinition[]
+  
+  // Performance and optimization hints
+  optimization_hints: OptimizationHint[]
+  caching_strategy: CachingStrategy
+}
+
+interface CompiledBehavior {
+  // Compiled executable code
+  executable: ExecutableCode
+  metadata: CompilationMetadata
+  
+  // Runtime interface
+  execute(context: ExecutionContext): Promise<ExecutionResult>
+  getCapabilities(): ComponentCapability[]
+  
+  // Performance optimization
+  vectorized_operations: VectorizedOperation[]
+  batch_operations: BatchOperation[]
+  
+  // Debugging support
+  debug_info: DebugInformation
+  profiling_hooks: ProfilingHook[]
+}
+```
+
+## 8. Immersive Environment Codex Types
+
+### 8.1 Environmental Codex Integration
+
+The Codex system extends beyond content organization to create **immersive environmental experiences** that adapt to user context and activities:
+
+```typescript
+interface EnvironmentalCodex extends TemplateAwareCodexEntry {
+  environmental_data: {
+    // Immersive environment control
+    music_integration: MusicIntegration
+    lighting_control: LightingControl
+    ui_theming: UIThemeControl
+    ambient_effects: AmbientEffectControl
+    
+    // Context-aware adaptation
+    context_triggers: ContextTrigger[]
+    activity_responses: ActivityResponse[]
+    mood_adaptation: MoodAdaptationConfig
+    
+    // Environmental relationships
+    environmental_links: EnvironmentalLink[]
+    atmosphere_inheritance: AtmosphereInheritance
+  }
+}
+
+interface MusicIntegration {
+  // Music selection and control
+  background_music: {
+    tracks: MusicTrack[]
+    selection_algorithm: 'mood_based' | 'activity_based' | 'time_based' | 'user_defined'
+    volume_control: VolumeControl
+    crossfade_settings: CrossfadeSettings
+  }
+  
+  // Context-responsive music
+  contextual_music: {
+    work_focus: MusicProfile
+    creative_flow: MusicProfile  
+    break_time: MusicProfile
+    deep_concentration: MusicProfile
+  }
+  
+  // User activity integration
+  activity_music_mapping: {
+    writing: MusicCue[]
+    coding: MusicCue[]
+    research: MusicCue[]
+    planning: MusicCue[]
+  }
+}
+
+interface LightingControl {
+  // Smart lighting integration
+  color_schemes: ColorScheme[]
+  brightness_adaptation: BrightnessProfile[]
+  circadian_sync: CircadianSettings
+  
+  // Activity-based lighting
+  activity_lighting: {
+    focus_work: LightingProfile
+    creative_sessions: LightingProfile
+    review_analysis: LightingProfile
+    break_periods: LightingProfile
+  }
+  
+  // Mood enhancement
+  mood_lighting: {
+    energetic: LightingProfile
+    calm: LightingProfile
+    focused: LightingProfile
+    creative: LightingProfile
+  }
+}
+
+interface UIThemeControl {
+  // Dynamic theme adaptation  
+  theme_switching: {
+    auto_adaptation: boolean
+    context_themes: ContextTheme[]
+    time_based_themes: TimeBasedTheme[]
+    activity_themes: ActivityTheme[]
+  }
+  
+  // Immersive interface elements
+  interface_atmosphere: {
+    background_patterns: BackgroundPattern[]
+    accent_colors: AccentColorScheme[]
+    typography_moods: TypographyMood[]
+    spacing_rhythms: SpacingRhythm[]
+  }
+  
+  // Contextual UI adaptations
+  ui_personality: {
+    work_mode: UIPersonality
+    creative_mode: UIPersonality
+    analysis_mode: UIPersonality
+    planning_mode: UIPersonality
+  }
+}
+
+interface ContextTrigger {
+  // Context detection
+  trigger_type: 'activity_change' | 'time_of_day' | 'user_mood' | 'project_phase' | 'content_type'
+  condition: ContextCondition
+  
+  // Environmental response
+  environmental_changes: EnvironmentalChange[]
+  transition_style: TransitionStyle
+  duration: Duration
+  
+  // User preference integration
+  user_override: boolean
+  learning_enabled: boolean
+}
+```
+
+### 8.2 Video Game Manager Component Integration
+
+Codex entries can behave like sophisticated video game manager components, providing real-time adaptation and intelligent environmental control:
+
+```typescript
+interface VideoGameManagerComponent extends ThreeModeComponent {
+  // Game-like management capabilities
+  manager_type: 'environment' | 'workflow' | 'content' | 'automation' | 'learning'
+  
+  // Real-time system management
+  realtime_capabilities: {
+    frame_update: (deltaTime: number) => void
+    event_processing: EventProcessor
+    state_management: StateManager
+    resource_management: ResourceManager
+  }
+  
+  // Intelligence coordination
+  ai_director: {
+    pattern_recognition: PatternRecognitionSystem
+    behavioral_adaptation: BehavioralAdaptationSystem
+    predictive_automation: PredictiveAutomationSystem
+    learning_system: LearningSystem
+  }
+  
+  // Component communication
+  component_network: {
+    message_bus: ComponentMessageBus
+    event_distribution: EventDistributionSystem
+    state_synchronization: StateSynchronizationSystem
+  }
+  
+  // Performance optimization
+  performance_management: {
+    resource_monitoring: ResourceMonitor
+    adaptive_quality: QualityManager
+    batch_processing: BatchProcessor
+    memory_optimization: MemoryOptimizer
+  }
+}
+
+interface EnvironmentManagerComponent extends VideoGameManagerComponent {
+  // Environmental orchestration
+  environment_control: {
+    // Ambient system management
+    ambient_system: AmbientSystemManager
+    lighting_director: LightingDirector
+    audio_orchestrator: AudioOrchestrator
+    
+    // Contextual adaptation
+    context_analyzer: ContextAnalyzer
+    mood_detector: MoodDetector
+    activity_tracker: ActivityTracker
+    
+    // Immersive experience coordination
+    experience_coordinator: ExperienceCoordinator
+    atmosphere_generator: AtmosphereGenerator
+  }
+  
+  // Real-time environmental adaptation
+  adaptation_engine: {
+    // User behavior analysis
+    analyzeUserPatterns(): UserBehaviorPattern[]
+    predictUserNeeds(context: UserContext): PredictedNeeds
+    
+    // Environmental optimization
+    optimizeEnvironmentForActivity(activity: UserActivity): EnvironmentalOptimization
+    adaptToUserMood(mood: DetectedMood): MoodAdaptation
+    
+    // Learning and improvement
+    learnFromUserFeedback(feedback: EnvironmentalFeedback): void
+    updateAdaptationModels(interactions: UserInteraction[]): void
+  }
+}
+
+interface WorkflowManagerComponent extends VideoGameManagerComponent {
+  // Workflow orchestration
+  workflow_control: {
+    // Task progression management
+    task_progression: TaskProgressionManager
+    dependency_resolver: DependencyResolver
+    resource_allocator: ResourceAllocator
+    
+    // Intelligent workflow optimization
+    workflow_optimizer: WorkflowOptimizer
+    bottleneck_detector: BottleneckDetector
+    efficiency_analyzer: EfficiencyAnalyzer
+  }
+  
+  // Adaptive workflow intelligence
+  workflow_intelligence: {
+    // Pattern-based optimization
+    identifyWorkflowPatterns(): WorkflowPattern[]
+    suggestOptimizations(workflow: Workflow): OptimizationSuggestion[]
+    
+    // Predictive workflow management  
+    predictWorkflowOutcomes(workflow: Workflow): PredictedOutcome[]
+    recommendNextActions(context: WorkflowContext): ActionRecommendation[]
+    
+    // Continuous improvement
+    analyzeWorkflowPerformance(results: WorkflowResult[]): PerformanceAnalysis
+    updateWorkflowStrategies(feedback: WorkflowFeedback): void
+  }
+}
+```
+
+## 9. Meta-Codex Generation System
+
+### 9.1 Self-Generating Codex Architecture
+
+The system includes **Meta-Codex entries** that dynamically generate other Codex entries based on runtime parameters and user context:
+
+```typescript
+interface MetaCodexEntry extends TemplateAwareCodexEntry {
+  meta_codex_data: {
+    // Generation configuration
+    generation_config: CodexGenerationConfig
+    generation_triggers: GenerationTrigger[]
+    generation_rules: GenerationRule[]
+    
+    // Template generation
+    template_generator: TemplateGenerator
+    generated_templates: GeneratedTemplateRegistry
+    
+    // Dynamic content creation
+    content_factory: ContentFactory
+    generation_pipeline: GenerationPipeline
+    
+    // Meta-template management
+    meta_templates: MetaTemplate[]
+    template_inheritance_chains: TemplateInheritanceChain[]
+  }
+}
+
+interface CodexGenerationConfig {
+  // Generation parameters
+  auto_generation: boolean
+  generation_frequency: 'on_demand' | 'scheduled' | 'event_driven' | 'continuous'
+  generation_scope: GenerationScope
+  
+  // Content personalization
+  user_context_integration: boolean
+  learning_based_generation: boolean
+  collaborative_generation: boolean
+  
+  // Quality control
+  validation_rules: ValidationRule[]
+  approval_workflow: ApprovalWorkflow
+  version_control: VersionControl
+}
+
+interface TemplateGenerator {
+  // Meta-template processing
+  processMetaTemplate(metaTemplate: MetaTemplate, parameters: MetaParameters): Promise<BehavioralTemplate[]>
+  
+  // Dynamic template creation
+  generateFromPattern(pattern: TemplatePattern, context: GenerationContext): Promise<BehavioralTemplate>
+  generateFromExample(example: ExampleContent, variations: VariationParameters): Promise<BehavioralTemplate[]>
+  
+  // AI-assisted generation
+  generateWithAI(prompt: GenerationPrompt, constraints: GenerationConstraints): Promise<BehavioralTemplate>
+  refineTemplateWithFeedback(template: BehavioralTemplate, feedback: UserFeedback): Promise<BehavioralTemplate>
+  
+  // Template composition
+  combineTemplates(templates: BehavioralTemplate[], compositionRules: CompositionRule[]): Promise<BehavioralTemplate>
+  createTemplateVariants(baseTemplate: BehavioralTemplate, variationSpecs: VariationSpecification[]): Promise<BehavioralTemplate[]>
+}
+
+interface MetaTemplate {
+  // Meta-template definition
+  meta_template_id: string
+  generation_algorithm: 'rule_based' | 'ai_assisted' | 'pattern_matching' | 'hybrid'
+  
+  // Parameter system
+  parameters: MetaParameter[]
+  parameter_constraints: ParameterConstraint[]
+  parameter_relationships: ParameterRelationship[]
+  
+  // Generation logic
+  generation_logic: {
+    // Template structure generation
+    structure_rules: StructureRule[]
+    content_rules: ContentRule[]
+    behavior_rules: BehaviorRule[]
+    
+    // Conditional generation
+    conditional_branches: ConditionalBranch[]
+    iteration_patterns: IterationPattern[]
+    
+    // AI integration points
+    ai_enhancement_points: AIEnhancementPoint[]
+    human_review_points: HumanReviewPoint[]
+  }
+  
+  // Output configuration
+  output_templates: OutputTemplateSpec[]
+  post_processing: PostProcessingStep[]
+  validation_steps: ValidationStep[]
+}
+
+interface ContentFactory {
+  // Dynamic content creation
+  createFromTemplate(templateId: string, parameters: CreationParameters): Promise<TemplateAwareCodexEntry>
+  createFromMetaTemplate(metaTemplateId: string, metaParameters: MetaParameters): Promise<TemplateAwareCodexEntry[]>
+  
+  // Intelligent content generation
+  generateContentSuite(project: ProjectContext, requirements: ContentRequirements): Promise<ContentSuite>
+  generateWorkflowOptimizations(workflow: Workflow, constraints: OptimizationConstraints): Promise<WorkflowOptimization[]>
+  
+  // Collaborative generation
+  facilitateCollaborativeCreation(participants: User[], creationTask: CreationTask): Promise<CollaborativeCreationSession>
+  mergeCollaborativeContributions(contributions: CreationContribution[]): Promise<MergedContent>
+}
+```
+
+### 9.2 Intelligent Template Evolution
+
+The system learns from user behavior and automatically evolves templates to better serve user needs:
+
+```typescript
+interface TemplateEvolutionSystem {
+  // Learning and adaptation
+  learning_engine: {
+    // User behavior analysis
+    analyzeTemplateUsage(templateId: string, timeframe: TimeFrame): TemplateUsageAnalysis
+    identifyUserPreferences(userId: string, templateCategory: string): UserPreferenceProfile
+    
+    // Template performance analysis
+    evaluateTemplateEffectiveness(templateId: string): EffectivenessMetrics
+    identifyTemplateImprovement opportunities(templateId: string): ImprovementOpportunity[]
+    
+    // Predictive template optimization
+    predictOptimalTemplateConfiguration(context: UsageContext): OptimalConfiguration
+    suggestTemplateModifications(templateId: string, goals: OptimizationGoal[]): ModificationSuggestion[]
+  }
+  
+  // Automatic template evolution
+  evolution_engine: {
+    // Template variation generation
+    generateTemplateVariations(baseTemplate: BehavioralTemplate, variationStrategy: VariationStrategy): Promise<TemplateVariation[]>
+    
+    // A/B testing for templates
+    conductTemplateABTest(originalTemplate: BehavioralTemplate, variants: TemplateVariation[]): Promise<ABTestResult>
+    
+    // Evolutionary optimization
+    evolveTemplateGeneration(populationSize: number, generations: number, fitnessFunction: FitnessFunction): Promise<EvolvedTemplate[]>
+    
+    // User-guided evolution
+    incorporateUserFeedback(templateId: string, feedback: UserFeedback): Promise<UpdatedTemplate>
+    learnFromUserModifications(originalTemplate: BehavioralTemplate, userModifications: UserModification[]): void
+  }
+  
+  // Template ecosystem management
+  ecosystem_management: {
+    // Template relationship analysis
+    analyzeTemplateEcosystem(): TemplateEcosystemAnalysis
+    identifyTemplateComplementarity(templateIds: string[]): ComplementarityAnalysis
+    
+    // Cross-template optimization
+    optimizeTemplateInteractions(templateIds: string[]): InteractionOptimization[]
+    resolveTemplateConflicts(conflictingTemplates: ConflictingTemplate[]): ConflictResolution[]
+    
+    // Template lifecycle management
+    manageTemplateLifecycle(templateId: string): LifecycleManagement
+    retireObsoleteTemplates(retirementCriteria: RetirementCriteria): RetiredTemplate[]
+  }
+}
+```
+
+## 10. Integration with Existing Codex Architecture
+
+### 10.1 Behavioral Programming Integration
+
+The new template-as-programming-language capabilities integrate seamlessly with the existing universal Codex entry architecture:
+
+```typescript
+// Enhanced universal Codex entry with behavioral programming
+interface EnhancedCodexEntry extends TemplateAwareCodexEntry {
+  // Existing universal properties maintained
+  id: string
+  type: string
+  title: string
+  // ... all existing fields preserved ...
+  
+  // New behavioral programming extensions
+  behavioral_config: {
+    // Component intelligence modes
+    intelligence_modes: Set<IntelligenceMode>
+    active_mode: IntelligenceMode
+    mode_transition_rules: ModeTransitionRule[]
+    
+    // Template-driven behavior
+    behavioral_template: BehavioralTemplate | null
+    compiled_behavior: CompiledBehavior | null
+    behavior_state: BehaviorState
+    
+    // Environmental integration
+    environmental_context: EnvironmentalContext | null
+    immersive_features: ImmersiveFeature[]
+    
+    // Manager component integration
+    manager_component: VideoGameManagerComponent | null
+    component_network_participation: ComponentNetworkParticipation
+  }
+  
+  // Enhanced methods with behavioral programming support
+  executeBehavior(context: ExecutionContext): Promise<ExecutionResult>
+  switchIntelligenceMode(newMode: IntelligenceMode): Promise<void>
+  updateBehavioralTemplate(template: BehavioralTemplate): Promise<void>
+  participateInComponentNetwork(network: ComponentNetwork): void
+}
+
+// Backward compatibility layer
+interface BackwardCompatibilityLayer {
+  // Existing API preservation
+  legacyTaskAPI: LegacyTaskAPIAdapter
+  legacyCharacterAPI: LegacyCharacterAPIAdapter
+  legacySceneAPI: LegacySceneAPIAdapter
+  
+  // Progressive enhancement
+  enhanceExistingCodex(codexId: string, enhancements: BehavioralEnhancement[]): Promise<EnhancedCodexEntry>
+  migrateToEnhancedArchitecture(migrationPlan: MigrationPlan): Promise<MigrationResult>
+  
+  // Feature flag system
+  featureFlags: {
+    template_behavioral_programming: boolean
+    three_mode_components: boolean
+    immersive_environments: boolean
+    meta_codex_generation: boolean
+    video_game_components: boolean
+  }
+}
+```
+
+### 10.2 Enhanced Template System Architecture
+
+The existing template system is extended to support behavioral programming while maintaining full compatibility:
+
+```typescript
+// Enhanced template service with behavioral programming support
+interface EnhancedTemplateService extends TemplateService {
+  // Existing template operations (preserved)
+  loadTemplate(templateId: string): Promise<Template>
+  validateTemplate(template: Template): ValidationResult
+  // ... all existing methods preserved ...
+  
+  // New behavioral template operations
+  loadBehavioralTemplate(templateId: string): Promise<BehavioralTemplate>
+  compileBehavioralTemplate(template: BehavioralTemplate): Promise<CompiledBehavior>
+  validateBehavioralTemplate(template: BehavioralTemplate): BehavioralValidationResult
+  
+  // Meta-template operations
+  processMetaTemplate(metaTemplate: MetaTemplate, parameters: MetaParameters): Promise<BehavioralTemplate[]>
+  generateTemplatesFromAI(prompt: GenerationPrompt, constraints: GenerationConstraints): Promise<BehavioralTemplate[]>
+  
+  // Template evolution operations
+  evolveTemplate(templateId: string, evolutionConfig: EvolutionConfig): Promise<EvolvedTemplate[]>
+  learnFromTemplateUsage(templateId: string, usageData: TemplateUsageData): void
+  
+  // Immersive environment integration
+  createEnvironmentalTemplate(environmentSpec: EnvironmentSpecification): Promise<EnvironmentalTemplate>
+  applyEnvironmentalTemplate(codexId: string, environmentalTemplate: EnvironmentalTemplate): Promise<void>
+  
+  // Component integration
+  createComponentTemplate(componentSpec: ComponentSpecification): Promise<ComponentTemplate>
+  integrateWithComponentNetwork(templateId: string, networkConfig: NetworkConfig): Promise<void>
+}
+
+// Enhanced persistence with behavioral support
+interface EnhancedPersistenceLayer extends TemplateAwarePersistenceLayer {
+  // Existing operations (preserved)
+  writeCodexFile(codex: TemplateAwareCodexEntry): Promise<void>
+  // ... all existing methods preserved ...
+  
+  // Behavioral programming persistence
+  saveBehavioralTemplate(template: BehavioralTemplate): Promise<void>
+  loadBehavioralTemplate(templateId: string): Promise<BehavioralTemplate>
+  cacheCompiledBehavior(behavior: CompiledBehavior): Promise<void>
+  loadCompiledBehavior(behaviorId: string): Promise<CompiledBehavior>
+  
+  // Environmental data persistence
+  saveEnvironmentalConfiguration(config: EnvironmentalConfiguration): Promise<void>
+  loadEnvironmentalConfiguration(configId: string): Promise<EnvironmentalConfiguration>
+  
+  // Component state persistence
+  saveComponentState(componentId: string, state: ComponentState): Promise<void>
+  loadComponentState(componentId: string): Promise<ComponentState>
+  
+  // Meta-template persistence
+  saveMetaTemplate(metaTemplate: MetaTemplate): Promise<void>
+  loadMetaTemplate(metaTemplateId: string): Promise<MetaTemplate>
+  saveGeneratedTemplates(generatedTemplates: GeneratedTemplate[]): Promise<void>
+}
+```
+
+## 11. Success Metrics and Validation (Enhanced)
+
+### Enhanced Technical Metrics
+
+- **Behavioral Template Performance**: <50ms compilation time for behavioral templates
+- **Component Mode Switching**: <100ms transition time between intelligence modes
+- **Environmental Adaptation**: <200ms response time for environmental changes
+- **Template Generation**: <2s for AI-assisted template generation
+- **Component Network Communication**: <10ms message passing between components
+
+### Enhanced User Experience Metrics
+
+- **Behavioral Programming Adoption**: 70% of users create at least one behavioral template
+- **Intelligence Mode Usage**: Users actively use 2+ intelligence modes for different activities
+- **Environmental Satisfaction**: 85% user satisfaction with immersive environmental features
+- **Template Evolution Engagement**: 60% of users engage with template evolution suggestions
+- **Meta-Template Creation**: 40% of advanced users create meta-templates
+
+### Ecosystem Health Metrics
+
+- **Component Network Stability**: 99.9% uptime for component communication networks
+- **Template Ecosystem Growth**: Steady increase in community-created behavioral templates
+- **Cross-Mode Compatibility**: 100% compatibility between intelligence modes
+- **Environmental Integration**: Seamless integration with 90% of user hardware setups
+
 ## Conclusion
 
 The Vespera Codex System represents a fundamental paradigm shift from hardcoded content types to a **universal, template-driven knowledge orchestration platform**. By enabling users to define their own content types through JSON5 templates, we create a system that is:
@@ -762,16 +1594,45 @@ The Vespera Codex System represents a fundamental paradigm shift from hardcoded 
 5. **Richly Connected**: Template-defined relationships drive intelligent automation
 6. **Contextually Intelligent**: Content understands its template-defined role and relationships
 7. **Infinitely Extensible**: New content types created through templates, not code changes
+8. **Behaviorally Programmable**: Templates define executable logic flows, conditionals, and runtime behavior
+9. **Multi-Intelligence**: Components operate in programmatic, LLM-driven, hybrid, and template-driven modes
+10. **Immersively Environmental**: Content controls music, lighting, UI themes, and atmospheric experiences
+11. **Self-Generating**: Meta-Codex entries create other Codex entries dynamically based on context
+12. **Game-Like Intelligent**: Video game manager components provide real-time adaptation and learning
 
-This template-driven architecture enables workflows that were previously impossible, such as:
+This revolutionary architecture enables workflows that were previously impossible, such as:
 
-- **Academic researchers** creating custom citation and methodology templates
-- **TTRPG designers** defining encounter, treasure, and stat block templates
-- **Software teams** customizing agile workflow templates for their specific processes
-- **Content creators** building templates for different content types and publication workflows
-- **Freelancers** creating project management templates tailored to their client work
+**Template-as-Programming-Language Applications:**
+- **Software architects** creating behavioral templates that automatically optimize code organization
+- **Project managers** building self-adapting workflow templates that learn from team patterns
+- **Creative writers** designing character templates that evolve and respond to story development
+- **Researchers** creating meta-templates that generate specialized research methodologies
 
-The system adapts to **any domain** through user-created templates rather than requiring new features from developers.
+**Three-Mode Component Applications:**
+- **Content that switches intelligently** between fast programmatic responses and thoughtful LLM analysis
+- **Hybrid workflows** where routine tasks run programmatically while complex decisions use AI reasoning
+- **Template-driven automation** where users define all behavior through customizable templates
+- **Context-adaptive systems** that automatically select the optimal intelligence mode
+
+**Immersive Environment Applications:**
+- **Focus enhancement systems** that automatically adjust lighting, music, and UI based on work activity
+- **Mood-responsive workspaces** that adapt environmental conditions to user emotional state
+- **Context-aware productivity environments** that shift atmosphere based on project phase and content type
+- **Circadian-synchronized workspaces** that optimize environment throughout the day
+
+**Meta-Codex Generation Applications:**
+- **Project initialization systems** that generate complete project structures from high-level requirements
+- **Workflow optimization engines** that create custom templates based on team performance patterns
+- **Content creation assistants** that generate specialized templates for emerging content types
+- **Learning systems** that evolve templates based on user behavior and feedback
+
+**Video Game Manager Component Applications:**
+- **Real-time productivity optimization** with game-like performance monitoring and adaptation
+- **Intelligent resource allocation** that learns from user patterns and predicts optimal configurations
+- **Behavioral pattern recognition** that identifies workflow inefficiencies and suggests improvements
+- **Collaborative intelligence networks** where components communicate and coordinate automatically
+
+The system adapts to **any domain** and **any workflow style** through user-created behavioral templates rather than requiring new features from developers. Users can program their own intelligent behaviors, environmental experiences, and automation workflows without writing traditional code.
 
 The system maintains full compatibility with Obsidian's native features while providing **template-defined views and automation** that transform passive notes into an active, intelligent workspace customized for any domain.
 
