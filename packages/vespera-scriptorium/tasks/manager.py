@@ -35,6 +35,10 @@ class TaskManager:
             db_path=project_root / ".vespera_scriptorium" / "tasks.db" if project_root else None
         )
         
+        # Initialize task executor for real agent spawning
+        from .executor import TaskExecutor
+        self.task_executor = TaskExecutor(self.project_root, self.role_manager, self)
+        
         # Task execution tracking
         self.active_executions: Dict[str, Dict[str, Any]] = {}
         
@@ -687,3 +691,46 @@ class TaskManager:
         except Exception as e:
             logger.error(f"Failed to check circular dependency: {e}")
             return False
+    
+    async def execute_task(self, task_id: str, 
+                          context: Optional[Dict[str, Any]] = None,
+                          dry_run: bool = False) -> Dict[str, Any]:
+        """
+        Execute a task using the assigned role through agent spawning.
+        
+        This is the core orchestration method that spawns Claude agents to execute tasks.
+        
+        Args:
+            task_id: Task to execute
+            context: Additional execution context
+            dry_run: If True, validate but don't execute
+            
+        Returns:
+            Dictionary with execution results
+        """
+        try:
+            # Use TaskExecutor for real agent spawning
+            result = await self.task_executor.execute_task(task_id, context, dry_run)
+            
+            # Convert TaskExecutionResult to dictionary format expected by MCP tools
+            return {
+                "success": result.success,
+                "status": result.status.value,
+                "output": result.output,
+                "role_used": result.role_used,
+                "execution_time": result.execution_time,
+                "tool_groups_used": result.tool_groups_used or [],
+                "artifacts_created": result.artifacts_created or [],
+                "error_message": result.error,
+                "timestamp": result.timestamp.isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to execute task {task_id}: {e}")
+            return {
+                "success": False,
+                "status": "failed",
+                "error_message": str(e),
+                "output": "",
+                "execution_time": 0.0
+            }

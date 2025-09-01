@@ -321,47 +321,81 @@ class RoleExecutor:
         enforcer = ToolGroupEnforcer(role)
         
         try:
+            logger.info("=== RoleExecutor attempting real Claude CLI execution ===")
             # Enable real Claude CLI execution
             from .claude_executor import ClaudeExecutor, ClaudeExecutionConfig
             
+            logger.info("Step 1: Creating Claude executor configuration...")
             # Initialize Claude executor
             claude_config = ClaudeExecutionConfig(
                 working_directory=str(self.project_root),
-                timeout=300,  # 5 minute timeout
+                timeout=1800,  # 30 minute timeout for complex LLM tasks
                 claude_binary="claude"  # Assumes 'claude' is in PATH
             )
-            executor = ClaudeExecutor(self.project_root, claude_config)
+            logger.info(f"Config created - binary: {claude_config.claude_binary}, working_dir: {claude_config.working_directory}")
+            
+            logger.info("Step 2: Creating ClaudeExecutor instance...")
+            executor = ClaudeExecutor(project_root=self.project_root, config=claude_config)
+            logger.info("ClaudeExecutor instance created successfully")
             
             # Execute with real Claude CLI
             import asyncio
             task_id = f"exec_{int(time.time() * 1000)}"
+            logger.info(f"Step 3: Generated task ID: {task_id}")
             
             try:
                 # Run async execution
-                logger.info(f"Attempting real Claude CLI execution for task {task_id}")
+                logger.info(f"=== ATTEMPTING REAL CLAUDE CLI EXECUTION ===")
+                logger.info(f"Task ID: {task_id}")
+                logger.info(f"Role: {role_name}")
                 logger.info(f"Claude binary: {claude_config.claude_binary}")
                 logger.info(f"Working directory: {claude_config.working_directory}")
                 logger.info(f"Timeout: {claude_config.timeout}s")
+                logger.info(f"Project root: {self.project_root}")
+                logger.info(f"Task prompt length: {len(task_prompt)} chars")
                 
-                result = asyncio.run(
-                    executor.execute_task_with_claude(execution_context, task_id, dry_run=False)
-                )
+                logger.info("Step 4: Executing ClaudeExecutor with event loop handling...")
+                try:
+                    # Check if we're in an event loop
+                    loop = asyncio.get_running_loop()
+                    logger.info("Running in existing event loop - using thread executor")
+                    
+                    # Use thread executor to avoid "asyncio.run() cannot be called from a running event loop"
+                    import concurrent.futures
+                    with concurrent.futures.ThreadPoolExecutor() as thread_pool:
+                        result = thread_pool.submit(
+                            asyncio.run,
+                            executor.execute_task_with_claude(execution_context, task_id, dry_run=False)
+                        ).result()
+                    
+                except RuntimeError:
+                    # No event loop running - can use asyncio.run directly
+                    logger.info("No event loop running - using asyncio.run")
+                    result = asyncio.run(
+                        executor.execute_task_with_claude(execution_context, task_id, dry_run=False)
+                    )
                 
-                logger.info(f"Claude CLI execution succeeded for task {task_id}")
+                logger.info(f"=== CLAUDE CLI EXECUTION SUCCEEDED ===")
+                logger.info(f"Task ID: {task_id}")
+                logger.info(f"Result status: {result.status}")
+                logger.info(f"Result success: {getattr(result, 'success', 'N/A')}")
                 return result
                 
             except Exception as claude_error:
                 # Enhanced error logging before fallback to simulation
-                logger.error(f"Claude CLI execution failed for task {task_id}")
-                logger.error(f"Error type: {type(claude_error).__name__}")
-                logger.error(f"Error message: {str(claude_error)}")
+                logger.error(f"=== CLAUDE CLI EXECUTION FAILED ===")
+                logger.error(f"Task ID: {task_id}")
+                logger.error(f"Exception type: {type(claude_error).__name__}")
+                logger.error(f"Exception message: {str(claude_error)}")
                 logger.error(f"Role: {role_name}")
-                logger.error(f"Task prompt: {task_prompt[:100]}...")
+                logger.error(f"Task prompt (first 100 chars): {task_prompt[:100]}...")
                 
                 # Log additional context for debugging
                 import traceback
-                logger.error(f"Full traceback:\n{traceback.format_exc()}")
+                logger.error(f"=== FULL TRACEBACK ===")
+                logger.error(traceback.format_exc())
                 
+                logger.info("=== TESTING CLAUDE BINARY ACCESSIBILITY ===")
                 # Check if Claude binary is accessible
                 import subprocess
                 try:
@@ -371,13 +405,13 @@ class RoleExecutor:
                         text=True, 
                         timeout=5
                     )
-                    logger.error(f"Claude binary test - returncode: {subprocess_result.returncode}")
-                    logger.error(f"Claude binary test - stdout: {subprocess_result.stdout}")
-                    logger.error(f"Claude binary test - stderr: {subprocess_result.stderr}")
+                    logger.info(f"Claude binary test - returncode: {subprocess_result.returncode}")
+                    logger.info(f"Claude binary test - stdout: {subprocess_result.stdout}")
+                    logger.info(f"Claude binary test - stderr: {subprocess_result.stderr}")
                 except Exception as subprocess_error:
                     logger.error(f"Failed to test Claude binary: {subprocess_error}")
                 
-                logger.warning("Falling back to enhanced simulation mode")
+                logger.warning("=== FALLING BACK TO ENHANCED SIMULATION MODE ===")
                 execution_time = time.time() - start_time
             
             execution_time = time.time() - start_time

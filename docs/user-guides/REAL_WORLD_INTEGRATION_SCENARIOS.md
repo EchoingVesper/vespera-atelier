@@ -51,6 +51,7 @@ This documentation demonstrates how the revolutionary Vespera Template-Driven Co
 ```
 
 Sarah creates scene using her custom template:
+
 - **Scene Codex**: "Chapter_3_Forest_Encounter.codex.md" (uses scene_with_music template)
 - **Music Codex**: "Ambient_Forest_Sounds.codex.md" (uses ambient_music template)
 - **Automatic linking**: Template system connects them through mood-based automation
@@ -121,6 +122,7 @@ Campaign Directory (uses ttrpg_campaign template): "Shattered_Realms_Campaign"
 ```
 
 **Template Set Configuration**:
+
 ```json5
 // Marcus's TTRPG template set
 {
@@ -205,6 +207,7 @@ Project Directory (uses academic_research_project template): "Maritime_Trade_175
 ```
 
 **Dr. Chen's Custom Academic Template Set**:
+
 ```json5
 {
   "template_set_id": "maritime_history_research",
@@ -291,6 +294,7 @@ Series Directory (uses fantasy_book_series template): "Chronicles_of_Aethermoor"
 ```
 
 **Alex's Fantasy Series Template Set**:
+
 ```json5
 {
   "template_set_id": "fantasy_series_complete",
@@ -377,6 +381,7 @@ Visual Novel Project (uses visual_novel_project template): "Heart_of_the_Academy
 ```
 
 **Yuki's Visual Novel Template Set**:
+
 ```json5
 {
   "template_set_id": "romance_vn_complete",
@@ -462,6 +467,7 @@ Immersive Writing Project (uses immersive_writing_environment template): "Shadow
 ```
 
 **Maya's Immersive Environment Template Set**:
+
 ```json5
 {
   "template_set_id": "immersive_writing_complete",
@@ -646,6 +652,7 @@ Collaborative_Story_Project (uses p2p_collaborative_writing template): "Quantum_
 ```
 
 **Collaborative Template Set with P2P Architecture**:
+
 ```json5
 {
   "template_set_id": "p2p_collaborative_writing",
@@ -866,6 +873,7 @@ Dynamic_Game_Project (uses dynamic_video_game template): "Adaptive_Realms_RPG"
 ```
 
 **Dynamic Game Template Set**:
+
 ```json5
 {
   "template_set_id": "dynamic_video_game_complete",

@@ -80,11 +80,13 @@ project_types:
 ### 1. Project Isolation
 
 **Virtual Project Boundaries**
+
 - Projects are isolated through metadata, not file system folders
 - Intelligent filtering prevents cross-project template interference
 - Project-specific search scopes maintain context boundaries
 
 **Isolation Mechanisms**
+
 ```typescript
 interface ProjectIsolation {
   metadata_filtering: {
@@ -104,11 +106,13 @@ interface ProjectIsolation {
 ### 2. Template Switching
 
 **Context-Aware Template Activation**
+
 - Automatic template set loading based on project context
 - Seamless switching without manual configuration
 - Template inheritance for shared patterns
 
 **Implementation Pattern**
+
 ```typescript
 class TemplateContextManager {
   async switchProjectContext(projectId: string): Promise<void> {
@@ -130,11 +134,13 @@ class TemplateContextManager {
 ### 3. Cross-Project References
 
 **Controlled Cross-Pollination**
+
 - Explicit cross-project linking with metadata preservation
 - Smart suggestions for related content across projects
 - Reference tracking to prevent orphaned connections
 
 **Reference Patterns**
+
 ```yaml
 # In a software development note
 cross_project_references:
@@ -147,12 +153,14 @@ cross_project_references:
 ### 4. Project Discovery
 
 **Multi-Dimensional Organization**
+
 - Project dashboard with active/archived status
 - Tag-based project categorization
 - Timeline-based project access
 - Smart project recommendations
 
 **Discovery Interface**
+
 ```typescript
 interface ProjectDiscovery {
   dashboards: {
@@ -173,6 +181,7 @@ interface ProjectDiscovery {
 ### 5. Workspace Management
 
 **Dynamic Workspace Configuration**
+
 - Project-type-specific UI layouts
 - Automatic sidebar and panel configuration
 - Context-aware plugin activation
@@ -242,6 +251,7 @@ interface SmartSearch {
 **Context**: Developer working on TypeScript web app, Python ML project, and Rust CLI tool
 
 **Implementation**:
+
 ```yaml
 projects:
   - id: "web_frontend"
@@ -261,6 +271,7 @@ projects:
 ```
 
 **User Flow**:
+
 1. Opens note tagged with `ml_research`
 2. System automatically loads Python templates and data science workspace
 3. Code snippets, documentation patterns, and automation rules switch context
@@ -271,6 +282,7 @@ projects:
 **Context**: Managing novel writing, academic papers, and collaborative TTRPG development
 
 **Implementation**:
+
 ```yaml
 projects:
   - id: "fantasy_novel"
@@ -287,6 +299,7 @@ projects:
 ```
 
 **Cross-Project Synergies**:
+
 - Character psychology insights from research inform novel characters
 - Worldbuilding elements inspire TTRPG locations
 - Research methodology applies to game balance analysis
@@ -296,6 +309,7 @@ projects:
 **Context**: YouTube videos, blog articles, course development, and technical tutorials
 
 **Implementation**:
+
 - Project-specific content calendars
 - Cross-platform content repurposing templates
 - Audience analysis shared across projects
@@ -306,6 +320,7 @@ projects:
 **Context**: Managing multiple creative projects with environmental adaptation needs
 
 **Implementation**:
+
 ```yaml
 projects:
   - id: "fantasy_epic"
@@ -326,6 +341,7 @@ projects:
 ```
 
 **Environmental Features**:
+
 - Automatic music switching based on scene mood tags
 - Dynamic lighting adjustment matching scene atmosphere
 - Context-aware UI themes that adapt to story genre
@@ -484,12 +500,14 @@ plugin_compatibility:
 ### Performance Considerations
 
 **Scalability Strategies**:
+
 - Lazy loading of template sets
 - Indexed project metadata for fast context detection
 - Cached project hierarchies for instant switching
 - Background processing for cross-project analysis
 
 **Memory Management**:
+
 ```typescript
 interface PerformanceOptimization {
   template_caching: {
@@ -517,16 +535,19 @@ interface PerformanceOptimization {
 ### Project Switching Interface
 
 **Command Palette Integration**:
+
 - "Switch to Project: [Project Name]"
 - "Create Note in Project: [Project Name]"
 - "Find Cross-Project References"
 
 **Status Bar Indicators**:
+
 - Current project context
 - Active template set
 - Cross-project reference count
 
 **Sidebar Panels**:
+
 - Project dashboard
 - Template set selector
 - Cross-project connections
@@ -534,12 +555,14 @@ interface PerformanceOptimization {
 ### Onboarding Flow
 
 **Initial Setup**:
+
 1. Project type detection from existing notes
 2. Automatic template set suggestions
 3. Cross-project reference discovery
 4. Workspace configuration optimization
 
 **Progressive Disclosure**:
+
 - Start with single-project awareness
 - Gradually introduce cross-project features
 - Advanced features unlock with usage patterns
@@ -549,6 +572,7 @@ interface PerformanceOptimization {
 ### Existing Vault Migration
 
 **Phase 1: Detection and Analysis**
+
 ```typescript
 class VaultMigrationAnalyzer {
   async analyzeExistingVault(): Promise<MigrationPlan> {
@@ -562,11 +586,13 @@ class VaultMigrationAnalyzer {
 ```
 
 **Phase 2: Gradual Enhancement**
+
 - Add project metadata to existing notes
 - Preserve existing folder structures as hints
 - Maintain backward compatibility with existing workflows
 
 **Phase 3: Full Feature Activation**
+
 - Enable cross-project features
 - Optimize workspace configurations
 - Deploy advanced automation rules
@@ -574,11 +600,13 @@ class VaultMigrationAnalyzer {
 ### Change Management
 
 **User Training**:
+
 - Interactive tutorials for project context switching
 - Best practices for cross-project organization
 - Template customization workshops
 
 **Rollback Strategies**:
+
 - Metadata is additive, not destructive
 - Template system remains backward compatible
 - Project features can be disabled without data loss
@@ -588,26 +616,31 @@ class VaultMigrationAnalyzer {
 ### Planned Features
 
 **Collaborative Project Management**:
+
 - Shared project contexts across team members
 - Collaborative template development
 - Real-time project activity synchronization
 
 **AI-Enhanced Organization**:
+
 - Automatic project type detection
 - Smart template suggestions
 - Content-based project clustering
 
 **Advanced Analytics**:
+
 - Project productivity metrics
 - Cross-project knowledge flow analysis
 - Template effectiveness measurement
 
 **Integration Expansions**:
+
 - Git repository integration for code projects
 - Task management system connectivity
 - External tool synchronization (Jira, Notion, etc.)
 
 **Immersive Environment Integration**:
+
 - Environmental adaptation engine for creative projects
 - Real-time music and lighting synchronization
 - Context-aware UI theme switching
@@ -618,11 +651,13 @@ class VaultMigrationAnalyzer {
 ### Research Directions
 
 **Cognitive Load Optimization**:
+
 - Context switching fatigue mitigation
 - Attention management for multi-project workflows
 - Decision support for project prioritization
 
 **Knowledge Graph Enhancement**:
+
 - Semantic project relationships
 - Automated knowledge transfer suggestions
 - Project evolution tracking
@@ -634,6 +669,7 @@ The Multi-Project Vault Organization system transforms Obsidian vaults from simp
 The system addresses the core challenge of information fragmentation while providing the flexibility to work across diverse project types with appropriate tooling and context. Through careful attention to user experience, performance, and integration, it creates a sustainable foundation for complex, multi-faceted knowledge work.
 
 Key success metrics include:
+
 - Reduced project information loss
 - Faster context switching between project types
 - Increased discovery of cross-project insights

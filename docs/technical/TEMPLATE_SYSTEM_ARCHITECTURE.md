@@ -1564,7 +1564,7 @@ Templates can define immersive environment settings that create adaptive user ex
   
   // Immersive Environment Configuration
   "environmental_config": {
-    // Audio and Music Integration  
+    // Audio and Music Integration
     "audio_profiles": {
       "default": "medieval_ambient.mp3",
       "combat": "battle_drums.mp3",
@@ -2278,6 +2278,7 @@ type TemplateChangeCallback = (template: Template) => void
 ## 10. Implementation Plan
 
 ### Phase 1: Foundation (Weeks 1-2)
+
 1. **Core Template Infrastructure**
    - Implement `Template` and related interfaces
    - Create `TemplateRegistry` service
@@ -2291,6 +2292,7 @@ type TemplateChangeCallback = (template: Template) => void
    - Set up template file watching
 
 ### Phase 2: Dynamic Type System (Weeks 3-4)
+
 1. **Dynamic CodexType Registration**
    - Extend existing `CodexType` enum to support dynamic types
    - Implement `DynamicCodexType` creation from templates
@@ -2304,6 +2306,7 @@ type TemplateChangeCallback = (template: Template) => void
    - Add validation pipeline
 
 ### Phase 3: Template Views and UI (Weeks 5-6)
+
 1. **Template-Driven Views**
    - Extend `ViewRenderer` to support template-defined views
    - Implement tabbed, dashboard, and compact layouts
@@ -2317,6 +2320,7 @@ type TemplateChangeCallback = (template: Template) => void
    - Create template customization interface
 
 ### Phase 4: Advanced Features (Weeks 7-8)
+
 1. **Template Sharing System**
    - Implement hash-based sharing
    - Create import/export functionality
@@ -2330,6 +2334,7 @@ type TemplateChangeCallback = (template: Template) => void
    - Add template discovery by project type
 
 ### Phase 5: Integration and Polish (Weeks 9-10)
+
 1. **Automation Integration**
    - Connect template automation rules to existing automation system
    - Implement template-triggered workflows

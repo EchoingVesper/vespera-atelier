@@ -164,25 +164,29 @@ class RoleValidator:
             )
     
     def _is_valid_llm_identifier(self, llm_id: str) -> bool:
-        """Check if LLM identifier has valid format."""
-        parts = llm_id.split(':')
-        
-        # Local format: local:ollama:model
-        if len(parts) >= 3 and parts[0] == 'local':
-            return True
-        
-        # API format: provider:model
-        if len(parts) == 2:
-            return True
-        
-        # Single model names (common API models)
-        if len(parts) == 1 and llm_id in [
-            'claude-3-5-sonnet', 'claude-3-haiku', 'claude-3-opus',
-            'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'
-        ]:
-            return True
-        
-        return False
+        """Check if LLM identifier has valid format using template-driven validation."""
+        # Import here to avoid circular imports
+        try:
+            from .model_config import ModelConfigManager
+            model_manager = ModelConfigManager()
+            return model_manager.validator.validate_model_name(llm_id)
+        except Exception:
+            # Fallback to basic format validation
+            parts = llm_id.split(':')
+            
+            # Local format: local:ollama:model
+            if len(parts) >= 3 and parts[0] == 'local':
+                return True
+            
+            # API format: provider:model
+            if len(parts) == 2:
+                return True
+            
+            # Single model names (legacy support)
+            if len(parts) == 1:
+                return True
+            
+            return False
     
     def _check_llm_availability(self, role: Role) -> None:
         """Check availability of role's LLMs and suggest alternatives."""
@@ -211,7 +215,29 @@ class RoleValidator:
                 )
     
     def _check_single_llm_availability(self, llm_id: str) -> LLMProvider:
-        """Check if a single LLM is available."""
+        """Check if a single LLM is available using template-driven configuration."""
+        # Try template-driven validation first
+        try:
+            from .model_config import ModelConfigManager
+            model_manager = ModelConfigManager()
+            
+            # Check if this is a known model in our template system
+            model_info = model_manager.validator.resolve_model(llm_id)
+            if model_info:
+                # Model is known in template system - check by provider
+                if model_info.provider == "anthropic":
+                    return LLMProvider("anthropic", model_info.id, True, f"Template model: {model_info.cli_name}")
+                elif model_info.provider == "openai":
+                    return LLMProvider("openai", model_info.id, True, f"Template model: {model_info.cli_name}")
+                elif model_info.provider == "local":
+                    return self._check_ollama_model(model_info.cli_name)
+                else:
+                    return LLMProvider(model_info.provider, model_info.id, True, f"Template model: {model_info.cli_name}")
+        except Exception as e:
+            # Fall back to legacy validation
+            pass
+        
+        # Legacy validation for explicit provider:model format
         parts = llm_id.split(':')
         
         if parts[0] == 'local':
@@ -230,7 +256,7 @@ class RoleValidator:
             return LLMProvider("openai", parts[1] if len(parts) > 1 else "unknown", True, "API model")
         
         else:
-            return LLMProvider(parts[0], parts[1] if len(parts) > 1 else "unknown", False, "Unknown provider")
+            return LLMProvider(parts[0], parts[1] if len(parts) > 1 else "unknown", False, "Unknown provider or model")
     
     def _check_ollama_model(self, model_name: str) -> LLMProvider:
         """Check if an Ollama model is available locally."""

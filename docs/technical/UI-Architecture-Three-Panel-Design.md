@@ -2542,18 +2542,21 @@ interface ImmersiveIntegrationRequirements {
 #### 9.6.2 Environmental Panel Integration Points
 
 **Left Panel (Codex Navigator) Integration:**
+
 - Environmental mode indicators for each content item
 - Template-specific environmental rule display
 - Environmental filter options in smart folder system
 - Visual environmental state indicators in navigation tree
 
 **Center Panel (Main Editor) Integration:**
+
 - Real-time environmental adaptation during editing
 - Mode-aware component transitions within editor views
 - Environmental context preservation during tab switching
 - Three-mode component indicators embedded in editor interface
 
 **Right Panel (AI Chat) Integration:**
+
 - Environmental context in AI conversations
 - Environmental automation rule creation via natural language
 - Real-time collaboration status integrated with AI assistant

@@ -173,17 +173,30 @@ class ClaudeExecutor:
         """
         start_time = time.time()
         
+        logger.info(f"=== ClaudeExecutor.execute_task_with_claude ENTRY ===")
+        logger.info(f"Task ID: {task_id}")
+        logger.info(f"Role: {context.role.name}")
+        logger.info(f"Dry run: {dry_run}")
+        logger.info(f"Project root: {self.project_root}")
+        logger.info(f"Config: {self.config.__dict__}")
+        
         try:
+            logger.info("Step 1: Validating task ID...")
             # Validate inputs first
             task_id = self._validate_task_id(task_id)
+            logger.info(f"Task ID validated: {task_id}")
             
+            logger.info("Step 2: Preparing Claude CLI command...")
             # Prepare Claude CLI command
-            claude_command, prompt_file = self._prepare_claude_command(context, task_id)
+            claude_command, user_prompt = self._prepare_claude_command(context, task_id)
+            logger.info(f"Command prepared: {' '.join(claude_command)}")
+            logger.info(f"User prompt length: {len(user_prompt)} chars")
             
             if dry_run:
+                logger.info("Dry run mode - returning without execution")
                 return ExecutionResult(
                     status=ExecutionStatus.COMPLETED,
-                    output=f"[DRY RUN] Would execute: {' '.join(claude_command)}",
+                    output=f"[DRY RUN] Would execute: {' '.join(claude_command)}\nWith user prompt: {user_prompt[:200]}...",
                     role_name=context.role.name,
                     execution_time=time.time() - start_time,
                     tool_groups_used=[self._extract_tool_groups(context.role)],
@@ -191,18 +204,25 @@ class ClaudeExecutor:
                     files_modified=[]
                 )
             
-            # Execute Claude CLI process
-            result = await self._execute_claude_process(
+            logger.info("Step 3: Executing Claude CLI process...")
+            # Execute Claude CLI process with stream-json format
+            result = await self._execute_claude_process_with_streaming(
                 claude_command, 
-                prompt_file,
+                user_prompt,
                 task_id,
                 context
             )
             
+            logger.info("Step 4: Claude CLI execution completed successfully")
+            logger.info(f"Result status: {result.status}")
+            logger.info(f"Result output length: {len(result.output)}")
             return result
             
         except Exception as e:
-            logger.exception(f"Failed to execute task {task_id} with Claude")
+            logger.error(f"=== ClaudeExecutor.execute_task_with_claude EXCEPTION ===")
+            logger.error(f"Exception type: {type(e).__name__}")
+            logger.error(f"Exception message: {str(e)}")
+            logger.exception(f"Full traceback for task {task_id} Claude execution:")
             return ExecutionResult(
                 status=ExecutionStatus.FAILED,
                 output="",
@@ -211,56 +231,115 @@ class ClaudeExecutor:
                 tool_groups_used=[],
                 restrictions_violated=[],
                 files_modified=[],
-                error_message=str(e)
+                error_message=f"ClaudeExecutor error: {str(e)}"
             )
     
     def _prepare_claude_command(
         self, 
         context: ExecutionContext, 
         task_id: str
-    ) -> Tuple[List[str], Path]:
+    ) -> Tuple[List[str], str]:
         """
-        Prepare Claude CLI command with role-based restrictions.
+        Prepare Claude CLI command with role-based restrictions using proper CLI patterns.
         
         Returns:
-            Tuple of (command_args, prompt_file_path)
+            Tuple of (command_args, user_prompt_content)
         """
-        # Create temporary prompt file
-        prompt_content = self._build_role_aware_prompt(context, task_id)
-        prompt_file = self._create_prompt_file(prompt_content, task_id)
-        
-        # Base Claude command with --print flag for non-interactive execution
+        # Base Claude command with proper flags for agent spawning
         command = [self.config.claude_binary, "--print"]
         
-        # Add model configuration
-        if self.config.model:
-            command.extend(["--model", self.config.model])
+        # Add streaming JSON output for better response capture
+        command.extend(["--output-format", "stream-json"])
+        # Don't use --input-format stream-json, send plain text to stdin instead
         
-        # Add role-based tool restrictions using correct Claude CLI format
+        # Add verbose mode for debugging
+        command.append("--verbose")
+        
+        # Add model configuration (template-driven)
+        model = context.role.preferred_llm if hasattr(context.role, 'preferred_llm') else self.config.model
+        if model:
+            command.extend(["--model", model])
+        
+        # Add role-based tool restrictions (template-driven from role files)
         allowed_tools = self._get_allowed_tools(context.role)
         validated_tools = self._validate_tools(allowed_tools)
         if validated_tools:
-            # Use shlex.quote to prevent command injection
-            command.extend(["--allowed-tools"] + [shlex.quote(tool) for tool in validated_tools])
+            # Join tools with commas as expected by Claude CLI
+            tools_str = ",".join(validated_tools)
+            command.extend(["--allowed-tools", tools_str])
         
-        # Add additional directory access if needed (with validation)
-        working_dir = None
+        # Use --append-system-prompt for role-specific system instructions
+        system_prompt = self._build_role_system_prompt(context)
+        if system_prompt:
+            command.extend(["--append-system-prompt", system_prompt])
+        
+        # Add working directory access
+        working_dir = self._get_validated_working_directory()
+        if working_dir != self.project_root:
+            command.extend(["--add-dir", str(working_dir)])
+        
+        # Build user prompt (task description) - this goes to stdin
+        user_prompt = self._build_user_prompt(context, task_id)
+        
+        return command, user_prompt
+    
+    def _build_role_system_prompt(self, context: ExecutionContext) -> str:
+        """Build system prompt for role-based execution using --append-system-prompt."""
+        system_parts = [
+            f"You are operating as a {context.role.display_name}.",
+            context.role.system_prompt,
+            "",
+            "# Role Restrictions",
+        ]
+        
+        # Add role restrictions
+        if hasattr(context.role, 'restrictions') and context.role.restrictions:
+            for restriction in context.role.restrictions:
+                system_parts.append(f"- {restriction}")
+        
+        # Add tool group restrictions
+        system_parts.append("")
+        system_parts.append("# Tool Access")
+        for group_entry in context.role.tool_groups:
+            if isinstance(group_entry, ToolGroup):
+                system_parts.append(f"- ✓ {group_entry.value}: Full access")
+            elif isinstance(group_entry, tuple):
+                group, options = group_entry
+                restriction_info = f" (restricted to: {options.file_regex})" if hasattr(options, 'file_regex') and options.file_regex else ""
+                system_parts.append(f"- ✓ {group.value}{restriction_info}")
+        
+        return "\n".join(system_parts)
+    
+    def _build_user_prompt(self, context: ExecutionContext, task_id: str) -> str:
+        """Build user prompt (task description) that goes to stdin."""
+        prompt_parts = [
+            f"# Task: {context.task_prompt}",
+            "",
+            f"Task ID: {task_id}",
+            "",
+            "Please complete this task according to your role as a {}.".format(context.role.display_name),
+        ]
+        
+        # Add any additional context
+        if hasattr(context, 'project_context') and context.project_context:
+            prompt_parts.extend(["", "## Project Context", context.project_context])
+        
+        if hasattr(context, 'linked_documents') and context.linked_documents:
+            prompt_parts.extend(["", "## Referenced Documents"])
+            for doc in context.linked_documents:
+                prompt_parts.append(f"- {doc}")
+        
+        return "\n".join(prompt_parts)
+    
+    def _get_validated_working_directory(self) -> Path:
+        """Get and validate the working directory."""
         if self.config.working_directory:
             try:
-                working_dir = self._validate_working_directory(self.config.working_directory)
+                return self._validate_working_directory(self.config.working_directory)
             except ValueError as e:
                 logger.warning(f"Invalid working directory in config: {e}")
-                working_dir = self.project_root
-        else:
-            working_dir = self.project_root
-        
-        if working_dir and working_dir.exists():
-            # Use shlex.quote to prevent path injection
-            command.extend(["--add-dir", shlex.quote(str(working_dir))])
-        
-        # Note: prompt will be sent via stdin, not as command line argument
-        
-        return command, prompt_file
+                return self.project_root
+        return self.project_root
     
     def _build_role_aware_prompt(self, context: ExecutionContext, task_id: str) -> str:
         """Build a comprehensive prompt that includes role context and restrictions."""
@@ -360,32 +439,27 @@ class ClaudeExecutor:
         
         return prompt_file
     
-    async def _execute_claude_process(
+    async def _execute_claude_process_with_streaming(
         self,
         command: List[str],
-        prompt_file: Path,
+        user_prompt: str,
         task_id: str,
         context: ExecutionContext
     ) -> ExecutionResult:
-        """Execute the Claude CLI process and capture results."""
+        """Execute Claude CLI process with stream-json format and proper stdin handling."""
         start_time = time.time()
         
         try:
             logger.info(f"Executing Claude command for task {task_id}: {' '.join(command)}")
             logger.info(f"Working directory: {self.config.working_directory or self.project_root}")
-            logger.info(f"Prompt file: {prompt_file}")
-            
-            # Verify prompt file exists and is readable
-            if not prompt_file.exists():
-                raise FileNotFoundError(f"Prompt file does not exist: {prompt_file}")
-            logger.info(f"Prompt file size: {prompt_file.stat().st_size} bytes")
+            logger.info(f"User prompt length: {len(user_prompt)} chars")
             
             # Validate and prepare working directory
             working_dir = self.config.working_directory or str(self.project_root)
             validated_working_dir = self._validate_working_directory(working_dir)
             
-            # Start Claude process with security restrictions
             logger.info("Creating subprocess...")
+            # Start Claude process with security restrictions
             process = await asyncio.create_subprocess_exec(
                 *command,
                 stdin=asyncio.subprocess.PIPE,
@@ -399,15 +473,15 @@ class ClaudeExecutor:
             
             self.active_processes[task_id] = process
             
-            # Send prompt via stdin and wait for completion
-            logger.info("Sending prompt via stdin...")
-            prompt_content = prompt_file.read_text(encoding='utf-8')
+            # Send plain text prompt via stdin (Claude CLI handles this better than JSON)
+            logger.info("Sending plain text prompt via stdin...")
+            logger.info(f"User prompt: {user_prompt[:200]}...")
             
-            # Wait for completion with timeout
+            # Wait for completion with extended timeout for LLM processing
             logger.info(f"Waiting for subprocess completion (timeout: {self.config.timeout}s)...")
             try:
                 stdout, stderr = await asyncio.wait_for(
-                    process.communicate(input=prompt_content.encode('utf-8')),
+                    process.communicate(input=user_prompt.encode('utf-8')),
                     timeout=self.config.timeout
                 )
                 logger.info(f"Subprocess completed with return code: {process.returncode}")
@@ -421,12 +495,18 @@ class ClaudeExecutor:
             if task_id in self.active_processes:
                 del self.active_processes[task_id]
             
-            # Parse results
+            # Parse stream-json results
             execution_time = time.time() - start_time
-            output = stdout.decode('utf-8') if stdout else ""
+            raw_output = stdout.decode('utf-8') if stdout else ""
             error_output = stderr.decode('utf-8') if stderr else ""
             
-            logger.info(f"Subprocess output length: {len(output)} chars")
+            logger.info(f"Raw output length: {len(raw_output)} chars")
+            logger.info(f"Error output: {error_output[:500]}..." if error_output else "No error output")
+            
+            # Parse stream-json output to extract actual Claude response
+            parsed_output = self._parse_stream_json_output(raw_output)
+            
+            logger.info(f"Parsed output length: {len(parsed_output)} chars")
             logger.info(f"Subprocess error length: {len(error_output)} chars")
             
             if error_output:
@@ -443,17 +523,11 @@ class ClaudeExecutor:
                 logger.error(f"Claude subprocess failed: {error_message}")
             
             # Extract file modifications (would need to parse Claude's output)
-            files_modified = self._extract_file_modifications(output)
-            
-            # Clean up prompt file
-            try:
-                prompt_file.unlink()
-            except Exception:
-                pass  # Ignore cleanup errors
+            files_modified = self._extract_file_modifications(parsed_output)
             
             return ExecutionResult(
                 status=status,
-                output=output,
+                output=parsed_output,
                 role_name=context.role.name,
                 execution_time=execution_time,
                 tool_groups_used=[self._extract_tool_groups(context.role)],
@@ -477,6 +551,81 @@ class ClaudeExecutor:
                 pass
             
             raise e
+    
+    def _parse_stream_json_output(self, raw_output: str) -> str:
+        """Parse stream-json output to extract actual Claude response content using Claude Code SDK schema."""
+        if not raw_output.strip():
+            return ""
+        
+        content_parts = []
+        
+        # Split by lines and parse each JSON object
+        for line in raw_output.strip().split('\n'):
+            line = line.strip()
+            if not line:
+                continue
+                
+            try:
+                json_obj = json.loads(line)
+                
+                # Handle Claude Code SDK message schema format
+                if json_obj.get('type') == 'assistant':
+                    # Assistant message with content
+                    message = json_obj.get('message', {})
+                    content = message.get('content', [])
+                    
+                    if isinstance(content, list):
+                        for block in content:
+                            if isinstance(block, dict) and block.get('type') == 'text':
+                                content_parts.append(block.get('text', ''))
+                    elif isinstance(content, str):
+                        content_parts.append(content)
+                        
+                elif json_obj.get('type') == 'result':
+                    # Result object with final result
+                    result = json_obj.get('result', '')
+                    if result:
+                        content_parts.append(result)
+                        
+                elif json_obj.get('type') == 'system':
+                    # System initialization - ignore
+                    continue
+                    
+                # Legacy fallbacks for other formats
+                elif json_obj.get('type') == 'content_block_delta':
+                    # Streaming content delta
+                    delta = json_obj.get('delta', {})
+                    if delta.get('type') == 'text_delta':
+                        content_parts.append(delta.get('text', ''))
+                        
+                elif json_obj.get('type') == 'content_block':
+                    # Complete content block
+                    if json_obj.get('content_type') == 'text':
+                        content_parts.append(json_obj.get('text', ''))
+                        
+                elif json_obj.get('type') == 'message':
+                    # Complete message (fallback)
+                    content = json_obj.get('content', [])
+                    if isinstance(content, list):
+                        for block in content:
+                            if isinstance(block, dict) and block.get('type') == 'text':
+                                content_parts.append(block.get('text', ''))
+                    elif isinstance(content, str):
+                        content_parts.append(content)
+                        
+            except json.JSONDecodeError as e:
+                logger.warning(f"Failed to parse JSON line: {line[:100]}... Error: {e}")
+                # If JSON parsing fails, treat as plain text (fallback)
+                content_parts.append(line)
+        
+        result = ''.join(content_parts).strip()
+        
+        # If no JSON parsing worked, return raw output as fallback
+        if not result and raw_output:
+            logger.info("No JSON content found, using raw output as fallback")
+            return raw_output
+            
+        return result
     
     def _get_allowed_tools(self, role: Role) -> List[str]:
         """Extract allowed tools from role's tool groups."""
@@ -503,16 +652,13 @@ class ClaudeExecutor:
         """Extract file access patterns from role restrictions."""
         patterns = []
         
-        for restriction in role.restrictions:
-            if restriction.type == RestrictionType.FILE_PATTERN:
-                patterns.append(str(restriction.value))
-        
+        # File restrictions come from tool group options, not general restrictions
         # Check tool groups for file restrictions
         for tool_group in role.tool_groups:
             if isinstance(tool_group, tuple) and len(tool_group) > 1:
                 # Tool group with options
                 options = tool_group[1]
-                if hasattr(options, 'file_regex'):
+                if hasattr(options, 'file_regex') and options.file_regex:
                     patterns.append(options.file_regex)
         
         return patterns

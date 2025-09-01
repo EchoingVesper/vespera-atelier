@@ -105,10 +105,18 @@ class TaskExecutor:
         """
         start_time = datetime.now()
         
+        logger.info(f"=== TaskExecutor.execute_task ENTRY ===")
+        logger.info(f"Task ID: {task_id}")
+        logger.info(f"Context: {context}")
+        logger.info(f"Dry run: {dry_run}")
+        logger.info(f"Timeout: {timeout_minutes} minutes")
+        
         try:
+            logger.info("Step 1: Getting task from database...")
             # Get task
             task = await self.task_manager.task_service.get_task(task_id)
             if not task:
+                logger.error(f"Task {task_id} not found in database")
                 return TaskExecutionResult(
                     task_id=task_id,
                     success=False,
@@ -116,8 +124,15 @@ class TaskExecutor:
                     error=f"Task {task_id} not found"
                 )
             
+            logger.info(f"Task found: {task.title}")
+            logger.info(f"Task status: {task.status}")
+            logger.info(f"Assigned role: {task.execution.assigned_role}")
+            logger.info(f"Can be executed: {task.can_be_executed()}")
+            
             # Validate task is ready for execution
             if not task.can_be_executed():
+                logger.error(f"Task {task_id} is not ready for execution")
+                logger.error(f"Status: {task.status}, Role: {task.execution.assigned_role}")
                 return TaskExecutionResult(
                     task_id=task_id,
                     success=False,

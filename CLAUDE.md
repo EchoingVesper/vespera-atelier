@@ -437,3 +437,6 @@ All packages in this monorepo share this license to ensure open-source collabora
 ---
 
 **Remember**: This is a monorepo. Think in terms of packages, workspaces, and coordinated development.
+- The Claude Code CLI doesn't have the ability to restart a server connected to a currently running Claude Code instance. That's a manual command only accessible to the user, and in our case it's /mcp reconnect vespera-scriptorium
+- Always: Check for files' existence before attempting to create new files. Always: Read existing files before attempting to update them.
+- CRITICAL REMINDER: The MCP server does not hot reload. If changes are made that require testing, ask the user to close and reopen the Claude Code REPL or to attempt the internal /mcp reconnect command.

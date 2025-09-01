@@ -9,6 +9,7 @@ The Vespera Atelier implements a revolutionary **Dynamic Automation and Tag-Driv
 ### Core Innovation: Reactive Content Workflows
 
 Instead of manual content management, Vespera Codex enables:
+
 - **Tag-driven automation** that responds to content changes
 - **LLM-assisted rule creation** from natural language
 - **Cross-codex automation chains** that span multiple content types  
@@ -54,21 +55,25 @@ This is just the beginning. The system can automate complex creative workflows a
 ### Core Concepts
 
 **🏷️ Tag-Driven Automation**
+
 - Tags become automation triggers (`#mood:peaceful` → `#mood:tense`)
 - System responds with intelligent actions (music change, task creation, etc.)
 - No manual intervention required
 
 **🤖 LLM-Assisted Setup**  
+
 - Describe automation in natural language: "When Alice gets scared, change the music"
 - LLM converts to executable automation rules
 - No complex configuration required
 
 **🔗 Cross-Codex Chains**
+
 - Scene completion → Character updates → Task creation → Music changes  
 - Cascading automation across different content types
 - Intelligent workflow orchestration
 
 **⚡ Real-Time Reactive Content**
+
 - Immediate UI updates when content changes
 - Background automation chains execute seamlessly  
 - Live feedback shows what's happening and why
@@ -97,21 +102,25 @@ Tag Modified → Event Router → Automation Engine → Content Updates → Live
 ### Magical Automation Examples
 
 **📝 Writing Assistant**
+
 - Complete character development task → Automatically update relationship maps
 - Mark scene as "final" → Create review tasks for all characters involved  
 - Change character emotion → Update linked music and atmosphere
 
 **🎵 Dynamic Soundscapes**
+
 - Scene mood changes → Music automatically adapts
 - Character focus shifts → Theme music plays
 - Story tension rises → Background audio intensifies
 
 **📋 Intelligent Task Management**  
+
 - Task completion → Dependent tasks automatically prioritize
 - Deadline changes → Workload rebalances across team
 - Dependencies resolve → Blocked tasks automatically unblock
 
 **🎨 Creative Workflow Optimization**
+
 - Image upload → Automatic tagging and content linking
 - Video processing → Chapter generation and scene detection  
 - Audio analysis → Mood classification and music library integration
