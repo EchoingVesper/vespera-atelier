@@ -1,18 +1,19 @@
-# Dynamic Automation and Tag-Driven Systems Architecture
+# Template-Driven Dynamic Automation Architecture
 
 ## Overview
 
-The Vespera Codex Dynamic Automation system transforms static content into reactive, intelligent ecosystems. By combining tag-driven automation with LLM-assisted rule creation, the system enables magical user experiences where content automatically responds to changes across different media types and contexts.
+The Vespera Codex Template-Driven Automation system transforms static content into reactive, intelligent ecosystems where **automation rules are defined within templates themselves**. By combining template-driven automation with LLM-assisted rule creation, the system enables magical user experiences where content automatically responds to changes based on user-customizable template definitions rather than hardcoded system types.
 
-This document outlines the revolutionary automation engine that makes the Vespera Codex truly intelligent and reactive.
+This document outlines the revolutionary template-aware automation engine that makes the Vespera Codex truly intelligent, reactive, and infinitely customizable to any workflow or domain.
 
-## 🎯 Vision: Magical Content Ecosystems
+## 🎯 Vision: Template-Driven Magical Content Ecosystems
 
-Imagine a creative workspace where:
-- Changing a scene's mood tag from `#peaceful` to `#tense` automatically switches background music from "Forest Sounds" to "Battle Drums"
-- Completing character development tasks automatically updates relationship maps and triggers plot advancement
-- Marking a scene as "final" creates review tasks for all characters involved
-- Content changes propagate through interconnected Codex entries with intelligent automation
+Imagine a creative workspace where **templates define their own automation behavior**:
+
+- A `fantasy_scene` template defines that changing mood from `#peaceful` to `#tense` automatically switches linked `ambient_music` template entries from "Forest Sounds" to "Battle Drums"
+- An `agile_epic` template specifies that completing user stories automatically updates `sprint_burndown` templates and creates `code_review` template tasks
+- A `research_paper` template defines that marking sections as "final" creates `peer_review` template tasks for all linked `co_author` template entries
+- Content changes propagate through interconnected Codex entries based on template-defined automation rules rather than hardcoded system behavior
 
 ## 🏗️ System Architecture
 
@@ -42,391 +43,487 @@ vespera-atelier/
             └── src/events/          # Real-time event handling
 ```
 
-### Event System Architecture
+### Template-Aware Event System Architecture
 
-The automation engine builds on Vespera Scriptorium's existing triple-database architecture (SQLite + Chroma + KuzuDB), extending it with real-time event processing:
+The automation engine builds on Vespera Scriptorium's existing triple-database architecture (SQLite + Chroma + KuzuDB), extending it with template-driven event processing:
 
 ```typescript
-interface VesperaEvent {
+interface TemplateAwareVesperaEvent {
     id: string;
-    type: EventType;
+    type: string; // Dynamic type from template automation_rules
     source: EventSource;
     timestamp: DateTime;
     payload: EventPayload;
     tags: string[];
     codex_ids: string[];
     metadata: EventMetadata;
+    
+    // Template-specific properties
+    template_id: string;
+    template_version: string;
+    template_context: TemplateEventContext;
 }
 
-enum EventType {
-    TAG_CHANGED = "tag_changed",
-    CONTENT_UPDATED = "content_updated", 
-    TASK_COMPLETED = "task_completed",
-    RELATIONSHIP_CREATED = "relationship_created",
-    STATUS_CHANGED = "status_changed",
-    CODEX_LINKED = "codex_linked"
+interface TemplateEventContext {
+    triggering_field?: string;        // Field that changed
+    template_automation_rule: AutomationRule;  // Template-defined rule
+    template_field_schema: FieldDefinition[];  // Available fields for this template
+    cross_template_refs: CrossTemplateReference[]; // Links to other template types
 }
 ```
 
-## 🏷️ Tag-Driven Automation Engine
+## 🏷️ Template-Driven Automation Engine
 
-### Tag Change Detection
+### Template-Defined Event Detection
 
-The system monitors tag changes across all Codex entries and triggers automation chains:
+The system monitors changes across all Codex entries and triggers automation chains based on template-defined rules:
 
 ```python
-class TagAutomationEngine:
-    """Monitors tag changes and executes automation rules."""
+class TemplateAutomationEngine:
+    """Monitors template-defined events and executes template automation rules."""
     
-    def __init__(self, task_service, event_publisher):
+    def __init__(self, task_service, event_publisher, template_registry):
         self.task_service = task_service
         self.event_publisher = event_publisher
-        self.rule_engine = AutomationRuleEngine()
+        self.template_registry = template_registry
+        self.rule_engine = TemplateAwareRuleEngine()
         
-    async def on_tag_changed(self, event: TagChangedEvent):
-        """Handle tag change events and trigger automation."""
-        # Find applicable rules
-        rules = await self.rule_engine.find_rules_for_tags(
-            event.added_tags, 
-            event.removed_tags,
-            event.codex_type
+    async def on_template_event(self, event: TemplateAwareVesperaEvent):
+        """Handle template-defined events and trigger automation."""
+        # Get template definition
+        template = await self.template_registry.get_template(event.template_id)
+        
+        # Find applicable template automation rules
+        rules = await self.rule_engine.find_template_rules(
+            template.automation_rules,
+            event.type,
+            event.template_context
         )
         
-        # Execute automation chains
+        # Execute template-defined automation chains
         for rule in rules:
-            await self.execute_automation_rule(rule, event)
+            await self.execute_template_automation_rule(rule, event, template)
 ```
 
-### Concrete Example: Music Integration Automation
+### Template-Defined Automation Example: Music Integration
 
-**Scenario**: User's friend writing with dynamic music integration
+**Scenario**: User creates custom `fantasy_scene` and `ambient_music` templates with integrated automation
 
-```yaml
-# Example automation rule
-name: "Scene Mood Music Automation"
-trigger:
-  type: "tag_changed"
-  codex_type: "scene"
-  tag_pattern: "#mood:*"
+```json5
+// fantasy_scene.json5 template excerpt
+{
+  "template_id": "fantasy_scene_v1",
+  "field_schema": {
+    "mood": {
+      "type": "select",
+      "options": ["peaceful", "tense", "mysterious", "epic"]
+    },
+    "linked_music": {
+      "type": "codex_reference",
+      "filter": {"template_id": ["ambient_music_v1"]}
+    }
+  },
   
-conditions:
-  - codex_has_linked_music: true
-  - music_codex_has_mood_mapping: true
-  
-actions:
-  - type: "update_linked_codex"
-    target_type: "music"
-    update_rule: "mood_mapping"
-    parameters:
-      mood_tag: "${trigger.new_tag_value}"
-      fade_duration: "2s"
-  
-  - type: "emit_event"
-    event_type: "music_changed"
-    payload:
-      scene_id: "${trigger.codex_id}"
-      old_music: "${context.previous_music}"
-      new_music: "${context.selected_music}"
+  // Template defines its own automation rules
+  "automation_rules": [
+    {
+      "trigger": "field_changed",
+      "field": "mood",
+      "action": "update_linked_templates",
+      "params": {
+        "target_template_type": "ambient_music_v1",
+        "update_rule": "mood_mapping",
+        "field_mapping": {
+          "peaceful": {"track_type": "nature_sounds", "intensity": "low"},
+          "tense": {"track_type": "battle_music", "intensity": "high"}
+        }
+      }
+    }
+  ]
+}
 ```
 
-**Implementation Flow**:
+**Template-Driven Implementation Flow**:
 
-1. **Tag Change Detection**: User changes scene tag from `#mood:peaceful` to `#mood:tense`
-2. **Rule Matching**: System finds "Scene Mood Music Automation" rule
-3. **Context Resolution**: Identifies linked Music Codex entries
-4. **Action Execution**: 
-   - Queries music database for `mood:tense` tracks
-   - Updates linked Music Codex to "Battle Drums"
-   - Triggers smooth audio transition with 2-second fade
-5. **Event Propagation**: Publishes `music_changed` event for UI updates
-6. **User Experience**: Music seamlessly transitions without manual intervention
+1. **Template Field Change**: User changes `mood` field from "peaceful" to "tense" in fantasy_scene template instance
+2. **Template Rule Matching**: System finds template-defined automation rule for mood field changes
+3. **Template Context Resolution**: Identifies linked `ambient_music_v1` template instances
+4. **Template Action Execution**:
+   - Applies template-defined field mapping (tense → battle_music + high intensity)
+   - Updates linked ambient_music template instances with new field values
+   - Triggers template-defined transition behavior
+5. **Template Event Propagation**: Publishes template-aware events for UI updates
+6. **User Experience**: Music seamlessly transitions based on user-defined template automation, not hardcoded system behavior
 
-### Tag-Based Content Discovery
+### Template-Based Content Discovery
 
 ```python
-class TagBasedContentEngine:
-    """Manages content discovery and linking through tags."""
+class TemplateBasedContentEngine:
+    """Manages content discovery and linking through template relationships."""
     
-    async def find_related_content(self, tags: List[str], 
-                                 content_type: str = None) -> List[CodexEntry]:
-        """Find content related to specific tags across all media types."""
+    async def find_related_content(self, 
+                                 template_id: str,
+                                 field_values: Dict[str, Any],
+                                 related_template_types: List[str] = None) -> List[CodexEntry]:
+        """Find content related through template-defined relationships."""
+        template = await self.template_registry.get_template(template_id)
+        
+        # Build query based on template field schema and cross-references
         query = """
-        MATCH (source:Codex)-[:HAS_TAG]->(tag:Tag)
-        WHERE tag.name IN $tags
+        MATCH (source:Codex {template_id: $template_id})
+        MATCH (related:Codex)-[:TEMPLATE_RELATIONSHIP]->(source)
+        WHERE related.template_id IN $related_template_types
         """
         
-        if content_type:
-            query += " AND source.type = $content_type"
-            
+        # Add template-specific field matching
+        for field_name, field_value in field_values.items():
+            if self._is_reference_field(template.field_schema.get(field_name)):
+                query += f" AND related.template_data.{field_name} = $field_{field_name}"
+        
         query += """
-        RETURN source, 
-               collect(tag.name) as matching_tags,
-               size(collect(tag.name)) as relevance_score
-        ORDER BY relevance_score DESC
+        RETURN related,
+               related.template_id as template_type,
+               size((related)-[:TEMPLATE_RELATIONSHIP]->()) as relationship_strength
+        ORDER BY relationship_strength DESC
         """
         
         return await self.graph_service.execute_query(query, {
-            "tags": tags,
-            "content_type": content_type
+            "template_id": template_id,
+            "related_template_types": related_template_types or [],
+            **{f"field_{k}": v for k, v in field_values.items()}
         })
 ```
 
-## 🤖 LLM-Assisted Automation Setup
+## 🤖 LLM-Assisted Template Automation Setup
 
-### Natural Language Rule Creation
+### Natural Language Template Rule Creation
 
-Users can describe automation in natural language, and the LLM creates executable rules:
+Users can describe automation in natural language, and the LLM creates template-embedded automation rules:
 
 ```python
-class LLMRuleGenerator:
-    """Converts natural language descriptions into automation rules."""
+class LLMTemplateRuleGenerator:
+    """Converts natural language descriptions into template automation rules."""
     
-    async def generate_rule_from_description(self, description: str) -> AutomationRule:
-        """Convert natural language to automation rule."""
+    async def generate_template_rule(self, 
+                                   description: str, 
+                                   template_context: Template) -> AutomationRule:
+        """Convert natural language to template-embedded automation rule."""
         
-        system_prompt = """
-        Convert natural language automation descriptions into structured rules.
+        system_prompt = f"""
+        Convert natural language automation descriptions into template-specific rules for the template "{template_context.name}".
         
-        Available triggers:
-        - tag_changed: When content tags are modified
-        - task_completed: When tasks are marked as done
-        - content_updated: When codex content is modified
-        - relationship_created: When codex entries are linked
+        Available template triggers (based on template field schema):
+        - field_changed: When template fields are modified
+        - created: When template instance is created
+        - status_changed: When template status fields change
+        - relationship_added: When template cross-references are added
         
-        Available actions:
-        - update_linked_codex: Modify related codex entries
-        - create_task: Generate new tasks
-        - update_relationship: Modify connections between content
-        - send_notification: Alert users of changes
-        - execute_script: Run custom automation scripts
+        Template field schema:
+        {self._format_field_schema(template_context.field_schema)}
+        
+        Available template actions:
+        - update_linked_templates: Modify related template instances
+        - create_template_instance: Generate new template instances
+        - update_template_relationship: Modify template cross-references
+        - trigger_template_workflow: Run template-defined workflows
+        - notify_template_users: Send template-aware notifications
         """
         
         user_prompt = f"""
-        Create automation rule for: "{description}"
+        Create template automation rule for: "{description}"
+        Template: {template_context.name} (ID: {template_context.template_id})
         
-        Return structured YAML configuration.
+        Return structured JSON5 automation rule to embed in template definition.
         """
         
-        # LLM processing would happen here
+        # LLM processing with template context
         response = await self.llm_client.generate_completion(
             system_prompt, user_prompt
         )
         
-        return self.parse_yaml_rule(response)
+        return self.parse_template_rule(response, template_context)
 ```
 
-### Example Natural Language Automations
+### Example Natural Language Template Automations
 
-**User Input**: "When Alice gets scared, change the music"
+**User Input**: "When Alice's emotional state changes to scared, switch to tense music"
+**Template Context**: User has `fantasy_character` and `ambient_music` templates
 
-**Generated Rule**:
-```yaml
-name: "Alice Fear Response Music"
-trigger:
-  type: "tag_changed" 
-  codex_type: "character"
-  character_name: "Alice"
-  tag_pattern: "#emotion:scared|#state:frightened"
-  
-actions:
-  - type: "update_linked_codex"
-    target_type: "music"
-    selection_criteria:
-      tags: ["#mood:tense", "#genre:horror", "#intensity:high"]
-    update_method: "immediate_switch"
+**Generated Template Rule** (embedded in fantasy_character template):
+
+```json5
+{
+  "trigger": "field_changed",
+  "field": "emotional_state",
+  "condition": "new_value == 'scared'",
+  "action": "update_linked_templates",
+  "params": {
+    "target_template_type": "ambient_music_v1",
+    "filter": {"linked_character": "{{codex_id}}"},
+    "update_fields": {
+      "mood_category": "tense",
+      "intensity_level": "high",
+      "genre_preference": "horror"
+    },
+    "transition_method": "immediate_switch"
+  }
+}
 ```
 
 **User Input**: "If I mark a scene as final, create review tasks for all characters"
+**Template Context**: User has `fantasy_scene`, `fantasy_character`, and `review_task` templates
 
-**Generated Rule**:
-```yaml
-name: "Scene Finalization Review Tasks"
-trigger:
-  type: "tag_changed"
-  codex_type: "scene" 
-  tag_pattern: "#status:final"
-  
-actions:
-  - type: "create_tasks_for_related_codex"
-    target_type: "character"
-    relationship: "appears_in_scene"
-    task_template:
-      title: "Review ${character.name} in ${scene.title}"
-      description: "Review character development and consistency"
-      priority: "high"
-      tags: ["#review", "#character", "#scene-final"]
+**Generated Template Rule** (embedded in fantasy_scene template):
+
+```json5
+{
+  "trigger": "field_changed",
+  "field": "scene_status",
+  "condition": "new_value == 'final'",
+  "action": "create_template_instances",
+  "params": {
+    "template_type": "review_task_v1",
+    "for_each_linked": {
+      "template_type": "fantasy_character_v1",
+      "relationship_field": "characters_in_scene"
+    },
+    "instance_data": {
+      "task_title": "Review {{character.character_name}} in {{scene.scene_title}}",
+      "task_description": "Review character development and consistency",
+      "review_type": "character_consistency",
+      "related_scene": "{{codex_id}}",
+      "target_character": "{{linked_character.codex_id}}",
+      "priority": "high"
+    }
+  }
+}
 ```
 
 **User Input**: "When I complete character development tasks, update their relationship maps"
+**Template Context**: User has `character_development_task` and `fantasy_character` templates
 
-**Generated Rule**:
-```yaml
-name: "Character Development Relationship Update"
-trigger:
-  type: "task_completed"
-  task_tags: ["#character-development"]
-  
-actions:
-  - type: "update_relationship_map"
-    character_id: "${task.metadata.character_id}"
-    analysis_type: "development_impact"
-    
-  - type: "emit_event"
-    event_type: "character_relationships_updated"
-    payload:
-      character_id: "${task.metadata.character_id}"
-      development_changes: "${analysis.changes}"
+**Generated Template Rule** (embedded in character_development_task template):
+
+```json5
+{
+  "trigger": "field_changed",
+  "field": "task_status",
+  "condition": "new_value == 'completed'",
+  "action": "update_linked_templates",
+  "params": {
+    "target_template_type": "fantasy_character_v1",
+    "link_field": "target_character",
+    "update_strategy": "relationship_analysis",
+    "update_fields": {
+      "relationship_map": "{{analyze_development_impact(task_notes, character_relationships)}}",
+      "character_arc_progress": "{{increment_progress()}}",
+      "last_development_update": "{{current_timestamp()}}"
+    },
+    "trigger_events": [
+      {
+        "event_type": "character_relationships_updated",
+        "template_context": true
+      }
+    ]
+  }
+}
 ```
 
-## 🔗 Cross-Codex Automation Chains
+## 🔗 Cross-Template Automation Chains
 
-### Cascading Automation Architecture
+### Template-Aware Cascading Automation Architecture
 
-Automation chains enable complex workflows that span multiple content types:
+Template automation chains enable complex workflows that span multiple template types based on user-defined template relationships:
 
 ```python
-class AutomationChain:
-    """Manages cascading automation across different codex types."""
+class TemplateAutomationChain:
+    """Manages cascading automation across different template types."""
     
-    def __init__(self):
-        self.chain_steps: List[AutomationStep] = []
-        self.context: Dict[str, Any] = {}
-        self.rollback_stack: List[RollbackAction] = []
+    def __init__(self, template_registry: TemplateRegistry):
+        self.template_registry = template_registry
+        self.chain_steps: List[TemplateAutomationStep] = []
+        self.template_context: Dict[str, TemplateContext] = {}
+        self.rollback_stack: List[TemplateRollbackAction] = []
     
-    async def execute_chain(self, initial_event: VesperaEvent) -> ChainResult:
-        """Execute a multi-step automation chain."""
-        self.context["initial_event"] = initial_event
+    async def execute_template_chain(self, 
+                                   initial_event: TemplateAwareVesperaEvent) -> TemplateChainResult:
+        """Execute a multi-step template automation chain."""
+        self.template_context["initial_event"] = initial_event
+        self.template_context["source_template"] = await self.template_registry.get_template(initial_event.template_id)
         results = []
         
         try:
             for step in self.chain_steps:
-                result = await self.execute_step(step, self.context)
+                # Resolve template context for each step
+                step_template = await self.template_registry.get_template(step.target_template_id)
+                template_context = TemplateStepContext(
+                    source_template=self.template_context["source_template"],
+                    target_template=step_template,
+                    field_mappings=step.template_field_mappings
+                )
+                
+                result = await self.execute_template_step(step, template_context)
                 results.append(result)
                 
-                # Update context for next step
-                self.context.update(result.context_updates)
+                # Update template context for next step
+                self.template_context.update(result.template_updates)
                 
-                # Record rollback action
+                # Record template-aware rollback action
                 if result.rollback_action:
                     self.rollback_stack.append(result.rollback_action)
                     
         except Exception as e:
-            # Execute rollback on failure
-            await self.rollback_chain()
-            raise AutomationChainError(f"Chain failed: {e}")
+            # Execute template-aware rollback
+            await self.rollback_template_chain()
+            raise TemplateAutomationChainError(f"Template chain failed: {e}")
             
-        return ChainResult(success=True, results=results)
+        return TemplateChainResult(success=True, results=results, template_context=self.template_context)
 ```
 
-### Example: Complex Creative Workflow
+### Example: Template-Driven Creative Workflow
 
-**Scenario**: Scene completion → Character state updates → Task creation → Music changes
+**Scenario**: Scene completion across user's custom `fantasy_scene`, `fantasy_character`, `character_development_task`, and `ambient_music` templates
 
-```yaml
-name: "Scene Completion Workflow"
-description: "Comprehensive automation when scene is marked complete"
+**Template Chain Definition** (stored in fantasy_scene template):
 
-chain_steps:
-  - step: 1
-    name: "Update Character States"
-    trigger: 
-      type: "tag_changed"
-      codex_type: "scene"
-      tag: "#status:complete"
-    
-    actions:
-      - type: "query_related_characters"
-        relationship: "appears_in_scene"
-        store_as: "scene_characters"
-      
-      - type: "update_character_progression" 
-        for_each: "${context.scene_characters}"
-        update_fields:
-          - "scenes_completed"
-          - "character_arc_progress"
-          - "relationship_developments"
+```json5
+{
+  "name": "Scene Completion Workflow",
+  "description": "Comprehensive template automation when scene is marked complete",
+  
+  "automation_rules": [
+    {
+      "trigger": "field_changed",
+      "field": "scene_status",
+      "condition": "new_value == 'complete'",
+      "action": "execute_template_chain",
+      "chain_steps": [
+        {
+          "step": 1,
+          "name": "Update Character States",
+          "target_template": "fantasy_character_v1",
+          "selection": {
+            "linked_field": "characters_in_scene"
+          },
+          "updates": {
+            "scenes_completed": "{{increment()}}",
+            "character_arc_progress": "{{calculate_progress()}}",
+            "relationship_developments": "{{analyze_scene_relationships()}}"
+          }
+        },
 
-  - step: 2
-    name: "Generate Review Tasks"
-    depends_on: [1]
-    
-    actions:
-      - type: "create_tasks"
-        for_each: "${context.scene_characters}"
-        task_template:
-          title: "Review ${character.name} development in ${scene.title}"
-          description: "Analyze character growth and plot implications"
-          tags: ["#review", "#character-analysis"]
-          priority: "normal"
-          
-  - step: 3
-    name: "Update Plot Advancement"
-    depends_on: [1]
-    
-    actions:
-      - type: "analyze_plot_implications"
-        scene_id: "${trigger.codex_id}"
-        characters: "${context.scene_characters}"
-        
-      - type: "update_story_timeline"
-        advancement_data: "${analysis.plot_changes}"
-        
-  - step: 4
-    name: "Adjust Ambient Music"
-    depends_on: [3]
-    
-    actions:
-      - type: "select_transition_music"
-        criteria:
-          story_phase: "${context.story_timeline.current_phase}"
-          emotional_tone: "${context.scene.final_emotional_state}"
-          
-      - type: "update_music_codex"
-        transition_type: "gentle_fade"
-        new_track: "${selected_music.track_id}"
+        {
+          "step": 2,
+          "name": "Generate Character Review Tasks",
+          "target_template": "character_review_task_v1",
+          "depends_on": [1],
+          "create_instances": {
+            "for_each": "{{linked_characters}}",
+            "template_data": {
+              "task_title": "Review {{character.character_name}} in {{scene.scene_title}}",
+              "review_focus": "character_development",
+              "source_scene": "{{codex_id}}",
+              "target_character": "{{character.codex_id}}",
+              "priority": "normal"
+            }
+          }
+        },
+        {
+          "step": 3,
+          "name": "Update Story Timeline",
+          "target_template": "story_timeline_v1",
+          "depends_on": [1],
+          "updates": {
+            "timeline_events": "{{append_scene_completion()}}",
+            "plot_advancement": "{{analyze_plot_implications()}}",
+            "character_arcs": "{{update_character_progressions()}}"
+          }
+        },
+        {
+          "step": 4,
+          "name": "Adjust Ambient Music",
+          "target_template": "ambient_music_v1",
+          "depends_on": [3],
+          "selection": {
+            "linked_field": "scene_music"
+          },
+          "updates": {
+            "current_track": "{{select_transition_music(story_phase, emotional_tone)}}",
+            "transition_type": "gentle_fade",
+            "intensity": "{{calculate_scene_intensity()}}"
+          }
+        }
+      ]
 
-rollback_strategy:
-  on_failure: "reverse_completed_steps"
-  preserve_user_changes: true
-  notify_user: true
+    },
+    "rollback_strategy": {
+      "on_failure": "reverse_completed_template_steps",
+      "preserve_user_changes": true,
+      "restore_template_states": true,
+      "notify_user": true
+    }
+  ]
+}
 ```
 
-## ⚡ Real-Time Reactive Content
+## ⚡ Real-Time Template-Reactive Content
 
-### Live Update Architecture
+### Template-Aware Live Update Architecture
 
-The system provides immediate UI updates and content synchronization:
+The system provides immediate UI updates and content synchronization based on template definitions:
 
 ```typescript
-class ReactiveContentManager {
+class TemplateReactiveContentManager {
     private eventBus: EventBus;
-    private subscriptions: Map<string, Set<ContentSubscription>>;
+    private templateRegistry: TemplateRegistry;
+    private subscriptions: Map<string, Set<TemplateContentSubscription>>;
     
-    constructor(eventBus: EventBus) {
+    constructor(eventBus: EventBus, templateRegistry: TemplateRegistry) {
         this.eventBus = eventBus;
+        this.templateRegistry = templateRegistry;
         this.subscriptions = new Map();
         
-        // Subscribe to automation events
-        this.eventBus.subscribe('automation.*', this.handleAutomationEvent.bind(this));
+        // Subscribe to template automation events
+        this.eventBus.subscribe('template.automation.*', this.handleTemplateAutomationEvent.bind(this));
+        // Subscribe to template updates
+        this.eventBus.subscribe('template.updated.*', this.handleTemplateUpdated.bind(this));
     }
     
-    async handleAutomationEvent(event: VesperaEvent): Promise<void> {
-        // Find subscribed UI components
-        const affected_codex = event.codex_ids;
-        const subscribers = this.getSubscribersForCodex(affected_codex);
+    async handleTemplateAutomationEvent(event: TemplateAwareVesperaEvent): Promise<void> {
+        // Get template definition for context
+        const template = await this.templateRegistry.get_template(event.template_id);
         
-        // Push updates to UI
+        // Find template-aware UI subscriptions
+        const affected_codex = event.codex_ids;
+        const subscribers = this.getSubscribersForTemplate(event.template_id, affected_codex);
+        
+        // Push template-aware updates to UI
         for (const subscription of subscribers) {
-            await this.pushUpdate(subscription, {
-                type: 'automation_update',
+            await this.pushTemplateUpdate(subscription, {
+                type: 'template_automation_update',
+                template_id: event.template_id,
+                template_context: event.template_context,
                 codex_ids: affected_codex,
-                changes: event.payload.changes,
+                field_changes: event.payload.field_changes,
+                automation_rule: event.template_context.template_automation_rule,
                 timestamp: event.timestamp
             });
         }
     }
     
-    async subscribeToCodex(codex_id: string, callback: UpdateCallback): Promise<string> {
+    async handleTemplateUpdated(event: TemplateUpdateEvent): Promise<void> {
+        // Handle template definition changes - update all instances
+        const affectedInstances = await this.findInstancesOfTemplate(event.template_id);
+        
+        for (const instance of affectedInstances) {
+            // Notify subscribers that template definition changed
+            await this.notifyTemplateSchemaChange(instance.codex_id, event.template_changes);
+        }
+    }
+    
+    async subscribeToTemplateInstance(codex_id: string, 
+                                     template_id: string,
+                                     callback: TemplateUpdateCallback): Promise<string> {
         const subscription_id = generateId();
         
         if (!this.subscriptions.has(codex_id)) {
@@ -435,7 +532,30 @@ class ReactiveContentManager {
         
         this.subscriptions.get(codex_id)!.add({
             id: subscription_id,
+            template_id: template_id,
             callback,
+            template_aware: true,
+            created_at: new Date()
+        });
+        
+        return subscription_id;
+    }
+    
+    async subscribeToTemplate(template_id: string,
+                             callback: TemplateSchemaUpdateCallback): Promise<string> {
+        // Subscribe to template definition changes
+        const subscription_id = generateId();
+        const template_key = `template:${template_id}`;
+        
+        if (!this.subscriptions.has(template_key)) {
+            this.subscriptions.set(template_key, new Set());
+        }
+        
+        this.subscriptions.get(template_key)!.add({
+            id: subscription_id,
+            template_id: template_id,
+            callback,
+            schema_subscription: true,
             created_at: new Date()
         });
         
@@ -444,76 +564,109 @@ class ReactiveContentManager {
 }
 ```
 
-### UI Integration Examples
+### Template-Aware UI Integration Examples
 
 **Obsidian Plugin Integration**:
 
 ```typescript
-// Obsidian plugin component
-class VesperaCodexView extends ItemView {
-    private reactiveManager: ReactiveContentManager;
+// Template-aware Obsidian plugin component
+class TemplateAwareVesperaCodexView extends ItemView {
+    private templateReactiveManager: TemplateReactiveContentManager;
+    private templateRegistry: TemplateRegistry;
     private subscriptions: string[] = [];
+    private currentTemplate: Template | null = null;
     
     async onload() {
-        // Subscribe to codex changes
         const codex_id = this.getCodexId();
-        const subscription_id = await this.reactiveManager.subscribeToCodex(
+        const template_id = this.getTemplateId();
+        
+        // Load template definition
+        this.currentTemplate = await this.templateRegistry.get_template(template_id);
+        
+        // Subscribe to template instance changes
+        const instance_subscription = await this.templateReactiveManager.subscribeToTemplateInstance(
             codex_id,
-            this.handleCodexUpdate.bind(this)
+            template_id,
+            this.handleTemplateInstanceUpdate.bind(this)
         );
         
-        this.subscriptions.push(subscription_id);
+        // Subscribe to template definition changes
+        const schema_subscription = await this.templateReactiveManager.subscribeToTemplate(
+            template_id,
+            this.handleTemplateSchemaUpdate.bind(this)
+        );
+        
+        this.subscriptions.push(instance_subscription, schema_subscription);
     }
     
-    private handleCodexUpdate(update: CodexUpdate): void {
-        // Update UI based on automation changes
-        if (update.type === 'tag_changed') {
-            this.updateTagsDisplay(update.changes.tags);
+    private handleTemplateInstanceUpdate(update: TemplateUpdate): void {
+        // Update UI based on template automation changes
+        if (update.type === 'template_automation_update') {
+            this.updateTemplateFields(update.field_changes);
+            
+            // Show template-specific automation feedback
+            this.showTemplateAutomationFeedback({
+                template_name: this.currentTemplate?.name,
+                automation_rule: update.automation_rule.trigger + ' → ' + update.automation_rule.action,
+                field_changes: update.field_changes,
+                affected_templates: update.template_context.cross_template_refs
+            });
         }
         
-        if (update.type === 'music_changed') {
-            this.updateMusicPlayer(update.changes.music);
+        if (update.type === 'cross_template_update') {
+            this.updateCrossTemplateReferences(update.linked_template_changes);
         }
+    }
+    
+    private handleTemplateSchemaUpdate(schemaUpdate: TemplateSchemaUpdate): void {
+        // Template definition was updated - rebuild UI
+        this.currentTemplate = schemaUpdate.updated_template;
+        this.rebuildTemplateView();
         
-        if (update.type === 'tasks_created') {
-            this.showTaskNotification(update.changes.tasks);
-        }
-        
-        // Show automation feedback
-        this.showAutomationFeedback({
-            message: `Automation triggered: ${update.automation_rule}`,
-            changes: update.changes,
-            dismissible: true
+        this.showNotification({
+            message: `Template "${this.currentTemplate.name}" was updated`,
+            details: 'UI has been refreshed with new template definition',
+            type: 'info'
         });
+    }
+    
+    private updateTemplateFields(fieldChanges: TemplateFieldChange[]): void {
+        for (const change of fieldChanges) {
+            const fieldDef = this.currentTemplate?.field_schema[change.field_name];
+            if (fieldDef) {
+                this.renderTemplateField(change.field_name, fieldDef, change.new_value);
+            }
+        }
     }
 }
 ```
 
-## 🔧 Technical Implementation
+## 🔧 Template-Aware Technical Implementation
 
-### Event System Performance
+### Template Event System Performance
 
 ```python
-class EventProcessor:
-    """High-performance event processing with batching and throttling."""
+class TemplateEventProcessor:
+    """High-performance template event processing with batching and template-aware throttling."""
     
-    def __init__(self):
-        self.event_queue = asyncio.Queue(maxsize=10000)
+    def __init__(self, template_registry: TemplateRegistry):
+        self.template_registry = template_registry
+        self.template_event_queue = asyncio.Queue(maxsize=10000)
         self.batch_size = 100
         self.batch_timeout = 0.1  # 100ms
-        self.processors = {}
+        self.template_processors = {}  # Processors by template_id
         
-    async def process_events(self):
-        """Process events in batches for performance."""
+    async def process_template_events(self):
+        """Process template events in batches with template-aware grouping."""
         while True:
             batch = []
             deadline = asyncio.get_event_loop().time() + self.batch_timeout
             
-            # Collect batch of events
+            # Collect batch of template events
             while len(batch) < self.batch_size and asyncio.get_event_loop().time() < deadline:
                 try:
                     event = await asyncio.wait_for(
-                        self.event_queue.get(), 
+                        self.template_event_queue.get(), 
                         timeout=deadline - asyncio.get_event_loop().time()
                     )
                     batch.append(event)
@@ -521,86 +674,116 @@ class EventProcessor:
                     break
             
             if batch:
-                await self.process_batch(batch)
+                await self.process_template_batch(batch)
     
-    async def process_batch(self, events: List[VesperaEvent]):
-        """Process a batch of events efficiently."""
-        # Group by event type for optimized processing
-        grouped = {}
+    async def process_template_batch(self, events: List[TemplateAwareVesperaEvent]):
+        """Process a batch of template events efficiently with template-aware grouping."""
+        # Group by template_id and event type for optimized processing
+        template_grouped = {}
         for event in events:
-            if event.type not in grouped:
-                grouped[event.type] = []
-            grouped[event.type].append(event)
+            template_key = f"{event.template_id}:{event.type}"
+            if template_key not in template_grouped:
+                template_grouped[template_key] = []
+            template_grouped[template_key].append(event)
         
-        # Process each group
+        # Process each template group
         tasks = []
-        for event_type, event_list in grouped.items():
-            if event_type in self.processors:
-                task = asyncio.create_task(
-                    self.processors[event_type](event_list)
-                )
-                tasks.append(task)
+        for template_key, event_list in template_grouped.items():
+            template_id, event_type = template_key.split(':', 1)
+            
+            # Get template-specific processor or use generic
+            processor_key = f"{template_id}:{event_type}"
+            if processor_key in self.template_processors:
+                processor = self.template_processors[processor_key]
+            elif template_id in self.template_processors:
+                processor = self.template_processors[template_id]
+            else:
+                # Use generic template processor
+                processor = self.generic_template_processor
+            
+            task = asyncio.create_task(
+                processor(event_list, await self.template_registry.get_template(template_id))
+            )
+            tasks.append(task)
         
-        # Wait for all processing to complete
+        # Wait for all template processing to complete
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
 ```
 
-### Automation Rule Engine
+### Template Automation Rule Engine
 
 ```python
-class AutomationRuleEngine:
-    """Core rule evaluation and execution engine."""
+class TemplateAutomationRuleEngine:
+    """Core template-aware rule evaluation and execution engine."""
     
-    def __init__(self, task_service, graph_service):
+    def __init__(self, task_service, graph_service, template_registry):
         self.task_service = task_service
         self.graph_service = graph_service
-        self.rule_cache = {}
-        self.execution_stats = {}
+        self.template_registry = template_registry
+        self.template_rule_cache = {}  # Cache by template_id
+        self.template_execution_stats = {}  # Stats by template_id
         
-    async def evaluate_rule(self, rule: AutomationRule, event: VesperaEvent) -> bool:
-        """Evaluate if a rule should trigger for an event."""
-        context = {
+    async def evaluate_template_rule(self, 
+                                   rule: TemplateAutomationRule, 
+                                   event: TemplateAwareVesperaEvent,
+                                   template: Template) -> bool:
+        """Evaluate if a template rule should trigger for an event."""
+        template_context = {
             'event': event,
-            'codex': await self.get_codex_context(event.codex_ids),
+            'template': template,
+            'codex_instance': await self.get_template_instance_context(event.codex_ids[0]),
+            'template_field_values': event.template_context.field_values,
+            'linked_templates': await self.get_linked_template_instances(event.codex_ids[0]),
             'user': await self.get_user_context(event.user_id)
         }
         
-        # Check trigger conditions
-        if not await self._check_trigger_match(rule.trigger, event):
+        # Check template-defined trigger conditions
+        if not await self._check_template_trigger_match(rule.trigger, event, template):
             return False
             
-        # Evaluate additional conditions
-        for condition in rule.conditions:
-            if not await self._evaluate_condition(condition, context):
+        # Evaluate template-specific conditions
+        if rule.condition:
+            if not await self._evaluate_template_condition(rule.condition, template_context):
                 return False
                 
         return True
     
-    async def execute_rule(self, rule: AutomationRule, event: VesperaEvent) -> RuleExecutionResult:
-        """Execute automation rule actions."""
+    async def execute_template_rule(self, 
+                                  rule: TemplateAutomationRule, 
+                                  event: TemplateAwareVesperaEvent,
+                                  template: Template) -> TemplateRuleExecutionResult:
+        """Execute template automation rule actions."""
         start_time = time.time()
         results = []
-        context = await self.build_execution_context(rule, event)
+        template_context = await self.build_template_execution_context(rule, event, template)
         
         try:
-            for action in rule.actions:
-                result = await self._execute_action(action, context)
-                results.append(result)
-                
-                # Update context with action results
-                context['previous_actions'] = results
-                
+            # Execute template-defined action
+            result = await self._execute_template_action(
+                rule.action, 
+                rule.params or {}, 
+                template_context
+            )
+            results.append(result)
+            
             execution_time = time.time() - start_time
             
-            # Record execution statistics
-            self._record_execution_stats(rule.name, execution_time, success=True)
+            # Record template-specific execution statistics
+            self._record_template_execution_stats(
+                template.template_id, 
+                rule.trigger + ':' + rule.action,
+                execution_time, 
+                success=True
+            )
             
-            return RuleExecutionResult(
+            return TemplateRuleExecutionResult(
                 success=True,
-                rule_name=rule.name,
+                template_id=template.template_id,
+                rule_description=f"{rule.trigger} → {rule.action}",
                 action_results=results,
-                execution_time=execution_time
+                execution_time=execution_time,
+                template_context=template_context
             )
             
         except Exception as e:
@@ -614,253 +797,552 @@ class AutomationRuleEngine:
             )
 ```
 
-### Loop Prevention and Safety
+### Template-Aware Loop Prevention and Safety
 
 ```python
-class AutomationSafetyManager:
-    """Prevents infinite loops and manages automation safety."""
+class TemplateAutomationSafetyManager:
+    """Prevents infinite loops and manages template automation safety."""
     
-    def __init__(self):
-        self.execution_history = deque(maxlen=1000)
-        self.rate_limits = {}
-        self.circuit_breakers = {}
+    def __init__(self, template_registry: TemplateRegistry):
+        self.template_registry = template_registry
+        self.template_execution_history = deque(maxlen=1000)
+        self.template_rate_limits = {}  # Rate limits per template_id
+        self.template_circuit_breakers = {}  # Circuit breakers per template_id
         
-    async def check_safety(self, rule: AutomationRule, event: VesperaEvent) -> SafetyCheck:
-        """Check if rule execution is safe."""
-        # Check for potential loops
-        if self._detect_potential_loop(rule, event):
-            return SafetyCheck(
+    async def check_template_safety(self, 
+                                  rule: TemplateAutomationRule, 
+                                  event: TemplateAwareVesperaEvent,
+                                  template: Template) -> TemplateSafetyCheck:
+        """Check if template rule execution is safe."""
+        template_rule_key = f"{template.template_id}:{rule.trigger}:{rule.action}"
+        
+        # Check for potential template automation loops
+        if self._detect_template_loop(template_rule_key, event):
+            return TemplateSafetyCheck(
                 safe=False, 
-                reason="Potential infinite loop detected"
+                reason=f"Potential infinite loop detected in template {template.name}",
+                template_id=template.template_id
             )
         
-        # Check rate limits
-        if self._check_rate_limit(rule.name):
-            return SafetyCheck(
+        # Check template-specific rate limits
+        if self._check_template_rate_limit(template_rule_key):
+            return TemplateSafetyCheck(
                 safe=False,
-                reason=f"Rate limit exceeded for rule {rule.name}"
+                reason=f"Rate limit exceeded for template rule {template_rule_key}",
+                template_id=template.template_id
             )
         
-        # Check circuit breaker
-        if self._check_circuit_breaker(rule.name):
-            return SafetyCheck(
+        # Check template circuit breaker
+        if self._check_template_circuit_breaker(template.template_id):
+            return TemplateSafetyCheck(
                 safe=False,
-                reason=f"Circuit breaker open for rule {rule.name}"
+                reason=f"Circuit breaker open for template {template.name}",
+                template_id=template.template_id
             )
         
-        return SafetyCheck(safe=True)
+        # Check cross-template chain depth
+        if await self._check_cross_template_chain_depth(event) > 10:
+            return TemplateSafetyCheck(
+                safe=False,
+                reason="Cross-template automation chain too deep (>10 levels)",
+                template_id=template.template_id
+            )
+        
+        return TemplateSafetyCheck(safe=True, template_id=template.template_id)
     
-    def _detect_potential_loop(self, rule: AutomationRule, event: VesperaEvent) -> bool:
-        """Detect potential infinite loops in automation chains."""
+    def _detect_template_loop(self, 
+                            template_rule_key: str, 
+                            event: TemplateAwareVesperaEvent) -> bool:
+        """Detect potential infinite loops in template automation chains."""
         recent_executions = [
-            entry for entry in self.execution_history
+            entry for entry in self.template_execution_history
             if entry.timestamp > datetime.now() - timedelta(minutes=1)
         ]
         
-        # Check for rapid repetition of same rule on same codex
-        same_rule_same_codex = [
+        # Check for rapid repetition of same template rule on same codex instance
+        same_template_rule_same_instance = [
             entry for entry in recent_executions
-            if entry.rule_name == rule.name and
+            if entry.template_rule_key == template_rule_key and
                set(entry.codex_ids) & set(event.codex_ids)
         ]
         
-        # Flag if more than 5 executions in 1 minute
-        return len(same_rule_same_codex) > 5
+        # Flag if more than 5 executions in 1 minute for same template rule
+        if len(same_template_rule_same_instance) > 5:
+            return True
+        
+        # Check for cross-template loops (A triggers B which triggers A)
+        cross_template_pattern = self._detect_cross_template_ping_pong(
+            event.template_id, 
+            event.codex_ids[0], 
+            recent_executions
+        )
+        
+        return cross_template_pattern
 ```
 
-## 🎮 User Control and Debugging
+## 🎮 Template-Aware User Control and Debugging
 
-### Automation Dashboard
+### Template Automation Dashboard
 
 ```python
-class AutomationDashboard:
-    """Provides monitoring and control interface for automation."""
+class TemplateAutomationDashboard:
+    """Provides monitoring and control interface for template automation."""
     
-    async def get_automation_status(self) -> Dict[str, Any]:
-        """Get current automation system status."""
+    def __init__(self, template_registry: TemplateRegistry):
+        self.template_registry = template_registry
+    
+    async def get_template_automation_status(self) -> Dict[str, Any]:
+        """Get current template automation system status."""
+        active_templates = await self.template_registry.get_all_templates()
+        
+        template_stats = {}
+        for template in active_templates:
+            template_stats[template.template_id] = {
+                'name': template.name,
+                'automation_rules_count': len(template.automation_rules),
+                'active_instances': await self.count_template_instances(template.template_id),
+                'automations_triggered_today': await self.get_template_events_count(template.template_id, days=1)
+            }
+        
         return {
-            'active_rules': len(await self.rule_engine.get_active_rules()),
-            'events_processed_today': await self.get_events_count(days=1),
-            'automation_chains_running': len(self.chain_manager.active_chains),
-            'safety_incidents': await self.safety_manager.get_incident_count(),
-            'performance_metrics': await self.get_performance_metrics()
+            'total_templates': len(active_templates),
+            'templates_with_automation': len([t for t in active_templates if t.automation_rules]),
+            'template_events_processed_today': await self.get_total_template_events_count(days=1),
+            'cross_template_chains_running': len(await self.get_active_cross_template_chains()),
+            'template_safety_incidents': await self.get_template_safety_incidents(),
+            'template_performance_metrics': await self.get_template_performance_metrics(),
+            'template_details': template_stats
         }
     
-    async def get_rule_execution_history(self, limit: int = 100) -> List[RuleExecution]:
-        """Get recent rule executions for debugging."""
-        return await self.execution_logger.get_recent_executions(limit)
+    async def get_template_execution_history(self, 
+                                           template_id: str = None,
+                                           limit: int = 100) -> List[TemplateRuleExecution]:
+        """Get recent template rule executions for debugging."""
+        if template_id:
+            return await self.template_execution_logger.get_template_executions(template_id, limit)
+        else:
+            return await self.template_execution_logger.get_recent_executions(limit)
     
-    async def disable_rule(self, rule_name: str, reason: str) -> bool:
-        """Disable a specific automation rule."""
-        success = await self.rule_engine.disable_rule(rule_name)
-        if success:
-            await self.audit_logger.log_rule_disabled(rule_name, reason)
-        return success
+    async def disable_template_automation(self, 
+                                        template_id: str, 
+                                        rule_index: int = None,
+                                        reason: str = None) -> bool:
+        """Disable automation for a specific template or rule."""
+        template = await self.template_registry.get_template(template_id)
+        
+        if rule_index is not None:
+            # Disable specific rule within template
+            if 0 <= rule_index < len(template.automation_rules):
+                template.automation_rules[rule_index].enabled = False
+                await self.template_registry.update_template(template)
+                await self.audit_logger.log_template_rule_disabled(
+                    template_id, rule_index, reason or "User requested"
+                )
+                return True
+        else:
+            # Disable all automation for template
+            for rule in template.automation_rules:
+                rule.enabled = False
+            await self.template_registry.update_template(template)
+            await self.audit_logger.log_template_automation_disabled(
+                template_id, reason or "User requested"
+            )
+            return True
+        
+        return False
+    
+    async def get_template_automation_metrics(self, template_id: str) -> Dict[str, Any]:
+        """Get detailed automation metrics for a specific template."""
+        template = await self.template_registry.get_template(template_id)
+        
+        return {
+            'template_name': template.name,
+            'total_rules': len(template.automation_rules),
+            'active_rules': len([r for r in template.automation_rules if r.enabled]),
+            'executions_last_hour': await self.get_template_executions_count(template_id, hours=1),
+            'executions_last_day': await self.get_template_executions_count(template_id, days=1),
+            'average_execution_time': await self.get_template_avg_execution_time(template_id),
+            'success_rate': await self.get_template_success_rate(template_id),
+            'most_triggered_rule': await self.get_most_triggered_template_rule(template_id),
+            'linked_template_types': await self.get_linked_template_types(template_id),
+            'safety_incidents': await self.get_template_safety_incidents(template_id)
+        }
 ```
 
-### User Override System
+### Template Automation Override System
 
 ```python
-class AutomationOverrideManager:
-    """Allows users to override or customize automation behavior."""
+class TemplateAutomationOverrideManager:
+    """Allows users to override or customize template automation behavior."""
     
-    async def create_override(self, user_id: str, rule_name: str, 
-                            override_type: OverrideType, 
-                            parameters: Dict[str, Any]) -> str:
-        """Create a user-specific automation override."""
-        override = AutomationOverride(
+    def __init__(self, template_registry: TemplateRegistry):
+        self.template_registry = template_registry
+    
+    async def create_template_override(self, 
+                                     user_id: str, 
+                                     template_id: str,
+                                     rule_index: int,
+                                     override_type: TemplateOverrideType, 
+                                     parameters: Dict[str, Any]) -> str:
+        """Create a user-specific template automation override."""
+        template = await self.template_registry.get_template(template_id)
+        
+        override = TemplateAutomationOverride(
             id=generate_id(),
             user_id=user_id,
-            rule_name=rule_name,
-            type=override_type,
+            template_id=template_id,
+            template_name=template.name,
+            rule_index=rule_index,
+            original_rule=template.automation_rules[rule_index],
+            override_type=override_type,
             parameters=parameters,
             created_at=datetime.now()
         )
         
-        await self.override_repository.save(override)
+        await self.template_override_repository.save(override)
         return override.id
     
-    async def apply_overrides(self, rule: AutomationRule, 
-                            user_id: str, 
-                            event: VesperaEvent) -> AutomationRule:
-        """Apply user overrides to a rule before execution."""
-        overrides = await self.override_repository.get_by_user_and_rule(
-            user_id, rule.name
+    async def apply_template_overrides(self, 
+                                     rule: TemplateAutomationRule,
+                                     template_id: str,
+                                     rule_index: int,
+                                     user_id: str, 
+                                     event: TemplateAwareVesperaEvent) -> TemplateAutomationRule:
+        """Apply user overrides to a template rule before execution."""
+        overrides = await self.template_override_repository.get_by_user_and_template_rule(
+            user_id, template_id, rule_index
         )
         
         modified_rule = rule.copy()
         
         for override in overrides:
-            if override.type == OverrideType.DISABLE:
+            if override.override_type == TemplateOverrideType.DISABLE:
                 modified_rule.enabled = False
-            elif override.type == OverrideType.MODIFY_CONDITIONS:
-                modified_rule.conditions.extend(override.parameters['additional_conditions'])
-            elif override.type == OverrideType.CHANGE_ACTIONS:
-                # Replace or modify actions
-                modified_rule.actions = override.parameters['new_actions']
+            elif override.override_type == TemplateOverrideType.MODIFY_CONDITION:
+                # Modify the template rule condition
+                modified_rule.condition = override.parameters.get('new_condition', modified_rule.condition)
+            elif override.override_type == TemplateOverrideType.CHANGE_ACTION:
+                # Replace template action
+                modified_rule.action = override.parameters['new_action']
+                modified_rule.params = override.parameters.get('new_params', modified_rule.params)
+            elif override.override_type == TemplateOverrideType.ADD_CONDITION:
+                # Add additional condition to template rule
+                if modified_rule.condition:
+                    modified_rule.condition = f"({modified_rule.condition}) AND ({override.parameters['additional_condition']})"
+                else:
+                    modified_rule.condition = override.parameters['additional_condition']
+            elif override.override_type == TemplateOverrideType.MODIFY_PARAMS:
+                # Modify rule parameters
+                if modified_rule.params:
+                    modified_rule.params.update(override.parameters.get('param_overrides', {}))
+                else:
+                    modified_rule.params = override.parameters.get('param_overrides', {})
         
         return modified_rule
 ```
 
-## 🚀 Getting Started
+## 🚀 Getting Started with Template-Driven Automation
 
 ### Basic Setup
 
 1. **Install Dependencies**:
+
    ```bash
    cd packages/vespera-scriptorium
    pip install -r requirements-automation.txt
    ```
 
-2. **Initialize Automation Engine**:
+2. **Initialize Template-Aware Automation Engine**:
+
    ```python
-   from automation.engine import AutomationEngine
+   from automation.template_engine import TemplateAutomationEngine
    from events.bus import EventBus
+   from templates.registry import TemplateRegistry
    
    event_bus = EventBus()
-   automation_engine = AutomationEngine(event_bus)
+   template_registry = TemplateRegistry()
+   automation_engine = TemplateAutomationEngine(event_bus, template_registry)
    
+   # Load templates first
+   await template_registry.load_all_templates()
+   
+   # Start template-aware automation
    await automation_engine.start()
    ```
 
-3. **Create Your First Rule**:
+3. **Create Your First Template with Automation**:
+
+   ```json5
+   // urgent_task.json5 template
+   {
+     "template_id": "urgent_task_v1",
+     "name": "Urgent Task",
+     "field_schema": {
+       "priority": {
+         "type": "select",
+         "options": ["low", "normal", "high", "urgent"]
+       },
+       "urgency_tag": {
+         "type": "select",
+         "options": ["normal", "urgent", "critical"]
+       }
+     },
+     "automation_rules": [
+       {
+         "trigger": "field_changed",
+         "field": "urgency_tag",
+         "condition": "new_value == 'urgent'",
+         "action": "update_field",
+         "params": {
+           "field_name": "priority",
+           "new_value": "high"
+         }
+       }
+     ]
+   }
+   ```
+
+4. **Use Template Automation**:
+
    ```python
-   rule = await automation_engine.create_rule_from_description(
-       "When I add the tag #urgent to any task, set its priority to high"
+   # Create instance of template
+   urgent_task = await automation_engine.create_template_instance(
+       "urgent_task_v1",
+       {
+         "task_title": "Fix critical bug",
+         "priority": "normal",
+         "urgency_tag": "normal"
+       }
+   )
+   
+   # Trigger automation by changing field
+   await automation_engine.update_template_field(
+       urgent_task.codex_id,
+       "urgency_tag", 
+       "urgent"  # This will automatically set priority to "high"
    )
    ```
 
-### Example Integrations
+### Template Integration Examples
 
-**Music Integration**:
-```yaml
-# Place in ~/.vespera/automation/rules/music-integration.yaml
-name: "Dynamic Music Integration"
-enabled: true
+**Music Integration** - User creates custom templates with integrated automation:
 
-triggers:
-  - type: "tag_changed"
-    codex_types: ["scene", "character", "location"]
-    tag_patterns: ["#mood:*", "#atmosphere:*", "#energy:*"]
-
-actions:
-  - type: "update_music_selection"
-    selection_strategy: "tag_weighted"
-    fade_duration: "3s"
-    
-  - type: "create_music_codex_if_missing"
-    template: "ambient_scene_music"
+```json5
+// fantasy_scene.json5 - User-defined template
+{
+  "template_id": "fantasy_scene_v1",
+  "name": "Fantasy Scene",
+  "field_schema": {
+    "mood": {
+      "type": "select",
+      "options": ["peaceful", "tense", "mysterious", "epic"]
+    },
+    "linked_music": {
+      "type": "codex_reference",
+      "filter": {"template_id": ["ambient_music_v1"]}
+    }
+  },
+  "automation_rules": [
+    {
+      "trigger": "field_changed",
+      "field": "mood",
+      "action": "update_linked_templates",
+      "params": {
+        "target_template_type": "ambient_music_v1",
+        "link_field": "linked_music",
+        "field_mappings": {
+          "peaceful": {"track_type": "nature", "intensity": "low"},
+          "tense": {"track_type": "battle", "intensity": "high"},
+          "mysterious": {"track_type": "ambient", "intensity": "medium"},
+          "epic": {"track_type": "orchestral", "intensity": "high"}
+        },
+        "transition_params": {
+          "fade_duration": "3s",
+          "crossfade": true
+        }
+      }
+    },
+    {
+      "trigger": "created",
+      "condition": "linked_music == null",
+      "action": "create_template_instance",
+      "params": {
+        "template_type": "ambient_music_v1",
+        "instance_data": {
+          "music_title": "{{scene_title}} Soundtrack",
+          "track_type": "{{mood_to_track_type(mood)}}",
+          "linked_scene": "{{codex_id}}"
+        },
+        "link_back": {
+          "field": "linked_music",
+          "value": "{{created_instance.codex_id}}"
+        }
+      }
+    }
+  ]
+}
 ```
 
-**Character Development Tracking**:
-```yaml
-# Place in ~/.vespera/automation/rules/character-tracking.yaml  
-name: "Character Development Automation"
-enabled: true
+**Character Development Tracking** - User-defined template ecosystem:
 
-triggers:
-  - type: "task_completed"
-    task_tags: ["#character-development", "#personality-change"]
-
-actions:
-  - type: "update_character_codex"
-    update_fields: ["development_notes", "personality_traits"]
-    
-  - type: "analyze_character_relationships"
-    update_relationship_maps: true
-    
-  - type: "suggest_plot_implications"
-    create_tasks: true
+```json5
+// character_development_task.json5
+{
+  "template_id": "character_dev_task_v1",
+  "name": "Character Development Task",
+  "extends": "base_task_v1",
+  "field_schema": {
+    "target_character": {
+      "type": "codex_reference",
+      "filter": {"template_id": ["fantasy_character_v1"]},
+      "required": true
+    },
+    "development_type": {
+      "type": "select",
+      "options": ["personality_growth", "skill_development", "relationship_change", "backstory_revelation"]
+    },
+    "development_notes": {
+      "type": "rich_text"
+    }
+  },
+  "automation_rules": [
+    {
+      "trigger": "field_changed",
+      "field": "task_status",
+      "condition": "new_value == 'completed'",
+      "action": "update_linked_templates",
+      "params": {
+        "target_template_type": "fantasy_character_v1",
+        "link_field": "target_character",
+        "update_strategy": "append_to_field",
+        "updates": {
+          "development_history": "{{development_notes}}",
+          "character_arc_progress": "{{increment_progress()}}",
+          "last_development_date": "{{current_date()}}"
+        }
+      }
+    },
+    {
+      "trigger": "field_changed", 
+      "field": "task_status",
+      "condition": "new_value == 'completed' AND development_type == 'relationship_change'",
+      "action": "trigger_template_workflow",
+      "params": {
+        "workflow_name": "update_character_relationships",
+        "workflow_params": {
+          "character_id": "{{target_character}}",
+          "relationship_changes": "{{development_notes}}"
+        }
+      }
+    }
+  ]
+}
 ```
 
-## 📊 Performance and Monitoring
+## 📊 Template Automation Performance and Monitoring
 
-### Metrics Collection
+### Template Metrics Collection
 
-The system automatically collects performance metrics:
+The system automatically collects template-aware performance metrics:
 
-- **Rule execution times**: Track automation performance
-- **Event processing rates**: Monitor system throughput  
-- **User interaction patterns**: Optimize automation suggestions
-- **Content relationship analysis**: Improve cross-codex automation
-- **Safety incident tracking**: Ensure reliable operation
+- **Template rule execution times**: Track automation performance per template type
+- **Cross-template event processing**: Monitor template chain throughput
+- **Template usage patterns**: Optimize template automation suggestions
+- **Template relationship analysis**: Improve cross-template automation effectiveness
+- **Template safety incident tracking**: Ensure reliable template automation operation
+- **Template instance lifecycle metrics**: Track creation, updates, and automation triggers
+- **User template customization patterns**: Guide template design improvements
 
-### Debugging Tools
+### Template Automation Debugging Tools
 
 ```python
-# Enable debug mode for automation
-await automation_engine.set_debug_mode(True)
+# Enable debug mode for template automation
+await template_automation_engine.set_debug_mode(True)
 
-# Monitor specific rule execution
-await automation_engine.add_rule_monitor("Scene Mood Music", 
-                                         callback=debug_callback)
+# Monitor specific template automation
+await template_automation_engine.add_template_monitor(
+    "fantasy_scene_v1", 
+    rule_index=0,  # Monitor first automation rule
+    callback=template_debug_callback
+)
 
-# Trace automation chains  
-chain_trace = await automation_engine.trace_chain_execution(chain_id)
+# Trace cross-template automation chains
+chain_trace = await template_automation_engine.trace_template_chain_execution(
+    initial_template_id="fantasy_scene_v1",
+    initial_codex_id="codex_123"
+)
+
+# Debug template field changes and automation triggers
+field_debug = await template_automation_engine.debug_template_field_change(
+    template_id="fantasy_scene_v1",
+    field_name="mood",
+    old_value="peaceful",
+    new_value="tense"
+)
+
+# View template automation execution history
+execution_log = await template_automation_engine.get_template_execution_log(
+    template_id="fantasy_scene_v1",
+    time_range="last_hour"
+)
 ```
 
-## 🔮 Future Enhancements
+## 🔮 Template Automation Future Enhancements
 
-1. **Machine Learning Integration**: 
-   - Learn user preferences for smarter automation
-   - Predict optimal content relationships
-   - Adaptive rule suggestion system
+1. **AI-Powered Template Intelligence**:
+   - Learn user template usage patterns for smarter automation suggestions
+   - Predict optimal cross-template relationships based on content analysis
+   - Adaptive template rule generation based on user behavior
+   - LLM-powered template optimization recommendations
 
-2. **Advanced Content Analysis**:
-   - Sentiment analysis for emotional automation
-   - Character personality tracking
-   - Plot structure analysis
+2. **Advanced Template Analysis**:
+   - Template field sentiment analysis for emotion-based automation
+   - Cross-template dependency analysis and optimization
+   - Template performance profiling and bottleneck detection
+   - Template usage analytics and improvement suggestions
 
-3. **Collaboration Features**:
-   - Shared automation libraries
-   - Team-based rule management  
-   - Real-time collaborative editing
+3. **Collaborative Template Ecosystem**:
+   - Community template marketplace with ratings and reviews
+   - Team-based template library management
+   - Real-time collaborative template editing and testing
+   - Template version control and branching
+   - Shared template automation debugging tools
 
-4. **Extended Integrations**:
-   - External music services (Spotify, YouTube)
-   - Image generation APIs (DALL-E, Midjourney)
-   - Writing assistance tools (Grammarly, ProWritingAid)
+4. **Extended Template Integrations**:
+   - External API integration templates (Spotify, YouTube, notion, etc.)
+   - AI service integration templates (DALL-E, GPT, Claude)
+   - Workflow automation templates (Zapier, IFTTT integration)
+   - File system and external tool integration templates
+   - Template-driven plugin architecture for unlimited extensibility
+
+5. **Template System Evolution**:
+   - Visual template designer with drag-and-drop automation rules
+   - Template testing framework with automated validation
+   - Template migration tools for seamless updates
+   - Template inheritance optimization and circular dependency detection
+   - Template-aware performance monitoring and scaling
 
 ---
 
-The Dynamic Automation and Tag-Driven Systems represent the revolutionary core of the Vespera Codex architecture, transforming static creative workspaces into intelligent, reactive ecosystems that anticipate and respond to user needs with magical precision.
+## Conclusion: Template-Driven Automation Revolution
+
+The **Template-Driven Dynamic Automation Architecture** represents a fundamental paradigm shift from hardcoded automation systems to user-extensible, template-defined automation ecosystems. By embedding automation rules directly within user-customizable templates, the Vespera Codex system becomes infinitely adaptable to any workflow, domain, or creative process.
+
+### Key Architectural Innovations:
+
+1. **User-Defined Automation**: Templates contain their own automation rules, eliminating hardcoded system behavior
+2. **Cross-Template Intelligence**: Automation chains work seamlessly across different user-defined template types
+3. **Template-Aware Safety**: Loop prevention and rate limiting understand template relationships and inheritance
+4. **Dynamic Event System**: Events are generated based on template field schemas rather than fixed system types
+5. **Inheritance-Powered Rules**: Template automation rules inherit and extend like template fields themselves
+
+### User Empowerment:
+
+- **Complete Control**: Users define not just content structure, but also automation behavior
+- **Infinite Customization**: Any workflow can be modeled through templates with embedded automation
+- **Seamless Integration**: Templates work together through user-defined relationships and automation chains
+- **Evolution-Ready**: Templates can be updated, extended, and shared without system modifications
+
+**The Result**: A truly **user-extensible automation platform** where creative professionals, researchers, developers, and knowledge workers can create complete workflow ecosystems that include both content organization and intelligent automation behavior - all through simple, shareable JSON5 template files.
+
+This template-driven approach transforms the Vespera Codex from a smart content management system into a **universal workflow intelligence platform** that grows and adapts to meet any user's unique creative and organizational needs.
