@@ -305,7 +305,17 @@ class ClaudeExecutor:
         # Use --append-system-prompt for role-specific system instructions
         system_prompt = self._build_role_system_prompt(context)
         if system_prompt:
-            command.extend(["--append-system-prompt", shlex.quote(system_prompt)])
+            # Additional safety check for command line length to prevent CLI crashes
+            quoted_prompt = shlex.quote(system_prompt)
+            estimated_command_length = len(" ".join(command)) + len(" --append-system-prompt ") + len(quoted_prompt)
+            
+            if estimated_command_length > 32000:  # Conservative Unix command line limit
+                logger.warning(f"Command line too long ({estimated_command_length} chars), truncating system prompt for role {context.role.name}")
+                # Use a much shorter system prompt
+                short_prompt = f"You are operating as a {context.role.display_name}. {context.role.system_prompt[:500]}..."
+                command.extend(["--append-system-prompt", shlex.quote(short_prompt)])
+            else:
+                command.extend(["--append-system-prompt", quoted_prompt])
         
         # Add working directory access
         working_dir = self._get_validated_working_directory()
@@ -318,7 +328,13 @@ class ClaudeExecutor:
         return command, user_prompt
     
     def _build_role_system_prompt(self, context: ExecutionContext) -> str:
-        """Build system prompt for role-based execution using --append-system-prompt."""
+        """Build system prompt for role-based execution using --append-system-prompt.
+        
+        Implements length limits to prevent CLI crashes in WSL2/Bun environments.
+        """
+        # Maximum system prompt length to prevent CLI crashes
+        MAX_SYSTEM_PROMPT_LENGTH = 8000  # Conservative limit for CLI stability
+        
         system_parts = [
             f"You are operating as a {context.role.display_name}.",
             context.role.system_prompt,
@@ -342,7 +358,38 @@ class ClaudeExecutor:
                 restriction_info = f" (restricted to: {options.file_regex})" if hasattr(options, 'file_regex') and options.file_regex else ""
                 system_parts.append(f"- ✓ {group.value}{restriction_info}")
         
-        return "\n".join(system_parts)
+        # Build full prompt
+        full_prompt = "\n".join(system_parts)
+        
+        # Implement length limit with graceful fallback
+        if len(full_prompt) > MAX_SYSTEM_PROMPT_LENGTH:
+            logger.warning(f"System prompt too long ({len(full_prompt)} chars), using fallback for role {context.role.name}")
+            
+            # Fallback to minimal essential prompt
+            fallback_parts = [
+                f"You are operating as a {context.role.display_name}.",
+                context.role.system_prompt[:2000] + "..." if len(context.role.system_prompt) > 2000 else context.role.system_prompt,
+                "",
+                "# Essential Tool Access",
+            ]
+            
+            # Add only most critical tool groups
+            essential_groups = []
+            for group_entry in context.role.tool_groups[:3]:  # Limit to first 3 groups
+                if isinstance(group_entry, ToolGroup):
+                    essential_groups.append(f"- ✓ {group_entry.value}")
+                elif isinstance(group_entry, tuple):
+                    group, _ = group_entry
+                    essential_groups.append(f"- ✓ {group.value}")
+            
+            fallback_parts.extend(essential_groups)
+            full_prompt = "\n".join(fallback_parts)
+            
+            # Final safety check
+            if len(full_prompt) > MAX_SYSTEM_PROMPT_LENGTH:
+                full_prompt = full_prompt[:MAX_SYSTEM_PROMPT_LENGTH - 100] + "\n\n[TRUNCATED FOR CLI STABILITY]"
+        
+        return full_prompt
     
     def _build_user_prompt(self, context: ExecutionContext, task_id: str) -> str:
         """Build user prompt (task description) that goes to stdin."""
