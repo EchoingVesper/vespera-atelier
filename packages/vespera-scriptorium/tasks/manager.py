@@ -692,6 +692,82 @@ class TaskManager:
             logger.error(f"Failed to check circular dependency: {e}")
             return False
     
+    async def start_task_execution(self, task_id: str, 
+                                  context: Optional[Dict[str, Any]] = None,
+                                  timeout_minutes: int = 30) -> Dict[str, Any]:
+        """
+        Start task execution asynchronously and return execution_id immediately.
+        
+        Args:
+            task_id: Task to execute
+            context: Additional execution context  
+            timeout_minutes: Execution timeout
+            
+        Returns:
+            Dictionary with success status and execution_id
+        """
+        try:
+            execution_id = await self.task_executor.start_task_execution(
+                task_id, context, timeout_minutes
+            )
+            
+            return {
+                "success": True,
+                "execution_id": execution_id,
+                "task_id": task_id,
+                "message": f"Task execution started with ID: {execution_id}"
+            }
+            
+        except ValueError as e:
+            logger.error(f"Validation error starting task {task_id}: {e}")
+            return {
+                "success": False,
+                "error_message": str(e),
+                "task_id": task_id
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to start task execution for {task_id}: {e}")
+            return {
+                "success": False,
+                "error_message": f"Internal error: {str(e)}",
+                "task_id": task_id
+            }
+    
+    async def get_execution_status(self, execution_id: str) -> Dict[str, Any]:
+        """
+        Get the status of an ongoing or completed execution.
+        
+        Args:
+            execution_id: Execution identifier
+            
+        Returns:
+            Dictionary with execution status information
+        """
+        try:
+            status = self.task_executor.get_execution_status(execution_id)
+            
+            if status is None:
+                return {
+                    "success": False,
+                    "error_message": f"Execution {execution_id} not found",
+                    "execution_id": execution_id
+                }
+            
+            return {
+                "success": True,
+                "execution_id": execution_id,
+                "status": status
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get execution status for {execution_id}: {e}")
+            return {
+                "success": False,
+                "error_message": str(e),
+                "execution_id": execution_id
+            }
+
     async def execute_task(self, task_id: str, 
                           context: Optional[Dict[str, Any]] = None,
                           dry_run: bool = False) -> Dict[str, Any]:

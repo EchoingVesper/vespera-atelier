@@ -9,6 +9,7 @@ import logging
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
 import asyncio
+import uuid
 from pathlib import Path
 
 from .models import Task, TaskStatus, TaskExecution
@@ -86,6 +87,203 @@ class TaskExecutor:
         self.execution_history: List[TaskExecutionResult] = []
         
     # Core execution methods
+    async def start_task_execution(self,
+                                 task_id: str,
+                                 context: Optional[Dict[str, Any]] = None,
+                                 timeout_minutes: int = 30) -> str:
+        """
+        Start task execution asynchronously and return execution_id immediately.
+        
+        Args:
+            task_id: Task to execute
+            context: Additional execution context
+            timeout_minutes: Execution timeout
+            
+        Returns:
+            execution_id: Unique identifier for the execution
+            
+        Raises:
+            ValueError: If task cannot be executed
+        """
+        logger.info(f"=== TaskExecutor.start_task_execution ENTRY ===")
+        logger.info(f"Task ID: {task_id}")
+        logger.info(f"Context: {context}")
+        logger.info(f"Timeout: {timeout_minutes} minutes")
+        
+        # Get and validate task
+        task = await self.task_manager.task_service.get_task(task_id)
+        if not task:
+            raise ValueError(f"Task {task_id} not found")
+            
+        if not task.can_be_executed():
+            raise ValueError(f"Task {task_id} is not ready for execution (no role assigned or blocked)")
+        
+        # Generate unique execution ID
+        execution_id = str(uuid.uuid4())
+        
+        # Update task with execution ID and set status to DOING
+        task.execution.current_execution_id = execution_id
+        await self.task_manager.task_service.update_task(
+            task_id, 
+            {
+                "status": TaskStatus.DOING.value,
+                "execution": task.execution.__dict__
+            }
+        )
+        
+        # Initialize tracking for this execution
+        start_time = datetime.now()
+        self.active_executions[execution_id] = {
+            "task_id": task_id,
+            "started_at": start_time.isoformat(),
+            "role": task.execution.assigned_role,
+            "status": "executing",
+            "context": context or {}
+        }
+        
+        # Start background execution
+        asyncio.create_task(self._execute_task_background(
+            task_id, execution_id, context, timeout_minutes, start_time
+        ))
+        
+        logger.info(f"Started background execution for task {task_id} with execution_id {execution_id}")
+        return execution_id
+    
+    async def _execute_task_background(self,
+                                     task_id: str,
+                                     execution_id: str,
+                                     context: Optional[Dict[str, Any]],
+                                     timeout_minutes: int,
+                                     start_time: datetime) -> None:
+        """Execute task in background and handle completion."""
+        try:
+            # Get task again (fresh copy)
+            task = await self.task_manager.task_service.get_task(task_id)
+            if not task:
+                logger.error(f"Task {task_id} not found during background execution")
+                return
+            
+            # Build execution context
+            execution_context = self._build_execution_context(task, context)
+            role_name = task.execution.assigned_role
+            
+            # Execute using role executor (synchronous call)
+            role_result = self.role_executor.execute_task(
+                role_name=role_name,
+                task_prompt=self._build_task_prompt(task, execution_context),
+                linked_documents=execution_context.get("linked_documents", []),
+                project_context=execution_context.get("project_context", ""),
+                dry_run=False
+            )
+            
+            # Calculate execution time
+            execution_time = (datetime.now() - start_time).total_seconds()
+            
+            # Create result
+            result = TaskExecutionResult(
+                task_id=task_id,
+                success=role_result.status == ExecutionStatus.COMPLETED,
+                status=role_result.status,
+                output=role_result.output,
+                error=role_result.error_message,
+                role_used=role_name,
+                execution_time=execution_time,
+                artifacts_created=role_result.files_modified,
+                tool_groups_used=role_result.tool_groups_used,
+                metadata={
+                    "execution_id": execution_id,
+                    "llm_used": role_result.llm_used,
+                    "restrictions_violated": role_result.restrictions_violated,
+                    "execution_context": execution_context
+                }
+            )
+            
+            # Update task with execution results
+            await self._update_task_after_execution(task, result)
+            
+            # Update active executions tracking
+            if execution_id in self.active_executions:
+                self.active_executions[execution_id].update({
+                    "status": "completed" if result.success else "failed",
+                    "completed_at": datetime.now().isoformat(),
+                    "execution_time": execution_time,
+                    "output": result.output,
+                    "error": result.error
+                })
+            
+            # Add to execution history
+            self.execution_history.append(result)
+            
+            logger.info(f"Background execution completed for task {task_id} (execution_id: {execution_id}) with result: {result.status.value}")
+            
+        except asyncio.TimeoutError:
+            execution_time = (datetime.now() - start_time).total_seconds()
+            await self._handle_execution_timeout(task_id, execution_id, execution_time, timeout_minutes)
+            
+        except Exception as e:
+            execution_time = (datetime.now() - start_time).total_seconds()
+            await self._handle_execution_error(task_id, execution_id, e, execution_time)
+    
+    async def _handle_execution_timeout(self, task_id: str, execution_id: str, 
+                                       execution_time: float, timeout_minutes: int) -> None:
+        """Handle execution timeout."""
+        result = TaskExecutionResult(
+            task_id=task_id,
+            success=False,
+            status=ExecutionStatus.TIMEOUT,
+            error=f"Task execution timed out after {timeout_minutes} minutes",
+            execution_time=execution_time,
+            metadata={"execution_id": execution_id}
+        )
+        
+        # Update tracking
+        if execution_id in self.active_executions:
+            self.active_executions[execution_id].update({
+                "status": "timeout",
+                "completed_at": datetime.now().isoformat(),
+                "execution_time": execution_time,
+                "error": result.error
+            })
+        
+        # Reset task status
+        await self.task_manager.task_service.update_task(
+            task_id, 
+            {"status": TaskStatus.TODO.value}
+        )
+        
+        self.execution_history.append(result)
+        logger.error(f"Background execution timed out for task {task_id} (execution_id: {execution_id})")
+    
+    async def _handle_execution_error(self, task_id: str, execution_id: str, 
+                                     error: Exception, execution_time: float) -> None:
+        """Handle execution error."""
+        result = TaskExecutionResult(
+            task_id=task_id,
+            success=False,
+            status=ExecutionStatus.FAILED,
+            error=str(error),
+            execution_time=execution_time,
+            metadata={"execution_id": execution_id}
+        )
+        
+        # Update tracking
+        if execution_id in self.active_executions:
+            self.active_executions[execution_id].update({
+                "status": "error",
+                "completed_at": datetime.now().isoformat(),
+                "execution_time": execution_time,
+                "error": str(error)
+            })
+        
+        # Reset task status
+        await self.task_manager.task_service.update_task(
+            task_id, 
+            {"status": TaskStatus.TODO.value}
+        )
+        
+        self.execution_history.append(result)
+        logger.error(f"Background execution failed for task {task_id} (execution_id: {execution_id}): {error}")
+
     async def execute_task(self,
                           task_id: str,
                           context: Optional[Dict[str, Any]] = None,
@@ -105,6 +303,14 @@ class TaskExecutor:
         """
         start_time = datetime.now()
         
+        def log_task_progress(phase: str, percentage: int, message: str = ""):
+            """Log task execution progress with phase and percentage."""
+            progress_msg = f"[TASK {percentage:3d}%] {phase}"
+            if message:
+                progress_msg += f": {message}"
+            logger.info(progress_msg)
+        
+        log_task_progress("INITIALIZING", 0, f"Starting task execution for {task_id}")
         logger.info(f"=== TaskExecutor.execute_task ENTRY ===")
         logger.info(f"Task ID: {task_id}")
         logger.info(f"Context: {context}")
@@ -112,7 +318,7 @@ class TaskExecutor:
         logger.info(f"Timeout: {timeout_minutes} minutes")
         
         try:
-            logger.info("Step 1: Getting task from database...")
+            log_task_progress("PREPARING", 5, "Getting task from database")
             # Get task
             task = await self.task_manager.task_service.get_task(task_id)
             if not task:
@@ -129,6 +335,7 @@ class TaskExecutor:
             logger.info(f"Assigned role: {task.execution.assigned_role}")
             logger.info(f"Can be executed: {task.can_be_executed()}")
             
+            log_task_progress("PREPARING", 10, "Validating task readiness")
             # Validate task is ready for execution
             if not task.can_be_executed():
                 logger.error(f"Task {task_id} is not ready for execution")
@@ -141,6 +348,7 @@ class TaskExecutor:
                     role_used=task.execution.assigned_role
                 )
             
+            log_task_progress("PREPARING", 15, f"Loading role: {task.execution.assigned_role}")
             # Get assigned role
             role_name = task.execution.assigned_role
             role = self.role_manager.get_role(role_name)
@@ -153,9 +361,11 @@ class TaskExecutor:
                     role_used=role_name
                 )
             
+            log_task_progress("PREPARING", 20, "Building execution context")
             # Build execution context
             execution_context = self._build_execution_context(task, context)
             
+            log_task_progress("PREPARING", 25, "Setting up execution tracking")
             # Track active execution
             if not dry_run:
                 self.active_executions[task_id] = {
@@ -171,6 +381,7 @@ class TaskExecutor:
                     {"status": TaskStatus.DOING.value}
                 )
             
+            log_task_progress("EXECUTING", 30, f"Starting role executor with {role_name}")
             # Execute using role executor (synchronous call)
             role_result = self.role_executor.execute_task(
                 role_name=role_name,
@@ -180,6 +391,7 @@ class TaskExecutor:
                 dry_run=dry_run
             )
             
+            log_task_progress("FINALIZING", 85, "Processing execution results")
             # Calculate execution time
             execution_time = (datetime.now() - start_time).total_seconds()
             
@@ -201,16 +413,19 @@ class TaskExecutor:
                 }
             )
             
+            log_task_progress("FINALIZING", 90, "Updating task status")
             # Update task with execution results
             if not dry_run:
                 await self._update_task_after_execution(task, result)
             
+            log_task_progress("FINALIZING", 95, "Cleaning up execution tracking")
             # Clean up active execution tracking
             self.active_executions.pop(task_id, None)
             
             # Add to execution history
             self.execution_history.append(result)
             
+            log_task_progress("COMPLETE", 100, f"Task execution finished: {result.status.value}")
             logger.info(f"Executed task '{task.title}' with result: {result.status.value}")
             return result
             
@@ -505,6 +720,10 @@ class TaskExecutor:
             logger.error(f"Failed to update task after execution: {e}")
     
     # Monitoring and status methods
+    def get_execution_status(self, execution_id: str) -> Optional[Dict[str, Any]]:
+        """Get status of a specific execution by execution_id."""
+        return self.active_executions.get(execution_id)
+    
     def get_active_executions(self) -> Dict[str, Dict[str, Any]]:
         """Get currently active task executions."""
         return self.active_executions.copy()

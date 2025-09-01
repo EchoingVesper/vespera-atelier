@@ -9,6 +9,55 @@
 - **Goal**: Professional documentation with $0 budget
 - **Philosophy**: Open source, copyleft, community-driven
 
+## 🚨 **ARCHITECTURAL REALITY CHECK (Updated 2025-01-09)**
+
+**CRITICAL**: This guide has been updated to reflect the actual implementation status of Vespera Atelier systems vs. documented aspirational architecture.
+
+### ✅ **IMPLEMENTED & DOCUMENTED SYSTEMS**
+- **Hook Agent System**: Fully operational template-driven automation with 7 MCP tools
+- **Task Orchestration System**: Complete task management with hierarchical relationships, role-based execution
+- **MCP Server V2**: 30+ tools for comprehensive project management via Claude Code integration
+- **Background Task Execution**: Non-blocking agent spawning and execution tracking
+
+### ⚠️ **PARTIALLY IMPLEMENTED SYSTEMS**  
+- **Dynamic Automation Architecture**: Hook agents operational, but automation engine, events system, and tag-driven automation are planned features
+- **Role-Based Execution**: Core role system implemented, template integration planned
+
+### 📋 **PLANNED/THEORETICAL SYSTEMS**
+- **Codex Architecture**: Universal content system (.codex.md files) - architectural design complete, implementation planned
+- **Template System V2**: User-extensible .json5 templates - V1 archived, V2 redesign in planning
+- **Cross-Template Automation Chains**: Depends on Codex + Template system implementation
+
+**Documentation Strategy**: Clearly distinguish between implemented features (ready to document), partially implemented (document with caveats), and planned features (architectural documentation only).
+
+### 🔧 **CURRENT MCP TOOLS AVAILABLE**
+
+The Vespera Scriptorium V2 MCP Server provides **30+ tools** through Claude Code integration:
+
+#### **Task Management Tools (14 tools)**
+- `create_task`, `get_task`, `update_task`, `delete_task` - Basic task CRUD
+- `create_task_tree`, `get_task_tree` - Hierarchical task structures  
+- `execute_task`, `complete_task` - Task execution lifecycle
+- `assign_role_to_task`, `list_roles` - Role-based execution
+- `add_task_dependency`, `analyze_task_dependencies` - Task relationships
+- `get_task_dashboard`, `list_tasks` - Status and metrics
+
+#### **Hook Agent System Tools (7 tools)** ✅ FULLY OPERATIONAL
+- `register_hook_agent` - Register hook agents from template automation rules
+- `register_timed_agent` - Register timed agents from template schedules  
+- `trigger_hook_agent` - Manually trigger hook agent execution
+- `get_hook_agent_status` - Get status of all hook and timed agents
+- `pause_timed_agent`, `resume_timed_agent` - Timed agent control
+- `get_comprehensive_agent_status` - Detailed metrics
+
+#### **File Operations & Context Tools (9+ tools)**
+- High-performance file operations with automatic artifact creation
+- Project info and context management
+- RAG system integration and search
+
+#### **Documentation-Specific MCP Tools (Planned)**
+The MCP tools defined in this guide (`docs/audit`, `docs/generate`, `docs/update_batch`, `docs/build`, `docs/analyze_content`) represent the **planned documentation integration**. These are not yet implemented but provide the blueprint for Phase 4 integration.
+
 ## Phase 1: Foundation Setup (Week 1)
 
 ### Core Technology Stack (100% Free)
@@ -358,9 +407,62 @@ How to verify the tutorial worked.
 
 ```
 
-## Phase 4: Vespera Scriptorium MCP Integration
+## Phase 3B: Current System Integration (IMPLEMENTED)
+
+### Hook Agent System Documentation
+
+**✅ FULLY IMPLEMENTED**: The template-driven hook agent system is operational and should be documented as a core Vespera Atelier capability.
+
+#### Key Documentation Areas
+
+**Hook Agent Architecture** (`docs/technical/HOOK_AGENT_SYSTEM_IMPLEMENTATION.md`)
+- ✅ Complete and accurate - can be used as authoritative reference
+- Documents 824 lines of production-ready implementation
+- Covers TemplateContext, HookAgentDefinition, TimedAgentDefinition classes
+- Real Claude Code agent spawning via BackgroundTaskExecutionManager
+
+**MCP Integration Guide**
+```bash
+# Available Hook Agent MCP Tools via Claude Code
+mcp__vespera-scriptorium__register_hook_agent      # From template automation rules
+mcp__vespera-scriptorium__register_timed_agent     # Scheduled template agents  
+mcp__vespera-scriptorium__trigger_hook_agent       # Manual execution
+mcp__vespera-scriptorium__get_hook_agent_status    # System status
+mcp__vespera-scriptorium__pause_timed_agent        # Control timed agents
+mcp__vespera-scriptorium__resume_timed_agent       # Resume paused agents
+mcp__vespera-scriptorium__get_comprehensive_agent_status  # Detailed metrics
+```
+
+**Template-Driven Automation Examples** 
+- Pre-task setup hooks (git worktree creation)
+- Post-task documentation updates
+- Scheduled standup preparation agents
+- Cross-template automation chains (when template system V2 is implemented)
+
+**Performance Characteristics** (Documented Metrics)
+- Agent spawn time: <100ms simple hooks, <500ms complex
+- Memory footprint: <50MB per active agent  
+- Background processing: Non-blocking with priority queuing
+- Real-time status updates every 30 seconds
+
+### Current Task Orchestration System
+
+**✅ FULLY IMPLEMENTED**: V2 task management system with 14 MCP tools
+
+**Documentation Priority Topics**:
+- Hierarchical task trees with parent-child relationships
+- Role-based execution with capability restrictions
+- Task dependency analysis and management
+- Real-time dashboard with metrics and progress tracking
+- Integration with hook agent system for automation
+
+## Phase 4: Vespera Scriptorium MCP Integration (PLANNED)
 
 ### MCP Documentation Server Architecture
+
+**🚧 IMPLEMENTATION STATUS: PLANNED/DESIGN PHASE**
+
+This section defines the **planned integration** of documentation management as first-class MCP tools in the Vespera Scriptorium V2 system. The tools described below are **design blueprints** for future implementation, building on the existing MCP architecture that currently supports 30+ tools for task management, hook agents, and file operations.
 
 The Vespera Scriptorium should integrate documentation management as first-class MCP tools. This transforms documentation from a separate process into a core development capability.
 

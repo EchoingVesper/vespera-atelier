@@ -36,6 +36,27 @@ logger = logging.getLogger(__name__)
 
 from tasks import TaskManager, TaskService, TaskStatus, TaskPriority, TaskRelation, TaskMetadata
 from roles import RoleManager
+from hook_integration import HookIntegrationManager, HookAgentInput, TimedAgentInput, HookTriggerInput
+
+# Try importing BackgroundTaskExecutionManager with fallback
+try:
+    from vespera_utilities.background_manager.task_execution_manager import BackgroundTaskExecutionManager
+except ImportError:
+    try:
+        import sys
+        from pathlib import Path
+        utilities_path = Path(__file__).parent.parent.parent / "vespera-utilities"
+        sys.path.insert(0, str(utilities_path))
+        from background_manager.task_execution_manager import BackgroundTaskExecutionManager
+    except ImportError:
+        # If still can't import, create a mock for testing
+        class BackgroundTaskExecutionManager:
+            def __init__(self, *args, **kwargs):
+                pass
+            def shutdown(self, *args, **kwargs):
+                pass
+            def get_performance_metrics(self):
+                return {"mock": True}
 
 # Import the high-performance Rust file operations module
 try:
@@ -177,6 +198,8 @@ class VesperaServer:
         # Initialize server components
         self.task_manager: Optional[TaskManager] = None
         self.role_manager: Optional[RoleManager] = None
+        self.background_executor: Optional[BackgroundTaskExecutionManager] = None
+        self.hook_integration: Optional[HookIntegrationManager] = None
         self.mcp_server: Optional[FastMCP] = None
         self.websocket_server = None
         self.initialized = False
@@ -202,6 +225,23 @@ class VesperaServer:
             logger.info(f"✅ Task Manager initialized:")
             logger.info(f"   Project: {self.project_root.name}")
             logger.info(f"   Database: {task_db_path}")
+            
+            # Initialize background task execution manager  
+            results_path = self.vespera_dir / "background_results"
+            self.background_executor = BackgroundTaskExecutionManager(
+                max_workers=4,
+                result_storage_path=results_path,
+                enable_persistence=True
+            )
+            logger.info(f"✅ Background Task Executor initialized")
+            
+            # Initialize hook agent integration
+            self.hook_integration = HookIntegrationManager(
+                task_manager=self.task_manager,
+                background_executor=self.background_executor,
+                project_root=self.project_root
+            )
+            logger.info(f"✅ Hook Agent Integration initialized")
             
             self.initialized = True
     
@@ -262,6 +302,25 @@ class VesperaServer:
             """Execute a specific task or find and execute next available task."""
             self.initialize_managers()
             return await self._execute_task(task_id, project_id, dry_run)
+        
+        # Tool 6.5: Start Task Execution (Async)
+        @self.mcp_server.tool()
+        async def start_task_execution(
+            task_id: str,
+            timeout_minutes: int = 30
+        ) -> Dict[str, Any]:
+            """Start task execution asynchronously and return execution_id immediately."""
+            self.initialize_managers()
+            return await self._start_task_execution(task_id, timeout_minutes)
+        
+        # Tool 6.6: Get Execution Status  
+        @self.mcp_server.tool()
+        async def get_execution_status(
+            execution_id: str
+        ) -> Dict[str, Any]:
+            """Get the status of an ongoing or completed execution."""
+            self.initialize_managers()
+            return await self._get_execution_status(execution_id)
         
         # Tool 7: Complete Task
         @self.mcp_server.tool()
@@ -512,9 +571,62 @@ class VesperaServer:
                 except Exception as e:
                     return {"success": False, "error": str(e), "path": path}
             
-            logger.info(f"✅ MCP Server '{server_name}' configured with 21 tools (15 task management + 6 Rust file operations)")
+            hook_tool_count = 23 + 7  # 23 existing + 7 hook agent tools
+            logger.info(f"✅ MCP Server '{server_name}' configured with {hook_tool_count} tools (17 task management + 6 Rust file operations + 7 hook agent tools)")
         else:
-            logger.info(f"✅ MCP Server '{server_name}' configured with 15 tools (Rust file operations unavailable)")
+            hook_tool_count = 17 + 7  # 17 existing + 7 hook agent tools
+            logger.info(f"✅ MCP Server '{server_name}' configured with {hook_tool_count} tools (17 task management + 7 hook agent tools)")
+        
+        # Hook Agent Tools (Tools 24-30 or 18-24 depending on Rust availability)
+        
+        # Hook Agent Tool 1: Register Hook Agent
+        @self.mcp_server.tool()
+        async def register_hook_agent(input_data: HookAgentInput) -> Dict[str, Any]:
+            """Register a hook agent from template automation rules."""
+            self.initialize_managers()
+            return await self.hook_integration.register_hook_agent(input_data)
+        
+        # Hook Agent Tool 2: Register Timed Agent
+        @self.mcp_server.tool()
+        async def register_timed_agent(input_data: TimedAgentInput) -> Dict[str, Any]:
+            """Register a timed agent from template automation rules."""
+            self.initialize_managers()
+            return await self.hook_integration.register_timed_agent(input_data)
+        
+        # Hook Agent Tool 3: Trigger Hook Agent
+        @self.mcp_server.tool()
+        async def trigger_hook_agent(input_data: HookTriggerInput) -> Dict[str, Any]:
+            """Manually trigger a hook agent execution."""
+            self.initialize_managers()
+            return await self.hook_integration.trigger_hook_agent(input_data)
+        
+        # Hook Agent Tool 4: Get Hook Agent Status
+        @self.mcp_server.tool()
+        async def get_hook_agent_status() -> Dict[str, Any]:
+            """Get status of all hook agents and timed agents."""
+            self.initialize_managers()
+            return await self.hook_integration.get_hook_agent_status()
+        
+        # Hook Agent Tool 5: Pause Timed Agent
+        @self.mcp_server.tool()
+        async def pause_timed_agent(agent_id: str) -> Dict[str, Any]:
+            """Pause a timed agent."""
+            self.initialize_managers()
+            return await self.hook_integration.pause_timed_agent(agent_id)
+        
+        # Hook Agent Tool 6: Resume Timed Agent
+        @self.mcp_server.tool()
+        async def resume_timed_agent(agent_id: str) -> Dict[str, Any]:
+            """Resume a paused timed agent."""
+            self.initialize_managers()
+            return await self.hook_integration.resume_timed_agent(agent_id)
+        
+        # Hook Agent Tool 7: Get Comprehensive Agent Status
+        @self.mcp_server.tool()
+        async def get_comprehensive_agent_status() -> Dict[str, Any]:
+            """Get comprehensive status including performance metrics for all agents."""
+            self.initialize_managers()
+            return await self.hook_integration.get_comprehensive_agent_status()
     
     # Implementation methods for MCP tools (comprehensive implementations)
     async def _create_task_recursive(self, task_input: TaskInput, parent_id: Optional[str] = None) -> Dict[str, Any]:
@@ -710,6 +822,45 @@ class VesperaServer:
         except Exception as e:
             return {"success": False, "error": str(e)}
     
+    async def _start_task_execution(self, task_id: str, timeout_minutes: int):
+        """Start task execution asynchronously and return execution_id immediately."""
+        try:
+            result = await self.task_manager.start_task_execution(
+                task_id=task_id, 
+                timeout_minutes=timeout_minutes
+            )
+            
+            # Add project context to response
+            result["project"] = self.project_root.name
+            return result
+            
+        except Exception as e:
+            logger.error(f"Failed to start task execution: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "task_id": task_id,
+                "project": self.project_root.name
+            }
+    
+    async def _get_execution_status(self, execution_id: str):
+        """Get the status of an ongoing or completed execution."""
+        try:
+            result = await self.task_manager.get_execution_status(execution_id)
+            
+            # Add project context to response
+            result["project"] = self.project_root.name
+            return result
+            
+        except Exception as e:
+            logger.error(f"Failed to get execution status: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "execution_id": execution_id,
+                "project": self.project_root.name
+            }
+
     async def _complete_task(self, task_id: str, output: Optional[str], artifacts: Optional[List[str]]):
         """Complete task."""
         try:

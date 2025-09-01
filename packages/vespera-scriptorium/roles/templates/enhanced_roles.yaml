@@ -356,3 +356,37 @@ ask_mode:
     - "information"
     - "explanation"
     - "read_only"
+
+mcp_tool_tester:
+  display_name: "🔧 MCP Tool Tester"
+  description: "Specialized role for testing individual MCP tools with minimal capabilities"
+  system_prompt: |
+    You are an MCP Tool Tester focused exclusively on validating individual MCP tools.
+    You have access only to specific MCP tools and the complete_task function to report
+    back results. You cannot edit files or execute commands - your sole purpose is to
+    test MCP tool functionality and provide validation reports.
+  preferred_llm: "sonnet"
+  fallback_llms:
+    - "gpt-4"
+    - "local:ollama:llama3"
+  tool_groups:
+    - "mcp"
+  restrictions:
+    - "max_task_depth: 1"
+    - "mcp_tools_only: true"
+  context_requirements:
+    - "tool_specification"
+    - "expected_behavior"
+  task_types:
+    - "tool_testing"
+    - "validation"
+    - "mcp_testing"
+  validation_rules:
+    - "tool_executed_successfully"
+    - "results_documented"
+    - "errors_reported"
+  tags:
+    - "testing"
+    - "validation"
+    - "mcp"
+    - "tool_testing"

@@ -449,16 +449,26 @@ class ClaudeExecutor:
         """Execute Claude CLI process with stream-json format and proper stdin handling."""
         start_time = time.time()
         
+        def log_progress(phase: str, percentage: int, message: str = ""):
+            """Log execution progress with phase and percentage."""
+            progress_msg = f"[{percentage:3d}%] {phase}"
+            if message:
+                progress_msg += f": {message}"
+            logger.info(progress_msg)
+        
         try:
+            # Phase 1: Spawning (0-20%)
+            log_progress("SPAWNING", 0, "Starting Claude CLI execution")
             logger.info(f"Executing Claude command for task {task_id}: {' '.join(command)}")
             logger.info(f"Working directory: {self.config.working_directory or self.project_root}")
             logger.info(f"User prompt length: {len(user_prompt)} chars")
             
+            log_progress("SPAWNING", 5, "Validating working directory")
             # Validate and prepare working directory
             working_dir = self.config.working_directory or str(self.project_root)
             validated_working_dir = self._validate_working_directory(working_dir)
             
-            logger.info("Creating subprocess...")
+            log_progress("SPAWNING", 10, "Creating subprocess")
             # Start Claude process with security restrictions
             process = await asyncio.create_subprocess_exec(
                 *command,
@@ -469,33 +479,62 @@ class ClaudeExecutor:
                 # Add process limits (available on Unix-like systems)
                 preexec_fn=self._setup_process_limits if hasattr(__import__('os'), 'setrlimit') else None
             )
-            logger.info(f"Subprocess created with PID: {process.pid}")
             
+            log_progress("SPAWNING", 15, f"Subprocess created with PID: {process.pid}")
             self.active_processes[task_id] = process
             
-            # Send plain text prompt via stdin (Claude CLI handles this better than JSON)
-            logger.info("Sending plain text prompt via stdin...")
+            log_progress("SPAWNING", 20, "Subprocess spawned successfully")
+            
+            # Phase 2: Executing (20-80%)
+            log_progress("EXECUTING", 25, "Sending task prompt to Claude CLI")
             logger.info(f"User prompt: {user_prompt[:200]}...")
             
+            log_progress("EXECUTING", 30, f"Waiting for Claude response (timeout: {self.config.timeout}s)")
             # Wait for completion with extended timeout for LLM processing
-            logger.info(f"Waiting for subprocess completion (timeout: {self.config.timeout}s)...")
             try:
-                stdout, stderr = await asyncio.wait_for(
-                    process.communicate(input=user_prompt.encode('utf-8')),
-                    timeout=self.config.timeout
+                # Monitor execution with progress updates
+                execution_start = time.time()
+                timeout_increment = self.config.timeout / 10  # Update every 10% of timeout
+                
+                # Use a loop to provide progress updates during long execution
+                communication_task = asyncio.create_task(
+                    process.communicate(input=user_prompt.encode('utf-8'))
                 )
-                logger.info(f"Subprocess completed with return code: {process.returncode}")
+                
+                # Progress monitoring loop
+                progress_step = 35
+                while not communication_task.done():
+                    elapsed = time.time() - execution_start
+                    if elapsed > self.config.timeout:
+                        communication_task.cancel()
+                        raise asyncio.TimeoutError()
+                    
+                    # Update progress based on elapsed time
+                    if progress_step < 75:  # Cap at 75% during execution
+                        execution_progress = min(int((elapsed / self.config.timeout) * 40), 40)
+                        current_progress = 35 + execution_progress
+                        if current_progress >= progress_step:
+                            log_progress("EXECUTING", progress_step, f"Claude processing... ({elapsed:.1f}s elapsed)")
+                            progress_step += 5
+                    
+                    await asyncio.sleep(timeout_increment)
+                
+                stdout, stderr = await communication_task
+                log_progress("EXECUTING", 80, f"Claude execution completed (return code: {process.returncode})")
+                
             except asyncio.TimeoutError:
+                log_progress("EXECUTING", -1, f"TIMEOUT after {self.config.timeout} seconds")
                 logger.error(f"Subprocess timed out after {self.config.timeout} seconds")
                 process.kill()
                 await process.wait()
                 raise TimeoutError(f"Claude execution timed out after {self.config.timeout} seconds")
             
-            # Clean up
+            # Phase 3: Processing (80-95%)
+            log_progress("PROCESSING", 82, "Cleaning up subprocess")
             if task_id in self.active_processes:
                 del self.active_processes[task_id]
             
-            # Parse stream-json results
+            log_progress("PROCESSING", 85, "Decoding output streams")
             execution_time = time.time() - start_time
             raw_output = stdout.decode('utf-8') if stdout else ""
             error_output = stderr.decode('utf-8') if stderr else ""
@@ -503,9 +542,11 @@ class ClaudeExecutor:
             logger.info(f"Raw output length: {len(raw_output)} chars")
             logger.info(f"Error output: {error_output[:500]}..." if error_output else "No error output")
             
+            log_progress("PROCESSING", 88, "Parsing stream-json output")
             # Parse stream-json output to extract actual Claude response
             parsed_output = self._parse_stream_json_output(raw_output)
             
+            log_progress("PROCESSING", 92, "Analyzing execution results")
             logger.info(f"Parsed output length: {len(parsed_output)} chars")
             logger.info(f"Subprocess error length: {len(error_output)} chars")
             
@@ -516,14 +557,17 @@ class ClaudeExecutor:
             if process.returncode == 0:
                 status = ExecutionStatus.COMPLETED
                 error_message = None
-                logger.info("Claude subprocess completed successfully")
+                log_progress("PROCESSING", 95, "Execution successful")
             else:
                 status = ExecutionStatus.FAILED
                 error_message = error_output or f"Claude process exited with code {process.returncode}"
-                logger.error(f"Claude subprocess failed: {error_message}")
+                log_progress("PROCESSING", 95, f"Execution failed: {error_message[:100]}...")
             
-            # Extract file modifications (would need to parse Claude's output)
+            # Phase 4: Completion (95-100%)
+            log_progress("COMPLETION", 97, "Extracting file modifications")
             files_modified = self._extract_file_modifications(parsed_output)
+            
+            log_progress("COMPLETION", 100, f"Task execution complete ({execution_time:.1f}s total)")
             
             return ExecutionResult(
                 status=status,
