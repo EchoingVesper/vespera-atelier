@@ -5,7 +5,7 @@
  * seamless integration between vault operations and task management.
  */
 
-import { App, TFile, TFolder, Vault, MetadataCache, Notice } from 'obsidian';
+import { App, TFile, TFolder, Vault, MetadataCache, Notice, MarkdownView, View } from 'obsidian';
 import { VesperaMCPClient } from '../mcp/interfaces';
 import { ObsidianMCPIntegration } from '../mcp/interfaces';
 
@@ -37,6 +37,38 @@ export class ObsidianVesperaAdapter implements ObsidianMCPIntegration {
         this.app = app;
         this.mcpClient = mcpClient;
         this.setupVaultWatchers();
+    }
+
+    /**
+     * Update the MCP client instance (used when settings change)
+     */
+    updateMCPClient(newMcpClient: VesperaMCPClient): void {
+        this.mcpClient = newMcpClient;
+        console.log('ObsidianVesperaAdapter: MCP client updated');
+    }
+
+    /**
+     * Get project ID from file path (uses vault name as project ID)
+     */
+    getProjectIdFromPath(filePath: string): string {
+        // Use vault name as project identifier
+        const vaultName = this.app.vault.getName();
+        return vaultName || 'default-project';
+    }
+
+    /**
+     * Clean up resources when plugin unloads
+     */
+    cleanup(): void {
+        // Remove vault watchers
+        this.app.vault.off('modify', this.handleFileModified.bind(this));
+        this.app.vault.off('create', this.handleFileCreated.bind(this));
+        this.app.vault.off('delete', this.handleFileDeleted?.bind(this) || (() => {}));
+        
+        // Clear task file map
+        this.taskFileMap.clear();
+        
+        console.log('ObsidianVesperaAdapter: Cleaned up resources');
     }
 
     /**
@@ -334,7 +366,7 @@ export class ObsidianVesperaAdapter implements ObsidianMCPIntegration {
                 
                 // Vault context
                 folderPath: file.parent?.path || '',
-                vaultPath: this.app.vault.adapter.path || '',
+                vaultPath: (this.app.vault.adapter as any).path || '',
                 
                 // Quality indicators
                 isStub: content.length < 100,
@@ -570,7 +602,7 @@ export class ObsidianVesperaAdapter implements ObsidianMCPIntegration {
 
     updateStatusBar(status: string): void {
         // Update the status bar with connection/sync status
-        const statusBarEl = this.app.statusBar?.createEl('span');
+        const statusBarEl = (this.app as any).statusBar?.createEl('span');
         if (statusBarEl) {
             statusBarEl.setText(`Vespera: ${status}`);
         }
@@ -585,17 +617,17 @@ export class ObsidianVesperaAdapter implements ObsidianMCPIntegration {
         const cache = activeFile ? this.app.metadataCache.getFileCache(activeFile) : null;
         
         return {
-            activeFile,
-            activeProject: cache?.frontmatter?.project || this.getActiveProject(),
-            selectedText: this.getSelectedText(),
+            activeFile: activeFile || undefined,
+            activeProject: cache?.frontmatter?.project || this.getActiveProject() || undefined,
+            selectedText: this.getSelectedText() || undefined,
             noteProperties: cache?.frontmatter
         };
     }
 
     getSelectedText(): string | null {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-        if (activeView) {
-            const editor = activeView.editor;
+        if (activeView && 'editor' in activeView) {
+            const editor = (activeView as any).editor;
             return editor.getSelection() || null;
         }
         return null;

@@ -7,7 +7,7 @@
 
 import { ItemView, WorkspaceLeaf, Setting, ButtonComponent, DropdownComponent, TextAreaComponent } from 'obsidian';
 import { VesperaMCPClient } from '../mcp/client';
-import { ObsidianVaultAdapter } from '../adapters/obsidian-adapter';
+import { ObsidianVesperaAdapter } from '../adapters/obsidian-adapter';
 
 export const TASK_MANAGER_VIEW_TYPE = "vespera-task-manager";
 
@@ -32,17 +32,61 @@ interface ProjectData {
 
 export class TaskManagerView extends ItemView {
     private mcpClient: VesperaMCPClient;
-    private vaultAdapter: ObsidianVaultAdapter;
+    private vaultAdapter: ObsidianVesperaAdapter;
     private tasks: TaskData[] = [];
     private projects: ProjectData[] = [];
     private selectedTask: TaskData | null = null;
     private filterStatus: string = 'all';
     private filterProject: string = 'all';
 
-    constructor(leaf: WorkspaceLeaf, mcpClient: VesperaMCPClient, vaultAdapter: ObsidianVaultAdapter) {
+    constructor(leaf: WorkspaceLeaf, mcpClient: VesperaMCPClient, vaultAdapter: ObsidianVesperaAdapter) {
         super(leaf);
         this.mcpClient = mcpClient;
         this.vaultAdapter = vaultAdapter;
+        
+        // Set up initial event handlers
+        this.setupMCPEventHandlers();
+    }
+
+    /**
+     * Update the MCP client instance (called when settings change)
+     */
+    updateMCPClient(newMcpClient: VesperaMCPClient): void {
+        // Remove old event listeners if they exist
+        if (this.mcpClient) {
+            this.mcpClient.removeAllListeners('connect');
+            this.mcpClient.removeAllListeners('disconnect');
+            this.mcpClient.removeAllListeners('error');
+        }
+        
+        this.mcpClient = newMcpClient;
+        console.log('TaskManagerView: MCP client updated');
+        
+        // Set up event listeners for the new client
+        this.setupMCPEventHandlers();
+        
+        // Re-render the view to update connection status
+        this.render();
+    }
+
+    /**
+     * Set up MCP client event handlers for UI updates
+     */
+    private setupMCPEventHandlers(): void {
+        this.mcpClient.on('connect', () => {
+            console.log('TaskManagerView: MCP client connected, re-rendering...');
+            this.render();
+        });
+
+        this.mcpClient.on('disconnect', () => {
+            console.log('TaskManagerView: MCP client disconnected, re-rendering...');
+            this.render();
+        });
+
+        this.mcpClient.on('error', (error: Error) => {
+            console.log('TaskManagerView: MCP client error, re-rendering...', error);
+            this.render();
+        });
     }
 
     getViewType(): string {
@@ -382,14 +426,20 @@ export class TaskManagerView extends ItemView {
         };
 
         try {
+            console.log('Creating new task:', newTask);
             const result = await this.mcpClient.createTask(newTask);
+            console.log('Task creation result:', result);
+            
             if (result.success) {
+                console.log('Task created successfully, refreshing tasks...');
                 await this.refreshTasks();
                 // Select the new task
                 const createdTask = this.tasks.find(t => t.id === result.task.id);
                 if (createdTask) {
                     this.selectTask(createdTask);
                 }
+            } else {
+                console.error('Task creation failed:', result.error);
             }
         } catch (error) {
             console.error('Failed to create task:', error);

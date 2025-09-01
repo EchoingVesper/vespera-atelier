@@ -47,7 +47,7 @@ export interface MCPTransport {
 }
 
 export interface MCPTransportConfig {
-  type: 'stdio' | 'websocket' | 'sse';
+  type: 'stdio' | 'websocket' | 'http';
   endpoint?: string;
   command?: string;
   args?: string[];
@@ -90,7 +90,7 @@ export interface ResourceCapability {
 export interface PromptCapability {
   name: string;
   description?: string;
-  arguments?: PromptArgument[];
+  args?: PromptArgument[];
 }
 
 export interface PromptArgument {
@@ -160,7 +160,7 @@ export interface MCPPendingRequest {
 // Tool invocation interfaces
 export interface ToolInvocation {
   name: string;
-  arguments: any;
+  args: any;
   callId?: string;
 }
 
@@ -218,7 +218,7 @@ export interface IMCPClient {
   request(method: string, params?: any, options?: MCPRequestOptions): Promise<any>;
   
   // Tool invocation
-  invokeTool(name: string, arguments: any): Promise<ToolResult>;
+  invokeTool(name: string, args: any): Promise<ToolResult>;
   
   // Resource access
   getResource(uri: string): Promise<ResourceResponse>;
@@ -236,11 +236,21 @@ export interface IMCPClient {
 
 // Vespera-specific interfaces extending base MCP
 export interface VesperaMCPClient extends IMCPClient {
+  // Connection status
+  isConnected(): boolean;
+  
+  // Event listener management
+  removeAllListeners(event?: string): void;
+  
   // Task management
   createTask(taskData: any): Promise<any>;
   updateTask(taskId: string, updates: any): Promise<any>;
   deleteTask(taskId: string): Promise<any>;
   getTasks(filters?: any): Promise<any[]>;
+  listTasks(options?: any): Promise<{ success: boolean; tasks?: any[]; error?: string }>;
+  
+  // Dashboard
+  getDashboard(options?: any): Promise<{ success: boolean; dashboard?: any; error?: string }>;
   
   // Role management
   getRoles(): Promise<any[]>;

@@ -12,7 +12,7 @@ interface VesperaScriptoriumSettings {
 }
 
 const DEFAULT_SETTINGS: VesperaScriptoriumSettings = {
-	mcpServerUrl: 'http://localhost:8000/sse/vespera-v2-tasks',
+	mcpServerUrl: 'ws://localhost:8000',
 	mcpServerPort: 8000,
 	autoConnect: true,
 	showStatusBar: true,
@@ -33,7 +33,7 @@ export default class VesperaScriptoriumPlugin extends Plugin {
 		this.mcpClient = new MCPClient({
 			connection: {
 				transport: {
-					type: 'http',
+					type: 'websocket',
 					endpoint: this.settings.mcpServerUrl,
 					timeout: 30000,
 					reconnectDelay: 5000,
@@ -144,6 +144,71 @@ export default class VesperaScriptoriumPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+		// Recreate MCP client if URL has changed
+		await this.reinitializeMCPClient();
+	}
+
+	async reinitializeMCPClient() {
+		// Disconnect old client if connected
+		if (this.mcpClient) {
+			try {
+				await this.mcpClient.disconnect();
+			} catch (error) {
+				console.log('Error disconnecting old MCP client:', error);
+			}
+		}
+
+		// Create new MCP client with updated settings
+		this.mcpClient = new MCPClient({
+			connection: {
+				transport: {
+					type: 'websocket',
+					endpoint: this.settings.mcpServerUrl,
+					timeout: 30000,
+					reconnectDelay: 5000,
+					maxReconnectAttempts: 3
+				},
+				clientInfo: {
+					name: 'vespera-obsidian-plugin',
+					version: '1.0.0'
+				},
+				capabilities: {
+					tools: [],
+					resources: [],
+					prompts: []
+				},
+				timeout: 30000
+			},
+			debug: false,
+			logLevel: 'info'
+		});
+
+		// Re-setup event handlers
+		this.setupMCPEventHandlers();
+
+		// Update vault adapter with new MCP client
+		if (this.vaultAdapter) {
+			this.vaultAdapter.updateMCPClient(this.mcpClient);
+		}
+
+		// Update any existing TaskManagerView instances
+		this.updateTaskManagerViews();
+
+		console.log(`MCP client reinitialized with URL: ${this.settings.mcpServerUrl}`);
+	}
+
+	// Update Task Manager Views with new MCP client
+	updateTaskManagerViews() {
+		const { workspace } = this.app;
+		const leaves = workspace.getLeavesOfType(TASK_MANAGER_VIEW_TYPE);
+		
+		leaves.forEach(leaf => {
+			const view = leaf.view as TaskManagerView;
+			if (view && view.updateMCPClient) {
+				view.updateMCPClient(this.mcpClient);
+				console.log('Updated TaskManagerView with new MCP client');
+			}
+		});
 	}
 
 	// Task Manager View Management
@@ -157,8 +222,8 @@ export default class VesperaScriptoriumPlugin extends Plugin {
 			// If task manager view already exists, activate it
 			leaf = leaves[0];
 		} else {
-			// Create new task manager view in right sidebar
-			leaf = workspace.getRightLeaf(false);
+			// Create new task manager view in main editor area
+			leaf = workspace.getLeaf('tab');
 			await leaf.setViewState({ type: TASK_MANAGER_VIEW_TYPE, active: true });
 		}
 		
@@ -267,7 +332,7 @@ export default class VesperaScriptoriumPlugin extends Plugin {
 				feature: 'vault-integration',
 				metadata: {
 					source_file: file.path,
-					vault_path: this.app.vault.adapter.basePath,
+					vault_path: (this.app.vault.adapter as any).basePath || this.app.vault.getName(),
 					file_context: fileContext
 				}
 			});
@@ -347,7 +412,7 @@ class VesperaScriptoriumSettingTab extends PluginSettingTab {
 						this.plugin.updateStatusBar('Disconnected');
 					} else if (!value && this.plugin.statusBarItem) {
 						this.plugin.statusBarItem.remove();
-						this.plugin.statusBarItem = null;
+						this.plugin.statusBarItem = undefined as any;
 					}
 				}));
 
