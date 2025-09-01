@@ -1550,7 +1550,255 @@ class TemplateCustomizer {
 }
 ```
 
-## 8. Integration with Existing Codex Architecture
+## 8. Immersive Environment Integration
+
+### 8.1 Environmental Template Configuration
+
+Templates can define immersive environment settings that create adaptive user experiences:
+
+```json5
+{
+  "template_id": "fantasy_scene_v1", 
+  "name": "Fantasy Scene",
+  "description": "Scene template with environmental adaptation",
+  
+  // Immersive Environment Configuration
+  "environmental_config": {
+    // Audio and Music Integration  
+    "audio_profiles": {
+      "default": "medieval_ambient.mp3",
+      "combat": "battle_drums.mp3",
+      "peaceful": "forest_sounds.mp3", 
+      "mystical": "ethereal_choir.mp3"
+    },
+    
+    // Dynamic Lighting Control
+    "lighting_profiles": {
+      "dawn": {
+        "color": "#FFE4B5", 
+        "brightness": 70,
+        "warmth": 85
+      },
+      "dusk": {
+        "color": "#4B0082",
+        "brightness": 30, 
+        "warmth": 20
+      },
+      "candlelight": {
+        "color": "#FFA500",
+        "brightness": 40,
+        "warmth": 90
+      }
+    },
+    
+    // Context-Aware UI Theming
+    "ui_themes": {
+      "medieval": {
+        "background": "parchment_texture.jpg",
+        "font": "MiddleEarth", 
+        "accent_color": "#8B4513",
+        "border_style": "ornate_medieval"
+      },
+      "modern_clean": {
+        "background": "clean_white.jpg",
+        "font": "Roboto",
+        "accent_color": "#2196F3",
+        "border_style": "minimal"
+      }
+    },
+    
+    // Real-Time Adaptation Rules
+    "adaptation_triggers": {
+      "tag_changes": {
+        "mood_peaceful": {
+          "audio": "peaceful",
+          "lighting": "dawn", 
+          "theme": "medieval"
+        },
+        "mood_tense": {
+          "audio": "combat",
+          "lighting": "dusk",
+          "theme": "medieval"
+        },
+        "mood_mystical": {
+          "audio": "mystical", 
+          "lighting": "candlelight",
+          "theme": "medieval"
+        }
+      },
+      "field_changes": {
+        "scene_type": {
+          "battlefield": {
+            "audio": "combat",
+            "lighting": "dusk"
+          },
+          "tavern": {
+            "audio": "default", 
+            "lighting": "candlelight"
+          }
+        }
+      }
+    },
+    
+    // Video Game-Style HUD Elements
+    "hud_elements": {
+      "scene_mood_indicator": {
+        "type": "circular_progress",
+        "field": "tension_level",
+        "colors": ["#00FF00", "#FFFF00", "#FF0000"]
+      },
+      "character_count": {
+        "type": "badge",
+        "source": "linked_characters.length"
+      }
+    }
+  }
+}
+```
+
+### 8.2 Three-Mode Component Behavior System
+
+Templates support behavioral programming with multiple execution modes:
+
+```json5
+{
+  "template_id": "intelligent_character_v1",
+  
+  "behavioral_components": {
+    "relationship_tracker": {
+      // Pure programmatic mode - traditional logic
+      "programmatic_mode": {
+        "relationship_calculation": "javascript:calculateRelationshipScore(character1, character2)",
+        "conflict_detection": "rule_engine:detect_personality_conflicts",
+        "update_triggers": ["personality_change", "interaction_logged"]
+      },
+      
+      // LLM-driven mode - AI-powered natural language processing  
+      "llm_driven_mode": {
+        "relationship_analysis": {
+          "model": "gpt4_mini",
+          "prompt": "Analyze the relationship between {{character1.name}} and {{character2.name}} based on their interactions: {{recent_interactions}}"
+        },
+        "dialogue_suggestions": {
+          "model": "claude_haiku", 
+          "context": "personality_traits,relationship_history"
+        },
+        "personality_inference": {
+          "model": "local_llm",
+          "trigger": "insufficient_personality_data"
+        }
+      },
+      
+      // Hybrid mode - combined approach with intelligent fallbacks
+      "hybrid_mode": {
+        "primary_method": "programmatic_mode",
+        "fallback_conditions": [
+          "insufficient_data_points",
+          "edge_case_detected",
+          "user_requests_creative_input"
+        ],
+        "fallback_method": "llm_driven_mode",
+        "validation": "cross_reference_both_methods"
+      },
+      
+      // Template-driven behavior - rule-based behavioral programming
+      "template_driven_mode": {
+        "behavior_rules": [
+          {
+            "condition": "relationship_score < 0.3",
+            "actions": ["suggest_conflict_resolution", "highlight_tension"]
+          },
+          {
+            "condition": "new_character_introduced", 
+            "actions": ["analyze_group_dynamics", "suggest_introductions"]
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+### 8.3 Dynamic Environmental Adaptation Engine
+
+Templates can trigger complex environmental adaptations:
+
+```json5
+{
+  "environmental_automation": {
+    "scene_completion_trigger": {
+      "when": "status_changed_to_completed",
+      "adaptations": [
+        {
+          "type": "audio_fade",
+          "from_profile": "current",
+          "to_profile": "peaceful",
+          "duration": "3s"
+        },
+        {
+          "type": "lighting_transition", 
+          "to_profile": "dawn",
+          "duration": "5s"
+        },
+        {
+          "type": "create_linked_content",
+          "template": "scene_reflection_notes",
+          "auto_populate": ["scene_summary", "key_moments"]
+        }
+      ]
+    },
+    
+    "character_mood_sync": {
+      "when": "linked_character_mood_changes",
+      "adaptations": [
+        {
+          "type": "conditional_environment",
+          "conditions": [
+            {
+              "character_mood": "melancholic",
+              "environment": {
+                "audio": "somber_strings.mp3",
+                "lighting": {"color": "#4A5568", "brightness": 40}
+              }
+            },
+            {
+              "character_mood": "joyful", 
+              "environment": {
+                "audio": "uplifting_melody.mp3",
+                "lighting": {"color": "#F7FAFC", "brightness": 80}
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
+```
+
+### 8.4 Immersive Template Sharing
+
+Environmental configurations are preserved when sharing templates:
+
+```json5
+{
+  "sharing_config": {
+    "include_environmental_assets": true,
+    "asset_bundle": {
+      "audio_files": ["medieval_ambient.mp3", "battle_drums.mp3"],
+      "theme_files": ["parchment_texture.jpg", "medieval_borders.css"],
+      "lighting_profiles": ["dawn.json", "dusk.json", "candlelight.json"]
+    },
+    "fallback_assets": {
+      "audio": "system_default",
+      "lighting": "neutral_white", 
+      "themes": "obsidian_default"
+    }
+  }
+}
+```
+
+## 9. Integration with Existing Codex Architecture
 
 ### 8.1 Codex Entry Extension
 

@@ -20,7 +20,11 @@ Instead of manual content management, Vespera Codex enables:
 
 | Document | Purpose | Audience |
 |----------|---------|----------|
-| **[Dynamic Automation Architecture](./DYNAMIC_AUTOMATION_ARCHITECTURE.md)** | Complete technical architecture for the revolutionary automation system | Developers, Architects |
+| **[Dynamic Automation Architecture](./technical/DYNAMIC_AUTOMATION_ARCHITECTURE.md)** | Complete technical architecture for the revolutionary automation system | Developers, Architects |
+| **[Codex Architecture](./technical/CODEX_ARCHITECTURE.md)** | Universal content system where everything is a Codex entry with template-driven behavior | System Architects |
+| **[Template System Architecture](./technical/TEMPLATE_SYSTEM_ARCHITECTURE.md)** | Comprehensive template system enabling user-extensible content types via JSON5 files | Developers, Template Creators |  
+| **[Multi-Project Vault Organization](./technical/MULTI_PROJECT_VAULT_ORGANIZATION.md)** | Managing multiple project types within single vaults with seamless template switching | Project Managers, Power Users |
+| **[UI Architecture Three-Panel Design](./technical/UI-Architecture-Three-Panel-Design.md)** | Three-panel interface design with immersive environment integration | UI/UX Developers |
 | **[Event System Specification](./technical/EVENT_SYSTEM_SPECIFICATION.md)** | Detailed event processing and real-time reactive content implementation | Backend Developers |
 
 ### 🎨 Examples and Use Cases  
@@ -34,6 +38,7 @@ Instead of manual content management, Vespera Codex enables:
 | Document | Purpose | Audience |
 |----------|---------|----------|
 | **[Getting Started with Automation](./user-guides/GETTING_STARTED_AUTOMATION.md)** | Step-by-step guide to setting up and using automation | New Users, Content Creators |
+| **[Real-World Integration Scenarios](./user-guides/REAL_WORLD_INTEGRATION_SCENARIOS.md)** | Comprehensive examples of how Vespera integrates into various creative workflows | All Users, Workflow Designers |
 
 ## 🚀 Quick Start: Experience the Magic
 
