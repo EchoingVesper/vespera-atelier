@@ -302,10 +302,10 @@ class ClaudeExecutor:
             tools_str = ",".join(validated_tools)
             command.extend(["--allowed-tools", shlex.quote(tools_str)])
         
-        # NEW APPROACH: Use minimal bootstrap system prompt that's CLI-safe
-        # All role and task context will be retrieved via get_task_context MCP tool
-        bootstrap_prompt = "You are a Claude AI assistant. Your first action must be to call get_task_context to retrieve your role and task information."
-        command.extend(["--append-system-prompt", shlex.quote(bootstrap_prompt)])
+        # ULTIMATE FIX: NO SYSTEM PROMPT AT ALL - completely bypass Bun CLI issues
+        # All context will be provided via user prompt and get_task_context MCP tool
+        # This is the only way to prevent Bun v1.2.19 WSL2 crashes
+        logger.info(f"Skipping ALL system prompts to prevent Bun CLI crashes for role {context.role.name}")
         
         # Add working directory access  
         working_dir = self._get_validated_working_directory()
@@ -448,28 +448,41 @@ class ClaudeExecutor:
         return "\n".join(prompt_parts)
     
     def _build_bootstrap_user_prompt(self, task_id: str) -> str:
-        """Build minimal bootstrap prompt that directs agent to get_task_context."""
+        """Build comprehensive bootstrap prompt with embedded system context (no system prompt used)."""
         prompt_parts = [
-            "# Task Bootstrap",
+            "# Claude AI Assistant - Task Bootstrap",
+            "",
+            "You are Claude, an AI assistant created by Anthropic. You're operating as a spawned agent in the Vespera Scriptorium task orchestration system.",
             "",
             f"**Task ID**: {task_id}",
             "",
-            "## IMPORTANT: Bootstrap Required",
-            "Before you can begin working on your task, you must:",
+            "## CRITICAL: Bootstrap Sequence Required",
             "",
-            "1. **FIRST**: Call the `get_task_context` MCP tool with your task_id to retrieve:",
-            "   - Your assigned role and capabilities",  
-            "   - The complete task description and requirements",
-            "   - Project context and file access information",
-            "   - All other necessary context for task completion",
+            "You are starting with minimal context because system prompts cause CLI crashes. You must immediately:",
             "",
-            "2. **ONLY AFTER** successfully retrieving your context can you use other tools",
+            "**STEP 1: CALL get_task_context**",
+            f"Call the MCP tool `get_task_context` with task_id='{task_id}' to retrieve:",
+            "- Your assigned role (architect, coder, tester, etc.) and specific capabilities",
+            "- Complete task description and requirements",  
+            "- Project context and working directory information",
+            "- Tool access permissions and restrictions",
+            "- All context needed for successful task completion",
             "",
-            "3. If you encounter any MCP tool errors during task execution, call `pause_for_triage` with error details",
+            "**STEP 2: PROCEED WITH TASK**",
+            "Only after successfully retrieving context can you:",
+            "- Use other MCP tools and file operations",
+            "- Begin actual task work according to your role",
+            "- Apply role-specific restrictions and guidelines",
             "",
-            "**Your task_id for get_task_context is**: " + task_id,
+            "**ERROR HANDLING**",
+            "If you encounter MCP tool errors during execution:",
+            f"- Call `pause_for_triage` with task_id='{task_id}' and error details",
+            "- This will pause execution and log issues for human review",
             "",
-            "Begin now by calling get_task_context."
+            "**START NOW**",
+            f"Your first action must be: get_task_context(task_id='{task_id}')",
+            "",
+            "Do NOT attempt any other tools or actions until you have successfully retrieved your task context."
         ]
         
         return "\n".join(prompt_parts)
