@@ -1,0 +1,299 @@
+{
+  // EXAMPLE: Task Codex - Migrated from existing MCP task system
+  // This shows how the existing task system becomes just another Codex type
+  
+  id: "task_64f8a2c7-e89b-12d3-a456-426614174000",
+  version: "1.0.0",
+  content_type: "vespera.task",
+  template_id: "vespera.templates.hierarchical_task",
+  template_version: "2.1.0",
+  
+  title: "Create Vespera Forge VS Code Plugin Structure",
+  description: "Set up the TypeScript VS Code extension project with proper integration to the Vespera Bindery CRDT library for real-time collaborative editing.",
+  
+  created_by: "user_dev_primary",
+  created_at: "2025-01-02T14:30:00.000Z",
+  updated_by: "user_dev_primary", 
+  updated_at: "2025-01-02T17:45:22.123Z",
+  
+  visibility: "shared",
+  collaborators: [
+    {
+      user_id: "user_architect",
+      role: "editor",
+      invited_at: "2025-01-02T14:35:00.000Z",
+      accepted_at: "2025-01-02T14:36:15.789Z"
+    }
+  ],
+  
+  crdt_metadata: {
+    vector_clock: {
+      "user_dev_primary": 28,
+      "user_architect": 12
+    },
+    content_hash: "sha256:d4f6b23c8e90a1f2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7",
+    lww_metadata: {
+      status: {
+        value: "in_progress", 
+        timestamp: "2025-01-02T17:45:22.123Z",
+        user_id: "user_dev_primary",
+        operation_id: "op_status_change_001"
+      },
+      priority: {
+        value: "high",
+        timestamp: "2025-01-02T14:30:00.000Z", 
+        user_id: "user_dev_primary",
+        operation_id: "op_priority_set_001"
+      }
+    }
+  },
+  
+  content: {
+    // Core task fields from existing system
+    status: "in_progress",
+    priority: "high", 
+    task_order: 200,
+    
+    // Temporal tracking
+    due_date: "2025-01-05T23:59:59.000Z",
+    started_at: "2025-01-02T17:45:22.123Z",
+    completed_at: null,
+    
+    // Assignment and execution (integrated with role system)
+    assignee: "user_dev_primary",
+    assigned_role: "frontend_developer",
+    retry_count: 0,
+    max_retries: 3,
+    
+    execution_history: [
+      {
+        execution_id: "exec_vscode_setup_001",
+        timestamp: "2025-01-02T17:45:22.123Z",
+        role_name: "frontend_developer",
+        status: "started",
+        output: "Initialized VS Code extension project with TypeScript template",
+        metadata: {
+          vscode_version: "1.85.0",
+          node_version: "18.19.0",
+          typescript_version: "5.3.3"
+        }
+      }
+    ],
+    
+    // Rich metadata and categorization
+    tags: ["frontend", "vscode", "extension", "typescript", "collaboration"],
+    labels: {
+      complexity: "moderate",
+      estimated_effort: "6 hours",
+      actual_effort: "1.5 hours",
+      milestone: "phase-2.1",
+      area: "user-interface",
+      framework: "vscode-extension"
+    },
+    
+    // Project context
+    project_id: "vespera_bindery_phase2", 
+    feature: "vscode-integration",
+    milestone: "phase-2.1-plugin-foundation",
+    
+    // Task relationships using Codex references
+    references: [
+      {
+        codex_id: "task_550e8400-e29b-41d4-a716-446655440000",
+        reference_type: "depends_on",
+        title: "Design enhanced Codex format with CRDT metadata", 
+        context: "Plugin needs to consume Codex format"
+      },
+      {
+        codex_id: "task_123e4567-e89b-12d3-a456-426614174001",
+        reference_type: "depends_on", 
+        title: "Implement hybrid CRDT core architecture",
+        context: "Plugin uses Bindery library for CRDT operations"
+      }
+    ],
+    
+    // Hierarchical structure
+    parent_id: "task_epic_vespera_forge_implementation",
+    child_ids: [
+      "task_64f8a2c7-e89b-12d3-a456-426614174001", // Setup TypeScript project
+      "task_64f8a2c7-e89b-12d3-a456-426614174002", // Implement CRDT integration
+      "task_64f8a2c7-e89b-12d3-a456-426614174003", // Create collaborative editor
+      "task_64f8a2c7-e89b-12d3-a456-426614174004"  // Add real-time sync
+    ],
+    
+    // External documentation and code references
+    source_references: [
+      "https://code.visualstudio.com/api/get-started/your-first-extension",
+      "https://github.com/microsoft/vscode-extension-samples",
+      "file://docs/technical/UI-Architecture-Three-Panel-Design.md"
+    ],
+    code_references: [
+      "packages/vespera-utilities/vespera-bindery/src/",
+      "packages/vespera-utilities/vespera-bindery/Cargo.toml"
+    ],
+    
+    // Rich collaborative content  
+    rich_content: {
+      yjs_state: {
+        document_state: "AQQDAQEBAQEBAgIEBgYGBgYGBwcHBwcHCAkJCQkJCgsLCwsLDA0NDQ0NDg==",
+        updates: []
+      },
+      
+      plain_text: `Create the VS Code extension project structure with:
+
+## Phase 2.1 Requirements:
+1. TypeScript VS Code extension template
+2. Integration with Vespera Bindery Rust library via NAPI-RS
+3. Three-panel UI architecture (nav, content, context)
+4. Real-time collaborative editing support
+5. Template-driven content rendering
+
+## Implementation Steps:
+1. ✅ Initialize extension project with proper manifest
+2. 🔄 Set up Rust library integration via NAPI bindings  
+3. ⏳ Implement collaborative text editor
+4. ⏳ Add template system integration
+5. ⏳ Create immersive environment adaptation
+
+## Technical Decisions:
+- Use VS Code's native WebView API for rich editing
+- Integrate Y.js for client-side CRDT operations
+- Connect to Vespera Bindery for server-side coordination`,
+      
+      sections: {
+        requirements: {
+          content: "TypeScript VS Code extension with CRDT collaboration...",
+          last_edited: "2025-01-02T17:45:22.123Z",
+          editor: "user_dev_primary"
+        },
+        progress_notes: {
+          content: "Extension manifest created, working on Rust integration...",
+          last_edited: "2025-01-02T17:45:22.123Z", 
+          editor: "user_dev_primary"
+        }
+      }
+    }
+  },
+  
+  backend_integration: {
+    chroma: {
+      embedding_id: "emb_vscode_task_001",
+      content_hash: "sha256:d4f6b23c8e90a1f2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7",
+      last_embedded: "2025-01-02T17:45:22.123Z",
+      embedding_version: 1,
+      synced: true
+    },
+    kuzu: {
+      graph_node_id: "node_vscode_task_001",
+      last_graph_sync: "2025-01-02T17:45:22.123Z", 
+      graph_version: 1,
+      synced: true
+    },
+    sqlite: {
+      table: "codices",
+      primary_key: "task_64f8a2c7-e89b-12d3-a456-426614174000",
+      last_persisted: "2025-01-02T17:45:22.123Z",
+      schema_version: 1
+    },
+    sync_coordination: {
+      overall_status: "synced",
+      last_full_sync: "2025-01-02T17:45:22.123Z",
+      sync_error: null,
+      pending_sync_operations: []
+    }
+  },
+  
+  template_metadata: {
+    template_source: "file://templates/vespera.task.template.json5",
+    template_hash: "sha256:b665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae4",
+    
+    field_constraints: {
+      status: {
+        type: "enum",
+        values: ["todo", "in_progress", "review", "done", "blocked", "cancelled"],
+        required: true
+      },
+      priority: {
+        type: "enum",
+        values: ["critical", "high", "normal", "low", "someday"],
+        default: "normal"
+      }
+    },
+    
+    ui_hints: {
+      primary_fields: ["title", "status", "priority", "assignee"],
+      secondary_fields: ["due_date", "tags", "estimated_effort"],
+      field_groups: {
+        "Task Details": ["title", "description", "status", "priority"],
+        "Assignment": ["assignee", "assigned_role", "due_date"], 
+        "Progress": ["execution_history", "retry_count", "actual_effort"],
+        "Organization": ["tags", "labels", "project_id", "milestone"],
+        "Relationships": ["parent_id", "child_ids", "references"]
+      }
+    },
+    
+    automation_rules: [
+      {
+        trigger: "status_change",
+        condition: { from: "todo", to: "in_progress" },
+        actions: [
+          { type: "set_timestamp", field: "started_at" },
+          { type: "notify_assignee" },
+          { type: "update_environment_theme", theme: "focused_work" }
+        ]
+      },
+      {
+        trigger: "status_change",
+        condition: { from: "*", to: "done" },
+        actions: [
+          { type: "set_timestamp", field: "completed_at" },
+          { type: "update_parent_progress" },
+          { type: "trigger_celebration", level: "task_completion" }
+        ]
+      }
+    ]
+  },
+  
+  environment: {
+    theme_adaptation: {
+      current_theme: "development_focus",
+      mood_indicators: ["productive", "technical"],
+      color_scheme: {
+        primary: "#0ea5e9",    // Sky blue for development tasks
+        accent: "#f59e0b",     // Amber for in-progress status
+        background: "#0f172a"  // Dark slate for coding focus
+      }
+    },
+    
+    ambient_elements: {
+      background_audio: "codex_media_coding_ambient_001",  // Reference to audio Codex
+      lighting_profile: "coding_session",
+      distraction_blocking: true
+    },
+    
+    workspace_context: {
+      related_codices: [
+        "task_550e8400-e29b-41d4-a716-446655440000",  // CRDT format task
+        "doc_vscode_extension_architecture",          // Architecture docs
+        "template_vespera_task"                       // Task template definition
+      ],
+      active_tools: ["vscode", "rust-analyzer", "npm"],
+      focus_score: 0.92
+    }
+  },
+  
+  file_representation: {
+    primary_file: "create-vscode-plugin-structure.task.json5",
+    associated_files: [
+      "create-vscode-plugin-structure.task.md",
+      "attachments/vscode-extension-mockup.png",
+      "attachments/three-panel-layout-sketch.pdf"
+    ],
+    export_formats: ["markdown", "pdf", "jira", "github_issue"],
+    version_control: {
+      git_tracked: true,
+      ignore_patterns: ["*.tmp", "*.cache", "node_modules/"],
+      commit_template: "Task: {{title}} - {{status}} ({{priority}})"
+    }
+  }
+}

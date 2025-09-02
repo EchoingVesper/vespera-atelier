@@ -1,0 +1,474 @@
+{
+  // Vespera Codex Format Specification v1.0
+  // Universal container format for collaborative content management
+  // Supports any content type with CRDT-based real-time collaboration
+  
+  // ========================================================================
+  // UNIVERSAL CODEX STRUCTURE
+  // ========================================================================
+  
+  // Core Codex identification and metadata
+  id: "codex_550e8400-e29b-41d4-a716-446655440000",  // UUID v4
+  version: "1.0.0",                                    // Codex format version
+  
+  // Content type and template system
+  content_type: "vespera.task",                       // MIME-style type identifier
+  template_id: "vespera.templates.hierarchical_task", // Reference to template definition
+  template_version: "2.1.0",                         // Template version for compatibility
+  
+  // Core metadata
+  title: "Implement CRDT-based Codex format",
+  description: "Design and implement the universal Codex format that can handle any content type with real-time collaboration support",
+  
+  // Authorship and ownership
+  created_by: "user_123e4567-e89b-12d3-a456-426614174000",
+  created_at: "2025-01-02T15:04:05.123Z",
+  updated_by: "user_123e4567-e89b-12d3-a456-426614174000", 
+  updated_at: "2025-01-02T16:23:42.456Z",
+  
+  // Access control and sharing
+  visibility: "private",                              // private, shared, public
+  collaborators: [
+    {
+      user_id: "user_987fcdeb-51a2-43d8-9f12-123456789abc",
+      role: "editor",                                 // viewer, editor, admin
+      invited_at: "2025-01-02T15:30:00.000Z",
+      accepted_at: "2025-01-02T15:32:15.789Z"
+    }
+  ],
+  
+  // ========================================================================
+  // CRDT COLLABORATION METADATA
+  // ========================================================================
+  
+  // CRDT state tracking for real-time collaboration
+  crdt_metadata: {
+    // Vector clock for ordering operations across collaborators
+    vector_clock: {
+      "user_123e4567-e89b-12d3-a456-426614174000": 42,
+      "user_987fcdeb-51a2-43d8-9f12-123456789abc": 17
+    },
+    
+    // Content hash for change detection and conflict resolution
+    content_hash: "sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
+    
+    // Last-Writer-Wins timestamps for simple fields
+    lww_metadata: {
+      title: {
+        value: "Implement CRDT-based Codex format",
+        timestamp: "2025-01-02T16:23:42.456Z",
+        user_id: "user_123e4567-e89b-12d3-a456-426614174000",
+        operation_id: "op_550e8400-e29b-41d4-a716-446655440001"
+      },
+      status: {
+        value: "doing",
+        timestamp: "2025-01-02T16:20:15.123Z", 
+        user_id: "user_123e4567-e89b-12d3-a456-426614174000",
+        operation_id: "op_550e8400-e29b-41d4-a716-446655440002"
+      }
+    },
+    
+    // Observed-Remove Set for collections (tags, references, etc.)
+    or_sets: {
+      tags: {
+        elements: {
+          "architecture": {
+            "tag_550e8400-e29b-41d4-a716-446655440003": {
+              operation_id: "tag_550e8400-e29b-41d4-a716-446655440003",
+              user_id: "user_123e4567-e89b-12d3-a456-426614174000",
+              timestamp: "2025-01-02T15:45:30.123Z"
+            }
+          },
+          "crdt": {
+            "tag_550e8400-e29b-41d4-a716-446655440004": {
+              operation_id: "tag_550e8400-e29b-41d4-a716-446655440004",
+              user_id: "user_987fcdeb-51a2-43d8-9f12-123456789abc",
+              timestamp: "2025-01-02T16:10:22.456Z"
+            }
+          }
+        },
+        removed_tags: [
+          // Operations that removed elements (tombstones)
+        ]
+      }
+    },
+    
+    // Hierarchical CRDT state for parent-child relationships
+    hierarchy_state: {
+      parent_id: {
+        value: "codex_123e4567-e89b-12d3-a456-426614174001",
+        timestamp: "2025-01-02T15:04:05.123Z",
+        user_id: "user_123e4567-e89b-12d3-a456-426614174000",
+        operation_id: "op_550e8400-e29b-41d4-a716-446655440005"
+      },
+      child_positions: {
+        // Ordered list of child positions with fractional indexing
+        "codex_123e4567-e89b-12d3-a456-426614174002": {
+          position: "a0",
+          timestamp: "2025-01-02T15:30:00.000Z",
+          user_id: "user_123e4567-e89b-12d3-a456-426614174000"
+        }
+      }
+    },
+    
+    // Sync status across different backend systems
+    sync_status: {
+      local_state: "synced",                          // local, synced, conflict, error
+      remote_sync: "2025-01-02T16:23:45.789Z",       // Last successful sync
+      conflict_resolution: "auto",                    // auto, manual, pending
+      pending_operations: []                          // Queued operations for offline sync
+    }
+  },
+  
+  // ========================================================================
+  // TEMPLATE-DRIVEN CONTENT FIELDS
+  // ========================================================================
+  
+  // The actual content - structure determined by template
+  // For a task content_type, these would be task-specific fields
+  content: {
+    // Task-specific fields (when content_type is "vespera.task")
+    status: "doing",                                  // todo, doing, review, done, blocked, cancelled
+    priority: "high",                                 // critical, high, normal, low, someday
+    task_order: 150,                                  // For ordering within same priority
+    
+    // Temporal tracking
+    due_date: "2025-01-05T18:00:00.000Z",
+    started_at: "2025-01-02T16:20:15.123Z",
+    completed_at: null,
+    
+    // Assignment and execution
+    assignee: "user_123e4567-e89b-12d3-a456-426614174000",
+    assigned_role: "architect",                       // References role system
+    execution_history: [
+      {
+        execution_id: "exec_550e8400-e29b-41d4-a716-446655440010",
+        timestamp: "2025-01-02T16:20:15.123Z",
+        role_name: "architect",
+        status: "started",
+        output: "Beginning CRDT format design",
+        metadata: {
+          session_id: "session_123",
+          tool_versions: { "vespera_bindery": "0.1.0" }
+        }
+      }
+    ],
+    
+    // Rich metadata
+    tags: ["architecture", "crdt", "collaboration", "format-design"],
+    labels: {
+      complexity: "complex",
+      estimated_effort: "4 hours",
+      milestone: "v1.0-foundation",
+      area: "core-architecture"
+    },
+    
+    // Project context
+    project_id: "proj_vespera_bindery_phase1",
+    feature: "codex-format",
+    milestone: "phase-1.3",
+    
+    // Content references (using OR-Set for collaborative editing)
+    references: [
+      {
+        codex_id: "codex_123e4567-e89b-12d3-a456-426614174003",
+        reference_type: "depends_on",
+        title: "Implement hybrid CRDT core architecture",
+        context: "Requires CRDT primitives to be implemented first"
+      },
+      {
+        codex_id: "codex_123e4567-e89b-12d3-a456-426614174004", 
+        reference_type: "relates_to",
+        title: "VS Code Plugin Structure",
+        context: "Plugin will consume this format"
+      }
+    ],
+    
+    // Hierarchical relationships
+    parent_id: "codex_123e4567-e89b-12d3-a456-426614174001", // Parent task
+    child_ids: [
+      "codex_123e4567-e89b-12d3-a456-426614174020",          // Subtask 1
+      "codex_123e4567-e89b-12d3-a456-426614174021"           // Subtask 2  
+    ],
+    
+    // Effort and complexity tracking
+    estimated_effort: "4 hours",
+    actual_effort: "2.5 hours",                      // Updated as work progresses
+    complexity: "complex",                           // trivial, simple, moderate, complex, very_complex
+    
+    // External references and documentation
+    source_references: [
+      "https://github.com/yjs/yjs",                   // Y.js documentation
+      "https://crdt.tech/",                           // CRDT research
+      "file://docs/technical/CODEX_ARCHITECTURE.md"  // Local architecture docs
+    ],
+    code_references: [
+      "packages/vespera-utilities/vespera-bindery/src/crdt/",
+      "packages/vespera-utilities/vespera-bindery/src/types.rs:309"
+    ],
+    
+    // Rich text content (collaborative editing via Y-CRDT)
+    rich_content: {
+      // Y-CRDT compatible format for real-time text collaboration
+      yjs_state: {
+        // Base64 encoded Y.js document state
+        // In real implementation, this would be the actual Y.Doc state
+        document_state: "AQQDAQEBAQEBAgIEBgYGBgYGBwcHBwcHCAkJCQkJCgsLCwsLDA0NDQ0NDg==",
+        updates: [
+          // Sequential updates for collaborative editing
+          {
+            timestamp: "2025-01-02T15:04:05.123Z",
+            user_id: "user_123e4567-e89b-12d3-a456-426614174000",
+            update_data: "AQMBAgIDBAUGBwgJCgsMDQ=="
+          }
+        ]
+      },
+      
+      // Fallback plain text representation
+      plain_text: "Design the universal Codex format with the following requirements:\n\n1. Support any content type through templates\n2. Built-in CRDT metadata for real-time collaboration\n3. Hierarchical relationships for task trees\n4. Rich metadata and tagging system\n5. Integration with existing MCP backend patterns",
+      
+      // Structured content sections (also collaborative)
+      sections: {
+        requirements: {
+          content: "Support any content type through templates...",
+          last_edited: "2025-01-02T15:30:00.000Z",
+          editor: "user_123e4567-e89b-12d3-a456-426614174000"
+        },
+        implementation_notes: {
+          content: "Use JSON5 format for human readability...",
+          last_edited: "2025-01-02T16:15:22.456Z", 
+          editor: "user_987fcdeb-51a2-43d8-9f12-123456789abc"
+        }
+      }
+    }
+  },
+  
+  // ========================================================================
+  // BACKEND INTEGRATION METADATA
+  // ========================================================================
+  
+  // Integration with triple database system (from existing MCP backend)
+  backend_integration: {
+    // Chroma vector database integration
+    chroma: {
+      embedding_id: "emb_550e8400-e29b-41d4-a716-446655440100",
+      content_hash: "sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
+      last_embedded: "2025-01-02T16:23:42.456Z",
+      embedding_version: 1,                           // For model updates
+      synced: true
+    },
+    
+    // KuzuDB graph database integration  
+    kuzu: {
+      graph_node_id: "node_550e8400-e29b-41d4-a716-446655440200",
+      last_graph_sync: "2025-01-02T16:23:42.456Z",
+      graph_version: 1,                               // For schema updates
+      synced: true
+    },
+    
+    // SQLite persistence (primary storage)
+    sqlite: {
+      table: "codices",
+      primary_key: "codex_550e8400-e29b-41d4-a716-446655440000",
+      last_persisted: "2025-01-02T16:23:42.456Z",
+      schema_version: 1
+    },
+    
+    // Overall sync coordination
+    sync_coordination: {
+      overall_status: "synced",                       // pending, syncing, synced, error, partial
+      last_full_sync: "2025-01-02T16:23:42.456Z",
+      sync_error: null,
+      pending_sync_operations: []
+    }
+  },
+  
+  // ========================================================================
+  // TEMPLATE SYSTEM METADATA
+  // ========================================================================
+  
+  // Template system for extensibility
+  template_metadata: {
+    // Reference to template definition
+    template_source: "file://templates/vespera.task.template.json5",
+    template_hash: "sha256:b665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae4",
+    
+    // Field validation and constraints
+    field_constraints: {
+      status: {
+        type: "enum",
+        values: ["todo", "doing", "review", "done", "blocked", "cancelled", "archived"],
+        required: true
+      },
+      priority: {
+        type: "enum", 
+        values: ["critical", "high", "normal", "low", "someday"],
+        default: "normal"
+      },
+      title: {
+        type: "string",
+        max_length: 200,
+        required: true
+      }
+    },
+    
+    // UI rendering hints for editors
+    ui_hints: {
+      primary_fields: ["title", "status", "priority"],
+      secondary_fields: ["assignee", "due_date", "tags"],
+      hidden_fields: ["crdt_metadata", "backend_integration"],
+      field_groups: {
+        "Core": ["title", "description", "status", "priority"],
+        "Assignment": ["assignee", "assigned_role", "due_date"],
+        "Metadata": ["tags", "labels", "references"],
+        "Hierarchy": ["parent_id", "child_ids"]
+      }
+    },
+    
+    // Automation and workflow rules
+    automation_rules: [
+      {
+        trigger: "status_change",
+        condition: { from: "todo", to: "doing" },
+        actions: [
+          { type: "set_timestamp", field: "started_at" },
+          { type: "notify_assignee" }
+        ]
+      },
+      {
+        trigger: "status_change", 
+        condition: { from: "*", to: "done" },
+        actions: [
+          { type: "set_timestamp", field: "completed_at" },
+          { type: "update_parent_progress" }
+        ]
+      }
+    ]
+  },
+  
+  // ========================================================================
+  // IMMERSIVE ENVIRONMENT INTEGRATION
+  // ========================================================================
+  
+  // Environmental adaptation for immersive editing experiences  
+  environment: {
+    theme_adaptation: {
+      current_theme: "dark_focus",                    // Adapts to content and context
+      mood_indicators: ["focused", "urgent"],        // Derived from priority/status
+      color_scheme: {
+        primary: "#6366f1",                          // Indigo for high priority
+        accent: "#ef4444",                           // Red accent for urgency
+        background: "#1f2937"                        // Dark background for focus
+      }
+    },
+    
+    ambient_elements: {
+      background_audio: null,                        // Could reference audio Codex
+      lighting_profile: "focused_work",              // Integrated with smart lighting
+      distraction_blocking: true                     // Context-aware focus modes
+    },
+    
+    workspace_context: {
+      related_codices: [                             // Smart contextual sidebar
+        "codex_123e4567-e89b-12d3-a456-426614174003", // Related implementation task
+        "codex_123e4567-e89b-12d3-a456-426614174004"  // Architecture documentation
+      ],
+      active_tools: ["vespera-bindery", "vscode"],   // Currently active development tools
+      focus_score: 0.85                             // AI-derived focus/flow indicator
+    }
+  },
+  
+  // ========================================================================
+  // FILE SYSTEM REPRESENTATION
+  // ========================================================================
+  
+  // How this Codex appears in the file system (optional)
+  file_representation: {
+    // Primary file (this JSON5)
+    primary_file: "implement-crdt-codex-format.codex.json5",
+    
+    // Associated files (attachments, cached renders, etc.)
+    associated_files: [
+      "implement-crdt-codex-format.codex.md",       // Markdown render for GitHub
+      "implement-crdt-codex-format.codex.pdf",      // PDF export
+      "attachments/crdt-architecture-diagram.png"   // Referenced media files
+    ],
+    
+    // Export formats supported by template
+    export_formats: ["markdown", "pdf", "html", "csv", "json"],
+    
+    // Integration with git and version control
+    version_control: {
+      git_tracked: true,
+      ignore_patterns: ["*.tmp", "*.cache"],        // Don't track temporary files
+      commit_template: "Task: {{title}} ({{status}})"
+    }
+  }
+}
+
+// ========================================================================
+// EXAMPLE: DIFFERENT CONTENT TYPES USING SAME FORMAT
+// ========================================================================
+
+/*
+
+EXAMPLE 2: Document Codex
+{
+  id: "codex_doc_550e8400-e29b-41d4-a716-446655440001",
+  content_type: "vespera.document",
+  template_id: "vespera.templates.markdown_document",
+  title: "CRDT Architecture Documentation",
+  
+  content: {
+    document_type: "technical_specification",
+    sections: {
+      introduction: { content: "...", collaborative_state: "..." },
+      architecture: { content: "...", collaborative_state: "..." },
+      implementation: { content: "...", collaborative_state: "..." }
+    },
+    bibliography: [...],
+    reviewers: [...]
+  }
+}
+
+EXAMPLE 3: Media Codex  
+{
+  id: "codex_media_550e8400-e29b-41d4-a716-446655440002",
+  content_type: "vespera.media.audio",
+  template_id: "vespera.templates.audio_file", 
+  title: "Focus Music - Deep Work Ambient",
+  
+  content: {
+    file_path: "./media/focus-music-deep-work.mp3",
+    duration: "01:45:30",
+    artist: "Brian Eno",
+    album: "Ambient 1: Music for Airports",
+    genre: "ambient",
+    mood_tags: ["focus", "calm", "productive"],
+    usage_context: "coding_sessions"
+  }
+}
+
+EXAMPLE 4: Playlist Codex
+{
+  id: "codex_playlist_550e8400-e29b-41d4-a716-446655440003", 
+  content_type: "vespera.collection.playlist",
+  template_id: "vespera.templates.media_playlist",
+  title: "Deep Work Coding Session",
+  
+  content: {
+    playlist_type: "contextual_ambient",
+    track_references: [
+      {
+        codex_id: "codex_media_550e8400-e29b-41d4-a716-446655440002",
+        play_order: 1,
+        crossfade_duration: 3.0
+      }
+    ],
+    total_duration: "03:22:15",
+    auto_loop: true,
+    context_triggers: ["status:doing", "tag:architecture", "time:focus_hours"]
+  }
+}
+
+*/

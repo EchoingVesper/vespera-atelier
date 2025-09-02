@@ -1,0 +1,442 @@
+{
+  // EXAMPLE: Media & Playlist Codices
+  // Shows how media files and collections work within the universal Codex format
+
+  // ========================================================================
+  // MEDIA CODEX: Individual Audio File
+  // ========================================================================
+  
+  media_codex: {
+    id: "media_focus_ambient_550e8400-e29b-41d4-a716-446655440200",
+    version: "1.0.0", 
+    content_type: "vespera.media.audio",
+    template_id: "vespera.templates.audio_file",
+    template_version: "1.2.0",
+    
+    title: "Deep Work Ambient - Ocean Waves",
+    description: "Gentle ocean wave sounds designed for deep focus during coding and architecture work. 90 minutes of seamless ambient audio.",
+    
+    created_by: "user_content_curator",
+    created_at: "2025-01-01T09:15:30.000Z",
+    updated_by: "user_dev_primary",
+    updated_at: "2025-01-02T14:22:15.123Z",
+    
+    visibility: "shared",
+    collaborators: [
+      {
+        user_id: "user_dev_primary", 
+        role: "viewer",
+        invited_at: "2025-01-02T10:00:00.000Z",
+        accepted_at: "2025-01-02T10:05:30.456Z"
+      }
+    ],
+    
+    crdt_metadata: {
+      vector_clock: {
+        "user_content_curator": 15,
+        "user_dev_primary": 3
+      },
+      content_hash: "sha256:a1b2c3d4e5f6789012345678901234567890abcdef0123456789abcdef012345",
+      lww_metadata: {
+        play_count: {
+          value: 27,
+          timestamp: "2025-01-02T14:22:15.123Z", 
+          user_id: "user_dev_primary",
+          operation_id: "op_play_count_update_027"
+        },
+        rating: {
+          value: 4.8,
+          timestamp: "2025-01-02T11:30:00.000Z",
+          user_id: "user_dev_primary",
+          operation_id: "op_rating_update_002"
+        }
+      },
+      or_sets: {
+        mood_tags: {
+          elements: {
+            "calming": {
+              "tag_calm_001": {
+                operation_id: "tag_calm_001",
+                user_id: "user_content_curator", 
+                timestamp: "2025-01-01T09:15:30.000Z"
+              }
+            },
+            "focus": {
+              "tag_focus_002": {
+                operation_id: "tag_focus_002",
+                user_id: "user_dev_primary",
+                timestamp: "2025-01-02T10:15:00.000Z"
+              }
+            },
+            "coding": {
+              "tag_coding_003": {
+                operation_id: "tag_coding_003", 
+                user_id: "user_dev_primary",
+                timestamp: "2025-01-02T14:22:15.123Z"
+              }
+            }
+          },
+          removed_tags: []
+        }
+      }
+    },
+    
+    content: {
+      // Media file information
+      file_info: {
+        file_path: "./media/audio/deep-work-ambient-ocean-waves.mp3",
+        file_size: 129847362,                         // bytes
+        file_format: "mp3",
+        bitrate: "320kbps",
+        sample_rate: "44.1kHz", 
+        channels: "stereo",
+        content_hash: "sha256:f1e2d3c4b5a697801234567890123456789abcdef0123456789abcdef0123456"
+      },
+      
+      // Audio metadata
+      duration: "01:32:45",                            // 92 minutes 45 seconds
+      artist: "Nature Soundscapes Studio",
+      album: "Focus & Flow: Ambient Collections",
+      track_number: 3,
+      genre: "ambient",
+      year: 2024,
+      
+      // Usage and context
+      mood_tags: ["calming", "focus", "coding", "deep-work", "ocean", "waves"],
+      energy_level: "low",                             // low, medium, high, very_high
+      focus_compatibility: "excellent",               // poor, fair, good, excellent
+      distraction_level: "minimal",                   // none, minimal, moderate, high
+      
+      // Contextual usage patterns
+      usage_contexts: [
+        "coding_sessions",
+        "architecture_design", 
+        "documentation_writing",
+        "deep_thinking"
+      ],
+      optimal_volume: 0.3,                            // 0.0 to 1.0
+      fade_in_duration: 3.0,                          // seconds
+      fade_out_duration: 5.0,                         // seconds
+      
+      // User interaction data
+      play_count: 27,
+      skip_count: 2,
+      rating: 4.8,                                     // 1.0 to 5.0
+      last_played: "2025-01-02T14:22:15.123Z",
+      average_listen_duration: "01:28:32",            // How long users typically listen
+      
+      // Collaborative features
+      user_notes: {
+        "user_dev_primary": {
+          note: "Perfect for Rust programming sessions. Helps maintain flow state during complex CRDT implementation.",
+          timestamp: "2025-01-02T14:22:15.123Z",
+          rating: 5.0
+        }
+      },
+      
+      // Technical metadata
+      waveform_analysis: {
+        average_amplitude: 0.15,
+        dynamic_range: 12.5,                         // dB
+        frequency_balance: "bass_light",             // bass_heavy, balanced, treble_heavy, bass_light
+        spectral_centroid: 2450.7                   // Hz, indicates brightness
+      },
+      
+      // References to other Codices
+      references: [
+        {
+          codex_id: "playlist_deep_work_coding_session",
+          reference_type: "included_in",
+          title: "Deep Work Coding Session Playlist",
+          context: "Featured track for programming focus"
+        }
+      ],
+      
+      // Licensing and attribution
+      license: "Creative Commons - Attribution",
+      attribution: "Ocean waves recorded at Big Sur, California",
+      usage_rights: "commercial_allowed"
+    }
+  },
+
+  // ========================================================================
+  // PLAYLIST CODEX: Contextual Audio Collection  
+  // ========================================================================
+  
+  playlist_codex: {
+    id: "playlist_deep_work_coding_550e8400-e29b-41d4-a716-446655440300",
+    version: "1.0.0",
+    content_type: "vespera.collection.playlist", 
+    template_id: "vespera.templates.contextual_playlist",
+    template_version: "1.1.0",
+    
+    title: "Deep Work Coding Session",
+    description: "Curated ambient soundscape for extended programming sessions. Automatically adapts based on task context and user activity patterns.",
+    
+    created_by: "user_dev_primary",
+    created_at: "2025-01-02T08:00:00.000Z",
+    updated_by: "user_dev_primary", 
+    updated_at: "2025-01-02T16:45:30.789Z",
+    
+    visibility: "shared",
+    collaborators: [
+      {
+        user_id: "user_architect",
+        role: "editor",
+        invited_at: "2025-01-02T14:00:00.000Z", 
+        accepted_at: "2025-01-02T14:30:15.123Z"
+      }
+    ],
+    
+    crdt_metadata: {
+      vector_clock: {
+        "user_dev_primary": 18,
+        "user_architect": 5  
+      },
+      content_hash: "sha256:b2c3d4e5f6a789012345678901234567890abcdef0123456789abcdef0123456",
+      lww_metadata: {
+        auto_play: {
+          value: true,
+          timestamp: "2025-01-02T16:45:30.789Z",
+          user_id: "user_dev_primary", 
+          operation_id: "op_autoplay_enabled_001"
+        },
+        context_sensitivity: {
+          value: "high",
+          timestamp: "2025-01-02T14:15:00.000Z",
+          user_id: "user_dev_primary",
+          operation_id: "op_context_sens_002"
+        }
+      },
+      or_sets: {
+        playlist_tracks: {
+          elements: {
+            "media_focus_ambient_550e8400-e29b-41d4-a716-446655440200": {
+              "track_001": {
+                operation_id: "track_add_001", 
+                user_id: "user_dev_primary",
+                timestamp: "2025-01-02T08:15:00.000Z"
+              }
+            },
+            "media_forest_rain_550e8400-e29b-41d4-a716-446655440201": {
+              "track_002": {
+                operation_id: "track_add_002",
+                user_id: "user_architect", 
+                timestamp: "2025-01-02T14:30:15.123Z"
+              }
+            }
+          },
+          removed_tracks: []
+        }
+      }
+    },
+    
+    content: {
+      // Playlist configuration
+      playlist_type: "contextual_ambient",           // static, shuffle, contextual_ambient, adaptive_focus
+      playback_mode: "seamless_loop",                // linear, loop, shuffle, seamless_loop
+      auto_play: true,
+      context_sensitivity: "high",                   // none, low, medium, high
+      
+      // Track collection with collaborative editing
+      tracks: [
+        {
+          codex_id: "media_focus_ambient_550e8400-e29b-41d4-a716-446655440200",
+          title: "Deep Work Ambient - Ocean Waves",
+          play_order: 1,
+          crossfade_duration: 4.0,                   // seconds
+          volume_adjustment: 0.0,                    // relative to base volume  
+          start_time: 0.0,                          // seconds, for partial track inclusion
+          end_time: null,                           // null = full track
+          conditions: {
+            // When to include this track
+            task_types: ["coding", "architecture", "debugging"],
+            time_of_day: ["morning", "afternoon"],
+            focus_level: ["medium", "high"],
+            distraction_environment: ["quiet", "moderate"]
+          }
+        },
+        {
+          codex_id: "media_forest_rain_550e8400-e29b-41d4-a716-446655440201", 
+          title: "Gentle Forest Rain",
+          play_order: 2,
+          crossfade_duration: 6.0,
+          volume_adjustment: -2.0,                   // slightly quieter
+          conditions: {
+            task_types: ["documentation", "planning", "research"],
+            time_of_day: ["evening"],
+            focus_level: ["low", "medium"],
+            mood: ["contemplative", "reflective"]
+          }
+        },
+        {
+          codex_id: "media_white_noise_550e8400-e29b-41d4-a716-446655440202",
+          title: "Brown Noise - Deep Focus", 
+          play_order: 3,
+          crossfade_duration: 8.0,
+          volume_adjustment: -5.0,                   // background level
+          conditions: {
+            task_types: ["complex_debugging", "system_design"],
+            distraction_environment: ["noisy", "very_noisy"],
+            focus_level: ["high"],
+            concentration_mode: "deep_focus"
+          }
+        }
+      ],
+      
+      // Aggregate playlist information
+      total_duration: "04:15:22",                    // Total if played sequentially
+      average_track_duration: "01:25:07", 
+      track_count: 3,
+      
+      // Contextual automation
+      context_triggers: [
+        {
+          trigger_type: "task_status_change",
+          condition: { 
+            task_status: "in_progress",
+            task_tags: ["architecture", "coding", "rust"]
+          },
+          action: "auto_start_playlist",
+          volume: 0.25
+        },
+        {
+          trigger_type: "focus_time_block",
+          condition: {
+            time_block_type: "deep_work",
+            duration: ">= 2 hours"
+          },
+          action: "auto_start_playlist",
+          mode: "seamless_loop"
+        },
+        {
+          trigger_type: "environment_noise_level",
+          condition: { noise_level: "> 40dB" },
+          action: "switch_to_track",
+          target_track: "media_white_noise_550e8400-e29b-41d4-a716-446655440202"
+        }
+      ],
+      
+      // Usage analytics
+      usage_stats: {
+        total_play_time: "23:45:12",                 // Cumulative listening time
+        sessions_count: 15,
+        average_session_length: "01:35:00",
+        most_played_track: "media_focus_ambient_550e8400-e29b-41d4-a716-446655440200",
+        skip_rate: 0.08,                            // 8% of tracks skipped
+        completion_rate: 0.92                       // 92% of sessions completed
+      },
+      
+      // Collaborative curation
+      curator_notes: {
+        "user_dev_primary": {
+          note: "Optimized for Rust development sessions. Ocean waves work exceptionally well for CRDT architecture work.",
+          timestamp: "2025-01-02T16:45:30.789Z"
+        },
+        "user_architect": {
+          note: "Added forest rain for evening documentation sessions. Creates good atmosphere for technical writing.",
+          timestamp: "2025-01-02T14:30:15.123Z"
+        }
+      },
+      
+      // Integration with other systems
+      smart_integrations: {
+        vscode_extension: {
+          enabled: true,
+          auto_start_on_project_open: true,
+          project_types: ["rust", "typescript", "architecture"],
+          pause_on_debugging: true
+        },
+        focus_timer: {
+          pomodoro_integration: true,
+          session_length: "25 minutes",
+          break_music: "media_nature_gentle_550e8400-e29b-41d4-a716-446655440203"
+        },
+        calendar_integration: {
+          deep_work_blocks: true,
+          meeting_auto_pause: true,
+          focus_time_detection: "ai_assisted"
+        }
+      },
+      
+      // References to related content
+      references: [
+        {
+          codex_id: "task_64f8a2c7-e89b-12d3-a456-426614174000",
+          reference_type: "enhances",
+          title: "Create Vespera Forge VS Code Plugin Structure", 
+          context: "Background music for this development task"
+        },
+        {
+          codex_id: "doc_crdt_architecture_550e8400-e29b-41d4-a716-446655440100",
+          reference_type: "enhances",
+          title: "CRDT Architecture Specification",
+          context: "Ambient soundscape for technical documentation work"
+        }
+      ],
+      
+      // Mood and environment tags
+      tags: ["ambient", "focus", "coding", "deep-work", "contextual", "adaptive"],
+      labels: {
+        energy_level: "low_to_medium",
+        distraction_factor: "minimal",
+        focus_enhancement: "high",
+        context_awareness: "intelligent",
+        collaboration_friendly: "yes"
+      }
+    },
+    
+    // Standard backend integration 
+    backend_integration: {
+      chroma: {
+        embedding_id: "emb_deep_work_playlist", 
+        content_hash: "sha256:b2c3d4e5f6a789012345678901234567890abcdef0123456789abcdef0123456",
+        last_embedded: "2025-01-02T16:45:30.789Z",
+        synced: true
+      },
+      sqlite: {
+        table: "codices",
+        primary_key: "playlist_deep_work_coding_550e8400-e29b-41d4-a716-446655440300",
+        last_persisted: "2025-01-02T16:45:30.789Z"
+      }
+    },
+    
+    // Environmental adaptation for playlist
+    environment: {
+      theme_adaptation: {
+        current_theme: "ambient_focus",
+        mood_indicators: ["calm", "productive", "sustained"],
+        color_scheme: {
+          primary: "#0d9488",     // Teal for ambient/nature themes
+          accent: "#fbbf24",      // Warm yellow for gentle energy
+          background: "#134e4a"   // Dark teal for calming depth
+        }
+      },
+      
+      ambient_elements: {
+        background_audio: "self",             // This playlist IS the ambient element
+        lighting_profile: "warm_ambient",
+        distraction_blocking: true,
+        smart_volume_adjustment: true         // Adapts to environmental noise
+      }
+    }
+  }
+}
+
+/*
+This example demonstrates:
+
+1. **Media Codex Structure**: Individual audio files with rich metadata, usage analytics, and collaborative annotations
+
+2. **Playlist Codex as Collection**: Smart playlists that reference other media Codices and adapt based on context
+
+3. **Contextual Automation**: Playlists that respond to task status, environment, and user behavior patterns
+
+4. **Collaborative Curation**: Multiple users can contribute tracks and annotations to shared playlists
+
+5. **Smart Integration**: Deep integration with development tools, calendar, and environmental systems
+
+6. **CRDT Collaboration**: Even media metadata and playlists can be collaboratively edited in real-time
+
+7. **Universal Format**: Media files follow the same structural patterns as tasks and documents
+*/

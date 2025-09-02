@@ -1,0 +1,753 @@
+{
+  // Vespera Template Definition: Hierarchical Task
+  // This template defines how task Codices are structured and behave
+  // Templates enable dynamic content types without hardcoding
+  
+  // ========================================================================
+  // TEMPLATE METADATA
+  // ========================================================================
+  
+  template_id: "vespera.templates.hierarchical_task",
+  template_version: "2.1.0",
+  template_name: "Hierarchical Task Management",
+  content_type: "vespera.task",
+  
+  created_by: "vespera_system",
+  created_at: "2025-01-01T00:00:00.000Z", 
+  updated_at: "2025-01-02T12:00:00.000Z",
+  
+  description: "Comprehensive task template supporting hierarchical relationships, role-based execution, collaborative editing, and integration with MCP backend systems.",
+  
+  // Template inheritance and composition
+  extends: ["vespera.templates.base_content"],        // Inherits core Codex structure
+  mixins: [
+    "vespera.mixins.hierarchical",                    // Parent-child relationships
+    "vespera.mixins.collaborative_editing",           // Real-time collaboration
+    "vespera.mixins.temporal_tracking",               // Created/updated timestamps
+    "vespera.mixins.backend_integration"              // Triple database sync
+  ],
+  
+  // ========================================================================
+  // FIELD DEFINITIONS
+  // ========================================================================
+  
+  fields: {
+    // Core task identification (inherited from base_content)
+    // id, title, description are provided by base template
+    
+    // Task-specific status and workflow
+    status: {
+      type: "enum",
+      values: ["todo", "in_progress", "review", "done", "blocked", "cancelled", "archived"],
+      default: "todo",
+      required: true,
+      
+      crdt_layer: "metadata",                         // Uses LWW-Map for conflict resolution
+      
+      ui_hints: {
+        display_name: "Status",
+        widget: "status_picker",
+        primary_field: true,
+        color_coding: {
+          "todo": "#6b7280",         // Gray
+          "in_progress": "#f59e0b",  // Amber  
+          "review": "#8b5cf6",       // Purple
+          "done": "#059669",         // Green
+          "blocked": "#ef4444",      // Red
+          "cancelled": "#6b7280",    // Gray
+          "archived": "#9ca3af"      // Light gray
+        }
+      },
+      
+      automation_triggers: [
+        {
+          on_change: { from: "todo", to: "in_progress" },
+          actions: [
+            "set_timestamp:started_at",
+            "notify_assignee",
+            "update_environment_theme:focused_work"
+          ]
+        },
+        {
+          on_change: { to: "done" },
+          actions: [
+            "set_timestamp:completed_at", 
+            "update_parent_progress",
+            "trigger_celebration:task_completion"
+          ]
+        }
+      ]
+    },
+    
+    priority: {
+      type: "enum", 
+      values: ["critical", "high", "normal", "low", "someday"],
+      default: "normal",
+      required: true,
+      
+      crdt_layer: "metadata",
+      
+      ui_hints: {
+        display_name: "Priority",
+        widget: "priority_selector",
+        primary_field: true,
+        icon_mapping: {
+          "critical": "⚡",
+          "high": "🔴", 
+          "normal": "🟡",
+          "low": "🟢",
+          "someday": "💭"
+        }
+      }
+    },
+    
+    task_order: {
+      type: "integer",
+      default: 0,
+      description: "Ordering within same priority/status group",
+      
+      crdt_layer: "metadata",
+      
+      ui_hints: {
+        display_name: "Order",
+        widget: "drag_handle",
+        hidden: true                                  // Not directly editable
+      }
+    },
+    
+    // Temporal tracking
+    due_date: {
+      type: "datetime",
+      optional: true,
+      
+      crdt_layer: "metadata",
+      
+      ui_hints: {
+        display_name: "Due Date",
+        widget: "datetime_picker",
+        secondary_field: true
+      },
+      
+      validation: {
+        future_date: true,                           // Must be in the future
+        reasonable_range: "6 months"                 // Within 6 months
+      }
+    },
+    
+    started_at: {
+      type: "datetime",
+      optional: true,
+      auto_managed: true,                           // Set automatically by automation
+      
+      crdt_layer: "metadata",
+      
+      ui_hints: {
+        display_name: "Started",
+        widget: "readonly_timestamp",
+        tertiary_field: true
+      }
+    },
+    
+    completed_at: {
+      type: "datetime", 
+      optional: true,
+      auto_managed: true,
+      
+      crdt_layer: "metadata",
+      
+      ui_hints: {
+        display_name: "Completed",
+        widget: "readonly_timestamp", 
+        tertiary_field: true
+      }
+    },
+    
+    // Assignment and execution
+    assignee: {
+      type: "user_reference",
+      default: "current_user",
+      
+      crdt_layer: "metadata",
+      
+      ui_hints: {
+        display_name: "Assignee",
+        widget: "user_picker",
+        secondary_field: true,
+        show_avatar: true
+      }
+    },
+    
+    assigned_role: {
+      type: "role_reference",
+      optional: true,
+      references: "vespera.role_system",
+      
+      crdt_layer: "metadata",
+      
+      ui_hints: {
+        display_name: "Assigned Role", 
+        widget: "role_selector",
+        secondary_field: true,
+        help_text: "Role determines available tools and capabilities"
+      },
+      
+      validation: {
+        valid_roles: ["architect", "frontend_developer", "backend_developer", "researcher", "designer"]
+      }
+    },
+    
+    execution_history: {
+      type: "array",
+      item_type: "execution_record",
+      default: [],
+      auto_managed: true,
+      
+      crdt_layer: "reference",                       // Uses OR-Set for collaborative execution logs
+      
+      ui_hints: {
+        display_name: "Execution History",
+        widget: "execution_timeline",
+        tertiary_field: true,
+        expandable: true
+      },
+      
+      schema: {
+        execution_record: {
+          execution_id: { type: "uuid", required: true },
+          timestamp: { type: "datetime", required: true },
+          role_name: { type: "string", required: true },
+          status: { type: "string", required: true },
+          output: { type: "text", default: "" },
+          error: { type: "text", optional: true },
+          metadata: { type: "object", default: {} }
+        }
+      }
+    },
+    
+    // Rich metadata and organization
+    tags: {
+      type: "tag_set",
+      default: [],
+      
+      crdt_layer: "reference",                       // Uses OR-Set for collaborative tagging
+      
+      ui_hints: {
+        display_name: "Tags",
+        widget: "tag_editor",
+        secondary_field: true,
+        autocomplete: true,
+        color_coding: true
+      },
+      
+      validation: {
+        max_tags: 20,
+        tag_format: "lowercase_hyphenated"
+      }
+    },
+    
+    labels: {
+      type: "key_value_map",
+      default: {},
+      
+      crdt_layer: "metadata",                        // Individual labels use LWW
+      
+      ui_hints: {
+        display_name: "Labels",
+        widget: "label_editor", 
+        tertiary_field: true,
+        predefined_keys: [
+          "complexity",
+          "estimated_effort", 
+          "actual_effort",
+          "milestone",
+          "area",
+          "framework"
+        ]
+      },
+      
+      schema: {
+        complexity: {
+          type: "enum",
+          values: ["trivial", "simple", "moderate", "complex", "very_complex"],
+          default: "moderate"
+        },
+        estimated_effort: {
+          type: "duration_string",
+          examples: ["30 minutes", "2 hours", "1 day", "1 week"]
+        }
+      }
+    },
+    
+    // Project and feature context
+    project_id: {
+      type: "codex_reference",
+      content_type_filter: "vespera.project",
+      optional: true,
+      
+      crdt_layer: "metadata",
+      
+      ui_hints: {
+        display_name: "Project",
+        widget: "project_selector",
+        secondary_field: true
+      }
+    },
+    
+    feature: {
+      type: "string",
+      optional: true,
+      
+      crdt_layer: "metadata",
+      
+      ui_hints: {
+        display_name: "Feature",
+        widget: "text_input",
+        tertiary_field: true,
+        placeholder: "e.g., user-authentication, crdt-implementation"
+      }
+    },
+    
+    milestone: {
+      type: "string",
+      optional: true,
+      
+      crdt_layer: "metadata",
+      
+      ui_hints: {
+        display_name: "Milestone",
+        widget: "milestone_selector", 
+        tertiary_field: true
+      }
+    },
+    
+    // Cross-references and relationships
+    references: {
+      type: "reference_set",
+      default: [],
+      
+      crdt_layer: "reference",                       // OR-Set for collaborative reference management
+      
+      ui_hints: {
+        display_name: "References",
+        widget: "reference_manager",
+        tertiary_field: true,
+        expandable: true
+      },
+      
+      schema: {
+        reference: {
+          codex_id: { type: "uuid", required: true },
+          reference_type: {
+            type: "enum",
+            values: ["depends_on", "blocks", "relates_to", "duplicate_of", "references"],
+            required: true
+          },
+          title: { type: "string", required: true },
+          context: { type: "text", optional: true }
+        }
+      }
+    },
+    
+    // Hierarchical relationships (from hierarchical mixin)
+    parent_id: {
+      type: "codex_reference",
+      content_type_filter: "vespera.task",
+      optional: true,
+      
+      crdt_layer: "hierarchy",                       // Special CRDT layer for tree operations
+      
+      ui_hints: {
+        display_name: "Parent Task",
+        widget: "task_selector",
+        tertiary_field: true,
+        breadcrumb: true
+      },
+      
+      validation: {
+        no_cycles: true,                             // Prevents circular hierarchies
+        max_depth: 10                                // Reasonable nesting limit
+      }
+    },
+    
+    child_ids: {
+      type: "codex_reference_array",
+      content_type_filter: "vespera.task", 
+      default: [],
+      
+      crdt_layer: "hierarchy",
+      
+      ui_hints: {
+        display_name: "Subtasks",
+        widget: "subtask_list",
+        tertiary_field: true,
+        sortable: true,
+        inline_create: true
+      }
+    },
+    
+    // Rich collaborative content
+    rich_content: {
+      type: "rich_text",
+      default: "",
+      
+      crdt_layer: "text",                            // Y-CRDT for real-time collaborative editing
+      
+      ui_hints: {
+        display_name: "Detailed Content",
+        widget: "collaborative_editor",
+        primary_field: true,
+        markdown_support: true,
+        section_organization: true
+      },
+      
+      sections: {
+        requirements: {
+          display_name: "Requirements",
+          optional: true,
+          template: "## Requirements\n\n"
+        },
+        implementation_notes: {
+          display_name: "Implementation Notes", 
+          optional: true,
+          template: "## Implementation Notes\n\n"
+        },
+        progress_notes: {
+          display_name: "Progress Notes",
+          optional: true,
+          template: "## Progress\n\n"
+        }
+      }
+    },
+    
+    // External references
+    source_references: {
+      type: "url_array",
+      default: [],
+      
+      crdt_layer: "reference",
+      
+      ui_hints: {
+        display_name: "Source References",
+        widget: "url_list",
+        tertiary_field: true,
+        link_preview: true
+      }
+    },
+    
+    code_references: {
+      type: "file_path_array",
+      default: [],
+      
+      crdt_layer: "reference",
+      
+      ui_hints: {
+        display_name: "Code References",
+        widget: "file_path_list",
+        tertiary_field: true,
+        file_browser: true,
+        syntax_highlighting: true
+      }
+    }
+  },
+  
+  // ========================================================================
+  // UI CONFIGURATION
+  // ========================================================================
+  
+  ui_configuration: {
+    // Field organization and layout
+    field_groups: {
+      "Task Details": {
+        fields: ["title", "description", "status", "priority"],
+        layout: "vertical",
+        primary: true
+      },
+      
+      "Assignment & Timing": {
+        fields: ["assignee", "assigned_role", "due_date"],
+        layout: "horizontal",
+        secondary: true
+      },
+      
+      "Progress & Execution": {
+        fields: ["execution_history", "started_at", "completed_at"],
+        layout: "vertical",
+        tertiary: true,
+        collapsible: true
+      },
+      
+      "Organization": {
+        fields: ["tags", "labels", "project_id", "milestone"],
+        layout: "grid",
+        tertiary: true
+      },
+      
+      "Relationships": {
+        fields: ["parent_id", "child_ids", "references"],
+        layout: "vertical", 
+        tertiary: true,
+        collapsible: true
+      },
+      
+      "Content": {
+        fields: ["rich_content"],
+        layout: "full_width",
+        primary: true
+      },
+      
+      "External Links": {
+        fields: ["source_references", "code_references"],
+        layout: "vertical",
+        tertiary: true,
+        collapsible: true
+      }
+    },
+    
+    // Layout modes for different contexts
+    layout_modes: {
+      compact: {
+        visible_groups: ["Task Details", "Assignment & Timing"],
+        field_size: "small",
+        use_for: ["task_list", "kanban_card"]
+      },
+      
+      standard: {
+        visible_groups: ["Task Details", "Assignment & Timing", "Organization", "Content"],
+        field_size: "medium", 
+        use_for: ["task_detail_view", "editing_form"]
+      },
+      
+      detailed: {
+        visible_groups: "all",
+        field_size: "large",
+        use_for: ["full_edit_mode", "debugging_view"]
+      }
+    },
+    
+    // View customization
+    view_configurations: {
+      kanban_card: {
+        template: "compact",
+        show_fields: ["title", "status", "priority", "assignee"],
+        max_height: "120px"
+      },
+      
+      list_item: {
+        template: "compact", 
+        show_fields: ["title", "status", "priority", "due_date"],
+        single_line: true
+      },
+      
+      detail_panel: {
+        template: "standard",
+        enable_inline_editing: true,
+        show_collaboration_cursors: true
+      }
+    }
+  },
+  
+  // ========================================================================
+  // AUTOMATION & WORKFLOW 
+  // ========================================================================
+  
+  automation_rules: [
+    {
+      name: "auto_start_tracking",
+      trigger: "field_change",
+      condition: {
+        field: "status",
+        from: "todo",
+        to: "in_progress"
+      },
+      actions: [
+        {
+          type: "set_field",
+          field: "started_at",
+          value: "current_timestamp"
+        },
+        {
+          type: "notify_user",
+          user_field: "assignee",
+          message: "Task started: {{title}}"
+        },
+        {
+          type: "update_environment",
+          theme: "focused_work",
+          ambient_audio: "coding_session"
+        }
+      ]
+    },
+    
+    {
+      name: "completion_tracking",
+      trigger: "field_change",
+      condition: {
+        field: "status",
+        to: "done"
+      },
+      actions: [
+        {
+          type: "set_field",
+          field: "completed_at", 
+          value: "current_timestamp"
+        },
+        {
+          type: "update_parent_progress",
+          calculate: "percentage_complete"
+        },
+        {
+          type: "trigger_celebration",
+          level: "task_completion",
+          duration: "3s"
+        }
+      ]
+    },
+    
+    {
+      name: "overdue_alerts",
+      trigger: "time_based",
+      condition: {
+        field: "due_date",
+        comparison: "< current_time",
+        status_not: "done"
+      },
+      actions: [
+        {
+          type: "add_tag",
+          tag: "overdue"
+        },
+        {
+          type: "notify_user",
+          user_field: "assignee",
+          urgency: "high"
+        }
+      ]
+    },
+    
+    {
+      name: "collaborative_notifications",
+      trigger: "field_change",
+      condition: {
+        field: "any",
+        by_user: "not_assignee"
+      },
+      actions: [
+        {
+          type: "notify_user",
+          user_field: "assignee",
+          message: "{{changed_by}} updated {{field}} in {{title}}",
+          throttle: "5 minutes"
+        }
+      ]
+    }
+  ],
+  
+  // ========================================================================
+  // INTEGRATION CONFIGURATION
+  // ========================================================================
+  
+  integrations: {
+    // Backend database integration
+    backend_sync: {
+      chroma_embedding: {
+        enabled: true,
+        fields_to_embed: ["title", "description", "rich_content.plain_text"],
+        embedding_model: "text-embedding-3-small",
+        update_triggers: ["content_change"]
+      },
+      
+      kuzu_graph: {
+        enabled: true,
+        node_type: "Task",
+        relationships: [
+          { type: "PARENT_OF", field: "child_ids" },
+          { type: "DEPENDS_ON", field: "references.depends_on" },
+          { type: "BLOCKS", field: "references.blocks" },
+          { type: "ASSIGNED_TO", field: "assignee" },
+          { type: "PART_OF_PROJECT", field: "project_id" }
+        ]
+      }
+    },
+    
+    // External tool integration
+    development_tools: {
+      vscode_extension: {
+        enabled: true,
+        features: [
+          "inline_task_creation",
+          "code_reference_linking",
+          "status_updates_from_git",
+          "smart_time_tracking"
+        ]
+      },
+      
+      git_integration: {
+        enabled: true,
+        commit_message_templates: [
+          "Task: {{title}} - {{status}}",
+          "{{title}} ({{task_id}})"
+        ],
+        branch_naming: "task/{{task_id}}-{{title_slug}}",
+        auto_status_updates: {
+          on_branch_create: "in_progress", 
+          on_pr_merge: "review"
+        }
+      }
+    },
+    
+    // Calendar and time management
+    calendar_sync: {
+      enabled: true,
+      due_date_events: true,
+      focus_time_blocking: true,
+      estimated_effort_scheduling: true
+    }
+  },
+  
+  // ========================================================================
+  // TEMPLATE VERSIONING & MIGRATION
+  // ========================================================================
+  
+  versioning: {
+    schema_version: "2.1.0",
+    
+    migration_paths: {
+      "1.0.0": {
+        transform_fields: {
+          "old_priority_number": "priority_enum_conversion"
+        },
+        add_fields: ["execution_history", "rich_content"],
+        remove_fields: ["legacy_notes"]
+      },
+      
+      "2.0.0": {
+        transform_fields: {
+          "simple_references": "structured_references"
+        },
+        add_fields: ["backend_integration"],
+        crdt_layer_changes: {
+          "tags": { from: "metadata", to: "reference" }
+        }
+      }
+    },
+    
+    compatibility: {
+      backwards_compatible: ["2.0.0", "1.9.0"],
+      upgrade_required: ["1.0.0", "0.x.x"]
+    }
+  }
+}
+
+/*
+This template definition shows:
+
+1. **Dynamic Content Types**: Tasks are defined through templates, not hardcoded
+2. **CRDT Layer Assignment**: Each field specifies which CRDT layer handles its collaboration
+3. **Rich UI Configuration**: Comprehensive UI hints for different editing contexts  
+4. **Automation Rules**: Declarative workflow automation triggered by field changes
+5. **Backend Integration**: Seamless sync with triple database architecture
+6. **Template Evolution**: Versioning and migration support for schema changes
+7. **Tool Integration**: Deep integration with development tools and calendar systems
+
+New content types can be created by defining similar templates, making the system infinitely extensible while maintaining collaborative editing and rich UI support.
+*/
