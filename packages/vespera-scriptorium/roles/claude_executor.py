@@ -303,19 +303,27 @@ class ClaudeExecutor:
             command.extend(["--allowed-tools", shlex.quote(tools_str)])
         
         # Use --append-system-prompt for role-specific system instructions
-        system_prompt = self._build_role_system_prompt(context)
-        if system_prompt:
-            # Additional safety check for command line length to prevent CLI crashes
-            quoted_prompt = shlex.quote(system_prompt)
-            estimated_command_length = len(" ".join(command)) + len(" --append-system-prompt ") + len(quoted_prompt)
-            
-            if estimated_command_length > 16000:  # Very conservative limit for Bun v1.2.19
-                logger.warning(f"Command line too long ({estimated_command_length} chars), using minimal system prompt for role {context.role.name}")
-                # Use minimal system prompt for maximum Bun compatibility
-                minimal_prompt = f"You are a {context.role.display_name}. Complete the given task."
-                command.extend(["--append-system-prompt", shlex.quote(minimal_prompt)])
-            else:
-                command.extend(["--append-system-prompt", quoted_prompt])
+        # CRITICAL: Bypass system prompts entirely for architect role in WSL2 due to Bun crashes
+        import platform
+        is_wsl = "microsoft" in platform.uname().release.lower()
+        
+        if is_wsl and context.role.name == "architect":
+            logger.warning(f"Skipping system prompt for architect role in WSL2 due to Bun v1.2.19 crashes")
+            # Skip system prompt entirely - role will be communicated via user prompt
+        else:
+            system_prompt = self._build_role_system_prompt(context)
+            if system_prompt:
+                # Additional safety check for command line length to prevent CLI crashes
+                quoted_prompt = shlex.quote(system_prompt)
+                estimated_command_length = len(" ".join(command)) + len(" --append-system-prompt ") + len(quoted_prompt)
+                
+                if estimated_command_length > 16000:  # Very conservative limit for Bun v1.2.19
+                    logger.warning(f"Command line too long ({estimated_command_length} chars), using minimal system prompt for role {context.role.name}")
+                    # Use minimal system prompt for maximum Bun compatibility
+                    minimal_prompt = f"You are a {context.role.display_name}. Complete the given task."
+                    command.extend(["--append-system-prompt", shlex.quote(minimal_prompt)])
+                else:
+                    command.extend(["--append-system-prompt", quoted_prompt])
         
         # Add working directory access
         working_dir = self._get_validated_working_directory()
@@ -323,7 +331,11 @@ class ClaudeExecutor:
             command.extend(["--add-dir", shlex.quote(str(working_dir))])
         
         # Build user prompt (task description) - this goes to stdin
-        user_prompt = self._build_user_prompt(context, task_id)
+        # Include role information in user prompt if we bypassed system prompt
+        if is_wsl and context.role.name == "architect":
+            user_prompt = self._build_user_prompt_with_role_info(context, task_id)
+        else:
+            user_prompt = self._build_user_prompt(context, task_id)
         
         return command, user_prompt
     
@@ -404,6 +416,47 @@ class ClaudeExecutor:
             "",
             "Please complete this task according to your role as a {}.".format(context.role.display_name),
         ]
+        
+        # Add any additional context
+        if hasattr(context, 'project_context') and context.project_context:
+            prompt_parts.extend(["", "## Project Context", context.project_context])
+        
+        if hasattr(context, 'linked_documents') and context.linked_documents:
+            prompt_parts.extend(["", "## Referenced Documents"])
+            for doc in context.linked_documents:
+                prompt_parts.append(f"- {doc}")
+        
+        return "\n".join(prompt_parts)
+    
+    def _build_user_prompt_with_role_info(self, context: ExecutionContext, task_id: str) -> str:
+        """Build user prompt with embedded role information for WSL2 Bun compatibility."""
+        prompt_parts = [
+            f"# Task: {context.task_prompt}",
+            "",
+            f"Task ID: {task_id}",
+            "",
+            f"## Your Role: {context.role.display_name}",
+            f"**Description**: {context.role.description}",
+            "",
+            "## Role Capabilities",
+        ]
+        
+        # Add essential tool groups
+        tool_groups = []
+        for group_entry in context.role.tool_groups[:3]:  # Limit to essential groups
+            if isinstance(group_entry, ToolGroup):
+                tool_groups.append(f"- {group_entry.value}")
+            elif isinstance(group_entry, tuple):
+                group, _ = group_entry
+                tool_groups.append(f"- {group.value}")
+        
+        if tool_groups:
+            prompt_parts.extend(tool_groups)
+        
+        prompt_parts.extend([
+            "",
+            "Please complete this task according to your role as a {}.".format(context.role.display_name),
+        ])
         
         # Add any additional context
         if hasattr(context, 'project_context') and context.project_context:
