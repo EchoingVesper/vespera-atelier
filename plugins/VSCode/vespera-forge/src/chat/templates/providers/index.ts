@@ -1,0 +1,161 @@
+/**
+ * Provider template definitions and loading utilities
+ */
+import { ProviderTemplate, ProviderCapabilities } from '../../types/provider';
+
+// Claude Code Provider Template
+export const CLAUDE_CODE_TEMPLATE: ProviderTemplate = {
+  template_id: "claude-code",
+  name: "Claude Code SDK",
+  description: "Claude Code provider using the official Anthropic Claude Code TypeScript SDK. Uses your Claude Max subscription without additional API costs.",
+  version: "1.0.0",
+  category: "llm_provider",
+  
+  provider_config: {
+    provider_type: "claude-code",
+    model: "claude-sonnet-4", 
+    api_endpoint: "internal://claude-code-sdk",
+    supports_streaming: true,
+    supports_functions: true,
+    max_tokens: 4096,
+    context_window: 200000
+  },
+  
+  authentication: {
+    type: "custom",
+    key_name: "none",
+    header: "none",
+    format: "none"
+  },
+  
+  ui_schema: {
+    config_fields: [
+      {
+        name: "systemPrompt",
+        type: "textarea",
+        required: false,
+        label: "System Prompt",
+        placeholder: "You are Claude, a helpful AI assistant.",
+        description: "Define the assistant's role and behavior",
+        default: "You are Claude, a helpful AI assistant."
+      },
+      {
+        name: "maxTurns",
+        type: "number",
+        required: false,
+        label: "Max Conversation Turns",
+        placeholder: "5",
+        description: "Maximum number of back-and-forth exchanges in a single conversation",
+        validation: {
+          min: 1,
+          max: 20,
+          step: 1
+        },
+        default: 5
+      },
+      {
+        name: "allowedTools",
+        type: "select",
+        required: false,
+        label: "Available Tools",
+        description: "Select which tools Claude can use during conversations",
+        validation: {
+          options: [
+            "Read,Write,Bash,Grep,Glob",
+            "Read,Write,Bash",
+            "Read,Write",
+            "Read,Bash,WebSearch",
+            "All"
+          ]
+        },
+        default: "Read,Write,Bash,Grep,Glob"
+      },
+      {
+        name: "enableThinking",
+        type: "checkbox",
+        required: false,
+        label: "Show Thinking Process",
+        description: "Display Claude's internal thinking process as it works through problems",
+        default: false
+      },
+      {
+        name: "enableToolVisibility",
+        type: "checkbox",
+        required: false,
+        label: "Show Tool Usage",
+        description: "Display when Claude is using tools like file operations or web search",
+        default: true
+      }
+    ]
+  },
+  
+  capabilities: {
+    streaming: true,
+    function_calling: true,
+    image_analysis: true,
+    code_execution: true,
+    web_search: true
+  },
+  
+  config_schema: {
+    type: "object",
+    properties: {
+      systemPrompt: {
+        type: "string",
+        description: "System prompt to define assistant behavior"
+      },
+      maxTurns: {
+        type: "number",
+        minimum: 1,
+        maximum: 20,
+        description: "Maximum conversation turns"
+      },
+      allowedTools: {
+        type: "string",
+        description: "Comma-separated list of allowed tools"
+      },
+      enableThinking: {
+        type: "boolean",
+        description: "Show thinking process"
+      },
+      enableToolVisibility: {
+        type: "boolean", 
+        description: "Show tool usage"
+      }
+    }
+  }
+};
+
+// Template registry for easy access
+export const PROVIDER_TEMPLATES = {
+  'claude-code': CLAUDE_CODE_TEMPLATE
+};
+
+/**
+ * Get a provider template by ID
+ */
+export function getProviderTemplate(templateId: string): ProviderTemplate | undefined {
+  return PROVIDER_TEMPLATES[templateId as keyof typeof PROVIDER_TEMPLATES];
+}
+
+/**
+ * Get all available provider templates
+ */
+export function getAllProviderTemplates(): ProviderTemplate[] {
+  return Object.values(PROVIDER_TEMPLATES);
+}
+
+/**
+ * Create a default config from a template
+ */
+export function createDefaultConfig(template: ProviderTemplate): any {
+  const config: Record<string, any> = {};
+  
+  for (const field of template.ui_schema.config_fields) {
+    if (field.default !== undefined) {
+      config[field.name] = field.default;
+    }
+  }
+  
+  return config;
+}
