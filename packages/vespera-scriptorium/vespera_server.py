@@ -1181,11 +1181,11 @@ class VesperaServer:
             if not task_result.get("success", False):
                 return task_result
             
-            task_data = task_result["task"]
+            task_obj = task_result["task"]
             
             # Get role information if assigned
-            role_info = None
-            assigned_role = task_data.get("execution", {}).get("assigned_role")
+            role_dict = None
+            assigned_role = task_obj.execution.assigned_role if task_obj.execution else None
             if assigned_role:
                 role_info = self.role_manager.get_role(assigned_role)
                 if role_info:
@@ -1208,11 +1208,11 @@ class VesperaServer:
                 "task_id": task_id,
                 "agent_session_id": agent_session_id,
                 "task": {
-                    "title": task_data["title"],
-                    "description": task_data["description"],
-                    "priority": task_data["priority"],
-                    "status": task_data["status"],
-                    "project_id": task_data["project_id"]
+                    "title": task_obj.title,
+                    "description": task_obj.description,
+                    "priority": task_obj.priority.value if task_obj.priority else "normal",
+                    "status": task_obj.status.value if task_obj.status else "todo",
+                    "project_id": task_obj.project_id
                 },
                 "role": role_dict,
                 "project": {
