@@ -1,0 +1,411 @@
+/* Task Dashboard Styles - Theme-aware responsive design */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  font-weight: var(--vscode-font-weight);
+  color: var(--vscode-foreground);
+  background-color: var(--vscode-background);
+  line-height: 1.4;
+}
+
+.dashboard-container {
+  padding: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--vscode-border);
+  padding-bottom: 16px;
+}
+
+.dashboard-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+.refresh-button {
+  background: var(--vscode-button-background);
+  border: none;
+  border-radius: 4px;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--vscode-button-foreground);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.refresh-button:hover {
+  background: var(--vscode-button-hover);
+}
+
+.refresh-button:focus {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
+}
+
+/* Connection Status */
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--vscode-descriptionForeground);
+}
+
+.connection-status.connected .status-indicator {
+  background: var(--vscode-terminal-ansiGreen);
+}
+
+.connection-status.connecting .status-indicator {
+  background: var(--vscode-terminal-ansiYellow);
+  animation: pulse 2s infinite;
+}
+
+.connection-status.error .status-indicator {
+  background: var(--vscode-errorForeground);
+}
+
+.connection-status.disconnected .status-indicator {
+  background: var(--vscode-descriptionForeground);
+}
+
+.error-text {
+  color: var(--vscode-errorForeground);
+  font-size: 0.8rem;
+  margin-left: 4px;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* No Data State */
+.no-data {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.no-data h3 {
+  margin-bottom: 12px;
+  color: var(--vscode-foreground);
+}
+
+.primary-button {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  border-radius: 4px;
+  padding: 12px 24px;
+  cursor: pointer;
+  margin-top: 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.primary-button:hover {
+  background: var(--vscode-button-hover);
+}
+
+/* Dashboard Content */
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Summary Cards */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.summary-card {
+  background: var(--vscode-card-background);
+  border: 1px solid var(--vscode-border);
+  border-radius: 6px;
+  padding: 16px;
+  text-align: center;
+}
+
+.summary-number {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+  margin-bottom: 4px;
+}
+
+.summary-label {
+  font-size: 0.85rem;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* Charts */
+.charts-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.chart-container {
+  background: var(--vscode-card-background);
+  border: 1px solid var(--vscode-border);
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.chart-container h3 {
+  margin-bottom: 16px;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Quick Actions */
+.quick-actions {
+  background: var(--vscode-card-background);
+  border: 1px solid var(--vscode-border);
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.quick-actions h3 {
+  margin-bottom: 16px;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.action-button {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.action-button:hover {
+  background: var(--vscode-button-hover);
+}
+
+/* Recent Tasks & Task Lists */
+.recent-tasks,
+.task-lists {
+  background: var(--vscode-card-background);
+  border: 1px solid var(--vscode-border);
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.recent-tasks h3,
+.task-list-section h3 {
+  margin-bottom: 16px;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.task-item:hover {
+  background: var(--vscode-list-hoverBackground);
+  border-color: var(--vscode-focusBorder);
+}
+
+.task-item.urgent {
+  border-left: 3px solid var(--vscode-errorForeground);
+}
+
+.task-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.task-status.status-todo {
+  background: var(--vscode-descriptionForeground);
+}
+
+.task-status.status-doing {
+  background: var(--vscode-terminal-ansiBlue);
+}
+
+.task-status.status-review {
+  background: var(--vscode-terminal-ansiYellow);
+}
+
+.task-status.status-done {
+  background: var(--vscode-terminal-ansiGreen);
+}
+
+.task-status.status-blocked {
+  background: var(--vscode-errorForeground);
+}
+
+.task-status.status-cancelled {
+  background: var(--vscode-descriptionForeground);
+}
+
+.task-status.status-archived {
+  background: var(--vscode-disabledForeground);
+}
+
+.task-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-title {
+  font-weight: 500;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.task-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: var(--vscode-descriptionForeground);
+}
+
+.task-priority {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.task-priority.priority-critical {
+  background: var(--vscode-errorForeground);
+  color: var(--vscode-errorLens-errorBackground);
+}
+
+.task-priority.priority-high {
+  background: var(--vscode-notificationsWarningIcon-foreground);
+  color: var(--vscode-background);
+}
+
+.task-priority.priority-normal {
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+}
+
+.task-priority.priority-low {
+  background: var(--vscode-descriptionForeground);
+  color: var(--vscode-background);
+}
+
+.task-priority.priority-someday {
+  background: var(--vscode-disabledForeground);
+  color: var(--vscode-background);
+}
+
+.task-due-date {
+  color: var(--vscode-descriptionForeground);
+}
+
+.overdue-title {
+  color: var(--vscode-errorForeground);
+}
+
+.task-list-section {
+  margin-bottom: 24px;
+}
+
+.task-list-section:last-child {
+  margin-bottom: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 12px;
+  }
+  
+  .summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  
+  .charts-section {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .action-button {
+    justify-content: center;
+  }
+  
+  .task-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
