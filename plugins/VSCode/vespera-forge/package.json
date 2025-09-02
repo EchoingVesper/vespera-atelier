@@ -1,0 +1,294 @@
+{
+  "name": "vespera-forge",
+  "displayName": "Vespera Forge",
+  "description": "AI-enhanced content management and task orchestration for VS Code with collaborative CRDT editing",
+  "version": "0.0.1",
+  "publisher": "vespera-atelier",
+  "license": "AGPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vespera-atelier/vespera-atelier.git",
+    "directory": "plugins/VSCode/vespera-forge"
+  },
+  "bugs": {
+    "url": "https://github.com/vespera-atelier/vespera-atelier/issues"
+  },
+  "homepage": "https://github.com/vespera-atelier/vespera-atelier/tree/main/plugins/VSCode/vespera-forge",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other",
+    "Data Science",
+    "Machine Learning",
+    "Notebooks",
+    "Visualization"
+  ],
+  "keywords": [
+    "ai",
+    "content-management",
+    "task-orchestration",
+    "crdt",
+    "collaborative",
+    "rust",
+    "automation",
+    "vespera"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "vespera-forge.initialize",
+        "title": "Initialize Vespera Forge",
+        "category": "Vespera Forge"
+      },
+      {
+        "command": "vespera-forge.createContent",
+        "title": "Create Content",
+        "category": "Vespera Forge"
+      },
+      {
+        "command": "vespera-forge.testCommand",
+        "title": "Test Command",
+        "category": "Vespera Forge"
+      },
+      {
+        "command": "vespera-forge.openTaskManager",
+        "title": "Open Task Manager",
+        "category": "Vespera Forge"
+      },
+      {
+        "command": "vespera-forge.configureBindery",
+        "title": "Configure Bindery",
+        "category": "Vespera Forge"
+      },
+      {
+        "command": "vespera-forge.refreshTaskTree",
+        "title": "Refresh Task Tree",
+        "category": "Vespera Forge"
+      },
+      {
+        "command": "vespera-forge.createSubtask",
+        "title": "Create Subtask",
+        "category": "Vespera Forge"
+      },
+      {
+        "command": "vespera-forge.completeTask",
+        "title": "Complete Task",
+        "category": "Vespera Forge"
+      },
+      {
+        "command": "vespera-forge.deleteTask",
+        "title": "Delete Task",
+        "category": "Vespera Forge"
+      },
+      {
+        "command": "vespera-forge.inlineTest",
+        "title": "Inline Test Command",
+        "category": "Vespera Forge"
+      },
+      {
+        "command": "vespera-forge.openChatPanel",
+        "title": "Open Chat Panel",
+        "category": "Vespera Forge"
+      },
+      {
+        "command": "vespera-forge.configureChatProviders",
+        "title": "Configure Chat Providers",
+        "category": "Vespera Forge"
+      },
+      {
+        "command": "vespera-forge.clearChatHistory",
+        "title": "Clear Chat History",
+        "category": "Vespera Forge"
+      },
+      {
+        "command": "vespera-forge.createChatSession",
+        "title": "Create Chat Session",
+        "category": "Vespera Forge Chat"
+      },
+      {
+        "command": "vespera-forge.switchChatSession",
+        "title": "Switch Chat Session",
+        "category": "Vespera Forge Chat"
+      },
+      {
+        "command": "vespera-forge.exportChatSessions",
+        "title": "Export Chat Sessions",
+        "category": "Vespera Forge Chat"
+      },
+      {
+        "command": "vespera-forge.importChatSessions",
+        "title": "Import Chat Sessions",
+        "category": "Vespera Forge Chat"
+      },
+      {
+        "command": "vespera-forge.showChatStats",
+        "title": "Show Chat Statistics",
+        "category": "Vespera Forge Chat"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "vespera-forge.createContent",
+        "key": "ctrl+alt+t",
+        "when": "vespera-forge:enabled"
+      },
+      {
+        "command": "vespera-forge.testCommand",
+        "key": "ctrl+alt+shift+t",
+        "when": "vespera-forge:enabled"
+      },
+      {
+        "command": "vespera-forge.openChatPanel",
+        "key": "ctrl+alt+c",
+        "when": "vespera-forge:enabled"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "vesperaForgeExplorer",
+          "name": "Vespera Forge",
+          "when": "vespera-forge:enabled"
+        }
+      ],
+      "vespera-forge": [
+        {
+          "id": "vesperaForgeTaskTree",
+          "name": "Task Tree",
+          "when": "vespera-forge:enabled"
+        },
+        {
+          "id": "vespera-forge.taskDashboard",
+          "type": "webview",
+          "name": "Task Dashboard",
+          "when": "vespera-forge:enabled"
+        },
+        {
+          "id": "vespera-forge.chatPanel",
+          "type": "webview",
+          "name": "Chat Assistant",
+          "when": "vespera-forge:enabled"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "vespera-forge",
+          "title": "Vespera Forge",
+          "icon": "$(symbol-namespace)"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "vespera-forge.refreshTaskTree",
+          "when": "view == vesperaForgeTaskTree",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "vespera-forge.createSubtask",
+          "when": "view == vesperaForgeTaskTree && viewItem =~ /task/",
+          "group": "1_actions"
+        },
+        {
+          "command": "vespera-forge.completeTask",
+          "when": "view == vesperaForgeTaskTree && viewItem =~ /task/ && viewItem =~ /status-todo|status-doing/",
+          "group": "1_actions"
+        },
+        {
+          "command": "vespera-forge.deleteTask",
+          "when": "view == vesperaForgeTaskTree && viewItem =~ /task/",
+          "group": "2_destructive"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Vespera Forge",
+      "properties": {
+        "vesperaForge.enableAutoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically start Vespera Forge when a workspace is opened"
+        },
+        "vesperaForge.rustBinderyPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to Rust Bindery executable"
+        },
+        "vesperaForge.chat.providers": {
+          "type": "object",
+          "default": {},
+          "description": "Chat provider configurations"
+        },
+        "vesperaForge.chat.ui.layout": {
+          "type": "string",
+          "default": "embedded",
+          "enum": ["embedded", "panel", "sidebar"],
+          "description": "Chat UI layout preference"
+        },
+        "vesperaForge.chat.ui.position": {
+          "type": "string",
+          "default": "right",
+          "enum": ["left", "right", "bottom"],
+          "description": "Chat UI position"
+        },
+        "vesperaForge.chat.ui.theme": {
+          "type": "string",
+          "default": "auto",
+          "enum": ["auto", "light", "dark"],
+          "description": "Chat UI theme"
+        },
+        "vesperaForge.chat.interaction.streaming": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable streaming responses"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "test": "vscode-test",
+    "clean": "rimraf dist out",
+    "dev": "npm run clean && npm run watch"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-code": "^1.0.100",
+    "fast-xml-parser": "^4.5.0",
+    "json5": "^2.2.3",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.5.0",
+    "@types/uuid": "^9.0.8",
+    "@types/vscode": "^1.95.0",
+    "@typescript-eslint/eslint-plugin": "^8.39.0",
+    "@typescript-eslint/parser": "^8.39.0",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.32.0",
+    "rimraf": "^6.0.0",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.6.0",
+    "webpack": "^5.101.0",
+    "webpack-cli": "^6.0.1"
+  }
+}

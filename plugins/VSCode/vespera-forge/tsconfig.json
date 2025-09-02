@@ -1,0 +1,50 @@
+{
+	"compilerOptions": {
+		"module": "Node16",
+		"target": "ES2022",
+		"lib": [
+			"ES2022"
+		],
+		"outDir": "out",
+		"sourceMap": true,
+		"rootDir": "src",
+		"strict": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true,
+		"noUnusedLocals": false,
+		"noUnusedParameters": true,
+		"exactOptionalPropertyTypes": false,
+		"noImplicitOverride": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noUncheckedIndexedAccess": true,
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
+		"forceConsistentCasingInFileNames": true,
+		"declaration": true,
+		"declarationMap": true,
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"moduleResolution": "Node16",
+		"baseUrl": "./src",
+		"paths": {
+			"@/*": ["*"],
+			"@/commands/*": ["commands/*"],
+			"@/providers/*": ["providers/*"],
+			"@/types/*": ["types/*"],
+			"@/utils/*": ["utils/*"]
+		}
+	},
+	"include": [
+		"src/**/*"
+	],
+	"exclude": [
+		"node_modules",
+		"out",
+		"dist",
+		"**/*.test.ts",
+		"src/chat/**/*"
+	],
+	"ts-node": {
+		"esm": true
+	}
+}
