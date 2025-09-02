@@ -571,11 +571,11 @@ class VesperaServer:
                 except Exception as e:
                     return {"success": False, "error": str(e), "path": path}
             
-            hook_tool_count = 23 + 7 + 2  # 23 existing + 7 hook agent tools + 2 task context tools
-            logger.info(f"✅ MCP Server '{server_name}' configured with {hook_tool_count} tools (17 task management + 6 Rust file operations + 7 hook agent tools + 2 task context tools)")
+            hook_tool_count = 23 + 7 + 2 + 1  # 23 existing + 7 hook agent tools + 2 task context tools + 1 hot reload tool
+            logger.info(f"✅ MCP Server '{server_name}' configured with {hook_tool_count} tools (17 task management + 6 Rust file operations + 7 hook agent tools + 2 task context tools + 1 hot reload tool)")
         else:
-            hook_tool_count = 17 + 7 + 2  # 17 existing + 7 hook agent tools + 2 task context tools
-            logger.info(f"✅ MCP Server '{server_name}' configured with {hook_tool_count} tools (17 task management + 7 hook agent tools + 2 task context tools)")
+            hook_tool_count = 17 + 7 + 2 + 1  # 17 existing + 7 hook agent tools + 2 task context tools + 1 hot reload tool
+            logger.info(f"✅ MCP Server '{server_name}' configured with {hook_tool_count} tools (17 task management + 7 hook agent tools + 2 task context tools + 1 hot reload tool)")
         
         # Hook Agent Tools (Tools 24-30 or 18-24 depending on Rust availability)
         
@@ -641,6 +641,12 @@ class VesperaServer:
             """Pause task execution and return error details for triage."""
             self.initialize_managers()
             return await self._pause_for_triage(task_id, error_details, agent_session_id)
+        
+        # Hot Reload Tool (Tool 33)
+        @self.mcp_server.tool()
+        async def hot_reload_server() -> Dict[str, Any]:
+            """Hot reload the MCP server to apply code changes without Claude Code restart."""
+            return await self._hot_reload_server()
     
     # Implementation methods for MCP tools (comprehensive implementations)
     async def _create_task_recursive(self, task_input: TaskInput, parent_id: Optional[str] = None) -> Dict[str, Any]:
@@ -1299,6 +1305,66 @@ class VesperaServer:
                 "success": False,
                 "error": str(e),
                 "task_id": task_id
+            }
+    
+    async def _hot_reload_server(self) -> Dict[str, Any]:
+        """Hot reload the MCP server by reimporting modules and reinitializing managers."""
+        try:
+            import importlib
+            import sys
+            from pathlib import Path
+            
+            # List of modules to reload
+            modules_to_reload = [
+                'roles.definitions',
+                'roles.manager', 
+                'roles.execution',
+                'roles.claude_executor',
+                'tasks.models',
+                'tasks.service',
+                'tasks.manager',
+                'tasks.executor'
+            ]
+            
+            reloaded_modules = []
+            failed_modules = []
+            
+            # Reload each module
+            for module_name in modules_to_reload:
+                try:
+                    if module_name in sys.modules:
+                        importlib.reload(sys.modules[module_name])
+                        reloaded_modules.append(module_name)
+                    else:
+                        # Module not loaded yet, try to import it
+                        importlib.import_module(module_name)
+                        reloaded_modules.append(f"{module_name} (newly imported)")
+                except Exception as e:
+                    failed_modules.append(f"{module_name}: {str(e)}")
+            
+            # Reinitialize managers to pick up changes
+            try:
+                self.initialize_managers()
+                manager_reload_status = "✅ Managers reinitialized successfully"
+            except Exception as e:
+                manager_reload_status = f"❌ Manager reinitialization failed: {str(e)}"
+            
+            return {
+                "success": True,
+                "reloaded_modules": reloaded_modules,
+                "failed_modules": failed_modules,
+                "manager_status": manager_reload_status,
+                "project": self.project_root.name,
+                "reload_timestamp": datetime.now().isoformat(),
+                "message": f"Hot reload completed. Reloaded {len(reloaded_modules)} modules."
+            }
+            
+        except Exception as e:
+            logger.error(f"Hot reload failed: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "message": "Hot reload failed. Manual restart may be required."
             }
     
     async def run_mcp_mode(self):
