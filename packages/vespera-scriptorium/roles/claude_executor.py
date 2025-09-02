@@ -282,9 +282,10 @@ class ClaudeExecutor:
         # Base Claude command with proper flags for agent spawning
         command = [self.config.claude_binary, "--print"]
         
-        # Add streaming JSON output for better response capture
-        command.extend(["--output-format", "stream-json"])
-        # Don't use --input-format stream-json, send plain text to stdin instead
+        # Use standard JSON output to ensure CLI compatibility in WSL2/Bun environments
+        command.extend(["--output-format", "json"])
+        # Use text input format for compatibility
+        command.extend(["--input-format", "text"])
         
         # Add verbose mode for debugging
         command.append("--verbose")
