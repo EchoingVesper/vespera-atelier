@@ -1,0 +1,175 @@
+{
+  // LM Studio Local Provider Template
+  template_id: "lmstudio-local",
+  name: "LM Studio (Local)",
+  description: "Local models running through LM Studio",
+  version: "1.0.0",
+  category: "llm_provider",
+  
+  provider_config: {
+    provider_type: "lmstudio",
+    model: "auto-detect",
+    api_endpoint: "http://localhost:1234/v1",
+    supports_streaming: true,
+    supports_functions: false,
+    max_tokens: 2048,
+    context_window: 8192
+  },
+  
+  authentication: {
+    type: "api_key",
+    key_name: "apiKey",
+    header: "Authorization", 
+    format: "Bearer {key}"
+  },
+  
+  ui_schema: {
+    config_fields: [
+      {
+        name: "baseUrl",
+        type: "text",
+        required: true,
+        label: "Base URL",
+        placeholder: "http://localhost:1234/v1",
+        description: "LM Studio server URL (ensure LM Studio is running)",
+        default: "http://localhost:1234/v1",
+        validation: {
+          pattern: "^https?://[^/]+/v1/?$",
+          message: "Must be a valid HTTP/HTTPS URL ending with /v1"
+        }
+      },
+      {
+        name: "apiKey",
+        type: "password",
+        required: false,
+        label: "API Key",
+        placeholder: "Leave empty for no auth",
+        description: "API key if your LM Studio instance requires authentication"
+      },
+      {
+        name: "model",
+        type: "text",
+        required: false,
+        label: "Model",
+        placeholder: "auto-detect",
+        description: "Model name (leave empty for auto-detection from LM Studio)"
+      },
+      {
+        name: "temperature",
+        type: "number",
+        required: false,
+        label: "Temperature",
+        placeholder: "0.7",
+        description: "Controls randomness in responses (0.0-2.0)",
+        default: 0.7,
+        validation: {
+          min: 0.0,
+          max: 2.0,
+          step: 0.1,
+          message: "Temperature must be between 0.0 and 2.0"
+        }
+      },
+      {
+        name: "maxTokens",
+        type: "number",
+        required: false,
+        label: "Max Tokens",
+        placeholder: "2048",
+        description: "Maximum tokens in response",
+        default: 2048,
+        validation: {
+          min: 1,
+          max: 32768,
+          step: 1,
+          message: "Max tokens must be between 1 and 32,768"
+        }
+      },
+      {
+        name: "systemPrompt",
+        type: "textarea",
+        required: false,
+        label: "System Prompt",
+        placeholder: "You are a helpful AI assistant...",
+        description: "Default system message for conversations",
+        validation: {
+          max: 5000,
+          message: "System prompt must be under 5,000 characters"
+        }
+      },
+      {
+        name: "timeout",
+        type: "number",
+        required: false,
+        label: "Timeout (seconds)",
+        placeholder: "60",
+        description: "Request timeout for local models (higher for slower hardware)",
+        default: 60,
+        validation: {
+          min: 10,
+          max: 600,
+          step: 10,
+          message: "Timeout must be between 10 and 600 seconds"
+        }
+      },
+      {
+        name: "enableContextExtension",
+        type: "checkbox",
+        required: false,
+        label: "Enable Context Extension",
+        description: "Allow extending context beyond model's native limit",
+        default: false
+      }
+    ]
+  },
+  
+  capabilities: {
+    streaming: true,
+    function_calling: false,
+    image_analysis: false,
+    code_execution: false,
+    web_search: false
+  },
+  
+  // Configuration validation schema
+  config_schema: {
+    type: "object",
+    required: ["baseUrl"],
+    properties: {
+      baseUrl: {
+        type: "string",
+        pattern: "^https?://[^/]+/v1/?$",
+        description: "LM Studio server URL"
+      },
+      apiKey: {
+        type: "string",
+        description: "Optional API key"
+      },
+      model: {
+        type: "string",
+        description: "Model name (optional for auto-detect)"
+      },
+      temperature: {
+        type: "number",
+        minimum: 0.0,
+        maximum: 2.0
+      },
+      maxTokens: {
+        type: "number",
+        minimum: 1,
+        maximum: 32768
+      },
+      systemPrompt: {
+        type: "string",
+        maxLength: 5000
+      },
+      timeout: {
+        type: "number",
+        minimum: 10,
+        maximum: 600
+      },
+      enableContextExtension: {
+        type: "boolean"
+      }
+    }
+  }
+}

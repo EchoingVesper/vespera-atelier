@@ -1,0 +1,72 @@
+{
+  // Chat Layout Configuration Template
+  template_id: "chat-layouts",
+  name: "Chat Layout Configurations",
+  description: "Defines available chat layout modes and their properties",
+  version: "1.0.0",
+  category: "chat_ui",
+  
+  layouts: {
+    embedded: {
+      name: "Embedded",
+      description: "Chat embedded in the main editor area",
+      icon: "layout-embedded",
+      supports_positions: ["right", "left"],
+      default_position: "right",
+      resizable: true,
+      min_width: 300,
+      max_width: 800,
+      default_width: 400
+    },
+    
+    sidebar: {
+      name: "Sidebar",
+      description: "Chat in a dedicated sidebar panel",
+      icon: "layout-sidebar",
+      supports_positions: ["left", "right"],
+      default_position: "right",
+      resizable: true,
+      min_width: 250,
+      max_width: 600,
+      default_width: 350
+    },
+    
+    floating: {
+      name: "Floating",
+      description: "Chat as a floating panel",
+      icon: "layout-floating",
+      supports_positions: ["top", "bottom", "left", "right"],
+      default_position: "top",
+      resizable: true,
+      draggable: true,
+      min_width: 320,
+      min_height: 400,
+      default_width: 500,
+      default_height: 600
+    },
+    
+    panel: {
+      name: "Panel",
+      description: "Chat in the bottom panel area",
+      icon: "layout-panel",
+      supports_positions: ["bottom"],
+      default_position: "bottom",
+      resizable: true,
+      min_height: 200,
+      max_height: 500,
+      default_height: 300
+    }
+  },
+  
+  responsive_breakpoints: {
+    mobile: 480,
+    tablet: 768,
+    desktop: 1024
+  },
+  
+  animations: {
+    enabled: true,
+    duration: 200,
+    easing: "ease-out"
+  }
+}

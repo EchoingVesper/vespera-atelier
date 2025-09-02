@@ -1,0 +1,142 @@
+{
+  // Custom Provider Template Example
+  // This serves as a template for creating new provider integrations
+  template_id: "custom-provider-example",
+  name: "Custom Provider Example",
+  description: "Template for creating custom chat provider integrations",
+  version: "1.0.0",
+  category: "llm_provider",
+  
+  // Provider configuration defines the technical details
+  provider_config: {
+    provider_type: "custom", // This should match your provider class registration
+    model: "custom-model-v1",
+    api_endpoint: "https://api.example.com/v1",
+    supports_streaming: true,
+    supports_functions: false,
+    max_tokens: 2048,
+    context_window: 4096
+  },
+  
+  // Authentication configuration
+  authentication: {
+    type: "api_key", // or "oauth", "bearer", "custom"
+    key_name: "apiKey",
+    header: "Authorization",
+    format: "Bearer {key}" // {key} will be replaced with actual API key
+  },
+  
+  // UI Schema defines the configuration form
+  ui_schema: {
+    config_fields: [
+      {
+        name: "apiKey",
+        type: "password",
+        required: true,
+        label: "API Key",
+        placeholder: "Enter your API key...",
+        description: "Your API key for this provider",
+        validation: {
+          pattern: "^[a-zA-Z0-9_-]+$", // Customize for your API key format
+          min: 10
+        }
+      },
+      {
+        name: "baseUrl",
+        type: "text",
+        required: false,
+        label: "Base URL",
+        placeholder: "https://api.example.com/v1",
+        description: "Custom API endpoint (optional)",
+        default: "https://api.example.com/v1",
+        validation: {
+          pattern: "^https?://.+"
+        }
+      },
+      {
+        name: "model",
+        type: "select",
+        required: false,
+        label: "Model",
+        description: "Choose the model to use",
+        default: "custom-model-v1",
+        validation: {
+          options: [
+            "custom-model-v1",
+            "custom-model-v2",
+            "custom-model-large"
+          ]
+        }
+      },
+      {
+        name: "temperature",
+        type: "number",
+        required: false,
+        label: "Temperature",
+        placeholder: "0.7",
+        description: "Controls randomness (0.0-2.0)",
+        default: 0.7,
+        validation: {
+          min: 0.0,
+          max: 2.0
+        }
+      },
+      {
+        name: "maxTokens",
+        type: "number",
+        required: false,
+        label: "Max Tokens",
+        placeholder: "2048",
+        description: "Maximum tokens in response",
+        default: 2048,
+        validation: {
+          min: 1,
+          max: 4096
+        }
+      },
+      {
+        name: "systemPrompt",
+        type: "textarea",
+        required: false,
+        label: "System Prompt",
+        placeholder: "You are a helpful assistant...",
+        description: "Default system message for conversations"
+      },
+      {
+        name: "enableSpecialFeature",
+        type: "checkbox",
+        required: false,
+        label: "Enable Special Feature",
+        description: "Enable provider-specific special feature",
+        default: false
+      },
+      {
+        name: "customParameter",
+        type: "text",
+        required: false,
+        label: "Custom Parameter",
+        placeholder: "Enter custom value...",
+        description: "Provider-specific custom parameter"
+      }
+    ]
+  },
+  
+  // Capabilities define what the provider can do
+  capabilities: {
+    streaming: true,        // Supports real-time streaming responses
+    function_calling: false,// Supports function/tool calling
+    image_analysis: false,  // Can analyze images
+    code_execution: false,  // Can execute code
+    web_search: false      // Can perform web searches
+  },
+  
+  // Optional: Template inheritance
+  // extends: "base-provider-template",
+  
+  // Optional: Override specific parts of parent template
+  // overrides: {
+  //   provider_config: {
+  //     max_tokens: 4096
+  //   }
+  // }
+}
