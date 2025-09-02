@@ -302,40 +302,18 @@ class ClaudeExecutor:
             tools_str = ",".join(validated_tools)
             command.extend(["--allowed-tools", shlex.quote(tools_str)])
         
-        # Use --append-system-prompt for role-specific system instructions
-        # CRITICAL: Bypass system prompts entirely for architect role in WSL2 due to Bun crashes
-        import platform
-        is_wsl = "microsoft" in platform.uname().release.lower()
+        # NEW APPROACH: Use minimal bootstrap system prompt that's CLI-safe
+        # All role and task context will be retrieved via get_task_context MCP tool
+        bootstrap_prompt = "You are a Claude AI assistant. Your first action must be to call get_task_context to retrieve your role and task information."
+        command.extend(["--append-system-prompt", shlex.quote(bootstrap_prompt)])
         
-        if is_wsl and context.role.name == "architect":
-            logger.warning(f"Skipping system prompt for architect role in WSL2 due to Bun v1.2.19 crashes")
-            # Skip system prompt entirely - role will be communicated via user prompt
-        else:
-            system_prompt = self._build_role_system_prompt(context)
-            if system_prompt:
-                # Additional safety check for command line length to prevent CLI crashes
-                quoted_prompt = shlex.quote(system_prompt)
-                estimated_command_length = len(" ".join(command)) + len(" --append-system-prompt ") + len(quoted_prompt)
-                
-                if estimated_command_length > 16000:  # Very conservative limit for Bun v1.2.19
-                    logger.warning(f"Command line too long ({estimated_command_length} chars), using minimal system prompt for role {context.role.name}")
-                    # Use minimal system prompt for maximum Bun compatibility
-                    minimal_prompt = f"You are a {context.role.display_name}. Complete the given task."
-                    command.extend(["--append-system-prompt", shlex.quote(minimal_prompt)])
-                else:
-                    command.extend(["--append-system-prompt", quoted_prompt])
-        
-        # Add working directory access
+        # Add working directory access  
         working_dir = self._get_validated_working_directory()
         if working_dir != self.project_root:
             command.extend(["--add-dir", shlex.quote(str(working_dir))])
         
-        # Build user prompt (task description) - this goes to stdin
-        # Include role information in user prompt if we bypassed system prompt
-        if is_wsl and context.role.name == "architect":
-            user_prompt = self._build_user_prompt_with_role_info(context, task_id)
-        else:
-            user_prompt = self._build_user_prompt(context, task_id)
+        # Build minimal bootstrap user prompt - just task ID for context retrieval
+        user_prompt = self._build_bootstrap_user_prompt(task_id)
         
         return command, user_prompt
     
@@ -466,6 +444,33 @@ class ClaudeExecutor:
             prompt_parts.extend(["", "## Referenced Documents"])
             for doc in context.linked_documents:
                 prompt_parts.append(f"- {doc}")
+        
+        return "\n".join(prompt_parts)
+    
+    def _build_bootstrap_user_prompt(self, task_id: str) -> str:
+        """Build minimal bootstrap prompt that directs agent to get_task_context."""
+        prompt_parts = [
+            "# Task Bootstrap",
+            "",
+            f"**Task ID**: {task_id}",
+            "",
+            "## IMPORTANT: Bootstrap Required",
+            "Before you can begin working on your task, you must:",
+            "",
+            "1. **FIRST**: Call the `get_task_context` MCP tool with your task_id to retrieve:",
+            "   - Your assigned role and capabilities",  
+            "   - The complete task description and requirements",
+            "   - Project context and file access information",
+            "   - All other necessary context for task completion",
+            "",
+            "2. **ONLY AFTER** successfully retrieving your context can you use other tools",
+            "",
+            "3. If you encounter any MCP tool errors during task execution, call `pause_for_triage` with error details",
+            "",
+            "**Your task_id for get_task_context is**: " + task_id,
+            "",
+            "Begin now by calling get_task_context."
+        ]
         
         return "\n".join(prompt_parts)
     

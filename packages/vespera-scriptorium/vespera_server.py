@@ -571,11 +571,11 @@ class VesperaServer:
                 except Exception as e:
                     return {"success": False, "error": str(e), "path": path}
             
-            hook_tool_count = 23 + 7  # 23 existing + 7 hook agent tools
-            logger.info(f"✅ MCP Server '{server_name}' configured with {hook_tool_count} tools (17 task management + 6 Rust file operations + 7 hook agent tools)")
+            hook_tool_count = 23 + 7 + 2  # 23 existing + 7 hook agent tools + 2 task context tools
+            logger.info(f"✅ MCP Server '{server_name}' configured with {hook_tool_count} tools (17 task management + 6 Rust file operations + 7 hook agent tools + 2 task context tools)")
         else:
-            hook_tool_count = 17 + 7  # 17 existing + 7 hook agent tools
-            logger.info(f"✅ MCP Server '{server_name}' configured with {hook_tool_count} tools (17 task management + 7 hook agent tools)")
+            hook_tool_count = 17 + 7 + 2  # 17 existing + 7 hook agent tools + 2 task context tools
+            logger.info(f"✅ MCP Server '{server_name}' configured with {hook_tool_count} tools (17 task management + 7 hook agent tools + 2 task context tools)")
         
         # Hook Agent Tools (Tools 24-30 or 18-24 depending on Rust availability)
         
@@ -627,6 +627,20 @@ class VesperaServer:
             """Get comprehensive status including performance metrics for all agents."""
             self.initialize_managers()
             return await self.hook_integration.get_comprehensive_agent_status()
+        
+        # Task Context Tools for Spawned Agents (Tools 31-32)
+        
+        @self.mcp_server.tool()
+        async def get_task_context(task_id: str, agent_session_id: Optional[str] = None) -> Dict[str, Any]:
+            """Get complete task context for spawned agents including role info and task details."""
+            self.initialize_managers()
+            return await self._get_task_context(task_id, agent_session_id)
+        
+        @self.mcp_server.tool()
+        async def pause_for_triage(task_id: str, error_details: str, agent_session_id: Optional[str] = None) -> Dict[str, Any]:
+            """Pause task execution and return error details for triage."""
+            self.initialize_managers()
+            return await self._pause_for_triage(task_id, error_details, agent_session_id)
     
     # Implementation methods for MCP tools (comprehensive implementations)
     async def _create_task_recursive(self, task_input: TaskInput, parent_id: Optional[str] = None) -> Dict[str, Any]:
@@ -1151,6 +1165,141 @@ class VesperaServer:
         except ImportError:
             logger.error("websockets library not installed. Run: pip install websockets")
             raise
+    
+    # Task Context Tools Implementation
+    async def _get_task_context(self, task_id: str, agent_session_id: Optional[str] = None) -> Dict[str, Any]:
+        """Get complete task context for spawned agents including role info and task details."""
+        try:
+            # Get task from database
+            task_result = await self._get_task(task_id)
+            if not task_result.get("success", False):
+                return task_result
+            
+            task_data = task_result["task"]
+            
+            # Get role information if assigned
+            role_info = None
+            assigned_role = task_data.get("execution", {}).get("assigned_role")
+            if assigned_role:
+                role_info = self.role_manager.get_role(assigned_role)
+                if role_info:
+                    role_dict = {
+                        "name": role_info.name,
+                        "display_name": role_info.display_name,
+                        "description": role_info.description,
+                        "system_prompt": role_info.system_prompt,
+                        "tool_groups": [
+                            tg.value if hasattr(tg, 'value') else str(tg) 
+                            for tg in role_info.tool_groups
+                        ],
+                        "restrictions": getattr(role_info, 'restrictions', [])
+                    }
+                else:
+                    role_dict = {"error": f"Role '{assigned_role}' not found"}
+            
+            # Create comprehensive context
+            context = {
+                "task_id": task_id,
+                "agent_session_id": agent_session_id,
+                "task": {
+                    "title": task_data["title"],
+                    "description": task_data["description"],
+                    "priority": task_data["priority"],
+                    "status": task_data["status"],
+                    "project_id": task_data["project_id"]
+                },
+                "role": role_dict,
+                "project": {
+                    "name": self.project_root.name,
+                    "root_path": str(self.project_root),
+                    "data_path": str(self.project_root / ".vespera_scriptorium")
+                },
+                "instructions": {
+                    "bootstrap_complete": True,
+                    "tools_unlocked": True,
+                    "message": "You have successfully retrieved your task context. You may now use all available tools to complete your assigned task."
+                },
+                "retrieved_at": datetime.now().isoformat()
+            }
+            
+            # Save context to file for debugging/audit trail
+            context_file = self.project_root / ".vespera_scriptorium" / "task_contexts" / f"{task_id}.json5"
+            context_file.parent.mkdir(exist_ok=True)
+            
+            import json
+            with open(context_file, 'w') as f:
+                json.dump(context, f, indent=2, default=str)
+            
+            return {
+                "success": True,
+                "context": context,
+                "message": f"Task context retrieved for task {task_id}"
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting task context: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "task_id": task_id
+            }
+    
+    async def _pause_for_triage(self, task_id: str, error_details: str, agent_session_id: Optional[str] = None) -> Dict[str, Any]:
+        """Pause task execution and return error details for triage."""
+        try:
+            # Update task status to indicate it needs triage
+            task_result = await self._get_task(task_id)
+            if not task_result.get("success", False):
+                return task_result
+            
+            # Log the error for triage
+            triage_info = {
+                "task_id": task_id,
+                "agent_session_id": agent_session_id,
+                "error_details": error_details,
+                "timestamp": datetime.now().isoformat(),
+                "project": self.project_root.name
+            }
+            
+            # Save triage info to file
+            triage_file = self.project_root / ".vespera_scriptorium" / "task_contexts" / f"{task_id}_triage.json5"
+            triage_file.parent.mkdir(exist_ok=True)
+            
+            import json
+            with open(triage_file, 'w') as f:
+                json.dump(triage_info, f, indent=2, default=str)
+            
+            # Update task with error info
+            from tasks.models import TaskUpdateInput
+            update_input = TaskUpdateInput(
+                task_id=task_id,
+                status="blocked"  # Mark as blocked for triage
+            )
+            
+            await self._update_task(update_input)
+            
+            return {
+                "success": True,
+                "task_id": task_id,
+                "status": "paused_for_triage",
+                "error_details": error_details,
+                "triage_file": str(triage_file),
+                "message": f"Task {task_id} paused for triage. Error details saved for review.",
+                "next_steps": [
+                    "Review error details in triage file",
+                    "Fix underlying issues",
+                    "Reset task status to 'todo' to retry",
+                    "Consider role reassignment if needed"
+                ]
+            }
+            
+        except Exception as e:
+            logger.error(f"Error pausing task for triage: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "task_id": task_id
+            }
     
     async def run_mcp_mode(self):
         """Run in pure MCP mode (stdio) for Claude Code integration."""
