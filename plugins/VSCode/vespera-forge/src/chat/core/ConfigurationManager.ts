@@ -7,7 +7,7 @@ import { ProviderConfig, ProviderTemplate, ConfigSchema, JsonSchemaProperty } fr
 import { ChatTemplateRegistry } from './TemplateRegistry';
 import { ChatEventRouter } from '../events/ChatEventRouter';
 import { ConfigurationChangedEvent } from '../types/events';
-import { encrypt, decrypt } from '../utils/encryption';
+import { CredentialManager } from '../utils/encryption';
 import { VesperaEvents } from '../../utils/events';
 
 export class ChatConfigurationManager {
@@ -502,8 +502,8 @@ export class ChatConfigurationManager {
       throw new Error(`Configuration validation failed: ${validationResult.errors.join(', ')}`);
     }
     
-    // Encrypt sensitive fields
-    const secureConfig = await this.encryptSensitiveFields(config, template);
+    // Store sensitive fields securely using VS Code SecretStorage API
+    const secureConfig = await this.encryptSensitiveFields(config, template, providerId);
     
     // Update provider configuration
     const updates: Partial<ChatConfiguration> = {
@@ -741,18 +741,24 @@ export class ChatConfigurationManager {
     return errors;
   }
   
-  private async encryptSensitiveFields(config: ProviderConfig, template: ProviderTemplate): Promise<ProviderConfig> {
+  private async encryptSensitiveFields(config: ProviderConfig, template: ProviderTemplate, providerId: string): Promise<ProviderConfig> {
     const secureConfig = { ...config };
     
-    // Encrypt fields marked as password type
+    // Store sensitive fields using VS Code SecretStorage API
     if (template.ui_schema && template.ui_schema.config_fields) {
       for (const field of template.ui_schema.config_fields) {
         if (field.type === 'password' && field.name in secureConfig) {
           try {
-            secureConfig[field.name] = await encrypt(secureConfig[field.name]);
+            // Store the credential securely using VS Code SecretStorage
+            const credentialKey = `${providerId}.${field.name}`;
+            await CredentialManager.storeCredential(this.context, credentialKey, secureConfig[field.name]);
+            
+            // Remove the sensitive value from the config (store reference instead)
+            secureConfig[field.name] = `[STORED_SECURELY:${credentialKey}]`;
+            console.log(`[ConfigurationManager] Stored sensitive field ${field.name} for provider ${providerId} securely`);
           } catch (error) {
-            console.warn(`Failed to encrypt field ${field.name}:`, error);
-            // Continue without encryption - better to have working config than to fail
+            console.error(`Failed to store sensitive field ${field.name} securely:`, error);
+            throw new Error(`Failed to store ${field.name} securely: ${error instanceof Error ? error.message : 'Unknown error'}`);
           }
         }
       }
@@ -774,21 +780,96 @@ export class ChatConfigurationManager {
     
     const decryptedConfig = { ...providerData.config };
     
-    // Decrypt fields that were encrypted
+    // Retrieve sensitive fields from secure storage
     if (template.ui_schema && template.ui_schema.config_fields) {
       for (const field of template.ui_schema.config_fields) {
         if (field.type === 'password' && field.name in decryptedConfig) {
-          try {
-            decryptedConfig[field.name] = await decrypt(decryptedConfig[field.name]);
-          } catch (error) {
-            console.warn(`Failed to decrypt field ${field.name}:`, error);
-            // Return encrypted value as fallback
+          const storedValue = decryptedConfig[field.name];
+          
+          // Check if this is a securely stored credential reference
+          if (typeof storedValue === 'string' && storedValue.startsWith('[STORED_SECURELY:')) {
+            const credentialKey = storedValue.substring('[STORED_SECURELY:'.length, storedValue.length - 1);
+            try {
+              const retrievedCredential = await CredentialManager.retrieveCredential(this.context, credentialKey);
+              if (retrievedCredential) {
+                decryptedConfig[field.name] = retrievedCredential;
+                console.log(`[ConfigurationManager] Retrieved secure credential for ${field.name}`);
+              } else {
+                console.warn(`[ConfigurationManager] No secure credential found for ${field.name}, may need migration`);
+                // Check for legacy base64 stored credential
+                await this.migrateLegacyCredential(providerId, field.name, storedValue);
+              }
+            } catch (error) {
+              console.error(`Failed to retrieve secure credential for ${field.name}:`, error);
+              // Try to migrate legacy credential if available
+              await this.migrateLegacyCredential(providerId, field.name, storedValue);
+            }
+          } else {
+            // This might be a legacy insecure credential - attempt migration
+            console.warn(`[ConfigurationManager] Found potential legacy credential for ${field.name}, attempting migration`);
+            await this.migrateLegacyCredential(providerId, field.name, storedValue);
           }
         }
       }
     }
     
     return decryptedConfig;
+  }
+  
+  /**
+   * Migrate legacy insecure credentials to secure VS Code SecretStorage
+   */
+  private async migrateLegacyCredential(providerId: string, fieldName: string, legacyValue: string): Promise<void> {
+    try {
+      let actualCredential = legacyValue;
+      
+      // Check if this is a base64 encoded legacy credential
+      if (legacyValue && !legacyValue.startsWith('[STORED_SECURELY:')) {
+        try {
+          // Try to decode as base64 (legacy format)
+          const decoded = Buffer.from(legacyValue, 'base64').toString();
+          // If decoding succeeds and looks like a valid credential, use it
+          if (decoded && decoded.length > 0 && decoded !== legacyValue) {
+            actualCredential = decoded;
+            console.log(`[ConfigurationManager] Decoded legacy base64 credential for ${providerId}.${fieldName}`);\n          }
+        } catch (decodeError) {
+          // If base64 decode fails, assume it's already plain text
+          console.log(`[ConfigurationManager] Legacy credential for ${providerId}.${fieldName} is not base64, using as-is`);\n        }
+      }
+      
+      // Store the credential securely
+      const credentialKey = `${providerId}.${fieldName}`;
+      await CredentialManager.storeCredential(this.context, credentialKey, actualCredential);
+      console.log(`[ConfigurationManager] Successfully migrated legacy credential for ${providerId}.${fieldName}`);\n      
+      // Update the config to reference the secure storage
+      const updates: Partial<ChatConfiguration> = {
+        providers: {
+          ...this.config.providers,
+          [providerId]: {
+            ...this.config.providers[providerId],
+            config: {
+              ...this.config.providers[providerId].config,
+              [fieldName]: `[STORED_SECURELY:${credentialKey}]`
+            }
+          }
+        }
+      };
+      
+      // Update configuration to remove legacy credential
+      await this.updateUserConfiguration(updates);
+      console.log(`[ConfigurationManager] Updated configuration after credential migration for ${providerId}.${fieldName}`);\n      
+      // Show migration success message
+      vscode.window.showInformationMessage(
+        `Migrated ${fieldName} for ${providerId} to secure storage for better security.`,
+        { modal: false }
+      );
+      
+    } catch (error) {
+      console.error(`[ConfigurationManager] Failed to migrate legacy credential for ${providerId}.${fieldName}:`, error);
+      vscode.window.showWarningMessage(
+        `Failed to migrate ${fieldName} for ${providerId} to secure storage. Please reconfigure this provider.`
+      );
+    }
   }
   
   dispose(): void {

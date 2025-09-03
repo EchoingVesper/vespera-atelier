@@ -4,15 +4,15 @@
 import * as vscode from 'vscode';
 
 /**
- * Simple encrypt/decrypt functions for backward compatibility
+ * DEPRECATED - These functions are no longer available for security reasons
+ * Use CredentialManager.storeCredential() and CredentialManager.retrieveCredential() instead
  */
 export async function encrypt(value: string): Promise<string> {
-  console.warn('Using simple base64 encryption - not secure, for development only');
-  return Buffer.from(value).toString('base64');
+  throw new Error('DEPRECATED: encrypt() function removed for security reasons. Use CredentialManager.storeCredential() instead.');
 }
 
 export async function decrypt(encrypted: string): Promise<string> {
-  return Buffer.from(encrypted, 'base64').toString();
+  throw new Error('DEPRECATED: decrypt() function removed for security reasons. Use CredentialManager.retrieveCredential() instead.');
 }
 
 export class CredentialManager {

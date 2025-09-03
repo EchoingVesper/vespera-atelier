@@ -351,8 +351,7 @@ export class ChatManager {
   }
   
   private async loadProviders(): Promise<void> {
-    // TODO: Load providers from templates and configuration
-    console.log('[ChatManager] Loading providers from templates...');
+    console.log('[ChatManager] Loading providers from templates with secure configuration...');
     
     const providerTemplates = this.templateRegistry.getTemplatesByCategory('llm_provider');
     const config = this.configManager.getConfiguration();
@@ -361,9 +360,19 @@ export class ChatManager {
       const providerConfig = config.providers[template.template_id];
       if (providerConfig && providerConfig.enabled) {
         try {
-          await this.addProvider(template, providerConfig.config);
+          // Use secure configuration retrieval that handles VS Code SecretStorage
+          const decryptedConfig = await this.configManager.getDecryptedProviderConfig(template.template_id);
+          if (decryptedConfig) {
+            await this.addProvider(template, decryptedConfig);
+            console.log(`[ChatManager] Successfully loaded provider ${template.template_id} with secure configuration`);
+          } else {
+            console.warn(`[ChatManager] No decrypted configuration available for provider ${template.template_id}`);
+          }
         } catch (error) {
-          console.error(`Failed to load provider ${template.template_id}:`, error);
+          console.error(`Failed to load provider ${template.template_id} with secure configuration:`, error);
+          vscode.window.showWarningMessage(
+            `Failed to load ${template.name || template.template_id} provider. Please reconfigure your API keys.`
+          );
         }
       }
     }
