@@ -40,4 +40,4 @@ Thumbs.db
 
 # Extension packaging
 *.vsix.bak
-extension-pack/
+extension-pack/../vespera-forge-security
