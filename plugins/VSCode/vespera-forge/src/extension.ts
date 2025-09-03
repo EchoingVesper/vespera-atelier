@@ -33,6 +33,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     isInitialized: false
   };
   
+  // Store view context for cleanup
+  (vesperaContext as any)._viewContext = viewContext;
+  
+  // Store global context for cleanup
+  globalExtensionContext = vesperaContext;
+  
   // Register all commands
   registerCommands(context, vesperaContext);
   
@@ -62,21 +68,78 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   console.log('✅ VESPERA FORGE: Extension activation completed successfully!');
 }
 
+// Global extension context for cleanup
+let globalExtensionContext: VesperaForgeContext | undefined;
+
 /**
  * Extension deactivation function
- * Called when extension is deactivated
+ * Called when extension is deactivated - Enhanced memory leak prevention
  */
 export async function deactivate(): Promise<void> {
   try {
-    log('Deactivating Vespera Forge extension...');
+    log('🔄 Deactivating Vespera Forge extension with comprehensive cleanup...');
+    
+    // Clear VS Code context flags
+    await vscode.commands.executeCommand('setContext', 'vespera-forge:enabled', false);
+    
+    // Explicitly dispose WebView providers to prevent memory leaks
+    if (globalExtensionContext && (globalExtensionContext as any)._viewContext) {
+      const viewContext = (globalExtensionContext as any)._viewContext;
+      
+      try {
+        // Dispose chat panel (most likely to have memory issues)
+        if (viewContext.chatPanelProvider && typeof viewContext.chatPanelProvider.dispose === 'function') {
+          viewContext.chatPanelProvider.dispose();
+          log('✅ Chat panel disposed');
+        }
+        
+        // Dispose task dashboard
+        if (viewContext.taskDashboardProvider && typeof viewContext.taskDashboardProvider.dispose === 'function') {
+          viewContext.taskDashboardProvider.dispose();
+          log('✅ Task dashboard disposed');
+        }
+        
+        // Dispose status bar manager
+        if (viewContext.statusBarManager && typeof viewContext.statusBarManager.dispose === 'function') {
+          viewContext.statusBarManager.dispose();
+          log('✅ Status bar manager disposed');
+        }
+        
+        // Dispose task tree provider
+        if (viewContext.taskTreeProvider && typeof viewContext.taskTreeProvider.dispose === 'function') {
+          viewContext.taskTreeProvider.dispose();
+          log('✅ Task tree provider disposed');
+        }
+        
+      } catch (viewError) {
+        console.error('Error disposing views:', viewError);
+      }
+    }
     
     // Disconnect from Bindery service
-    const { disposeBinderyService } = await import('./services/bindery');
-    await disposeBinderyService();
+    try {
+      const { disposeBinderyService } = await import('./services/bindery');
+      await disposeBinderyService();
+      log('✅ Bindery service disposed');
+    } catch (binderyError) {
+      console.error('Error disposing Bindery service:', binderyError);
+    }
     
-    log('Vespera Forge extension deactivation completed');
+    // Clear global references to prevent memory leaks
+    globalExtensionContext = undefined;
+    
+    // Force garbage collection hint (not guaranteed, but helpful)
+    if (global.gc) {
+      global.gc();
+      log('🗑️ Suggested garbage collection');
+    }
+    
+    log('✅ Vespera Forge extension deactivation completed successfully');
     
   } catch (error) {
-    console.error('Error during Vespera Forge deactivation:', error);
+    console.error('❌ Error during Vespera Forge deactivation:', error);
+    
+    // Even if there's an error, try to clean up global references
+    globalExtensionContext = undefined;
   }
 }

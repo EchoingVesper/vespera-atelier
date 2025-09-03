@@ -7,11 +7,12 @@ import { AnthropicProvider } from './AnthropicProvider';
 import { LMStudioProvider } from './LMStudioProvider';
 import { ClaudeCodeProvider } from './ClaudeCodeProvider';
 import { ProviderTemplate, ProviderConfig } from '../types/provider';
+import { ChatConfigurationManager } from '../core/ConfigurationManager';
 
 export type ProviderType = 'openai' | 'anthropic' | 'lmstudio' | 'claude-code' | 'custom';
 
 interface ProviderConstructor {
-  new (template: ProviderTemplate, config: ProviderConfig): ChatProvider;
+  new (template: ProviderTemplate, config: ProviderConfig, configManager?: ChatConfigurationManager): ChatProvider;
 }
 
 export class ProviderFactory {
@@ -25,7 +26,7 @@ export class ProviderFactory {
   /**
    * Create a provider instance from a template
    */
-  static createProvider(template: ProviderTemplate, config: ProviderConfig): ChatProvider {
+  static createProvider(template: ProviderTemplate, config: ProviderConfig, configManager?: ChatConfigurationManager): ChatProvider {
     const providerType = template.provider_config.provider_type.toLowerCase();
     const ProviderClass = this.providerRegistry.get(providerType);
     
@@ -33,7 +34,7 @@ export class ProviderFactory {
       throw new Error(`Unknown provider type: ${providerType}`);
     }
     
-    return new ProviderClass(template, config);
+    return new ProviderClass(template, config, configManager);
   }
   
   /**
@@ -62,7 +63,8 @@ export class ProviderFactory {
    */
   static createProviders(
     templates: ProviderTemplate[], 
-    configs: Record<string, ProviderConfig>
+    configs: Record<string, ProviderConfig>,
+    configManager?: ChatConfigurationManager
   ): Map<string, ChatProvider> {
     const providers = new Map<string, ChatProvider>();
     
@@ -70,7 +72,7 @@ export class ProviderFactory {
       const config = configs[template.template_id];
       if (config) {
         try {
-          const provider = this.createProvider(template, config);
+          const provider = this.createProvider(template, config, configManager);
           providers.set(template.template_id, provider);
         } catch (error) {
           console.error(`Failed to create provider ${template.template_id}:`, error);
@@ -84,10 +86,10 @@ export class ProviderFactory {
   /**
    * Validate that a config is compatible with a template
    */
-  static validateProviderConfig(template: ProviderTemplate, config: ProviderConfig): boolean {
+  static validateProviderConfig(template: ProviderTemplate, config: ProviderConfig, configManager?: ChatConfigurationManager): boolean {
     try {
       // Create a temporary provider to validate configuration
-      const tempProvider = this.createProvider(template, config);
+      const tempProvider = this.createProvider(template, config, configManager);
       const validation = tempProvider.validateConfig(config);
       tempProvider.dispose(); // Clean up
       

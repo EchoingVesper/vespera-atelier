@@ -6,6 +6,7 @@ import { ChatProvider } from './BaseProvider';
 import { ProviderTemplate, ProviderConfig, ProviderStatus } from '../types/provider';
 import { ChatMessage, ChatResponse, ChatChunk, HistoryContextOptions } from '../types/chat';
 import { FileContextManager, ContextualMessage } from '../context';
+import { ChatConfigurationManager } from '../core/ConfigurationManager';
 
 // Dynamic import for ES module compatibility
 const query = async () => {
@@ -17,9 +18,11 @@ export class ClaudeCodeProvider extends ChatProvider {
   private connectionStatus: ProviderStatus = ProviderStatus.Disconnected;
   private fileContextManager?: FileContextManager;
   private historyManager?: any; // ChatHistoryManager - will be injected
+  private configManager?: ChatConfigurationManager; // For secure credential access
 
-  constructor(template: ProviderTemplate, config: ProviderConfig) {
+  constructor(template: ProviderTemplate, config: ProviderConfig, configManager?: ChatConfigurationManager) {
     super(template, config);
+    this.configManager = configManager;
     
     // Initialize file context manager if enabled in config
     if (this.config['fileContextEnabled'] !== false) {
@@ -93,6 +96,9 @@ export class ClaudeCodeProvider extends ChatProvider {
     }
 
     try {
+      // Get secure configuration
+      const secureConfig = await this.getSecureConfig();
+      
       // Use Claude Code SDK without streaming for simple responses
       const claudeQuery = await query();
       const messages: string[] = [];
@@ -100,9 +106,9 @@ export class ClaudeCodeProvider extends ChatProvider {
       for await (const sdkMessage of claudeQuery({
         prompt: message.content,
         options: {
-          maxTurns: this.config['maxTurns'] || 1,
-          customSystemPrompt: this.config['systemPrompt'] || "You are Claude, a helpful AI assistant.",
-          allowedTools: (this.config['allowedTools'] || "Read,Write,Bash").split(',')
+          maxTurns: secureConfig['maxTurns'] || 1,
+          customSystemPrompt: secureConfig['systemPrompt'] || "You are Claude, a helpful AI assistant.",
+          allowedTools: (secureConfig['allowedTools'] || "Read,Write,Bash").split(',')
         }
       })) {
         if (sdkMessage.type === "result" && sdkMessage.subtype === "success") {
@@ -182,9 +188,12 @@ export class ClaudeCodeProvider extends ChatProvider {
         allowedTools = toolsConfig.split(',').map(tool => tool.trim());
       }
       
+      // Get secure configuration
+      const secureConfig = await this.getSecureConfig();
+      
       const queryOptions = {
-        maxTurns: this.config['maxTurns'] || 1,
-        customSystemPrompt: this.config['systemPrompt'] || "You are Claude, a helpful AI assistant. You have access to file context when relevant.",
+        maxTurns: secureConfig['maxTurns'] || 1,
+        customSystemPrompt: secureConfig['systemPrompt'] || "You are Claude, a helpful AI assistant. You have access to file context when relevant.",
         allowedTools: allowedTools
       };
       
@@ -399,6 +408,23 @@ export class ClaudeCodeProvider extends ChatProvider {
   }
 
   /**
+   * Get secure configuration with decrypted credentials
+   */
+  private async getSecureConfig(): Promise<ProviderConfig> {
+    if (this.configManager) {
+      // Use configuration manager to get decrypted config
+      const secureConfig = await this.configManager.getDecryptedProviderConfig(this.template.template_id);
+      if (secureConfig) {
+        return secureConfig;
+      }
+    }
+    
+    // Fallback to regular config (should not contain sensitive data in production)
+    console.warn('[ClaudeCodeProvider] Using fallback configuration - credentials may not be available');
+    return this.config;
+  }
+
+  /**
    * Build conversation context from history
    */
   private buildConversationContext(sessionId: string, currentMessage: string): string {
@@ -525,9 +551,12 @@ export class ClaudeCodeProvider extends ChatProvider {
         allowedTools = toolsConfig.split(',').map(tool => tool.trim());
       }
       
+      // Get secure configuration
+      const secureConfig = await this.getSecureConfig();
+      
       const queryOptions = {
-        maxTurns: this.config['maxTurns'] || 1,
-        customSystemPrompt: this.config['systemPrompt'] || "You are Claude, a helpful AI assistant. You have access to conversation history and file context when relevant.",
+        maxTurns: secureConfig['maxTurns'] || 1,
+        customSystemPrompt: secureConfig['systemPrompt'] || "You are Claude, a helpful AI assistant. You have access to conversation history and file context when relevant.",
         allowedTools: allowedTools
       };
       

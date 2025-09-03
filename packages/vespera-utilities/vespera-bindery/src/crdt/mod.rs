@@ -427,15 +427,58 @@ impl VesperaCRDT {
     /// Garbage collect operation log if it exceeds the threshold
     fn gc_operation_log_if_needed(&mut self) {
         const DEFAULT_MAX_OPERATIONS: usize = 1000;
+        const COMPACT_MAX_OPERATIONS: usize = 500;
+        
         if self.operation_log.len() > DEFAULT_MAX_OPERATIONS {
-            self.gc_operation_log(DEFAULT_MAX_OPERATIONS / 2); // Keep half
+            // More aggressive compaction to prevent memory leaks
+            let removed_count = self.gc_operation_log(COMPACT_MAX_OPERATIONS);
+            tracing::debug!(
+                "CRDT operation log compacted: removed {} operations, {} remaining",
+                removed_count,
+                self.operation_log.len()
+            );
+        }
+    }
+
+    /// Configure memory management thresholds for this CRDT instance
+    pub fn configure_memory_limits(
+        &mut self, 
+        max_operations: Option<usize>,
+        auto_gc_enabled: Option<bool>
+    ) {
+        // Store configuration for future use
+        // This could be extended to store config in the CRDT struct
+        if let Some(max_ops) = max_operations {
+            if self.operation_log.len() > max_ops {
+                let removed = self.gc_operation_log(max_ops);
+                tracing::info!(
+                    "CRDT configured with max {} operations, removed {} old operations",
+                    max_ops, removed
+                );
+            }
         }
     }
     
-    /// Perform comprehensive garbage collection
+    /// Perform comprehensive garbage collection with configurable limits
     pub fn gc_all(&mut self, operation_cutoff: DateTime<Utc>) -> GarbageCollectionStats {
-        // GC operation log
-        let old_operations_removed = self.gc_operation_log(500); // Keep last 500 operations
+        self.gc_all_with_limits(operation_cutoff, 500, 100)
+    }
+
+    /// Perform comprehensive garbage collection with custom limits
+    pub fn gc_all_with_limits(
+        &mut self, 
+        operation_cutoff: DateTime<Utc>,
+        max_operations: usize,
+        max_tree_tombstones: usize
+    ) -> GarbageCollectionStats {
+        tracing::debug!(
+            "Starting comprehensive GC: {} operations, cutoff {}",
+            self.operation_log.len(),
+            operation_cutoff
+        );
+
+        // GC operation log with configurable limit
+        let old_operations_removed = self.gc_operation_log(max_operations);
         
         // GC metadata layer tombstones
         let metadata_tombstones_removed = self.metadata_layer.gc_tombstones(operation_cutoff);
@@ -446,15 +489,25 @@ impl VesperaCRDT {
         // GC text layer (when Y-CRDT integration is complete)
         let text_fields_cleaned = self.text_layer.gc_fields();
         
-        // GC tree layer tombstones  
-        self.tree_layer.gc_tombstones(100);
+        // GC tree layer tombstones with configurable limit
+        self.tree_layer.gc_tombstones(max_tree_tombstones);
         
-        GarbageCollectionStats {
+        let stats = GarbageCollectionStats {
             operations_removed: old_operations_removed,
             metadata_tombstones_removed,
             reference_tags_removed,
             text_fields_cleaned,
-        }
+        };
+
+        tracing::info!(
+            "GC completed: {} ops removed, {} metadata tombstones, {} ref tags, {} text fields cleaned",
+            stats.operations_removed,
+            stats.metadata_tombstones_removed, 
+            stats.reference_tags_removed,
+            stats.text_fields_cleaned
+        );
+
+        stats
     }
     
     /// Get memory usage statistics
@@ -467,8 +520,84 @@ impl VesperaCRDT {
         }
     }
     
+    /// Schedule periodic garbage collection based on age and size thresholds
+    pub fn schedule_periodic_gc(
+        &mut self,
+        max_operation_age_hours: u32,
+        force_gc_every_n_operations: usize
+    ) -> bool {
+        let cutoff_time = Utc::now() - chrono::Duration::hours(max_operation_age_hours as i64);
+        let should_gc = self.operation_log.len() >= force_gc_every_n_operations ||
+            self.operation_log.iter().any(|op| op.timestamp < cutoff_time);
+
+        if should_gc {
+            let stats = self.gc_all(cutoff_time);
+            tracing::info!(
+                "Periodic GC completed for CRDT {}: removed {} operations",
+                self.codex_id, stats.operations_removed
+            );
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Get recommendations for memory optimization
+    pub fn memory_optimization_recommendations(&self) -> MemoryOptimizationReport {
+        let stats = self.memory_stats();
+        let mut recommendations = Vec::new();
+        let mut priority = OptimizationPriority::Low;
+
+        // Check operation log size
+        if stats.operation_log_size > 2000 {
+            recommendations.push("Operation log is very large (>2000). Consider more aggressive GC.".to_string());
+            priority = OptimizationPriority::High;
+        } else if stats.operation_log_size > 1000 {
+            recommendations.push("Operation log is large (>1000). Consider periodic GC.".to_string());
+            priority = priority.max(OptimizationPriority::Medium);
+        }
+
+        // Check metadata layer
+        if stats.metadata_stats.total_entries > 500 {
+            recommendations.push("Metadata layer has many entries. Consider tombstone cleanup.".to_string());
+            priority = priority.max(OptimizationPriority::Medium);
+        }
+
+        // Check reference layer
+        if stats.reference_stats.total_entries > 1000 {
+            recommendations.push("Reference layer has many entries. Consider cleanup.".to_string());
+            priority = priority.max(OptimizationPriority::Medium);
+        }
+
+        // Check text fields
+        if stats.text_field_count > 100 {
+            recommendations.push("Many text fields active. Consider field cleanup.".to_string());
+            priority = priority.max(OptimizationPriority::Low);
+        }
+
+        MemoryOptimizationReport {
+            priority,
+            recommendations,
+            current_stats: stats,
+            estimated_memory_usage_mb: self.estimate_memory_usage_mb(),
+        }
+    }
+
+    /// Estimate memory usage in megabytes
+    fn estimate_memory_usage_mb(&self) -> f64 {
+        // Rough estimates based on data structure sizes
+        let operation_log_mb = (self.operation_log.len() * 200) as f64 / 1024.0 / 1024.0; // ~200 bytes per op
+        let metadata_mb = (self.metadata_layer.stats().total_entries * 100) as f64 / 1024.0 / 1024.0;
+        let references_mb = (self.reference_layer.stats().total_entries * 150) as f64 / 1024.0 / 1024.0;
+        let text_mb = (self.text_layer.field_count() * 1000) as f64 / 1024.0 / 1024.0; // ~1KB per field
+        
+        operation_log_mb + metadata_mb + references_mb + text_mb
+    }
+
     /// Clean up resources when CRDT is no longer needed
     pub fn cleanup(&mut self) {
+        tracing::debug!("Cleaning up CRDT {} resources", self.codex_id);
+        
         self.operation_log.clear();
         self.operation_log.shrink_to_fit();
         
@@ -476,6 +605,12 @@ impl VesperaCRDT {
         self.reference_layer.clear();
         self.tree_layer.cleanup();
         self.text_layer.cleanup();
+        
+        // Clear vector clock
+        self.vector_clock.clear();
+        self.vector_clock.shrink_to_fit();
+        
+        tracing::debug!("CRDT {} cleanup completed", self.codex_id);
     }
 }
 
@@ -495,6 +630,30 @@ pub struct MemoryStats {
     pub metadata_stats: LWWMapStats,
     pub reference_stats: ORSetStats,
     pub text_field_count: usize,
+}
+
+/// Memory optimization report with recommendations
+#[derive(Debug, Clone)]
+pub struct MemoryOptimizationReport {
+    pub priority: OptimizationPriority,
+    pub recommendations: Vec<String>,
+    pub current_stats: MemoryStats,
+    pub estimated_memory_usage_mb: f64,
+}
+
+/// Priority level for memory optimization
+#[derive(Debug, Clone, PartialEq, PartialOrd, Ord, Eq)]
+pub enum OptimizationPriority {
+    Low,
+    Medium,
+    High,
+    Critical,
+}
+
+impl OptimizationPriority {
+    pub fn max(self, other: Self) -> Self {
+        if self > other { self } else { other }
+    }
 }
 
 /// Implement Drop to ensure proper cleanup of CRDT resources

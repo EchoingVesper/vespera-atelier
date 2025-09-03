@@ -237,7 +237,7 @@ export class ChatManager {
    */
   async addProvider(template: ProviderTemplate, config: any): Promise<void> {
     try {
-      const provider = ProviderFactory.createProvider(template, config);
+      const provider = ProviderFactory.createProvider(template, config, this.configManager);
       
       // Connect the provider
       await provider.connect();

@@ -11,9 +11,10 @@ export abstract class ChatProvider {
   protected status: ProviderStatus = ProviderStatus.Disconnected;
   protected eventEmitter = new EventEmitter();
   
-  constructor(template: ProviderTemplate, config: ProviderConfig) {
+  constructor(template: ProviderTemplate, config: ProviderConfig, configManager?: any) {
     this.template = template;
     this.config = config;
+    // Subclasses can override this constructor to use configManager if needed
   }
   
   // Abstract methods that must be implemented by concrete providers

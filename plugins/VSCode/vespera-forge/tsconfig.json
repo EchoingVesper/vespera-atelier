@@ -41,7 +41,7 @@
 		"node_modules",
 		"out",
 		"dist",
-		"src/chat/**/*"
+		"src/chat/ui/**/*"
 	],
 	"ts-node": {
 		"esm": true
