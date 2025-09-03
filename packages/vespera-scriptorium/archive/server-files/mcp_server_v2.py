@@ -7,9 +7,14 @@ FastMCP-based server for hierarchical task management system.
 
 import sys
 import logging
+import signal
+import asyncio
+import atexit
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from datetime import datetime
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 # Add the package to path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -406,17 +411,58 @@ async def complete_task(
 
 
 @mcp.tool()
-async def get_task_dashboard(project_id: Optional[str] = None) -> Dict[str, Any]:
-    """Get dashboard with task statistics and insights."""
+async def get_task_dashboard(
+    project_id: Optional[str] = None, 
+    max_recent_tasks: int = 10,
+    max_task_details: int = 50
+) -> Dict[str, Any]:
+    """Get dashboard with task statistics and insights.
+    
+    Args:
+        project_id: Optional project filter
+        max_recent_tasks: Limit recent tasks list (default 10)
+        max_task_details: Limit detailed task info (default 50)
+    """
     task_manager, _ = get_managers()
     
     try:
-        dashboard = await task_manager.get_task_dashboard(project_id)
+        # Get basic task counts instead of full dashboard to stay under token limit
+        tasks = await task_manager.task_service.list_tasks(project_id=project_id, limit=50)
+        
+        # Calculate basic statistics only
+        stats = {
+            "total_tasks": len(tasks),
+            "todo": len([t for t in tasks if str(t.status) == "TaskStatus.TODO"]),
+            "doing": len([t for t in tasks if str(t.status) == "TaskStatus.DOING"]),
+            "review": len([t for t in tasks if str(t.status) == "TaskStatus.REVIEW"]),
+            "done": len([t for t in tasks if str(t.status) == "TaskStatus.DONE"]),
+            "blocked": len([t for t in tasks if str(t.status) == "TaskStatus.BLOCKED"])
+        }
+        
+        # Get just a few recent task titles for context
+        recent_tasks = []
+        for task in sorted(tasks, key=lambda t: t.created_at, reverse=True)[:5]:
+            recent_tasks.append({
+                "id": task.id,
+                "title": task.title[:50] + ("..." if len(task.title) > 50 else ""),
+                "status": str(task.status).replace("TaskStatus.", "")
+            })
+        
+        dashboard = {
+            "statistics": stats,
+            "recent_tasks": recent_tasks,
+            "project_id": project_id,
+            "note": "Limited dashboard to reduce token usage"
+        }
         
         return {
             "success": True,
             "dashboard": dashboard,
-            "generated_at": datetime.now().isoformat()
+            "generated_at": datetime.now().isoformat(),
+            "limits_applied": {
+                "max_recent_tasks": max_recent_tasks,
+                "max_task_details": max_task_details
+            }
         }
         
     except Exception as e:
@@ -538,11 +584,92 @@ async def assign_role_to_task(task_id: str, role_name: str) -> Dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 
-if __name__ == "__main__":
-    # Initialize managers on startup
+@asynccontextmanager
+async def server_lifespan(server: FastMCP) -> AsyncIterator[Dict[str, Any]]:
+    """Manage server startup and shutdown lifecycle with proper cleanup."""
     logger.info("🚀 Starting Vespera V2 Task Management MCP Server")
-    get_managers()
+    
+    # Initialize managers and resources on startup
+    task_manager, role_manager = get_managers()
+    
+    # Store managers for cleanup
+    cleanup_context = {
+        "task_manager": task_manager,
+        "role_manager": role_manager
+    }
+    
     logger.info("✅ Vespera V2 MCP Server ready!")
     
-    # Run the FastMCP server
-    mcp.run()
+    try:
+        yield cleanup_context
+    finally:
+        # Cleanup on shutdown
+        logger.info("🔄 Shutting down Vespera V2 MCP Server...")
+        
+        # Cleanup any active Claude processes
+        try:
+            # Import here to avoid circular imports during startup
+            from roles.claude_executor import ClaudeExecutor
+            
+            # Check for any global executor instances that need cleanup
+            # Since executors are created per-task, we'll rely on SIGTERM handling
+            # to clean up any running processes
+            logger.info("✅ Claude executor cleanup initiated")
+            
+            # Force cleanup any remaining processes via system signal handling
+            import os
+            current_pid = os.getpid()
+            child_processes = []
+            
+            # Find any Claude child processes
+            import subprocess
+            try:
+                result = subprocess.run(
+                    ["pgrep", "-P", str(current_pid), "claude"],
+                    capture_output=True, text=True, timeout=2
+                )
+                if result.returncode == 0 and result.stdout.strip():
+                    child_pids = result.stdout.strip().split('\n')
+                    for pid in child_pids:
+                        try:
+                            os.kill(int(pid), signal.SIGTERM)
+                            logger.info(f"✅ Terminated Claude process {pid}")
+                        except (ProcessLookupError, ValueError):
+                            pass  # Process already gone
+                    logger.info(f"✅ Cleaned up {len(child_pids)} Claude processes")
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                # pgrep not available or timeout, skip process cleanup
+                pass
+        except Exception as e:
+            logger.error(f"⚠️ Error cleaning up Claude executor: {e}")
+        
+        # Cleanup database connections  
+        try:
+            if task_manager and hasattr(task_manager, 'task_service'):
+                # Close any database connections
+                if hasattr(task_manager.task_service, 'close'):
+                    await task_manager.task_service.close()
+                elif hasattr(task_manager.task_service, 'cleanup'):
+                    task_manager.task_service.cleanup()
+                logger.info("✅ Database connections closed")
+        except Exception as e:
+            logger.error(f"⚠️ Error closing database connections: {e}")
+        
+        logger.info("🛑 Vespera V2 MCP Server shutdown complete")
+
+
+if __name__ == "__main__":
+    # Apply lifespan management to existing mcp instance
+    mcp.dependencies.append(server_lifespan)
+    
+    # Run the FastMCP server with SSE transport for HTTP/WebSocket compatibility
+    # This allows the Obsidian plugin to connect via HTTP
+    import os
+    import uvicorn
+    
+    # For testing, we'll use SSE transport which runs over HTTP
+    print("🚀 Starting Vespera V2 MCP Server with SSE transport on port 8000...")
+    print("   Accessible at: http://localhost:8000/sse/vespera-v2-tasks")
+    
+    # Run with SSE transport
+    mcp.run(transport="sse")

@@ -37,6 +37,15 @@ class RoleManager:
         self.global_roles_path = Path(__file__).parent / "templates"
         self.project_roles_path = project_root / ".vespera_scriptorium" / "roles" if project_root else None
         
+        # Initialize template-driven model configuration
+        try:
+            from .model_config import ModelConfigManager
+            self.model_config_manager = ModelConfigManager()
+            logger.info(f"Template-driven model configuration loaded with {len(self.model_config_manager.validator.registry)} models")
+        except Exception as e:
+            logger.warning(f"Failed to load model configuration, using defaults: {e}")
+            self.model_config_manager = None
+        
         self._load_all_roles()
     
     def _load_all_roles(self) -> None:
@@ -100,6 +109,14 @@ class RoleManager:
                     try:
                         role_data['name'] = role_name
                         role = Role.from_dict(role_data)
+                        
+                        # Apply template-driven model configuration
+                        if self.model_config_manager:
+                            model_config = self.model_config_manager.get_role_model_config(role_name)
+                            role.preferred_llm = model_config["preferred_llm"]
+                            role.fallback_llms = model_config["fallback_llms"]
+                            logger.debug(f"Applied template model config to '{role_name}': {model_config}")
+                        
                         self.roles[role_name] = role
                         logger.debug(f"Loaded role '{role_name}' from {source}: {file_path}")
                     except Exception as e:
@@ -107,14 +124,19 @@ class RoleManager:
     
     def _create_default_roles(self) -> None:
         """Create default built-in roles if no templates exist."""
+        # Get template model configuration
+        orchestrator_models = self.model_config_manager.get_role_model_config("orchestrator") if self.model_config_manager else {"preferred_llm": "sonnet", "fallback_llms": ["gpt-4"]}
+        coder_models = self.model_config_manager.get_role_model_config("coder") if self.model_config_manager else {"preferred_llm": "sonnet", "fallback_llms": ["gpt-4"]}
+        researcher_models = self.model_config_manager.get_role_model_config("researcher") if self.model_config_manager else {"preferred_llm": "sonnet", "fallback_llms": ["gpt-4"]}
+        
         default_roles = {
             "orchestrator": Role(
                 name="orchestrator",
                 display_name="Task Orchestrator",
                 description="Coordinates task breakdown and agent assignment",
                 system_prompt="You are a Task Orchestrator focused on breaking down complex tasks into manageable subtasks and coordinating their execution.",
-                preferred_llm="local:ollama:llama3",
-                fallback_llms=["claude-3-5-sonnet", "gpt-4"],
+                preferred_llm=orchestrator_models["preferred_llm"],
+                fallback_llms=orchestrator_models["fallback_llms"],
                 tool_groups=[
                     ToolGroup.READ,
                     ToolGroup.COORDINATION,
@@ -132,8 +154,8 @@ class RoleManager:
                 display_name="Code Implementation Specialist",
                 description="Implements code following specifications with capability restrictions",
                 system_prompt="You are a Code Implementation Specialist focused on writing clean, efficient code following specifications.",
-                preferred_llm="local:ollama:codellama",
-                fallback_llms=["claude-3-5-sonnet", "gpt-4"],
+                preferred_llm=coder_models["preferred_llm"],
+                fallback_llms=coder_models["fallback_llms"],
                 tool_groups=[
                     ToolGroup.READ,
                     ToolGroup.EDIT,
@@ -154,8 +176,8 @@ class RoleManager:
                 display_name="Research and Analysis Specialist",
                 description="Conducts research and gathers information for informed decisions",
                 system_prompt="You are a Research and Analysis Specialist focused on gathering and synthesizing information.",
-                preferred_llm="claude-3-5-sonnet",
-                fallback_llms=["gpt-4", "local:ollama:llama3"],
+                preferred_llm=researcher_models["preferred_llm"],
+                fallback_llms=researcher_models["fallback_llms"],
                 tool_groups=[
                     ToolGroup.READ,
                     ToolGroup.BROWSER,

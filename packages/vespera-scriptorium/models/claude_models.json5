@@ -1,0 +1,145 @@
+{
+  "version": "2025.1.1",
+  "last_updated": "2025-01-15T10:30:00Z",
+  "update_source": "manual_config",
+  
+  "model_mappings": {
+    // Abstract name -> Specific model mapping
+    "sonnet": {
+      "id": "claude-sonnet-4-20250514",
+      "display_name": "Claude Sonnet 4", 
+      "provider": "anthropic",
+      "cli_name": "sonnet",
+      "aliases": ["sonnet", "claude-sonnet-4", "sonnet-4"],
+      "capabilities": ["text", "code", "analysis"],
+      "context_window": 200000,
+      "supports_streaming": true,
+      "deprecated": false
+    },
+    
+    "opus": {
+      "id": "claude-opus-4-20250514",
+      "display_name": "Claude Opus 4",
+      "provider": "anthropic", 
+      "cli_name": "opus",
+      "aliases": ["opus", "claude-opus-4", "opus-4"],
+      "capabilities": ["text", "code", "analysis", "reasoning"],
+      "context_window": 200000,
+      "supports_streaming": true,
+      "deprecated": false
+    },
+    
+    "haiku": {
+      "id": "claude-3-5-haiku-20241022",
+      "display_name": "Claude 3.5 Haiku",
+      "provider": "anthropic",
+      "cli_name": "haiku", 
+      "aliases": ["haiku", "claude-haiku", "fast"],
+      "capabilities": ["text", "code"],
+      "context_window": 200000,
+      "supports_streaming": true,
+      "deprecated": false
+    },
+    
+    "gpt-4": {
+      "id": "gpt-4",
+      "display_name": "GPT-4",
+      "provider": "openai",
+      "cli_name": "gpt-4",
+      "aliases": ["gpt-4", "gpt4"],
+      "capabilities": ["text", "code", "analysis"],
+      "context_window": 128000,
+      "supports_streaming": true,
+      "deprecated": false
+    },
+    
+    "codellama": {
+      "id": "codellama",
+      "display_name": "Code Llama",
+      "provider": "local",
+      "cli_name": "local:ollama:codellama",
+      "aliases": ["codellama", "code-llama"],
+      "capabilities": ["code"],
+      "context_window": 16000,
+      "supports_streaming": true,
+      "deprecated": false
+    },
+    
+    "llama3": {
+      "id": "llama3",
+      "display_name": "Llama 3",
+      "provider": "local",
+      "cli_name": "local:ollama:llama3",
+      "aliases": ["llama3", "llama-3"],
+      "capabilities": ["text", "code"],
+      "context_window": 8000,
+      "supports_streaming": true,
+      "deprecated": false
+    }
+  },
+  
+  "provider_configs": {
+    "anthropic": {
+      "api_endpoint": "https://api.anthropic.com/v1/models",
+      "headers_required": ["x-api-key", "anthropic-version"],
+      "update_interval_hours": 24,
+      "fallback_models": ["sonnet", "haiku"]
+    },
+    
+    "openai": {
+      "api_endpoint": "https://api.openai.com/v1/models",
+      "headers_required": ["Authorization"],
+      "update_interval_hours": 24,
+      "fallback_models": ["gpt-4"]
+    },
+    
+    "local": {
+      "validation_method": "cli_test",
+      "update_interval_hours": 168,
+      "fallback_models": ["llama3"]
+    }
+  },
+  
+  "role_presets": {
+    "architect": {
+      "preferred": "sonnet",
+      "fallbacks": ["gpt-4", "llama3"]
+    },
+    "coder": {
+      "preferred": "codellama", 
+      "fallbacks": ["sonnet", "gpt-4"]
+    },
+    "researcher": {
+      "preferred": "sonnet",
+      "fallbacks": ["gpt-4", "llama3"]
+    },
+    "tester": {
+      "preferred": "llama3",
+      "fallbacks": ["sonnet", "gpt-4"]
+    },
+    "reviewer": {
+      "preferred": "sonnet",
+      "fallbacks": ["gpt-4", "llama3"]
+    },
+    "documenter": {
+      "preferred": "sonnet",
+      "fallbacks": ["gpt-4", "llama3"]
+    },
+    "debugger": {
+      "preferred": "llama3",
+      "fallbacks": ["sonnet", "gpt-4"]
+    },
+    "orchestrator": {
+      "preferred": "llama3",
+      "fallbacks": ["sonnet", "gpt-4"] 
+    },
+    "creative_coordinator": {
+      "preferred": "sonnet",
+      "fallbacks": ["gpt-4", "llama3"]
+    },
+    "ask_mode": {
+      "preferred": "sonnet",
+      "fallbacks": ["gpt-4", "llama3"]
+    }
+  }
+}

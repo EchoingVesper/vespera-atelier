@@ -11,7 +11,7 @@ architect:
     You are a Technical Architect focused on planning and designing system architecture.
     You can read extensively to understand systems but are restricted to editing only
     documentation files to maintain clear separation between design and implementation.
-  preferred_llm: "claude-3-5-sonnet"
+  preferred_llm: "sonnet"
   fallback_llms:
     - "gpt-4"
     - "local:ollama:llama3"
@@ -49,7 +49,7 @@ coder:
     to maintain code quality and prevent scope creep.
   preferred_llm: "local:ollama:codellama"
   fallback_llms:
-    - "claude-3-5-sonnet"
+    - "sonnet"
     - "gpt-4"
   tool_groups:
     - "read"
@@ -81,7 +81,7 @@ researcher:
     You are a Research and Analysis Specialist focused on gathering and synthesizing
     information. You have comprehensive read and browser access but cannot modify
     files to maintain research objectivity and data integrity.
-  preferred_llm: "claude-3-5-sonnet"
+  preferred_llm: "sonnet"
   fallback_llms:
     - "gpt-4"
     - "local:ollama:llama3"
@@ -117,7 +117,7 @@ tester:
     to prevent accidental modification of production code.
   preferred_llm: "local:ollama:llama3"
   fallback_llms:
-    - "claude-3-5-sonnet"
+    - "sonnet"
     - "gpt-4"
   tool_groups:
     - "read"
@@ -149,7 +149,7 @@ reviewer:
     You are a Code Review and Quality Specialist focused on ensuring code quality
     and security. You have comprehensive read access to analyze code but cannot
     modify files to maintain review objectivity.
-  preferred_llm: "claude-3-5-sonnet"
+  preferred_llm: "sonnet"
   fallback_llms:
     - "gpt-4"
     - "local:ollama:llama3"
@@ -178,12 +178,14 @@ reviewer:
 
 documenter:
   display_name: "📝 Documentation Specialist"
-  description: "Creates and maintains documentation with markdown focus"
+  description: "Creates and maintains documentation with markdown focus and MCP file operations"
   system_prompt: |
     You are a Documentation Specialist focused on creating clear, comprehensive
     documentation. You can read all project files and create/edit documentation
-    files, but are restricted from modifying implementation code.
-  preferred_llm: "claude-3-5-sonnet"
+    files using high-performance Rust-powered file operations, but are restricted 
+    from modifying implementation code. You have access to MCP tools including the
+    new Rust file operations for optimal performance with large documentation files.
+  preferred_llm: "sonnet"
   fallback_llms:
     - "gpt-4"
     - "local:ollama:llama3"
@@ -191,6 +193,7 @@ documenter:
     - "read"
     - ["edit", {"file_regex": "\\.(md|rst|txt|doc)$", "description": "Documentation files only"}]
     - "browser"
+    - "mcp"
   restrictions:
     - "max_file_changes: 10"
   context_requirements:
@@ -211,6 +214,7 @@ documenter:
     - "documentation"
     - "writing"
     - "communication"
+    - "mcp_enabled"
 
 debugger:
   display_name: "🐛 Debugging and Troubleshooting Specialist"
@@ -221,7 +225,7 @@ debugger:
     restricted to minimal changes to maintain system stability.
   preferred_llm: "local:ollama:llama3"
   fallback_llms:
-    - "claude-3-5-sonnet"
+    - "sonnet"
     - "gpt-4"
   tool_groups:
     - "read"
@@ -257,7 +261,7 @@ orchestrator:
     but delegate actual implementation work to appropriate specialists.
   preferred_llm: "local:ollama:llama3"
   fallback_llms:
-    - "claude-3-5-sonnet" 
+    - "sonnet" 
     - "gpt-4"
   tool_groups:
     - "read"
@@ -290,7 +294,7 @@ creative_coordinator:
     You are a Creative Project Coordinator specialized in managing multi-modal
     creative projects. You have broad access to handle diverse creative assets
     and workflows across different media types.
-  preferred_llm: "claude-3-5-sonnet"
+  preferred_llm: "sonnet"
   fallback_llms:
     - "gpt-4"
     - "local:ollama:llama3"
@@ -327,7 +331,7 @@ ask_mode:
     You are an Ask Mode specialist focused on answering questions and providing
     information about the project. You can read and browse for information but
     cannot modify anything to maintain information integrity.
-  preferred_llm: "claude-3-5-sonnet"
+  preferred_llm: "sonnet"
   fallback_llms:
     - "gpt-4"
     - "local:ollama:llama3"
@@ -352,3 +356,37 @@ ask_mode:
     - "information"
     - "explanation"
     - "read_only"
+
+mcp_tool_tester:
+  display_name: "🔧 MCP Tool Tester"
+  description: "Specialized role for testing individual MCP tools with minimal capabilities"
+  system_prompt: |
+    You are an MCP Tool Tester focused exclusively on validating individual MCP tools.
+    You have access only to specific MCP tools and the complete_task function to report
+    back results. You cannot edit files or execute commands - your sole purpose is to
+    test MCP tool functionality and provide validation reports.
+  preferred_llm: "sonnet"
+  fallback_llms:
+    - "gpt-4"
+    - "local:ollama:llama3"
+  tool_groups:
+    - "mcp"
+  restrictions:
+    - "max_task_depth: 1"
+    - "mcp_tools_only: true"
+  context_requirements:
+    - "tool_specification"
+    - "expected_behavior"
+  task_types:
+    - "tool_testing"
+    - "validation"
+    - "mcp_testing"
+  validation_rules:
+    - "tool_executed_successfully"
+    - "results_documented"
+    - "errors_reported"
+  tags:
+    - "testing"
+    - "validation"
+    - "mcp"
+    - "tool_testing"

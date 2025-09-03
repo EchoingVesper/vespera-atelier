@@ -17,6 +17,16 @@ vespera-atelier/
 │       └── Vespera-Scriptorium/ # Obsidian plugin frontend
 ├── apps/                        # Future applications
 ├── PRPs/                        # Product Requirement Prompts
+├── docs/                        # Comprehensive architecture documentation
+│   ├── README.md               # Documentation hub and navigation
+│   ├── technical/              # Core system architecture documents
+│   │   ├── DYNAMIC_AUTOMATION_ARCHITECTURE.md  # Revolutionary automation system
+│   │   ├── CODEX_ARCHITECTURE.md               # Universal content system
+│   │   ├── TEMPLATE_SYSTEM_ARCHITECTURE.md     # User-extensible templates
+│   │   ├── UI-Architecture-Three-Panel-Design.md # Interface design
+│   │   └── MULTI_PROJECT_VAULT_ORGANIZATION.md  # Multi-project management
+│   ├── examples/               # Automation rule examples
+│   └── user-guides/            # User documentation and scenarios
 └── .claude/                     # Claude Code configuration
 ```
 
@@ -115,6 +125,16 @@ claude mcp list | grep vespera-scriptorium
 - Task hierarchy: create_task_tree, get_task_tree, analyze_task_dependencies  
 - Task execution: execute_task, complete_task, assign_role_to_task
 - Dashboard: get_task_dashboard, list_tasks, list_roles
+
+#### ***CRITICAL***: Architecture Documentation First
+
+**Before starting ANY development work:**
+
+1. **ALWAYS** check the Component Development Guide (section above)
+2. **READ** the required architectural documents for your component
+3. **UNDERSTAND** the template-driven, Codex-based system design
+4. **NEVER** hardcode content types - everything is template-driven
+5. **REFERENCE** docs/technical/ for technical specifications
 
 #### ***CRITICAL***: Git Commit After Every Task
 
@@ -239,11 +259,16 @@ python test_mcp_fastmcp.py         # MCP server tests
 - **Vespera Scriptorium**: `packages/vespera-scriptorium/CLAUDE.md`
 - **PRPs Framework**: `PRPs/CLAUDE.md`
 - **Meta-PRP Transition**: `PRPs/vespera-scriptorium-transition/README.md`
+- **🔥 Dynamic Automation Architecture**: `docs/technical/DYNAMIC_AUTOMATION_ARCHITECTURE.md` (Revolutionary new system)
+- **Architecture Documentation Hub**: `docs/README.md`
 
 ### Key Concepts
 
-- **Task Orchestrator**: Core orchestration engine for AI agent coordination
+- **🔥 Dynamic Automation System**: Revolutionary tag-driven automation with LLM-assisted rule creation
+- **Event-Driven Architecture**: Real-time reactive content workflows and cross-codex automation chains
+- **Task Orchestrator**: Core orchestration engine for AI agent coordination (V2 with triple database)
 - **PRP Framework**: Product Requirement Prompts for systematic development
+- **Codex Protocol**: Virtual content organization with multiple viewing perspectives
 - **Executive Dysfunction Support**: Design patterns for momentum preservation
 - **Git Worktree Strategy**: Isolated development environments
 
@@ -288,9 +313,98 @@ python test_mcp_fastmcp.py         # MCP server tests
    # - get_task_dashboard, list_tasks, list_roles
    ```
 
-## 🎨 Vision
+## 🎨 Vision: Revolutionary Automation Architecture
 
-The Vespera Atelier is an ecosystem of intelligent tools for creative professionals, researchers, and knowledge workers. Each package serves a specific role while working together through shared interfaces and the central orchestration engine.
+The Vespera Atelier is an ecosystem of intelligent tools for creative professionals, researchers, and knowledge workers. The revolutionary **Dynamic Automation and Tag-Driven Systems** transform static content into reactive, intelligent ecosystems.
+
+### Core Innovation: Magical Content Workflows
+
+- **Tag-Driven Automation**: Content responds to tag changes with intelligent automation (e.g., scene mood `#peaceful` → `#tense` automatically changes music)
+- **LLM-Assisted Setup**: Natural language automation creation ("When Alice gets scared, change the music")
+- **Cross-Codex Chains**: Cascading automation across different content types (scene completion → character updates → task creation)
+- **Real-Time Reactive Content**: Live UI updates and background automation execution
+
+### Architecture Documentation
+
+**📚 Comprehensive Documentation**: See `/docs/` directory for complete technical specifications:
+
+**Core System Architecture:**
+- **[Dynamic Automation Architecture](docs/technical/DYNAMIC_AUTOMATION_ARCHITECTURE.md)**: Revolutionary tag-driven automation system - **READ THIS FIRST** for any automation work
+- **[Codex Architecture](docs/technical/CODEX_ARCHITECTURE.md)**: Universal content system where everything is a Codex entry - **Essential** for content type work
+- **[Template System Architecture](docs/technical/TEMPLATE_SYSTEM_ARCHITECTURE.md)**: User-extensible templates via JSON5 files - **Required** for template development
+- **[Event System Specification](docs/technical/EVENT_SYSTEM_SPECIFICATION.md)**: Real-time event processing architecture - **Key** for reactive features
+
+**UI and Organization:**
+- **[UI Architecture Three-Panel Design](docs/technical/UI-Architecture-Three-Panel-Design.md)**: Interface design with immersive environments - **Essential** for UI work
+- **[Multi-Project Vault Organization](docs/technical/MULTI_PROJECT_VAULT_ORGANIZATION.md)**: Managing multiple projects in single vaults - **Required** for project management features
+
+**Examples and User Guides:**
+- **[Automation Examples](docs/examples/AUTOMATION_RULE_EXAMPLES.md)**: Concrete automation rule examples
+- **[Real-World Integration Scenarios](docs/user-guides/REAL_WORLD_INTEGRATION_SCENARIOS.md)**: Comprehensive workflow examples
+- **[User Getting Started Guide](docs/user-guides/GETTING_STARTED_AUTOMATION.md)**: Step-by-step automation setup
+
+## 🧭 Component Development Guide
+
+**When working on specific components, ALWAYS reference the relevant architectural documents:**
+
+### Obsidian Plugin Development
+**Required Reading:**
+1. **[UI Architecture Three-Panel Design](docs/technical/UI-Architecture-Three-Panel-Design.md)** - Interface structure and immersive environments
+2. **[Codex Architecture](docs/technical/CODEX_ARCHITECTURE.md)** - Universal content system integration
+3. **[Template System Architecture](docs/technical/TEMPLATE_SYSTEM_ARCHITECTURE.md)** - Dynamic template rendering
+
+**Key Implementation Notes:**
+- Task Manager belongs in main editor area, not sidebar
+- Three-panel design: Left (navigation), Center (content), Right (context/chat)
+- Support immersive environment adaptation (music, lighting, themes)
+- Template-driven UI components, not hardcoded types
+
+### Automation System Development
+**Required Reading:**
+1. **[Dynamic Automation Architecture](docs/technical/DYNAMIC_AUTOMATION_ARCHITECTURE.md)** - Complete automation system design
+2. **[Event System Specification](docs/technical/EVENT_SYSTEM_SPECIFICATION.md)** - Event processing implementation
+3. **[Automation Examples](docs/examples/AUTOMATION_RULE_EXAMPLES.md)** - Concrete rule examples
+
+**Key Implementation Notes:**
+- Tag changes trigger automation rules
+- LLM-assisted rule creation from natural language
+- Cross-codex automation chains (scene → character → task → music)
+- Real-time reactive UI updates
+
+### Template System Development
+**Required Reading:**
+1. **[Template System Architecture](docs/technical/TEMPLATE_SYSTEM_ARCHITECTURE.md)** - Complete template system specification
+2. **[Codex Architecture](docs/technical/CODEX_ARCHITECTURE.md)** - Integration with universal content system
+3. **[Multi-Project Vault Organization](docs/technical/MULTI_PROJECT_VAULT_ORGANIZATION.md)** - Project-aware template switching
+
+**Key Implementation Notes:**
+- Everything is template-driven via JSON5 files
+- No hardcoded CodexType enums - dynamic type registration
+- Template inheritance and sharing via hash strings
+- Environmental adaptation configs in templates
+
+### Content Management Development
+**Required Reading:**
+1. **[Codex Architecture](docs/technical/CODEX_ARCHITECTURE.md)** - Universal content system design
+2. **[Template System Architecture](docs/technical/TEMPLATE_SYSTEM_ARCHITECTURE.md)** - Template-driven content types
+3. **[Multi-Project Vault Organization](docs/technical/MULTI_PROJECT_VAULT_ORGANIZATION.md)** - Multi-project content organization
+
+**Key Implementation Notes:**
+- Everything is a Codex entry (.codex.md files)
+- Virtual hierarchies via metadata, not file system structure
+- Cross-project references and template switching
+- Three-mode component behavior (programmatic/LLM/hybrid)
+
+### MCP Server Development
+**Required Reading:**
+1. **[Event System Specification](docs/technical/EVENT_SYSTEM_SPECIFICATION.md)** - Event processing and MCP integration
+2. **[Dynamic Automation Architecture](docs/technical/DYNAMIC_AUTOMATION_ARCHITECTURE.md)** - Automation engine integration
+
+**Current V2 Architecture:**
+- 14 comprehensive MCP tools for complete task lifecycle
+- FastMCP implementation with official Python SDK
+- Hierarchical task system with dependencies
+- Role-based execution with capability restrictions
 
 ## 📝 Important Notes
 
@@ -323,3 +437,6 @@ All packages in this monorepo share this license to ensure open-source collabora
 ---
 
 **Remember**: This is a monorepo. Think in terms of packages, workspaces, and coordinated development.
+- The Claude Code CLI doesn't have the ability to restart a server connected to a currently running Claude Code instance. That's a manual command only accessible to the user, and in our case it's /mcp reconnect vespera-scriptorium
+- Always: Check for files' existence before attempting to create new files. Always: Read existing files before attempting to update them.
+- CRITICAL REMINDER: The MCP server does not hot reload. If changes are made that require testing, ask the user to close and reopen the Claude Code REPL or to attempt the internal /mcp reconnect command.

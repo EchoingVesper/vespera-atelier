@@ -1,0 +1,216 @@
+/* Styles for Vespera Scriptorium Plugin */
+
+.vespera-task-manager {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+}
+
+.task-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-connected {
+  color: var(--text-success);
+}
+
+.status-disconnected {
+  color: var(--text-error);
+}
+
+.task-filters {
+  margin-bottom: 16px;
+  padding: 8px;
+  background: var(--background-secondary);
+  border-radius: 4px;
+}
+
+.task-manager-main {
+  display: flex;
+  flex: 1;
+  gap: 16px;
+  min-height: 0;
+}
+
+.task-list-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 300px;
+}
+
+.task-details-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 300px;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.tasks-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.task-item {
+  padding: 12px;
+  margin-bottom: 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.task-item:hover {
+  background: var(--background-modifier-hover);
+}
+
+.task-item.selected {
+  background: var(--background-modifier-active-hover);
+  border-color: var(--interactive-accent);
+}
+
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 4px;
+}
+
+.task-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.status-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.status-todo {
+  background: var(--background-modifier-border);
+  color: var(--text-muted);
+}
+
+.status-doing {
+  background: var(--color-blue);
+  color: white;
+}
+
+.status-review {
+  background: var(--color-orange);
+  color: white;
+}
+
+.status-done {
+  background: var(--color-green);
+  color: white;
+}
+
+.status-blocked {
+  background: var(--color-red);
+  color: white;
+}
+
+.task-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.task-description-preview {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.task-form {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.task-form .setting-item {
+  margin-bottom: 12px;
+}
+
+.task-form textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.task-form button.danger {
+  background: var(--color-red);
+  color: white;
+  margin-left: 8px;
+}
+
+.task-timestamps {
+  margin-top: 16px;
+  padding-top: 8px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.task-timestamps p {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 2px 0;
+}
+
+.task-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 8px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.connection-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  gap: 16px;
+}
+
+.connection-prompt h3 {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.connection-prompt p {
+  margin: 0;
+  color: var(--text-faint);
+}
+
+/* Ribbon icon styling */
+.vespera-scriptorium-ribbon-class {
+  color: var(--interactive-accent);
+}
