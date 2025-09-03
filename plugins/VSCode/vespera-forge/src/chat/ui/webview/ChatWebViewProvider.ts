@@ -1,5 +1,5 @@
 /**
- * Chat WebView Provider for VS Code integration
+ * Chat WebView Provider for VS Code integration with comprehensive security
  */
 import * as vscode from 'vscode';
 import { ChatEventRouter } from '../../events/ChatEventRouter';
@@ -17,38 +17,90 @@ import {
   ValidateProviderConfigRequest
 } from '../../types/webview';
 import { getNonce, getChatWebViewContent } from './HtmlGenerator';
+import { WebViewSecurityManager } from './WebViewSecurityManager';
+import { VesperaInputSanitizer } from '../../../core/security/sanitization/VesperaInputSanitizer';
+import { VesperaSecurityAuditLogger } from '../../../core/security/audit/VesperaSecurityAuditLogger';
+import { VesperaLogger } from '../../../core/logging/VesperaLogger';
+import { VesperaErrorHandler } from '../../../core/error-handling/VesperaErrorHandler';
 
 export class ChatWebViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'vesperaForge.chatView';
   
   private _view?: vscode.WebviewView;
   private _disposables: vscode.Disposable[] = [];
+  private _securityManager?: WebViewSecurityManager;
+  private _sessionId: string;
   
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly eventRouter: ChatEventRouter,
     private readonly configManager: ChatConfigurationManager,
-    private readonly templateRegistry: ChatTemplateRegistry
-  ) {}
+    private readonly templateRegistry: ChatTemplateRegistry,
+    private readonly logger?: VesperaLogger,
+    private readonly errorHandler?: VesperaErrorHandler
+  ) {
+    this._sessionId = `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Initialize security manager for this WebView
+   */
+  private async initializeSecurityManager(): Promise<void> {
+    if (this._securityManager || !this.logger || !this.errorHandler) {
+      return;
+    }
+
+    try {
+      // Initialize required security components
+      const sanitizer = VesperaInputSanitizer.getInstance();
+      const auditLogger = new VesperaSecurityAuditLogger(this.logger);
+
+      this._securityManager = await WebViewSecurityManager.initialize({
+        sanitizer,
+        auditLogger,
+        logger: this.logger,
+        errorHandler: this.errorHandler,
+        securityConfig: {
+          strictMode: true,
+          enableRealTimeValidation: true,
+          maxMessageSize: 1048576, // 1MB
+          rateLimitPerSecond: 10,
+          enableContentSanitization: true,
+          cspStrictMode: true
+        }
+      });
+
+      this.logger.info('WebView security manager initialized', { 
+        sessionId: this._sessionId,
+        viewType: ChatWebViewProvider.viewType 
+      });
+    } catch (error) {
+      this.logger?.error('Failed to initialize security manager', error);
+      throw error;
+    }
+  }
   
-  public resolveWebviewView(
+  public async resolveWebviewView(
     webviewView: vscode.WebviewView,
     _context: vscode.WebviewViewResolveContext,
     _token: vscode.CancellationToken
-  ): void | Thenable<void> {
+  ): Promise<void> {
     this._view = webviewView;
     
-    // Configure webview
+    // Initialize security manager first
+    await this.initializeSecurityManager();
+    
+    // Configure webview with security settings
     webviewView.webview.options = {
       enableScripts: true,
       localResourceRoots: [this.context.extensionUri]
     };
     
-    // Set initial content
-    this.updateWebviewContent();
+    // Set initial content with security enhancements
+    await this.updateWebviewContent();
     
-    // Setup message handling
-    this.setupMessageHandling();
+    // Setup secure message handling
+    this.setupSecureMessageHandling();
     
     // Setup event listeners
     this.setupEventListeners();
@@ -57,41 +109,145 @@ export class ChatWebViewProvider implements vscode.WebviewViewProvider {
     webviewView.onDidDispose(() => {
       this.dispose();
     });
+
+    this.logger?.info('ChatWebView resolved successfully', {
+      sessionId: this._sessionId,
+      securityEnabled: !!this._securityManager
+    });
   }
   
-  private updateWebviewContent(): void {
+  private async updateWebviewContent(): Promise<void> {
     if (this._view) {
+      const nonce = getNonce();
+      
+      // Generate secure CSP if security manager is available
+      let cspOverride: string | undefined;
+      if (this._securityManager) {
+        cspOverride = this._securityManager.generateCSP({
+          context: 'chat-webview',
+          nonce,
+          allowInlineScripts: false,
+          allowInlineStyles: true, // VS Code themes require this
+          additionalSources: [this._view.webview.cspSource]
+        });
+      }
+
       this._view.webview.html = getChatWebViewContent(
         this._view.webview,
-        this.context.extensionUri
+        this.context.extensionUri,
+        {
+          nonce,
+          sessionId: this._sessionId,
+          cspOverride,
+          securityEnabled: !!this._securityManager
+        }
       );
+
+      this.logger?.debug('WebView content updated', {
+        sessionId: this._sessionId,
+        hasCustomCSP: !!cspOverride
+      });
     }
   }
   
-  private setupMessageHandling(): void {
+  private setupSecureMessageHandling(): void {
     if (!this._view) return;
     
     this._view.webview.onDidReceiveMessage(
-      async (message: WebViewMessage) => {
+      async (rawMessage: any) => {
+        const startTime = Date.now();
+        let validationResult;
+        
         try {
-          console.log(`[ChatWebView] Received message: ${message.type}`, message.data);
+          this.logger?.debug('Raw message received', { 
+            sessionId: this._sessionId,
+            messageType: rawMessage?.type,
+            hasData: !!rawMessage?.data
+          });
+
+          // Security validation and sanitization
+          if (this._securityManager) {
+            validationResult = await this._securityManager.validateMessage(
+              rawMessage,
+              {
+                sessionId: this._sessionId,
+                origin: 'vscode-webview',
+                messageCount: 0,
+                lastActivity: Date.now(),
+                trustLevel: 'medium'
+              }
+            );
+
+            if (!validationResult.isValid) {
+              this.logger?.warn('Message validation failed', {
+                sessionId: this._sessionId,
+                messageType: rawMessage?.type,
+                errors: validationResult.errors,
+                threats: validationResult.threats.length,
+                blocked: validationResult.blocked
+              });
+
+              if (rawMessage.requestId) {
+                await this._view!.webview.postMessage({
+                  success: false,
+                  error: validationResult.blocked 
+                    ? 'Message blocked by security policy'
+                    : 'Message validation failed',
+                  requestId: rawMessage.requestId,
+                  securityInfo: {
+                    threats: validationResult.threats.length,
+                    errors: validationResult.errors.slice(0, 3) // Limit error details
+                  }
+                });
+              }
+              return;
+            }
+          }
+
+          // Use sanitized message if available
+          const message: WebViewMessage = validationResult?.sanitizedMessage || rawMessage;
+          
+          this.logger?.info('Processing validated message', {
+            sessionId: this._sessionId,
+            messageType: message.type,
+            sanitized: !!validationResult?.sanitizedMessage,
+            threats: validationResult?.threats.length || 0
+          });
+
           const response = await this.handleMessage(message);
           
-          // Send response back to webview
+          // Send response back to webview with security info
           if (message.requestId) {
+            const secureResponse = await this.prepareSecureResponse(response, validationResult);
             await this._view!.webview.postMessage({
-              ...response,
+              ...secureResponse,
               requestId: message.requestId
             });
           }
+
+          this.logger?.debug('Message processed successfully', {
+            sessionId: this._sessionId,
+            messageType: message.type,
+            processingTime: Date.now() - startTime,
+            success: response.success
+          });
+
         } catch (error) {
-          console.error('[ChatWebView] Error handling message:', error);
+          this.logger?.error('Message handling error', error, {
+            sessionId: this._sessionId,
+            messageType: rawMessage?.type,
+            processingTime: Date.now() - startTime
+          });
+
+          if (this.errorHandler) {
+            await this.errorHandler.handleError(error as Error);
+          }
           
-          if (message.requestId) {
+          if (rawMessage.requestId) {
             await this._view!.webview.postMessage({
               success: false,
               error: error instanceof Error ? error.message : 'Unknown error',
-              requestId: message.requestId
+              requestId: rawMessage.requestId
             });
           }
         }
@@ -99,6 +255,30 @@ export class ChatWebViewProvider implements vscode.WebviewViewProvider {
       null,
       this._disposables
     );
+  }
+
+  /**
+   * Prepare response with security considerations
+   */
+  private async prepareSecureResponse(
+    response: WebViewResponse,
+    validationResult?: any
+  ): Promise<WebViewResponse> {
+    // Add security metadata if enabled
+    if (this._securityManager && validationResult) {
+      const securityInfo = {
+        sanitized: !!validationResult.sanitizedMessage,
+        threatCount: validationResult.threats.length,
+        processingTime: Date.now()
+      };
+      
+      return {
+        ...response,
+        _security: securityInfo
+      };
+    }
+
+    return response;
   }
   
   private async handleMessage(message: WebViewMessage): Promise<WebViewResponse> {
@@ -531,7 +711,23 @@ export class ChatWebViewProvider implements vscode.WebviewViewProvider {
   }
   
   public dispose(): void {
+    this.logger?.info('ChatWebViewProvider disposing', {
+      sessionId: this._sessionId,
+      disposablesCount: this._disposables.length
+    });
+
+    // Dispose security manager
+    if (this._securityManager) {
+      this._securityManager.dispose();
+      this._securityManager = undefined;
+    }
+
+    // Dispose all registered disposables
     this._disposables.forEach(d => d.dispose());
     this._disposables.length = 0;
+
+    this.logger?.info('ChatWebViewProvider disposed successfully', {
+      sessionId: this._sessionId
+    });
   }
 }
