@@ -101,7 +101,7 @@ export abstract class BaseDisposable implements EnhancedDisposable {
   /**
    * Get creation timestamp
    */
-  public get createdAt(): number {
+  public get createdTimestamp(): number {
     return this.createdAt;
   }
 

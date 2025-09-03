@@ -264,7 +264,10 @@ export enum SanitizationScope {
   MESSAGE = 'message',
   CONFIGURATION = 'configuration',
   FILE_CONTENT = 'file_content',
-  USER_INPUT = 'user_input'
+  USER_INPUT = 'user_input',
+  HTML_CONTENT = 'html_content',
+  MESSAGE_DATA = 'message_data',
+  CONFIG_DATA = 'config_data'
 }
 
 export interface SanitizationProcessor {

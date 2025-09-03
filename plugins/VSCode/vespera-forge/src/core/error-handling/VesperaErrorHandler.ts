@@ -302,9 +302,6 @@ export class VesperaErrorHandler implements vscode.Disposable {
     );
   }
 
-  private getStrategy(code: VesperaErrorCode): ErrorHandlingStrategy {
-    return this.strategies.get(code) || this.strategies.get(VesperaErrorCode.UNKNOWN_ERROR)!;
-  }
 
   private async notifyUser(error: VesperaError): Promise<void> {
     const action = error.isRetryable ? 'Retry' : 'OK';

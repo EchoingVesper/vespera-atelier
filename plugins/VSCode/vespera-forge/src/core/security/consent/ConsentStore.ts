@@ -325,7 +325,7 @@ export class ConsentStore implements vscode.Disposable {
   private encryptRecord(record: ConsentRecord): EncryptedConsentRecord {
     const algorithm = 'aes-256-gcm';
     const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipher(algorithm, this.encryptionKey);
+    const cipher = crypto.createCipheriv(algorithm, this.encryptionKey, iv);
     
     const data = JSON.stringify(record);
     let encrypted = cipher.update(data, 'utf8', 'hex');
@@ -349,7 +349,8 @@ export class ConsentStore implements vscode.Disposable {
    */
   private decryptRecord(encryptedRecord: EncryptedConsentRecord): ConsentRecord {
     const algorithm = 'aes-256-gcm';
-    const decipher = crypto.createDecipher(algorithm, this.encryptionKey);
+    const iv = Buffer.from(encryptedRecord.iv, 'hex');
+    const decipher = crypto.createDecipheriv(algorithm, this.encryptionKey, iv);
     
     let decrypted = decipher.update(encryptedRecord.encryptedData, 'hex', 'utf8');
     decrypted += decipher.final('utf8');

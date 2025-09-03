@@ -241,7 +241,7 @@ export class VesperaCoreServices implements vscode.Disposable {
     }
 
     const extensionVersion = vscode.extensions.getExtension('vespera-atelier.vespera-forge')?.packageJSON.version || 'unknown';
-    const isDevelopment = vscode.env.appName.includes('Insiders') || process.env.NODE_ENV === 'development';
+    const isDevelopment = vscode.env.appName.includes('Insiders') || process.env['NODE_ENV'] === 'development';
 
     return {
       logger: this.services.logger.getLogStats(),

@@ -82,7 +82,7 @@ export class VesperaLogger implements vscode.Disposable {
   }
 
   private mergeConfiguration(config: Partial<LoggerConfiguration>): LoggerConfiguration {
-    const isDevelopment = vscode.env.appName.includes('Insiders') || process.env.NODE_ENV === 'development';
+    const isDevelopment = vscode.env.appName.includes('Insiders') || process.env['NODE_ENV'] === 'development';
     
     return {
       level: config.level ?? (isDevelopment ? LogLevel.DEBUG : LogLevel.INFO),
@@ -306,6 +306,18 @@ export class VesperaLogger implements vscode.Disposable {
    */
   public clearOutput(): void {
     this.outputChannel.clear();
+  }
+
+  /**
+   * Create a child logger with a specific context prefix
+   */
+  public createChild(context: string): VesperaLogger {
+    // For now, return this instance with context information
+    // In a full implementation, this could create a separate logger instance
+    // that prefixes all messages with the context
+    const childLogger = Object.create(this);
+    childLogger.context = context;
+    return childLogger;
   }
 
   public dispose(): void {
