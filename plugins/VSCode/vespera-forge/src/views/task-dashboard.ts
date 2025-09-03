@@ -30,7 +30,7 @@ export class TaskDashboardWebviewProvider implements vscode.WebviewViewProvider 
       if (info.status === BinderyConnectionStatus.Connected) {
         this.refresh();
       } else if (info.status === BinderyConnectionStatus.Disconnected) {
-        this._dashboardData = undefined;
+        delete (this as any)._dashboardData;
         this.updateWebview();
       }
     });
@@ -89,7 +89,7 @@ export class TaskDashboardWebviewProvider implements vscode.WebviewViewProvider 
     const binderyService = getBinderyService();
     
     if (!binderyService.isConnected()) {
-      this._dashboardData = undefined;
+      delete (this as any)._dashboardData;
       this.updateWebview();
       return;
     }
@@ -119,7 +119,7 @@ export class TaskDashboardWebviewProvider implements vscode.WebviewViewProvider 
     const isDark = colorTheme.kind === vscode.ColorThemeKind.Dark;
     
     const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'dashboard.css'));
-    const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'dashboard.js'));
+    const _scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'dashboard.js'));
 
     return `<!DOCTYPE html>
     <html lang="en">

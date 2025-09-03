@@ -229,7 +229,7 @@ export class ChatManager {
     this.eventRouter.emit({
       type: 'chatProviderChanged',
       data: {
-        from: currentProvider,
+        ...(currentProvider && { from: currentProvider }),
         to: providerId
       }
     });

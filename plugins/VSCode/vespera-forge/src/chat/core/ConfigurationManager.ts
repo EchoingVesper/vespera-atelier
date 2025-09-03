@@ -9,6 +9,11 @@ import { ChatEventRouter } from '../events/ChatEventRouter';
 import { ConfigurationChangedEvent } from '../types/events';
 import { CredentialManager } from '../utils/encryption';
 import { VesperaEvents } from '../../utils/events';
+import { 
+  VesperaConfigurationError, 
+  VesperaErrorCode
+} from '../../core/error-handling/VesperaErrors';
+import { VesperaErrorHandler } from '../../core/error-handling/VesperaErrorHandler';
 
 export class ChatConfigurationManager {
   private config: ChatConfiguration;
@@ -150,7 +155,23 @@ export class ChatConfigurationManager {
       const workspaceConfig = vscode.workspace.getConfiguration('vesperaForge.chat', null);
       return this.extractConfigurationFromVSCode(workspaceConfig);
     } catch (error) {
-      console.warn('Failed to load workspace configuration:', error);
+      const vesperaError = new VesperaConfigurationError(
+        'Failed to load workspace configuration',
+        VesperaErrorCode.CONFIGURATION_LOAD_FAILED,
+        {
+          context: {
+            configScope: 'workspace',
+            operation: 'getWorkspaceConfiguration'
+          }
+        },
+        error instanceof Error ? error : new Error(String(error))
+      );
+      
+      // Handle error but don't throw (graceful degradation)
+      VesperaErrorHandler.getInstance().handleErrorWithStrategy(vesperaError, { 
+        shouldThrow: false,
+        shouldNotifyUser: false  // Don't spam user with workspace config issues
+      });
       return {};
     }
   }
@@ -161,7 +182,24 @@ export class ChatConfigurationManager {
       const userConfig = this.context.globalState.get<Partial<ChatConfiguration>>('vesperaForge.chat.user', {});
       return userConfig;
     } catch (error) {
-      console.warn('Failed to load user configuration:', error);
+      const vesperaError = new VesperaConfigurationError(
+        'Failed to load user configuration',
+        VesperaErrorCode.CONFIGURATION_LOAD_FAILED,
+        {
+          context: {
+            configScope: 'user',
+            operation: 'getUserConfiguration',
+            globalStateKey: 'vesperaForge.chat.user'
+          }
+        },
+        error instanceof Error ? error : new Error(String(error))
+      );
+      
+      // Handle error but don't throw (graceful degradation)
+      VesperaErrorHandler.getInstance().handleErrorWithStrategy(vesperaError, { 
+        shouldThrow: false,
+        shouldNotifyUser: false  // Don't spam user with user config loading issues
+      });
       return {};
     }
   }
@@ -458,8 +496,23 @@ export class ChatConfigurationManager {
       const savedConfig = this.context.globalState.get<Partial<ChatConfiguration>>('vesperaForge.chat.user', {});
       console.log(`[ConfigurationManager] Verification - config after save:`, JSON.stringify(savedConfig, null, 2));
     } catch (error) {
-      console.error('Failed to update user configuration:', error);
-      throw error;
+      const vesperaError = new VesperaConfigurationError(
+        'Failed to update user configuration',
+        VesperaErrorCode.CONFIGURATION_SAVE_FAILED,
+        {
+          context: {
+            configScope: 'user',
+            operation: 'updateUserConfiguration',
+            globalStateKey: 'vesperaForge.chat.user',
+            updates: JSON.stringify(updates)
+          }
+        },
+        error instanceof Error ? error : new Error(String(error))
+      );
+      
+      // Handle error and then rethrow
+      await VesperaErrorHandler.getInstance().handleError(vesperaError);
+      throw vesperaError;
     }
   }
   
@@ -492,14 +545,40 @@ export class ChatConfigurationManager {
     const template = this.templateRegistry.getTemplate(providerId);
     console.log(`[ConfigurationManager] template found:`, template ? 'yes' : 'no');
     if (!template) {
-      console.error(`[ConfigurationManager] Provider template not found: ${providerId}`);
-      throw new Error(`Provider template not found: ${providerId}`);
+      const vesperaError = new VesperaConfigurationError(
+        `Provider template not found: ${providerId}`,
+        VesperaErrorCode.PROVIDER_INITIALIZATION_FAILED,
+        {
+          context: {
+            providerId,
+            operation: 'configureProvider',
+            templateRegistry: 'ChatTemplateRegistry'
+          }
+        }
+      );
+      
+      await VesperaErrorHandler.getInstance().handleError(vesperaError);
+      throw vesperaError;
     }
     
     // Validate configuration against template schema
     const validationResult = this.validateProviderConfig(config, template);
     if (!validationResult.valid) {
-      throw new Error(`Configuration validation failed: ${validationResult.errors.join(', ')}`);
+      const vesperaError = new VesperaConfigurationError(
+        `Configuration validation failed: ${validationResult.errors.join(', ')}`,
+        VesperaErrorCode.CONFIGURATION_VALIDATION_FAILED,
+        {
+          context: {
+            providerId,
+            operation: 'configureProvider',
+            validationErrors: validationResult.errors,
+            configFields: Object.keys(config)
+          }
+        }
+      );
+      
+      await VesperaErrorHandler.getInstance().handleError(vesperaError);
+      throw vesperaError;
     }
     
     // Store sensitive fields securely using VS Code SecretStorage API
@@ -560,7 +639,20 @@ export class ChatConfigurationManager {
   
   async setDefaultProvider(providerId: string, scope: ConfigScope = 'user'): Promise<void> {
     if (!this.config.providers[providerId]) {
-      throw new Error(`Provider not configured: ${providerId}`);
+      const vesperaError = new VesperaConfigurationError(
+        `Provider not configured: ${providerId}`,
+        VesperaErrorCode.PROVIDER_INITIALIZATION_FAILED,
+        {
+          context: {
+            providerId,
+            operation: 'setDefaultProvider',
+            configuredProviders: Object.keys(this.config.providers)
+          }
+        }
+      );
+      
+      await VesperaErrorHandler.getInstance().handleError(vesperaError);
+      throw vesperaError;
     }
     
     const updates: Partial<ChatConfiguration> = {
@@ -757,8 +849,22 @@ export class ChatConfigurationManager {
             secureConfig[field.name] = `[STORED_SECURELY:${credentialKey}]`;
             console.log(`[ConfigurationManager] Stored sensitive field ${field.name} for provider ${providerId} securely`);
           } catch (error) {
-            console.error(`Failed to store sensitive field ${field.name} securely:`, error);
-            throw new Error(`Failed to store ${field.name} securely: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            const vesperaError = new VesperaConfigurationError(
+              `Failed to store ${field.name} securely`,
+              VesperaErrorCode.CREDENTIAL_STORAGE_FAILED,
+              {
+                context: {
+                  providerId,
+                  fieldName: field.name,
+                  credentialKey: `${providerId}.${field.name}`
+                }
+              },
+              error instanceof Error ? error : new Error(String(error))
+            );
+            
+            // Use error handler to handle consistently
+            await VesperaErrorHandler.getInstance().handleError(vesperaError);
+            throw vesperaError;
           }
         }
       }
@@ -847,7 +953,21 @@ export class ChatConfigurationManager {
       // Update the config to reference the secure storage
       const currentProvider = this.config.providers[providerId];
       if (!currentProvider) {
-        throw new Error(`Provider ${providerId} not found in current configuration`);
+        const vesperaError = new VesperaConfigurationError(
+          `Provider ${providerId} not found in current configuration`,
+          VesperaErrorCode.PROVIDER_INITIALIZATION_FAILED,
+          {
+            context: {
+              providerId,
+              fieldName,
+              operation: 'migrateLegacyCredential',
+              configuredProviders: Object.keys(this.config.providers)
+            }
+          }
+        );
+        
+        await VesperaErrorHandler.getInstance().handleError(vesperaError);
+        throw vesperaError;
       }
       
       const updates: Partial<ChatConfiguration> = {
@@ -855,7 +975,7 @@ export class ChatConfigurationManager {
           ...this.config.providers,
           [providerId]: {
             enabled: currentProvider.enabled,
-            isDefault: currentProvider.isDefault,
+            ...(currentProvider.isDefault !== undefined && { isDefault: currentProvider.isDefault }),
             config: {
               ...currentProvider.config,
               [fieldName]: `[STORED_SECURELY:${credentialKey}]`
@@ -875,10 +995,24 @@ export class ChatConfigurationManager {
       );
       
     } catch (error) {
-      console.error(`[ConfigurationManager] Failed to migrate legacy credential for ${providerId}.${fieldName}:`, error);
-      vscode.window.showWarningMessage(
-        `Failed to migrate ${fieldName} for ${providerId} to secure storage. Please reconfigure this provider.`
+      const vesperaError = new VesperaConfigurationError(
+        `Failed to migrate legacy credential for ${providerId}.${fieldName}`,
+        VesperaErrorCode.CREDENTIAL_STORAGE_FAILED,
+        {
+          context: {
+            providerId,
+            fieldName,
+            operation: 'migrateLegacyCredential'
+          }
+        },
+        error instanceof Error ? error : new Error(String(error))
       );
+      
+      // Handle error but don't throw (graceful degradation for migration)
+      await VesperaErrorHandler.getInstance().handleErrorWithStrategy(vesperaError, {
+        shouldThrow: false,
+        shouldNotifyUser: true  // User should know about migration failures
+      });
     }
   }
   

@@ -15,12 +15,24 @@
 		"strict": true,
 		"noImplicitReturns": true,
 		"noFallthroughCasesInSwitch": true,
-		"noUnusedLocals": false,
+		"noUnusedLocals": true,
 		"noUnusedParameters": true,
 		"exactOptionalPropertyTypes": false,
 		"noImplicitOverride": true,
 		"noPropertyAccessFromIndexSignature": true,
 		"noUncheckedIndexedAccess": true,
+		
+		// Additional Strict Checks
+		"allowUnreachableCode": false,
+		"allowUnusedLabels": false,
+		"noImplicitAny": true,
+		"strictNullChecks": true,
+		"strictFunctionTypes": true,
+		"strictBindCallApply": true,
+		"strictPropertyInitialization": true,
+		"noImplicitThis": true,
+		"alwaysStrict": true,
+		
 		"esModuleInterop": true,
 		"allowSyntheticDefaultImports": true,
 		"forceConsistentCasingInFileNames": true,
@@ -32,10 +44,13 @@
 		"baseUrl": "./src",
 		"paths": {
 			"@/*": ["*"],
+			"@/core/*": ["core/*"],
 			"@/commands/*": ["commands/*"],
 			"@/providers/*": ["providers/*"],
 			"@/types/*": ["types/*"],
-			"@/utils/*": ["utils/*"]
+			"@/utils/*": ["utils/*"],
+			"@/views/*": ["views/*"],
+			"@/chat/*": ["chat/*"]
 		}
 	},
 	"include": [

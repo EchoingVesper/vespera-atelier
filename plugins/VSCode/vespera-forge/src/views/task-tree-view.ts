@@ -11,7 +11,6 @@ import {
   TaskStatus,
   TaskPriority,
   CodexId,
-  TaskTree,
   BinderyConnectionStatus
 } from '../types/bindery';
 
@@ -44,7 +43,7 @@ export class TaskTreeDataProvider implements vscode.TreeDataProvider<TaskTreeIte
   readonly onDidChangeTreeData: vscode.Event<TaskTreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
 
   private taskCache: Map<CodexId, TaskSummary> = new Map();
-  private rootTasks: TaskSummary[] = [];
+  private _rootTasks: TaskSummary[] = [];
   private currentProjectId?: string;
   private refreshTimer?: NodeJS.Timeout;
 
@@ -115,7 +114,7 @@ export class TaskTreeDataProvider implements vscode.TreeDataProvider<TaskTreeIte
         try {
           // First, try to get all task trees (root tasks with their hierarchies)
           const allTasks = await binderyService.listTasks({
-            project_id: this.currentProjectId,
+            ...(this.currentProjectId && { project_id: this.currentProjectId }),
             limit: 100
           });
           
@@ -169,7 +168,7 @@ export class TaskTreeDataProvider implements vscode.TreeDataProvider<TaskTreeIte
             
             console.log('[TaskTree] 📋 Root tasks after filtering:', rootTasks.map(t => t.title));
             
-            this.rootTasks = rootTasks;
+            this._rootTasks = rootTasks;
             this.updateCache(allTasks.data);
             
             if (rootTasks.length === 0) {
@@ -200,7 +199,7 @@ export class TaskTreeDataProvider implements vscode.TreeDataProvider<TaskTreeIte
         // Fallback to list tasks with parent filter
         const result = await binderyService.listTasks({
           parent_id: taskId,
-          project_id: this.currentProjectId,
+          ...(this.currentProjectId && { project_id: this.currentProjectId }),
           limit: 100
         });
 
@@ -298,7 +297,7 @@ export class TaskTreeDataProvider implements vscode.TreeDataProvider<TaskTreeIte
 
   private clearCache(): void {
     this.taskCache.clear();
-    this.rootTasks = [];
+    this._rootTasks = [];
     this._onDidChangeTreeData.fire();
   }
 
@@ -325,7 +324,11 @@ export class TaskTreeDataProvider implements vscode.TreeDataProvider<TaskTreeIte
 
   public setProject(projectId?: string): void {
     if (this.currentProjectId !== projectId) {
-      this.currentProjectId = projectId;
+      if (projectId !== undefined) {
+        this.currentProjectId = projectId;
+      } else {
+        delete (this as any).currentProjectId;
+      }
       this.clearCache();
     }
   }
