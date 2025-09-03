@@ -54,14 +54,14 @@ export class VesperaChatSystem {
   private activeProvider?: any;
   private providers: Map<string, any> = new Map();
 
-  constructor(private extensionUri: vscode.Uri, private context: vscode.ExtensionContext) {
+  constructor(_extensionUri: vscode.Uri, private _context: vscode.ExtensionContext) {
     // Initialize core components in dependency order
     this.eventRouter = new ChatEventRouter();
-    this.templateRegistry = new ChatTemplateRegistry(context.extensionUri, this.eventRouter);
-    this.configurationManager = new ChatConfigurationManager(context, this.templateRegistry, this.eventRouter);
-    this.historyManager = new ChatHistoryManager(context);
-    this.sessionManager = new ChatSessionManager(context, this.historyManager);
-    this.webViewProvider = new ChatWebViewProvider(context, this.eventRouter, this.configurationManager, this.templateRegistry);
+    this.templateRegistry = new ChatTemplateRegistry(this._context.extensionUri, this.eventRouter);
+    this.configurationManager = new ChatConfigurationManager(this._context, this.templateRegistry, this.eventRouter);
+    this.historyManager = new ChatHistoryManager(this._context);
+    this.sessionManager = new ChatSessionManager(this._context, this.historyManager);
+    this.webViewProvider = new ChatWebViewProvider(this._context, this.eventRouter, this.configurationManager, this.templateRegistry);
   }
 
   /**
@@ -548,7 +548,7 @@ export class VesperaChatSystem {
     console.log('[VesperaChatSystem] Disposing chat system...');
     
     // Dispose of providers
-    for (const [id, provider] of this.providers) {
+    for (const [_id, provider] of this.providers) {
       if (typeof provider.dispose === 'function') {
         provider.dispose();
       }

@@ -8,7 +8,6 @@ import {
   ChatMessage, 
   ChatHistory, 
   ChatSession,
-  SessionFilter,
   SessionSearchResult,
   HistoryContextOptions 
 } from '../types/chat';
@@ -71,8 +70,8 @@ export class ChatHistoryManager {
         messages,
         totalMessages: storedHistory.totalMessages || 0,
         totalSessions: storedHistory.totalSessions || 0,
-        oldestMessage: storedHistory.oldestMessage ? new Date(storedHistory.oldestMessage) : undefined,
-        newestMessage: storedHistory.newestMessage ? new Date(storedHistory.newestMessage) : undefined,
+        ...(storedHistory.oldestMessage && { oldestMessage: new Date(storedHistory.oldestMessage) }),
+        ...(storedHistory.newestMessage && { newestMessage: new Date(storedHistory.newestMessage) }),
         storageVersion: storedHistory.storageVersion || ChatHistoryManager.STORAGE_VERSION
       };
     } catch (error) {

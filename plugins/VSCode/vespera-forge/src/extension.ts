@@ -1,6 +1,6 @@
 /**
  * Vespera Forge - AI-enhanced content management and task orchestration for VS Code
- * with collaborative CRDT editing
+ * with collaborative CRDT editing and enhanced memory management
  */
 
 console.log('[Vespera] 🔥 EXTENSION FILE LOADED - extension.ts is being executed');
@@ -10,136 +10,490 @@ import { VesperaForgeContext } from '@/types';
 import { registerCommands } from '@/commands';
 import { initializeProviders } from '@/providers';
 import { initializeViews } from '@/views';
-import { getConfig, showInfo, showError, log, isDevelopment } from '@/utils';
+import { getConfig, isDevelopment } from '@/utils';
+import { 
+  VesperaCoreServices, 
+  VesperaCoreServicesConfig,
+  VesperaContextManager
+} from '@/core';
+
+// Core services instance - managed by VesperaCoreServices singleton
+let coreServices: Awaited<ReturnType<typeof VesperaCoreServices.initialize>> | undefined;
 
 /**
- * Extension activation function
+ * Extension activation function with enhanced memory management
  * Called when extension is first activated
  */
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-  console.log('[Vespera] 🚀 VESPERA FORGE: Extension activated!');
+  console.log('[Vespera] 🚀 VESPERA FORGE: Extension activated with enhanced memory management!');
   
-  // Initialize providers
-  const { contentProvider, treeDataProvider } = initializeProviders(context);
-  
-  // Initialize views (task tree, dashboard, status bar)
-  const viewContext = initializeViews(context);
-  
-  // Create Vespera Forge context
-  const vesperaContext: VesperaForgeContext = {
-    extensionContext: context,
-    contentProvider,
-    config: getConfig(),
-    isInitialized: false
-  };
-  
-  // Store view context for cleanup
-  (vesperaContext as any)._viewContext = viewContext;
-  
-  // Store global context for cleanup
-  globalExtensionContext = vesperaContext;
-  
-  // Register all commands
-  registerCommands(context, vesperaContext);
-  
-  // Enable Vespera Forge context for views
-  await vscode.commands.executeCommand('setContext', 'vespera-forge:enabled', true);
-  
-  // Debug configuration
-  console.log('[Vespera] 🔍 Config enableAutoStart:', vesperaContext.config.enableAutoStart);
-  
-  // Auto-initialize if enabled in config (use immediate promise to avoid blocking)
-  if (vesperaContext.config.enableAutoStart) {
-    console.log('[Vespera] 🚀 Auto-initialization enabled, starting...');
-    // Initialize immediately after activation completes
-    setImmediate(async () => {
-      try {
-        console.log('[Vespera] 📞 Calling vespera-forge.initialize command...');
-        await vscode.commands.executeCommand('vespera-forge.initialize');
-        console.log('[Vespera] ✅ Auto-initialization completed');
-      } catch (error) {
-        console.error('[Vespera] ❌ Auto-initialization failed:', error);
-      }
-    });
-  } else {
-    console.log('[Vespera] ⏸️ Auto-initialization disabled in config');
-  }
-  
-  console.log('✅ VESPERA FORGE: Extension activation completed successfully!');
-}
-
-// Global extension context for cleanup
-let globalExtensionContext: VesperaForgeContext | undefined;
-
-/**
- * Extension deactivation function
- * Called when extension is deactivated - Enhanced memory leak prevention
- */
-export async function deactivate(): Promise<void> {
   try {
-    log('🔄 Deactivating Vespera Forge extension with comprehensive cleanup...');
-    
-    // Clear VS Code context flags
-    await vscode.commands.executeCommand('setContext', 'vespera-forge:enabled', false);
-    
-    // Explicitly dispose WebView providers to prevent memory leaks
-    if (globalExtensionContext && (globalExtensionContext as any)._viewContext) {
-      const viewContext = (globalExtensionContext as any)._viewContext;
-      
-      try {
-        // Dispose chat panel (most likely to have memory issues)
-        if (viewContext.chatPanelProvider && typeof viewContext.chatPanelProvider.dispose === 'function') {
-          viewContext.chatPanelProvider.dispose();
-          log('✅ Chat panel disposed');
-        }
-        
-        // Dispose task dashboard
-        if (viewContext.taskDashboardProvider && typeof viewContext.taskDashboardProvider.dispose === 'function') {
-          viewContext.taskDashboardProvider.dispose();
-          log('✅ Task dashboard disposed');
-        }
-        
-        // Dispose status bar manager
-        if (viewContext.statusBarManager && typeof viewContext.statusBarManager.dispose === 'function') {
-          viewContext.statusBarManager.dispose();
-          log('✅ Status bar manager disposed');
-        }
-        
-        // Dispose task tree provider
-        if (viewContext.taskTreeProvider && typeof viewContext.taskTreeProvider.dispose === 'function') {
-          viewContext.taskTreeProvider.dispose();
-          log('✅ Task tree provider disposed');
-        }
-        
-      } catch (viewError) {
-        console.error('Error disposing views:', viewError);
+    // Initialize core services first (includes memory management, logging, error handling)
+    const coreConfig: VesperaCoreServicesConfig = {
+      logging: {
+        level: isDevelopment() ? 1 : 2, // DEBUG in dev, INFO in prod
+        enableConsole: true,
+        enableVSCodeOutput: true,
+        enableStructuredLogging: true
+      },
+      memoryMonitoring: {
+        enabled: true,
+        thresholdMB: 150, // Alert at 150MB
+        checkIntervalMs: 30000 // Check every 30 seconds
+      },
+      telemetry: {
+        enabled: true
       }
+    };
+
+    coreServices = await VesperaCoreServices.initialize(context, coreConfig);
+    const { logger, contextManager, disposalManager, errorHandler } = coreServices;
+
+    logger.info('Vespera Forge activation started', {
+      vsCodeVersion: vscode.version,
+      environment: isDevelopment() ? 'development' : 'production'
+    });
+
+    // Initialize providers
+    const { contentProvider } = initializeProviders(context);
+    
+    // Initialize views (task tree, dashboard, status bar)
+    const viewContext = initializeViews(context);
+    
+    // Register view context with memory-safe context manager
+    contextManager.setViewContext(context, viewContext);
+    
+    // Register view providers as disposable resources
+    if (viewContext.chatPanelProvider) {
+      contextManager.registerResource(
+        viewContext.chatPanelProvider,
+        'ChatPanelProvider',
+        'main-chat-panel'
+      );
     }
     
-    // Disconnect from Bindery service
+    if (viewContext.taskDashboardProvider) {
+      contextManager.registerResource(
+        viewContext.taskDashboardProvider,
+        'TaskDashboardProvider',
+        'main-task-dashboard'
+      );
+    }
+    
+    if (viewContext.statusBarManager) {
+      contextManager.registerResource(
+        viewContext.statusBarManager,
+        'StatusBarManager',
+        'main-status-bar'
+      );
+    }
+    
+    if (viewContext.taskTreeProvider) {
+      contextManager.registerResource(
+        viewContext.taskTreeProvider,
+        'TaskTreeProvider',
+        'main-task-tree'
+      );
+    }
+
+    // Create enhanced Vespera Forge context with core services
+    const vesperaContext: VesperaForgeContext = {
+      extensionContext: context,
+      contentProvider,
+      config: getConfig(),
+      isInitialized: false,
+      coreServices
+    };
+
+    // Register content provider as disposable resource (if it has dispose method)
+    if ('dispose' in contentProvider && typeof contentProvider.dispose === 'function') {
+      contextManager.registerResource(
+        contentProvider as any, // Type assertion since ContentProvider doesn't extend DisposableResource
+        'ContentProvider',
+        'main-content-provider'
+      );
+    }
+
+    // Register all commands
+    registerCommands(context, vesperaContext);
+    
+    // Enable Vespera Forge context for views
+    await vscode.commands.executeCommand('setContext', 'vespera-forge:enabled', true);
+    
+    logger.debug('Extension configuration', { 
+      enableAutoStart: vesperaContext.config.enableAutoStart,
+      rustBinderyPath: vesperaContext.config.rustBinderyPath
+    });
+    
+    // Set up disposal hooks for comprehensive cleanup
+    disposalManager.addHook({
+      beforeDispose: async () => {
+        logger.info('Starting comprehensive extension cleanup');
+        
+        // Clear VS Code context flags
+        await vscode.commands.executeCommand('setContext', 'vespera-forge:enabled', false);
+        
+        // Dispose view context and all providers
+        await contextManager.disposeViewContext(context);
+      },
+      afterDispose: async () => {
+        // Perform final cleanup tasks
+        logger.info('Extension cleanup completed');
+        
+        // Suggest garbage collection
+        if (global.gc) {
+          global.gc();
+          logger.debug('Garbage collection triggered');
+        }
+      },
+      onDisposeError: async (error: Error) => {
+        logger.error('Error during disposal process', error);
+        await errorHandler.handleError(error);
+      }
+    });
+
+    // Auto-initialize if enabled in config (use immediate promise to avoid blocking)
+    if (vesperaContext.config.enableAutoStart) {
+      logger.info('Auto-initialization enabled, starting...');
+      // Initialize immediately after activation completes
+      setImmediate(async () => {
+        try {
+          logger.debug('Executing vespera-forge.initialize command');
+          await vscode.commands.executeCommand('vespera-forge.initialize');
+          logger.info('Auto-initialization completed successfully');
+        } catch (error) {
+          const errorToHandle = error instanceof Error ? error : new Error(String(error));
+          logger.error('Auto-initialization failed', errorToHandle);
+          await errorHandler.handleError(errorToHandle);
+        }
+      });
+    } else {
+      logger.info('Auto-initialization disabled in configuration');
+    }
+    
+    // Mark context as initialized
+    vesperaContext.isInitialized = true;
+    
+    logger.info('Vespera Forge extension activation completed successfully', {
+      registeredResources: contextManager.getMemoryStats().registeredResources,
+      memoryUsage: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB'
+    });
+
+  } catch (error) {
+    console.error('[Vespera] ❌ Extension activation failed:', error);
+    
+    // Try to report error if core services are available
+    if (coreServices?.errorHandler) {
+      const errorToHandle = error instanceof Error ? error : new Error(String(error));
+      await coreServices.errorHandler.handleError(errorToHandle);
+    }
+    
+    // Clean up any partially initialized resources
+    if (coreServices) {
+      await coreServices.disposalManager.dispose();
+      coreServices = undefined;
+    }
+    
+    throw error;
+  }
+}
+
+/**
+ * Extension deactivation function with enhanced memory management
+ * Called when extension is deactivated
+ */
+export async function deactivate(): Promise<void> {
+  if (!coreServices) {
+    console.log('[Vespera] Extension already deactivated or never fully activated');
+    return;
+  }
+
+  const { logger, contextManager, disposalManager, errorHandler } = coreServices;
+  
+  try {
+    logger.info('Starting Vespera Forge extension deactivation with enhanced cleanup');
+    
+    const startTime = Date.now();
+    const initialMemory = process.memoryUsage();
+    
+    // Get memory stats before cleanup
+    const memoryStatsBefore = contextManager.getMemoryStats();
+    logger.debug('Memory state before cleanup', {
+      registeredResources: memoryStatsBefore.registeredResources,
+      memoryUsage: Math.round(memoryStatsBefore.memoryUsage.heapUsed / 1024 / 1024) + 'MB'
+    });
+    
+    // Disconnect from Bindery service before main disposal
     try {
       const { disposeBinderyService } = await import('./services/bindery');
       await disposeBinderyService();
-      log('✅ Bindery service disposed');
+      logger.info('Bindery service disposed successfully');
     } catch (binderyError) {
-      console.error('Error disposing Bindery service:', binderyError);
+      const errorToHandle = binderyError instanceof Error ? binderyError : new Error(String(binderyError));
+      logger.error('Error disposing Bindery service', errorToHandle);
+      await errorHandler.handleError(errorToHandle);
     }
     
-    // Clear global references to prevent memory leaks
-    globalExtensionContext = undefined;
+    // Perform comprehensive cleanup via disposal manager
+    // This will trigger all the disposal hooks we registered during activation
+    const disposalResult = await disposalManager.dispose();
     
-    // Force garbage collection hint (not guaranteed, but helpful)
-    if (global.gc) {
-      global.gc();
-      log('🗑️ Suggested garbage collection');
+    logger.info('Primary disposal process completed', {
+      successful: disposalResult.successful,
+      failed: disposalResult.failed,
+      totalTime: disposalResult.totalTime,
+      errors: disposalResult.errors.length
+    });
+    
+    // If there were disposal failures, log them
+    if (disposalResult.errors.length > 0) {
+      logger.warn('Some resources failed to dispose properly', {
+        errorCount: disposalResult.errors.length,
+        errors: disposalResult.errors.map(e => e.message)
+      });
+      
+      // Report each disposal error
+      for (const error of disposalResult.errors) {
+        await errorHandler.handleError(error);
+      }
     }
     
-    log('✅ Vespera Forge extension deactivation completed successfully');
+    // Cleanup any stale resources that might have been missed
+    const staleCleanup = await contextManager.cleanupStaleResources(5 * 60 * 1000); // 5 minutes
+    if (staleCleanup.cleaned > 0 || staleCleanup.errors > 0) {
+      logger.info('Stale resource cleanup completed', staleCleanup);
+    }
+    
+    // Final memory check and garbage collection
+    const finalMemory = process.memoryUsage();
+    const memoryFreed = Math.round((initialMemory.heapUsed - finalMemory.heapUsed) / 1024 / 1024);
+    
+    logger.info('Memory cleanup summary', {
+      memoryFreedMB: memoryFreed,
+      finalHeapUsedMB: Math.round(finalMemory.heapUsed / 1024 / 1024),
+      totalDeactivationTime: Date.now() - startTime,
+      resourcesDisposed: disposalResult.successful
+    });
+    
+    // Dispose core services (this will dispose the context manager and logger last)
+    await VesperaCoreServices.getInstance().dispose();
+    
+    // Clear the core services reference
+    coreServices = undefined;
+    
+    console.log('[Vespera] ✅ Vespera Forge extension deactivated successfully with comprehensive cleanup');
     
   } catch (error) {
-    console.error('❌ Error during Vespera Forge deactivation:', error);
+    console.error('[Vespera] ❌ Critical error during extension deactivation:', error);
     
-    // Even if there's an error, try to clean up global references
-    globalExtensionContext = undefined;
+    // Try to report the error if error handler is still available
+    if (coreServices?.errorHandler) {
+      try {
+        const errorToHandle = error instanceof Error ? error : new Error(String(error));
+        await coreServices.errorHandler.handleError(errorToHandle);
+      } catch (reportError) {
+        console.error('[Vespera] Failed to report deactivation error:', reportError);
+      }
+    }
+    
+    // Emergency cleanup - force dispose core services even if there's an error
+    try {
+      if (coreServices) {
+        await VesperaCoreServices.getInstance().dispose();
+      }
+    } catch (emergencyError) {
+      console.error('[Vespera] Emergency cleanup failed:', emergencyError);
+    } finally {
+      coreServices = undefined;
+    }
+    
+    // Force garbage collection as last resort
+    if (global.gc) {
+      global.gc();
+      console.log('[Vespera] Emergency garbage collection triggered');
+    }
   }
 }
+
+// =============================================================================
+// MEMORY MANAGEMENT UTILITIES
+// =============================================================================
+
+/**
+ * Get the current view context safely using memory-managed storage
+ * Replaces the old global context pattern
+ */
+export function getViewContext(extensionContext: vscode.ExtensionContext): import('@/core/memory-management/VesperaContextManager').ViewContextEntry | undefined {
+  if (!coreServices?.contextManager) {
+    console.warn('[Vespera] Context manager not available');
+    return undefined;
+  }
+  
+  return coreServices.contextManager.getViewContext(extensionContext);
+}
+
+/**
+ * Check if core services are available and properly initialized
+ */
+export function isCoreServicesAvailable(): boolean {
+  return coreServices !== undefined && VesperaCoreServices.isInitialized();
+}
+
+/**
+ * Get memory statistics for the extension
+ */
+export function getMemoryStats(): ReturnType<VesperaContextManager['getMemoryStats']> | undefined {
+  if (!coreServices?.contextManager) {
+    return undefined;
+  }
+  
+  return coreServices.contextManager.getMemoryStats();
+}
+
+/**
+ * Perform a health check on all core services
+ */
+export async function performHealthCheck(): Promise<Awaited<ReturnType<VesperaCoreServices['healthCheck']>> | undefined> {
+  if (!coreServices) {
+    return undefined;
+  }
+  
+  return await VesperaCoreServices.getInstance().healthCheck();
+}
+
+/**
+ * Force garbage collection and cleanup of stale resources
+ * Useful for debugging memory issues or manual cleanup
+ */
+export async function forceMemoryCleanup(): Promise<{
+  garbageCollectionTriggered: boolean;
+  staleResourcesCleanup?: { cleaned: number; errors: number; } | undefined;
+  memoryBefore: NodeJS.MemoryUsage;
+  memoryAfter: NodeJS.MemoryUsage;
+}> {
+  const memoryBefore = process.memoryUsage();
+  let staleResourcesCleanup: Awaited<ReturnType<VesperaContextManager['cleanupStaleResources']>> | undefined;
+  
+  // Clean up stale resources if context manager is available
+  if (coreServices?.contextManager) {
+    staleResourcesCleanup = await coreServices.contextManager.cleanupStaleResources();
+  }
+  
+  // Force garbage collection if available
+  let garbageCollectionTriggered = false;
+  if (global.gc) {
+    global.gc();
+    garbageCollectionTriggered = true;
+  }
+  
+  const memoryAfter = process.memoryUsage();
+  
+  if (coreServices?.logger) {
+    coreServices.logger.info('Manual memory cleanup performed', {
+      garbageCollectionTriggered,
+      staleResourcesCleanup,
+      memoryFreedMB: Math.round((memoryBefore.heapUsed - memoryAfter.heapUsed) / 1024 / 1024)
+    });
+  }
+  
+  return {
+    garbageCollectionTriggered,
+    staleResourcesCleanup: staleResourcesCleanup || undefined,
+    memoryBefore,
+    memoryAfter
+  };
+}
+
+/**
+ * Advanced memory diagnostics command (for testing/debugging)
+ * This command can be called from VS Code command palette
+ */
+export async function runMemoryDiagnostics(): Promise<void> {
+  if (!coreServices?.logger) {
+    vscode.window.showWarningMessage('Core services not available for memory diagnostics');
+    return;
+  }
+
+  const { logger, contextManager } = coreServices;
+  
+  try {
+    logger.info('Running memory diagnostics...');
+    
+    // Get current memory stats
+    const memStats = contextManager.getMemoryStats();
+    
+    // Perform health check
+    const healthCheck = await VesperaCoreServices.getInstance().healthCheck();
+    
+    // Format diagnostic information
+    const diagnosticInfo = {
+      memoryStats: {
+        heapUsedMB: Math.round(memStats.memoryUsage.heapUsed / 1024 / 1024),
+        heapTotalMB: Math.round(memStats.memoryUsage.heapTotal / 1024 / 1024),
+        externalMB: Math.round(memStats.memoryUsage.external / 1024 / 1024),
+        rssMB: Math.round(memStats.memoryUsage.rss / 1024 / 1024),
+        registeredResources: memStats.registeredResources,
+        peakUsageMB: Math.round((memStats.memoryMonitoring.peakUsage || 0) / 1024 / 1024),
+        checksPerformed: memStats.memoryMonitoring.checksPerformed
+      },
+      resourceBreakdown: memStats.resourceTypes,
+      healthStatus: healthCheck.healthy,
+      serviceStatus: Object.entries(healthCheck.services).map(([name, status]) => ({
+        name,
+        healthy: status.healthy,
+        error: status.error
+      }))
+    };
+    
+    // Show results in VS Code output channel and information message
+    const summary = `Memory Diagnostics:
+• Heap Used: ${diagnosticInfo.memoryStats.heapUsedMB}MB / ${diagnosticInfo.memoryStats.heapTotalMB}MB
+• Peak Usage: ${diagnosticInfo.memoryStats.peakUsageMB}MB
+• Registered Resources: ${diagnosticInfo.memoryStats.registeredResources}
+• System Health: ${healthCheck.healthy ? '✅ Healthy' : '❌ Issues Detected'}
+• Memory Checks: ${diagnosticInfo.memoryStats.checksPerformed}`;
+
+    logger.info('Memory diagnostics completed', diagnosticInfo);
+    
+    vscode.window.showInformationMessage(
+      `Memory Diagnostics Complete - See output for details`,
+      'View Output'
+    ).then((selection) => {
+      if (selection === 'View Output') {
+        vscode.commands.executeCommand('workbench.action.output.toggleOutput');
+      }
+    });
+    
+    // Also show in information modal for immediate viewing
+    const detailedInfo = `${summary}
+
+Resource Types:
+${Object.entries(diagnosticInfo.resourceBreakdown).map(([type, count]) => `• ${type}: ${count}`).join('\n')}
+
+Service Status:
+${diagnosticInfo.serviceStatus.map(s => `• ${s.name}: ${s.healthy ? '✅' : '❌'}`).join('\n')}`;
+    
+    const action = await vscode.window.showInformationMessage(
+      detailedInfo,
+      { modal: true },
+      'Force Cleanup',
+      'Close'
+    );
+    
+    if (action === 'Force Cleanup') {
+      const cleanupResult = await forceMemoryCleanup();
+      const freedMB = Math.round((cleanupResult.memoryBefore.heapUsed - cleanupResult.memoryAfter.heapUsed) / 1024 / 1024);
+      vscode.window.showInformationMessage(
+        `Memory cleanup completed. Freed: ${freedMB}MB, GC: ${cleanupResult.garbageCollectionTriggered ? 'Yes' : 'No'}`
+      );
+    }
+    
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error('Memory diagnostics failed', error);
+    vscode.window.showErrorMessage(`Memory diagnostics failed: ${errorMessage}`);
+  }
+}
+
+// Export core services for advanced usage (be careful with this)
+export { coreServices };
