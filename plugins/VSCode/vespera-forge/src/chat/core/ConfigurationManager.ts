@@ -1039,7 +1039,7 @@ export class ChatConfigurationManager {
           throw error;
         }
         // If rate limiting fails, log but continue (graceful degradation)
-        console.warn('[ConfigurationManager] Rate limiting check failed, continuing with operation:', error.message);
+        console.warn('[ConfigurationManager] Rate limiting check failed, continuing with operation:', error instanceof Error ? error.message : String(error));
       }
     }
     
@@ -1301,6 +1301,7 @@ export class ChatConfigurationManager {
   /**
    * Legacy migration method (deprecated - kept for backward compatibility)
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private async migrateLegacyCredential(providerId: string, fieldName: string, legacyValue: string): Promise<void> {
     console.warn('[ConfigurationManager] Using deprecated migrateLegacyCredential method. Please use migrateLegacyCredentialWithConsent instead.');
     await this.migrateLegacyCredentialWithConsent(providerId, fieldName, legacyValue);

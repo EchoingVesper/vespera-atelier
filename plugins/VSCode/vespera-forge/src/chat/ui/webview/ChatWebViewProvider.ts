@@ -8,7 +8,6 @@ import { ChatTemplateRegistry } from '../../core/TemplateRegistry';
 import { 
   WebViewMessage, 
   WebViewResponse, 
-  WebViewMessageType,
   ConfigureProviderRequest,
   RemoveProviderRequest,
   SetDefaultProviderRequest,

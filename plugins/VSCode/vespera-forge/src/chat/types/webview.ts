@@ -31,6 +31,13 @@ export interface WebViewResponse {
   data?: any;
   error?: string;
   requestId?: string;
+  _security?: {
+    sessionId: string;
+    validated: boolean;
+    sanitized: boolean;
+    threatCount: number;
+    processingTime: number;
+  };
 }
 
 // Message-specific interfaces

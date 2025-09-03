@@ -1,7 +1,7 @@
 /**
  * Provider template definitions and loading utilities
  */
-import { ProviderTemplate, ProviderCapabilities } from '../../types/provider';
+import { ProviderTemplate } from '../../types/provider';
 
 // Claude Code Provider Template
 export const CLAUDE_CODE_TEMPLATE: ProviderTemplate = {
