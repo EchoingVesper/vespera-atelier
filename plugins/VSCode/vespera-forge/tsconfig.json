@@ -1,0 +1,67 @@
+{
+	"compilerOptions": {
+		"module": "CommonJS",
+		"target": "ES2022",
+		"lib": [
+			"ES2022",
+			"DOM",
+			"DOM.Iterable"
+		],
+		"jsx": "react-jsx",
+		"jsxImportSource": "react",
+		"outDir": "out",
+		"sourceMap": true,
+		"rootDir": "src",
+		"strict": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"exactOptionalPropertyTypes": false,
+		"noImplicitOverride": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noUncheckedIndexedAccess": true,
+		
+		// Additional Strict Checks
+		"allowUnreachableCode": false,
+		"allowUnusedLabels": false,
+		"noImplicitAny": true,
+		"strictNullChecks": true,
+		"strictFunctionTypes": true,
+		"strictBindCallApply": true,
+		"strictPropertyInitialization": true,
+		"noImplicitThis": true,
+		"alwaysStrict": true,
+		
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
+		"forceConsistentCasingInFileNames": true,
+		"declaration": true,
+		"declarationMap": true,
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"moduleResolution": "Node",
+		"baseUrl": "./src",
+		"paths": {
+			"@/*": ["*"],
+			"@/core/*": ["core/*"],
+			"@/commands/*": ["commands/*"],
+			"@/providers/*": ["providers/*"],
+			"@/types/*": ["types/*"],
+			"@/utils/*": ["utils/*"],
+			"@/views/*": ["views/*"],
+			"@/chat/*": ["chat/*"]
+		}
+	},
+	"include": [
+		"src/**/*"
+	],
+	"exclude": [
+		"node_modules",
+		"out",
+		"dist"
+	],
+	"ts-node": {
+		"esm": true
+	}
+}

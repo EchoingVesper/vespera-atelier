@@ -1,0 +1,139 @@
+[package]
+name = "vespera-bindery"
+version = "0.1.0"
+edition = "2021"
+description = "High-performance CRDT-based collaborative Codex management system"
+authors = ["Vespera Atelier <noreply@vespera-atelier.dev>"]
+license = "AGPL-3.0"
+repository = "https://github.com/vespera-atelier/vespera-atelier"
+keywords = ["crdt", "collaboration", "content-management", "real-time"]
+categories = ["data-structures", "concurrency", "text-processing"]
+
+[lib]
+name = "vespera_bindery"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "bindery-server"
+path = "src/bin/server.rs"
+
+[dependencies]
+# Core CRDT libraries
+yrs = { version = "0.18", optional = true }
+# loro-crdt = "0.16" # Will add when available
+# automerge = "0.5" # Alternative CRDT for comparison
+
+# Async runtime
+tokio = { version = "1.0", features = ["full"] }
+futures = "0.3"
+
+# Serialization and formats
+serde = { version = "1.0", features = ["derive", "rc"] }
+serde_json = "1.0"
+json5 = "0.4"
+serde_yaml = "0.9"
+
+# Node.js bindings (NAPI-RS)
+napi = { version = "2.15", features = ["napi8", "tokio_rt"], optional = true }
+napi-derive = { version = "2.15", optional = true }
+
+# Python bindings (PyO3) 
+pyo3 = { version = "0.22", features = ["extension-module"], optional = true }
+
+# Utilities
+uuid = { version = "1.8", features = ["v4", "serde"] }
+sha2 = "0.10"
+thiserror = "1.0"
+anyhow = "1.0"
+camino = "1.1"
+
+# File operations
+walkdir = "2.4"
+globset = "0.4"
+memmap2 = "0.9"
+
+# Networking and sync
+# webrtc = "0.6" # Will add for P2P sync
+# libp2p = "0.53" # Alternative P2P networking
+
+# Compression
+lz4_flex = "0.11"
+zstd = "0.13"
+
+# Logging and tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# JSON-RPC server functionality
+axum = "0.7"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors"] }
+hyper = { version = "1.0", features = ["full"] }
+
+# Time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# Configuration
+config = "0.14"
+
+# Additional dependencies for task management, role system, and hooks
+regex = "1.10"
+
+# Database persistence
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite", "uuid", "chrono"] }
+
+[dev-dependencies]
+tokio-test = "0.4"
+criterion = "0.5"
+proptest = "1.4"
+tempfile = "3.10"
+
+[build-dependencies]
+napi-build = { version = "2.1", optional = true }
+pyo3-build-config = { version = "0.22", optional = true }
+
+[features]
+default = ["yjs-compat"]
+
+# Binding features
+nodejs = ["napi", "napi-derive", "napi-build"]
+python = ["pyo3", "pyo3-build-config"]
+
+# CRDT implementation features
+yjs-compat = ["yrs"]
+# loro-compat = ["loro-crdt"]
+# automerge-compat = ["automerge"]
+
+# Network features  
+p2p-sync = []
+relay-sync = []
+
+# Development features
+dev = []
+benchmarks = []
+
+# Task management features
+task-management = []
+role-management = []
+hook-system = []
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.dev]
+opt-level = 0
+debug = true
+
+# Benchmarks will be added later
+# [[bench]]
+# name = "crdt_operations"
+# harness = false
+# required-features = ["benchmarks"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

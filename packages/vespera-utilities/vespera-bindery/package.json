@@ -1,0 +1,63 @@
+{
+  "name": "vespera-bindery",
+  "version": "0.1.0",
+  "description": "High-performance CRDT-based collaborative Codex management system",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "*.node"
+  ],
+  "scripts": {
+    "build": "napi build --platform --release",
+    "build:debug": "napi build --platform",
+    "build:all": "napi build --platform --release --target x86_64-unknown-linux-gnu --target x86_64-pc-windows-msvc --target x86_64-apple-darwin --target aarch64-apple-darwin",
+    "dev": "napi dev",
+    "test": "npm run build && node -e \"console.log(require('./dist/index.js'))\"",
+    "prepublishOnly": "npm run build",
+    "artifacts": "napi artifacts"
+  },
+  "keywords": [
+    "crdt",
+    "collaboration", 
+    "content-management",
+    "real-time",
+    "vespera",
+    "bindery",
+    "codex"
+  ],
+  "author": "Vespera Atelier <noreply@vespera-atelier.dev>",
+  "license": "AGPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vespera-atelier/vespera-atelier.git",
+    "directory": "packages/vespera-utilities/vespera-bindery"
+  },
+  "bugs": {
+    "url": "https://github.com/vespera-atelier/vespera-atelier/issues"
+  },
+  "homepage": "https://github.com/vespera-atelier/vespera-atelier#readme",
+  "devDependencies": {
+    "@napi-rs/cli": "^2.18.4",
+    "@types/node": "^20.11.30",
+    "typescript": "^5.4.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "napi": {
+    "name": "vespera-bindery",
+    "triples": {
+      "additional": [
+        "x86_64-unknown-linux-gnu",
+        "x86_64-pc-windows-msvc", 
+        "x86_64-apple-darwin",
+        "aarch64-apple-darwin"
+      ]
+    }
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  }
+}

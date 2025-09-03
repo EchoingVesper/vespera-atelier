@@ -1,0 +1,91 @@
+[build-system]
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "vespera-bindery"
+version = "0.1.0"
+description = "High-performance CRDT-based collaborative Codex management system"
+authors = [
+    {name = "Vespera Atelier", email = "noreply@vespera-atelier.dev"}
+]
+license = {text = "AGPL-3.0"}
+readme = "README.md"
+homepage = "https://github.com/vespera-atelier/vespera-atelier"
+repository = "https://github.com/vespera-atelier/vespera-atelier"
+documentation = "https://vespera-atelier.github.io/vespera-atelier"
+keywords = [
+    "crdt",
+    "collaboration", 
+    "content-management",
+    "real-time",
+    "vespera",
+    "bindery",
+    "codex"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9", 
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Rust",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Text Processing",
+    "Topic :: Database",
+    "Typing :: Typed"
+]
+requires-python = ">=3.8"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0", 
+    "mypy>=1.0.0",
+    "ruff>=0.1.0"
+]
+
+[project.urls]
+"Bug Reports" = "https://github.com/vespera-atelier/vespera-atelier/issues"
+"Source" = "https://github.com/vespera-atelier/vespera-atelier"
+"Documentation" = "https://vespera-atelier.github.io/vespera-atelier"
+
+[tool.maturin]
+features = ["pyo3/extension-module", "python"]
+python-source = "python"
+module-name = "vespera_bindery._internal"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers"
+testpaths = [
+    "python/tests",
+]
+asyncio_mode = "auto"
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+strict_optional = true
+
+[tool.ruff]
+select = ["E", "F", "W", "C", "I", "N", "UP", "YTT", "S", "B", "A", "COM", "C4", "DTZ", "T10", "ISC", "ICN", "G", "PIE", "T20", "PYI", "PT", "Q", "RSE", "RET", "SLF", "SIM", "TID", "TCH", "ARG", "PTH", "ERA", "PD", "PGH", "PL", "TRY", "NPY", "RUF"]
+ignore = ["E501", "S101", "PLR0913"]  # Line too long, use of assert, too many arguments
+line-length = 100
+target-version = "py38"
+
+[tool.ruff.per-file-ignores]
+"python/tests/*" = ["S101"]  # Allow assert in tests

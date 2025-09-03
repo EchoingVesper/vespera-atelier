@@ -1,0 +1,43 @@
+# VS Code Extension - Build and Test Artifacts
+
+# VS Code Extension Testing
+.vscode-test/
+*.vsix
+
+# Build outputs
+out/
+dist/
+build/
+*.js.map
+*.d.ts.map
+
+# Test Coverage
+coverage/
+.nyc_output/
+test-results/
+
+# Development
+.vscode/
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/extensions.json
+
+# Session context (Vespera V2)
+.vespera_v2/
+session_context.json
+.session_context.json
+
+# Node.js
+node_modules/
+npm-debug.log*
+package-lock.json.bak
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Extension packaging
+*.vsix.bak
+extension-pack/../vespera-forge-security

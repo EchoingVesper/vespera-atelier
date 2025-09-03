@@ -1,0 +1,973 @@
+/* 
+ * Vespera Forge Chat System Styles
+ * Follows VS Code design system and supports theme adaptation
+ */
+
+:root {
+  /* VS Code theme variables will be injected */
+  --vscode-chat-background: var(--vscode-editor-background, #1e1e1e);
+  --vscode-chat-foreground: var(--vscode-editor-foreground, #d4d4d4);
+  --vscode-chat-border: var(--vscode-widget-border, #454545);
+  --vscode-chat-input-background: var(--vscode-input-background, #3c3c3c);
+  --vscode-chat-button-background: var(--vscode-button-background, #0e639c);
+  --vscode-chat-button-hover: var(--vscode-button-hoverBackground, #1177bb);
+  
+  /* Chat-specific colors */
+  --chat-user-message: var(--vscode-textLink-foreground, #4fc1ff);
+  --chat-assistant-message: var(--vscode-chat-foreground, #d4d4d4);
+  --chat-system-message: var(--vscode-descriptionForeground, #cccccc99);
+  --chat-error-message: var(--vscode-errorForeground, #f85149);
+  
+  /* Status colors */
+  --status-connected: #28a745;
+  --status-connecting: #ffc107;
+  --status-error: #dc3545;
+  --status-disconnected: #6c757d;
+  
+  /* Spacing */
+  --chat-padding: 12px;
+  --chat-gap: 8px;
+  --chat-border-radius: 4px;
+}
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-size: var(--vscode-font-size, 13px);
+  line-height: 1.4;
+  color: var(--vscode-chat-foreground);
+  background: var(--vscode-chat-background);
+  overflow: hidden;
+}
+
+/* Chat loading state */
+.chat-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: var(--chat-gap);
+  color: var(--vscode-descriptionForeground);
+}
+
+.chat-loading__spinner {
+  font-size: 24px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Chat window layout */
+.chat-window {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--vscode-chat-background);
+}
+
+.chat-window--compact {
+  font-size: calc(var(--vscode-font-size, 13px) - 1px);
+}
+
+.chat-window--disconnected {
+  opacity: 0.7;
+}
+
+.chat-window--loading {
+  pointer-events: none;
+}
+
+/* Header */
+.chat-window__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--chat-padding);
+  border-bottom: 1px solid var(--vscode-chat-border);
+  background: var(--vscode-chat-background);
+  flex-shrink: 0;
+}
+
+.chat-window__title {
+  font-weight: 600;
+  color: var(--vscode-chat-foreground);
+}
+
+.chat-window__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--chat-gap);
+}
+
+.chat-window__actions {
+  display: flex;
+  gap: 4px;
+}
+
+.chat-window__action {
+  background: none;
+  border: none;
+  color: var(--vscode-button-secondaryForeground);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--chat-border-radius);
+  font-size: 14px;
+}
+
+.chat-window__action:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.chat-window__action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Messages area */
+.chat-window__messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--chat-padding);
+  background: var(--vscode-chat-background);
+  position: relative;
+}
+
+.chat-window__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+}
+
+.chat-window__empty-content {
+  max-width: 300px;
+}
+
+.chat-window__empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.chat-window__empty-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--vscode-chat-foreground);
+}
+
+.chat-window__empty-description {
+  color: var(--vscode-descriptionForeground);
+  font-size: 14px;
+}
+
+.chat-window__message-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Scroll to bottom indicator */
+.chat-window__scroll-indicator {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  z-index: 10;
+}
+
+.chat-window__scroll-button {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: bounce-in 0.3s ease;
+}
+
+.chat-window__scroll-button:hover {
+  background: var(--vscode-button-hoverBackground);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes bounce-in {
+  0% {
+    transform: scale(0.8) translateY(10px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Messages */
+.message {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--chat-padding);
+  border-radius: var(--chat-border-radius);
+  border: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.message:hover {
+  border-color: var(--vscode-chat-border);
+}
+
+.message--user {
+  background: var(--vscode-input-background);
+  align-self: flex-end;
+  max-width: 80%;
+}
+
+.message--assistant {
+  background: var(--vscode-chat-background);
+  border: 1px solid var(--vscode-chat-border);
+  align-self: flex-start;
+  max-width: 90%;
+}
+
+.message--system {
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  align-self: center;
+  max-width: 70%;
+  font-size: 12px;
+}
+
+.message--compact {
+  padding: 8px;
+  gap: 2px;
+}
+
+.message__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.message__role {
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.message__timestamp {
+  opacity: 0.7;
+}
+
+.message__provider {
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-size: 10px;
+}
+
+.message__content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.message__text {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.5;
+}
+
+.message__error {
+  color: var(--chat-error-message);
+  font-size: 12px;
+  font-style: italic;
+  background: var(--vscode-inputValidation-errorBackground);
+  padding: 4px 8px;
+  border-radius: var(--chat-border-radius);
+  border-left: 3px solid var(--chat-error-message);
+}
+
+.message__usage {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.7;
+}
+
+.message__actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.message:hover .message__actions {
+  opacity: 1;
+}
+
+.message__action {
+  background: none;
+  border: none;
+  color: var(--vscode-button-secondaryForeground);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--chat-border-radius);
+  font-size: 12px;
+}
+
+.message__action:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+/* Streaming indicator */
+.chat-window__streaming-indicator {
+  padding: var(--chat-padding);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-window__typing {
+  display: flex;
+  gap: 4px;
+}
+
+.chat-window__typing span {
+  width: 8px;
+  height: 8px;
+  background: var(--vscode-progressBar-background);
+  border-radius: 50%;
+  animation: typing 1.4s infinite ease-in-out;
+}
+
+.chat-window__typing span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.chat-window__typing span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+  0%, 60%, 100% { transform: scale(1); opacity: 0.5; }
+  30% { transform: scale(1.2); opacity: 1; }
+}
+
+/* Input area */
+.chat-window__input {
+  border-top: 1px solid var(--vscode-chat-border);
+  background: var(--vscode-chat-background);
+  flex-shrink: 0;
+}
+
+.chat-window__connection-warning {
+  padding: var(--chat-padding);
+  background: var(--vscode-inputValidation-warningBackground);
+  color: var(--vscode-inputValidation-warningForeground);
+  border-left: 3px solid var(--vscode-notificationsWarningIcon-foreground);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* Message Input Component */
+.message-input {
+  padding: var(--chat-padding);
+}
+
+.message-input--disabled {
+  opacity: 0.6;
+}
+
+.message-input--loading {
+  pointer-events: none;
+}
+
+.message-input__container {
+  display: flex;
+  gap: var(--chat-gap);
+  align-items: flex-end;
+}
+
+.message-input__textarea {
+  flex: 1;
+  background: var(--vscode-chat-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--chat-border-radius);
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: 1.4;
+  resize: none;
+  min-height: 36px;
+  max-height: 120px;
+}
+
+.message-input__textarea:focus {
+  outline: none;
+  border-color: var(--vscode-focusBorder);
+}
+
+.message-input__textarea::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+}
+
+.message-input__send {
+  flex-shrink: 0;
+}
+
+.message-input__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.message-input__hints {
+  display: flex;
+  gap: 12px;
+}
+
+.message-input__hint {
+  opacity: 0.7;
+}
+
+.message-input__counter {
+  font-variant-numeric: tabular-nums;
+}
+
+.message-input__counter--warning {
+  color: var(--vscode-notificationsWarningIcon-foreground);
+}
+
+.message-input__counter--error {
+  color: var(--vscode-notificationsErrorIcon-foreground);
+}
+
+/* Enhanced hint styles */
+.message-input__hint--success {
+  color: var(--status-connected);
+  font-weight: 500;
+}
+
+/* History navigation indicator */
+.message-input--history-active .message-input__textarea {
+  border-color: var(--vscode-inputOption-activeBorder);
+  background: var(--vscode-inputOption-activeBackground);
+}
+
+/* Command detection styles */
+.message-input__textarea[placeholder*="commands"] {
+  font-family: var(--vscode-editor-font-family);
+}
+
+.message-input--command-detected .message-input__textarea {
+  border-left: 3px solid var(--vscode-button-background);
+  padding-left: 9px;
+}
+
+/* Draft saved indicator animation */
+.message-input__hint--success {
+  animation: success-flash 0.3s ease;
+}
+
+@keyframes success-flash {
+  0% { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Send Button */
+.send-button {
+  background: var(--vscode-chat-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  border-radius: var(--chat-border-radius);
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.send-button:hover:not(:disabled) {
+  background: var(--vscode-chat-button-hover);
+}
+
+.send-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.send-button--loading .send-button__spinner {
+  animation: spin 1s linear infinite;
+}
+
+.send-button--secondary {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+}
+
+.send-button--secondary:hover:not(:disabled) {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.send-button--small {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.send-button--large {
+  padding: 12px 20px;
+  font-size: 14px;
+}
+
+/* Provider Selector */
+.provider-selector {
+  position: relative;
+  min-width: 180px;
+}
+
+.provider-selector--compact {
+  min-width: 120px;
+}
+
+.provider-selector--disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.provider-selector__trigger {
+  width: 100%;
+  background: var(--vscode-dropdown-background);
+  color: var(--vscode-dropdown-foreground);
+  border: 1px solid var(--vscode-dropdown-border);
+  border-radius: var(--chat-border-radius);
+  padding: 6px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.provider-selector__trigger:hover {
+  background: var(--vscode-dropdown-hoverBackground);
+}
+
+.provider-selector__selected {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.provider-selector__name {
+  flex: 1;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.provider-selector__placeholder {
+  color: var(--vscode-input-placeholderForeground);
+  font-style: italic;
+}
+
+.provider-selector__arrow {
+  color: var(--vscode-descriptionForeground);
+  font-size: 10px;
+}
+
+.provider-selector__dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: var(--vscode-dropdown-background);
+  border: 1px solid var(--vscode-dropdown-border);
+  border-radius: var(--chat-border-radius);
+  box-shadow: var(--vscode-widget-shadow);
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 2px;
+}
+
+.provider-selector__list {
+  padding: 4px 0;
+}
+
+.provider-selector__option {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.1s ease;
+}
+
+.provider-selector__option:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.provider-selector__option--selected {
+  background: var(--vscode-list-activeSelectionBackground);
+  color: var(--vscode-list-activeSelectionForeground);
+}
+
+.provider-selector__option-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.provider-selector__option-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.provider-selector__option-name {
+  font-weight: 500;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.provider-selector__option-model {
+  color: var(--vscode-descriptionForeground);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.provider-selector__configure {
+  background: none;
+  border: none;
+  color: var(--vscode-button-secondaryForeground);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 2px;
+  font-size: 10px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.provider-selector__option:hover .provider-selector__configure {
+  opacity: 1;
+}
+
+.provider-selector__configure:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.provider-selector__empty {
+  padding: 12px;
+  text-align: center;
+  color: var(--vscode-descriptionForeground);
+  font-style: italic;
+  font-size: 12px;
+}
+
+/* Provider Icon */
+.provider-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.provider-icon--small {
+  width: 16px;
+  height: 16px;
+}
+
+.provider-icon--medium {
+  width: 20px;
+  height: 20px;
+}
+
+.provider-icon--large {
+  width: 24px;
+  height: 24px;
+}
+
+.provider-icon__main {
+  font-size: inherit;
+}
+
+.provider-icon__status {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  font-size: 8px;
+  line-height: 1;
+}
+
+/* Status Indicator */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-indicator--small {
+  font-size: 10px;
+}
+
+.status-indicator--medium {
+  font-size: 12px;
+}
+
+.status-indicator--large {
+  font-size: 14px;
+}
+
+.status-indicator__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-indicator--success .status-indicator__dot {
+  background: var(--status-connected);
+}
+
+.status-indicator--warning .status-indicator__dot {
+  background: var(--status-connecting);
+}
+
+.status-indicator--error .status-indicator__dot {
+  background: var(--status-error);
+}
+
+.status-indicator--inactive .status-indicator__dot {
+  background: var(--status-disconnected);
+}
+
+.status-indicator--animated .status-indicator__dot {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.status-indicator--badge {
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+}
+
+/* Responsive design */
+@media (max-width: 400px) {
+  .chat-window__header {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+  
+  .provider-selector {
+    min-width: unset;
+  }
+  
+  .message--user,
+  .message--assistant {
+    max-width: 95%;
+  }
+}
+
+/* Enhanced Message Styles */
+.message__code {
+  background: var(--vscode-textCodeBlock-background);
+  color: var(--vscode-textPreformat-foreground);
+  font-family: var(--vscode-editor-font-family);
+  font-size: 0.9em;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.message--streaming .message__content {
+  position: relative;
+}
+
+.message__streaming-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 8px;
+}
+
+.message__typing-dot {
+  width: 4px;
+  height: 4px;
+  background: var(--vscode-progressBar-background);
+  border-radius: 50%;
+  animation: typing-pulse 1.4s infinite ease-in-out;
+}
+
+.message__typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.message__typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing-pulse {
+  0%, 60%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  30% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+.message__streaming-placeholder {
+  color: var(--vscode-descriptionForeground);
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.message__edit-container {
+  width: 100%;
+}
+
+.message__edit-textarea {
+  width: 100%;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 4px;
+  padding: 8px;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: 1.4;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.message__edit-textarea:focus {
+  outline: none;
+  border-color: var(--vscode-focusBorder);
+}
+
+.message__edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  justify-content: flex-end;
+}
+
+.message__edit-button {
+  padding: 4px 12px;
+  font-size: 12px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.message__edit-button--save {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+}
+
+.message__edit-button--save:hover:not(:disabled) {
+  background: var(--vscode-button-hoverBackground);
+}
+
+.message__edit-button--save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.message__edit-button--cancel {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+}
+
+.message__edit-button--cancel:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.message__actions--visible {
+  opacity: 1 !important;
+}
+
+.message__error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.message__error-icon {
+  flex-shrink: 0;
+}
+
+.message__usage {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.message__usage-breakdown {
+  opacity: 0.7;
+  font-size: 0.9em;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .message {
+    border-width: 2px;
+  }
+  
+  .message--user {
+    border-color: var(--chat-user-message);
+  }
+  
+  .message--assistant {
+    border-color: var(--chat-assistant-message);
+  }
+}

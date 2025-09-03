@@ -166,3 +166,8 @@ reference/
 **/.vespera_v2/
 **/session_context.json
 **/.session_context.json
+
+# VS Code Extension Development
+.vscode-test/
+*.vsix
+*.vsix.bak

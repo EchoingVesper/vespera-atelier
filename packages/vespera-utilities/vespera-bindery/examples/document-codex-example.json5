@@ -1,0 +1,400 @@
+{
+  // EXAMPLE: Document Codex - Technical Documentation  
+  // Shows how documentation becomes a collaborative Codex type
+  
+  id: "doc_crdt_architecture_550e8400-e29b-41d4-a716-446655440100",
+  version: "1.0.0",
+  content_type: "vespera.document.technical",
+  template_id: "vespera.templates.technical_specification",
+  template_version: "1.5.0",
+  
+  title: "Vespera Bindery CRDT Architecture Specification",
+  description: "Comprehensive technical specification for the hybrid CRDT architecture supporting real-time collaborative content management.",
+  
+  created_by: "user_architect",
+  created_at: "2025-01-01T10:00:00.000Z",
+  updated_by: "user_dev_primary",
+  updated_at: "2025-01-02T18:30:45.789Z",
+  
+  visibility: "shared",
+  collaborators: [
+    {
+      user_id: "user_dev_primary", 
+      role: "editor",
+      invited_at: "2025-01-01T10:15:00.000Z",
+      accepted_at: "2025-01-01T11:22:30.123Z"
+    },
+    {
+      user_id: "user_researcher",
+      role: "reviewer",
+      invited_at: "2025-01-02T09:00:00.000Z",
+      accepted_at: "2025-01-02T09:45:15.456Z"
+    }
+  ],
+  
+  crdt_metadata: {
+    vector_clock: {
+      "user_architect": 47,
+      "user_dev_primary": 23,
+      "user_researcher": 8
+    },
+    content_hash: "sha256:f7e8d9c0b1a2938475869dfebc0123456789abcdef0123456789abcdef012345",
+    lww_metadata: {
+      document_status: {
+        value: "draft",
+        timestamp: "2025-01-02T18:30:45.789Z",
+        user_id: "user_dev_primary", 
+        operation_id: "op_doc_status_update_003"
+      },
+      review_stage: {
+        value: "technical_review",
+        timestamp: "2025-01-02T16:20:00.000Z",
+        user_id: "user_architect",
+        operation_id: "op_review_stage_002"
+      }
+    },
+    or_sets: {
+      review_tags: {
+        elements: {
+          "needs-diagrams": {
+            "tag_diag_001": {
+              operation_id: "tag_diag_001",
+              user_id: "user_researcher",
+              timestamp: "2025-01-02T14:30:00.000Z"
+            }
+          },
+          "implementation-ready": {
+            "tag_impl_002": {
+              operation_id: "tag_impl_002", 
+              user_id: "user_architect",
+              timestamp: "2025-01-02T18:00:00.000Z"
+            }
+          }
+        },
+        removed_tags: []
+      }
+    }
+  },
+  
+  content: {
+    // Document-specific fields
+    document_type: "technical_specification",
+    document_status: "draft",                        // outline, draft, review, published, archived
+    version: "0.9.0",
+    review_stage: "technical_review",                // author_review, peer_review, technical_review, final_review
+    
+    // Publication metadata
+    authors: ["user_architect", "user_dev_primary"],
+    reviewers: ["user_researcher"],
+    publication_date: null,
+    last_review_date: "2025-01-02T16:20:00.000Z",
+    
+    // Document organization
+    tags: ["architecture", "crdt", "specification", "collaboration", "rust"],
+    labels: {
+      complexity: "advanced",
+      audience: "developers",
+      estimated_read_time: "25 minutes",
+      maintenance_level: "high",
+      subject_area: "distributed-systems"
+    },
+    
+    // Cross-references to other Codices
+    references: [
+      {
+        codex_id: "task_550e8400-e29b-41d4-a716-446655440000",
+        reference_type: "documents",
+        title: "Implement hybrid CRDT core architecture",
+        context: "Implementation task for this specification"
+      },
+      {
+        codex_id: "doc_codex_format_specification",
+        reference_type: "relates_to", 
+        title: "Universal Codex Format Specification",
+        context: "Format that uses this CRDT architecture"
+      }
+    ],
+    
+    // Hierarchical document structure (collaborative sections)
+    sections: {
+      "1_introduction": {
+        title: "1. Introduction",
+        content: `# Introduction
+
+The Vespera Bindery CRDT Architecture provides a hybrid approach to conflict-free replicated data types, specifically designed for real-time collaborative content management. This specification defines the four-layer CRDT system that enables seamless collaboration across multiple users and devices.
+
+## 1.1 Scope
+
+This document covers:
+- Hybrid CRDT layer architecture
+- Real-time synchronization protocols  
+- Conflict resolution strategies
+- Integration with existing MCP backend systems`,
+        
+        last_edited: "2025-01-02T18:30:45.789Z",
+        editor: "user_dev_primary",
+        review_status: "approved",
+        reviewer_comments: [
+          {
+            user: "user_researcher",
+            timestamp: "2025-01-02T17:45:00.000Z",
+            comment: "Clear introduction. Consider adding performance benchmarks.",
+            resolved: false
+          }
+        ],
+        
+        // Y-CRDT state for this section
+        yjs_state: {
+          document_state: "AQQDAQEBAQEBAgIEBgYGBgYGBwcHBwcHCAkJCQkJCgsLCwsLDA0NDQ0NDg==",
+          updates: [
+            {
+              timestamp: "2025-01-02T18:30:45.789Z",
+              user_id: "user_dev_primary",
+              update_data: "AQMBAgIDBAUGBwgJCgsMDQ=="
+            }
+          ]
+        }
+      },
+      
+      "2_architecture_overview": {
+        title: "2. Architecture Overview",
+        content: `# Architecture Overview
+
+The Vespera Bindery CRDT system implements a four-layer hybrid architecture:
+
+## 2.1 Text Layer (Y-CRDT)
+- **Purpose**: Collaborative text editing within template fields
+- **Implementation**: Y.js compatible operations for character-level collaboration
+- **Conflict Resolution**: Operational transformation with position-based ordering
+
+## 2.2 Tree Layer (Hierarchical CRDT)  
+- **Purpose**: Managing parent-child relationships and document hierarchies
+- **Implementation**: Custom tree CRDT with move operations
+- **Conflict Resolution**: Timestamp-based with cycle detection
+
+## 2.3 Metadata Layer (Last-Writer-Wins)
+- **Purpose**: Simple fields like status, priority, timestamps
+- **Implementation**: LWW-Map with vector clocks
+- **Conflict Resolution**: Latest timestamp wins with operation ID tie-breaking
+
+## 2.4 Reference Layer (Observed-Remove Set)
+- **Purpose**: Cross-Codex references, tags, collections
+- **Implementation**: OR-Set with unique operation tags
+- **Conflict Resolution**: Additive semantics with explicit removals`,
+        
+        last_edited: "2025-01-02T16:45:30.123Z", 
+        editor: "user_architect",
+        review_status: "in_review",
+        reviewer_comments: [
+          {
+            user: "user_researcher",
+            timestamp: "2025-01-02T17:00:00.000Z",
+            comment: "Add architectural diagram here for visual learners.",
+            resolved: false
+          }
+        ]
+      },
+      
+      "3_implementation_details": {
+        title: "3. Implementation Details",
+        content: `# Implementation Details
+
+## 3.1 Rust Implementation
+
+The core CRDT operations are implemented in Rust for performance and memory safety:
+
+\`\`\`rust
+pub struct VesperaCRDT {
+    pub text_layer: YTextCRDT,
+    pub tree_layer: VesperaTreeCRDT, 
+    pub metadata_layer: LWWMap<String, TemplateValue>,
+    pub reference_layer: ORSet<CodexReference>,
+    pub operation_log: Vec<CRDTOperation>,
+}
+\`\`\`
+
+## 3.2 Synchronization Protocol
+
+Operations are synchronized using a vector clock system with content hashing for integrity verification.
+
+## 3.3 Language Bindings
+
+- **Node.js**: NAPI-RS bindings for VS Code integration
+- **Python**: PyO3 bindings for MCP server integration`,
+        
+        last_edited: "2025-01-02T15:20:15.456Z",
+        editor: "user_architect", 
+        review_status: "needs_revision",
+        reviewer_comments: [
+          {
+            user: "user_dev_primary",
+            timestamp: "2025-01-02T18:15:00.000Z",
+            comment: "Add more code examples and error handling patterns.",
+            resolved: false
+          }
+        ]
+      }
+    },
+    
+    // Document metadata and bibliography
+    bibliography: [
+      {
+        type: "web",
+        title: "Conflict-free Replicated Data Types",
+        authors: ["Marc Shapiro", "Nuno Preguiça"],
+        url: "https://crdt.tech/",
+        accessed: "2025-01-01T10:00:00.000Z"
+      },
+      {
+        type: "documentation", 
+        title: "Y.js Documentation",
+        url: "https://github.com/yjs/yjs",
+        accessed: "2025-01-01T11:30:00.000Z"
+      }
+    ],
+    
+    // External links and code references
+    source_references: [
+      "https://crdt.tech/",
+      "https://github.com/yjs/yjs",
+      "file://packages/vespera-utilities/vespera-bindery/src/crdt/"
+    ],
+    code_references: [
+      "packages/vespera-utilities/vespera-bindery/src/crdt/mod.rs:1",
+      "packages/vespera-utilities/vespera-bindery/Cargo.toml:16"
+    ],
+    
+    // Document formatting and export options
+    formatting: {
+      citation_style: "IEEE",
+      toc_depth: 3,
+      include_code_snippets: true,
+      syntax_highlighting: "rust",
+      page_size: "A4",
+      margins: "standard"
+    }
+  },
+  
+  backend_integration: {
+    chroma: {
+      embedding_id: "emb_crdt_architecture_spec",
+      content_hash: "sha256:f7e8d9c0b1a2938475869dfebc0123456789abcdef0123456789abcdef012345",
+      last_embedded: "2025-01-02T18:30:45.789Z",
+      embedding_version: 1,
+      synced: true
+    },
+    kuzu: {
+      graph_node_id: "node_crdt_spec_doc",
+      last_graph_sync: "2025-01-02T18:30:45.789Z",
+      graph_version: 1,
+      synced: true
+    },
+    sqlite: {
+      table: "codices", 
+      primary_key: "doc_crdt_architecture_550e8400-e29b-41d4-a716-446655440100",
+      last_persisted: "2025-01-02T18:30:45.789Z",
+      schema_version: 1
+    }
+  },
+  
+  template_metadata: {
+    template_source: "file://templates/vespera.document.technical.template.json5",
+    template_hash: "sha256:c776a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae5",
+    
+    field_constraints: {
+      document_status: {
+        type: "enum",
+        values: ["outline", "draft", "review", "published", "archived"],
+        required: true
+      },
+      review_stage: {
+        type: "enum", 
+        values: ["author_review", "peer_review", "technical_review", "final_review"],
+        default: "author_review"
+      }
+    },
+    
+    ui_hints: {
+      primary_fields: ["title", "document_status", "version", "authors"],
+      secondary_fields: ["review_stage", "tags", "last_review_date"],
+      field_groups: {
+        "Document Info": ["title", "description", "document_type", "version"],
+        "Status": ["document_status", "review_stage", "last_review_date"],
+        "Authorship": ["authors", "reviewers", "collaborators"],
+        "Content": ["sections", "bibliography", "formatting"],
+        "Organization": ["tags", "labels", "references"]
+      },
+      editor_layout: {
+        primary_panel: "content_editor",     // Main editing area for sections
+        secondary_panel: "section_outline",  // Navigation and structure
+        tertiary_panel: "review_comments"    // Comments and collaboration
+      }
+    },
+    
+    automation_rules: [
+      {
+        trigger: "section_change",
+        condition: { field: "sections.*.content" },
+        actions: [
+          { type: "update_last_edited_timestamp" },
+          { type: "notify_collaborators", if: "major_change" },
+          { type: "auto_save_draft" }
+        ]
+      },
+      {
+        trigger: "review_stage_change",
+        condition: { to: "technical_review" },
+        actions: [
+          { type: "notify_reviewers" },
+          { type: "lock_major_edits" },
+          { type: "create_review_checklist" }
+        ]
+      }
+    ]
+  },
+  
+  environment: {
+    theme_adaptation: {
+      current_theme: "documentation_focus",
+      mood_indicators: ["analytical", "structured"],
+      color_scheme: {
+        primary: "#7c3aed",      // Purple for documentation
+        accent: "#059669",       // Green for approved sections
+        background: "#fefbff"    // Light background for reading
+      }
+    },
+    
+    ambient_elements: {
+      background_audio: null,           // Quiet environment for documentation
+      lighting_profile: "reading_mode",
+      distraction_blocking: false       // Allow research and cross-referencing
+    },
+    
+    workspace_context: {
+      related_codices: [
+        "task_550e8400-e29b-41d4-a716-446655440000",    // Implementation tasks
+        "doc_codex_format_specification",               // Related specifications
+        "template_technical_document"                   // Document template
+      ],
+      active_tools: ["markdown", "research_browser", "diagram_tool"],
+      focus_score: 0.78
+    }
+  },
+  
+  file_representation: {
+    primary_file: "vespera-bindery-crdt-architecture-spec.doc.json5",
+    associated_files: [
+      "vespera-bindery-crdt-architecture-spec.doc.md",       // Markdown export
+      "vespera-bindery-crdt-architecture-spec.doc.pdf",      // PDF export
+      "vespera-bindery-crdt-architecture-spec.doc.html",     // Web version
+      "attachments/crdt-layer-architecture-diagram.svg",     // Architecture diagram
+      "attachments/synchronization-sequence-diagram.png"     // Protocol diagram
+    ],
+    export_formats: ["markdown", "pdf", "html", "latex", "docx", "confluence"],
+    version_control: {
+      git_tracked: true,
+      ignore_patterns: ["*.tmp", "*.aux", "*.log", "*.synctex.gz"],
+      commit_template: "Doc: {{title}} v{{version}} ({{document_status}})"
+    }
+  }
+}

@@ -1,0 +1,174 @@
+{
+  // Anthropic Claude Provider Template
+  template_id: "anthropic-claude",
+  name: "Anthropic Claude",
+  description: "Anthropic Claude with strong reasoning and safety features",
+  version: "1.0.0",
+  category: "llm_provider",
+  
+  provider_config: {
+    provider_type: "anthropic",
+    model: "claude-3-5-sonnet-20241022",
+    api_endpoint: "https://api.anthropic.com",
+    supports_streaming: true,
+    supports_functions: true,
+    max_tokens: 8192,
+    context_window: 200000
+  },
+  
+  authentication: {
+    type: "api_key",
+    key_name: "apiKey",
+    header: "x-api-key",
+    format: "{key}"
+  },
+  
+  ui_schema: {
+    config_fields: [
+      {
+        name: "apiKey",
+        type: "password",
+        required: true,
+        label: "API Key",
+        placeholder: "sk-ant-...",
+        description: "Your Anthropic API key from https://console.anthropic.com/",
+        validation: {
+          pattern: "^sk-ant-[a-zA-Z0-9_-]{95}$",
+          min: 98,
+          message: "Anthropic API keys start with 'sk-ant-' followed by 95 characters"
+        }
+      },
+      {
+        name: "model",
+        type: "select",
+        required: false,
+        label: "Model",
+        description: "Claude model variant",
+        default: "claude-3-5-sonnet-20241022",
+        validation: {
+          options: [
+            "claude-3-5-sonnet-20241022",
+            "claude-3-5-haiku-20241022",
+            "claude-3-opus-20240229",
+            "claude-3-sonnet-20240229",
+            "claude-3-haiku-20240307"
+          ]
+        }
+      },
+      {
+        name: "baseUrl",
+        type: "text",
+        required: false,
+        label: "Custom Base URL",
+        placeholder: "https://api.anthropic.com",
+        description: "Custom API endpoint (leave empty for default)",
+        validation: {
+          pattern: "^https?://.*",
+          message: "Must be a valid HTTP/HTTPS URL"
+        }
+      },
+      {
+        name: "temperature",
+        type: "number",
+        required: false,
+        label: "Temperature",
+        placeholder: "0.7",
+        description: "Controls randomness in responses (0.0-1.0)",
+        default: 0.7,
+        validation: {
+          min: 0.0,
+          max: 1.0,
+          step: 0.1,
+          message: "Temperature must be between 0.0 and 1.0"
+        }
+      },
+      {
+        name: "maxTokens",
+        type: "number",
+        required: false,
+        label: "Max Tokens",
+        placeholder: "8192",
+        description: "Maximum tokens in response",
+        default: 8192,
+        validation: {
+          min: 1,
+          max: 8192,
+          step: 1,
+          message: "Max tokens must be between 1 and 8,192"
+        }
+      },
+      {
+        name: "systemPrompt",
+        type: "textarea",
+        required: false,
+        label: "System Prompt",
+        placeholder: "You are Claude, an AI assistant...",
+        description: "Default system message for conversations",
+        validation: {
+          max: 10000,
+          message: "System prompt must be under 10,000 characters"
+        }
+      },
+      {
+        name: "enableTools",
+        type: "checkbox",
+        required: false,
+        label: "Enable Tool Use",
+        description: "Allow Claude to use tools and functions",
+        default: true
+      }
+    ]
+  },
+  
+  capabilities: {
+    streaming: true,
+    function_calling: true,
+    image_analysis: true,
+    code_execution: false,
+    web_search: false
+  },
+  
+  // Configuration validation schema
+  config_schema: {
+    type: "object",
+    required: ["apiKey"],
+    properties: {
+      apiKey: {
+        type: "string",
+        pattern: "^sk-ant-[a-zA-Z0-9_-]{95}$",
+        description: "Anthropic API key"
+      },
+      model: {
+        type: "string",
+        enum: [
+          "claude-3-5-sonnet-20241022",
+          "claude-3-5-haiku-20241022", 
+          "claude-3-opus-20240229",
+          "claude-3-sonnet-20240229",
+          "claude-3-haiku-20240307"
+        ]
+      },
+      baseUrl: {
+        type: "string",
+        format: "uri"
+      },
+      temperature: {
+        type: "number",
+        minimum: 0.0,
+        maximum: 1.0
+      },
+      maxTokens: {
+        type: "number",
+        minimum: 1,
+        maximum: 8192
+      },
+      systemPrompt: {
+        type: "string",
+        maxLength: 10000
+      },
+      enableTools: {
+        type: "boolean"
+      }
+    }
+  }
+}

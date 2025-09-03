@@ -20,7 +20,48 @@ from enum import Enum
 from typing import Dict, List, Optional, Any, Callable, Union, Set
 import json
 import time
+import re
 from pathlib import Path
+
+
+def sanitize_template_data(data: Any, max_depth: int = 10, max_string_length: int = 10000) -> Any:
+    """
+    Sanitize template data to prevent injection attacks.
+    
+    Args:
+        data: Template data to sanitize
+        max_depth: Maximum recursion depth to prevent DoS
+        max_string_length: Maximum string length to prevent DoS
+        
+    Returns:
+        Sanitized version of the data
+    """
+    if max_depth <= 0:
+        return "[MAX_DEPTH_EXCEEDED]"
+    
+    if isinstance(data, str):
+        # Limit string length
+        if len(data) > max_string_length:
+            data = data[:max_string_length] + "[TRUNCATED]"
+        # Remove potentially dangerous characters that could break JSON or prompts
+        # Keep alphanumeric, spaces, basic punctuation, but remove control characters
+        sanitized = re.sub(r'[^\w\s\-_.,:;!?(){}[\]"\'+=/<>@#$%^&*|~`]', '', data)
+        return sanitized
+    elif isinstance(data, dict):
+        return {
+            str(k)[:100]: sanitize_template_data(v, max_depth - 1, max_string_length) 
+            for k, v in list(data.items())[:50]  # Limit dict size
+        }
+    elif isinstance(data, list):
+        return [
+            sanitize_template_data(item, max_depth - 1, max_string_length) 
+            for item in data[:50]  # Limit list size
+        ]
+    elif isinstance(data, (int, float, bool, type(None))):
+        return data
+    else:
+        # Convert unknown types to string and sanitize
+        return sanitize_template_data(str(data), max_depth - 1, max_string_length)
 
 # Try importing with both absolute and relative paths
 try:
@@ -330,11 +371,11 @@ You are a hook agent spawned from the template "{hook_def.template_context.templ
 (ID: {hook_def.template_context.template_id}) with trigger type: {hook_def.trigger_type.value}.
 
 ## Template Context
-Template Data: {json.dumps(agent_context['template']['data'], indent=2)}
-Field Schema: {json.dumps(agent_context['template']['field_schema'], indent=2)}
+Template Data: {json.dumps(sanitize_template_data(agent_context['template']['data']), indent=2)}
+Field Schema: {json.dumps(sanitize_template_data(agent_context['template']['field_schema']), indent=2)}
 
 ## Execution Context
-Trigger Event: {json.dumps(agent_context['execution']['triggering_event'], indent=2)}
+Trigger Event: {json.dumps(sanitize_template_data(agent_context['execution']['triggering_event']), indent=2)}
 Parent Task: {agent_context['execution']['parent_task_id']}
 Chain Depth: {agent_context['execution']['chain_depth']}
 
@@ -346,7 +387,7 @@ You must execute the following template-defined hook rules:
             instructions += f"\n### Rule {i}: {rule.get('name', 'Unnamed Rule')}\n"
             instructions += f"**Trigger**: {rule.get('trigger', 'N/A')}\n"
             instructions += f"**Action**: {rule.get('action', 'N/A')}\n"
-            instructions += f"**Parameters**: {json.dumps(rule.get('params', {}), indent=2)}\n"
+            instructions += f"**Parameters**: {json.dumps(sanitize_template_data(rule.get('params', {})), indent=2)}\n"
             
             if rule.get('condition'):
                 instructions += f"**Condition**: {rule['condition']}\n"
@@ -361,7 +402,7 @@ Allowed Operations: {', '.join(hook_def.allowed_operations) if hook_def.allowed_
 File Patterns: {', '.join(hook_def.file_patterns) if hook_def.file_patterns else 'No restrictions'}
 
 ## Linked Templates
-{json.dumps(agent_context['relationships']['linked_templates'], indent=2)}
+{json.dumps(sanitize_template_data(agent_context['relationships']['linked_templates']), indent=2)}
 
 ## Instructions
 Based on the template hook rules above and the current context, execute the required 
@@ -386,13 +427,13 @@ You are a timed agent spawned from the template "{agent_def.template_context.tem
 (ID: {agent_def.template_context.template_id}) with schedule type: {agent_def.schedule_type}.
 
 ## Scheduling Context
-Schedule Configuration: {json.dumps(agent_def.schedule_config, indent=2)}
+Schedule Configuration: {json.dumps(sanitize_template_data(agent_def.schedule_config), indent=2)}
 Execution Count: {agent_context['scheduling']['execution_count']}
 Last Execution: {agent_context['scheduling']['last_execution']}
 
 ## Template Context
-Template Data: {json.dumps(agent_context['template']['data'], indent=2)}
-Field Schema: {json.dumps(agent_context['template']['field_schema'], indent=2)}
+Template Data: {json.dumps(sanitize_template_data(agent_context['template']['data']), indent=2)}
+Field Schema: {json.dumps(sanitize_template_data(agent_context['template']['field_schema']), indent=2)}
 
 ## Agent Rules
 You must execute the following template-defined agent rules:
@@ -401,7 +442,7 @@ You must execute the following template-defined agent rules:
         for i, rule in enumerate(agent_def.agent_rules, 1):
             instructions += f"\n### Rule {i}: {rule.get('name', 'Unnamed Rule')}\n"
             instructions += f"**Action**: {rule.get('action', 'N/A')}\n"
-            instructions += f"**Parameters**: {json.dumps(rule.get('params', {}), indent=2)}\n"
+            instructions += f"**Parameters**: {json.dumps(sanitize_template_data(rule.get('params', {})), indent=2)}\n"
             
             if rule.get('condition'):
                 instructions += f"**Condition**: {rule['condition']}\n"

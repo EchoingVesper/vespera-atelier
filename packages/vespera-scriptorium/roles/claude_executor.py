@@ -11,6 +11,7 @@ import tempfile
 import asyncio
 import shlex
 import re
+import platform
 from typing import Dict, List, Optional, Any, Tuple
 from pathlib import Path
 from dataclasses import dataclass
@@ -134,25 +135,58 @@ class ClaudeExecutor:
         return working_path
     
     def _setup_process_limits(self):
-        """Set resource limits for Claude subprocess (Unix only)."""
-        try:
-            import resource
-            
-            # Set memory limit (1GB)
-            resource.setrlimit(resource.RLIMIT_AS, (1024 * 1024 * 1024, 1024 * 1024 * 1024))
-            
-            # Set CPU time limit (10 minutes)  
-            resource.setrlimit(resource.RLIMIT_CPU, (600, 600))
-            
-            # Set file size limit (100MB)
-            resource.setrlimit(resource.RLIMIT_FSIZE, (100 * 1024 * 1024, 100 * 1024 * 1024))
-            
-            # Set maximum number of processes
-            resource.setrlimit(resource.RLIMIT_NPROC, (10, 10))
-            
-        except (ImportError, OSError) as e:
-            # Resource limits not available on this platform
-            logger.debug(f"Process limits not set: {e}")
+        """Set resource limits for Claude subprocess (cross-platform)."""
+        system = platform.system()
+        
+        if system in ["Linux", "Darwin", "FreeBSD"]:
+            # Unix-like systems: Use resource module
+            try:
+                import resource
+                
+                # Set memory limit (1GB)
+                resource.setrlimit(resource.RLIMIT_AS, (1024 * 1024 * 1024, 1024 * 1024 * 1024))
+                
+                # Set CPU time limit (10 minutes)  
+                resource.setrlimit(resource.RLIMIT_CPU, (600, 600))
+                
+                # Set file size limit (100MB)
+                resource.setrlimit(resource.RLIMIT_FSIZE, (100 * 1024 * 1024, 100 * 1024 * 1024))
+                
+                # Set maximum number of processes
+                resource.setrlimit(resource.RLIMIT_NPROC, (10, 10))
+                
+                logger.debug(f"Unix resource limits applied on {system}")
+                
+            except (ImportError, OSError) as e:
+                logger.warning(f"Unix resource limits failed: {e}")
+                
+        elif system == "Windows":
+            # Windows: Use job objects for process constraints
+            try:
+                import ctypes
+                from ctypes import wintypes
+                
+                # Windows job object creation would go here
+                # For now, log that Windows constraints are limited
+                logger.warning("Windows resource limits: Using timeout-based constraints only. "
+                             "Memory limits require job objects (not implemented yet)")
+                             
+            except ImportError as e:
+                logger.warning(f"Windows resource control libraries unavailable: {e}")
+                
+        else:
+            logger.warning(f"Resource limits not supported on {system}")
+    
+    def _get_platform_timeout(self) -> int:
+        """Get platform-appropriate timeout for process execution."""
+        system = platform.system()
+        
+        if system == "Windows":
+            # Windows: Rely more heavily on timeout since resource limits are limited
+            return min(self.config.timeout, 300)  # Max 5 minutes on Windows
+        else:
+            # Unix: Can use resource limits + timeout
+            return self.config.timeout
         
     async def execute_task_with_claude(
         self,
@@ -248,9 +282,10 @@ class ClaudeExecutor:
         # Base Claude command with proper flags for agent spawning
         command = [self.config.claude_binary, "--print"]
         
-        # Add streaming JSON output for better response capture
-        command.extend(["--output-format", "stream-json"])
-        # Don't use --input-format stream-json, send plain text to stdin instead
+        # Use standard JSON output to ensure CLI compatibility in WSL2/Bun environments
+        command.extend(["--output-format", "json"])
+        # Use text input format for compatibility
+        command.extend(["--input-format", "text"])
         
         # Add verbose mode for debugging
         command.append("--verbose")
@@ -258,7 +293,7 @@ class ClaudeExecutor:
         # Add model configuration (template-driven)
         model = context.role.preferred_llm if hasattr(context.role, 'preferred_llm') else self.config.model
         if model:
-            command.extend(["--model", model])
+            command.extend(["--model", shlex.quote(str(model))])
         
         # Add role-based tool restrictions (template-driven from role files)
         allowed_tools = self._get_allowed_tools(context.role)
@@ -266,25 +301,34 @@ class ClaudeExecutor:
         if validated_tools:
             # Join tools with commas as expected by Claude CLI
             tools_str = ",".join(validated_tools)
-            command.extend(["--allowed-tools", tools_str])
+            command.extend(["--allowed-tools", shlex.quote(tools_str)])
         
-        # Use --append-system-prompt for role-specific system instructions
-        system_prompt = self._build_role_system_prompt(context)
-        if system_prompt:
-            command.extend(["--append-system-prompt", system_prompt])
+        # ULTIMATE FIX: NO SYSTEM PROMPT AT ALL - completely bypass Bun CLI issues
+        # All context will be provided via user prompt and get_task_context MCP tool
+        # This is the only way to prevent Bun v1.2.19 WSL2 crashes
+        logger.info(f"Skipping ALL system prompts to prevent Bun CLI crashes for role {context.role.name}")
         
-        # Add working directory access
+        # Add working directory access  
         working_dir = self._get_validated_working_directory()
         if working_dir != self.project_root:
-            command.extend(["--add-dir", str(working_dir)])
+            command.extend(["--add-dir", shlex.quote(str(working_dir))])
         
-        # Build user prompt (task description) - this goes to stdin
-        user_prompt = self._build_user_prompt(context, task_id)
+        # Build minimal bootstrap user prompt - just task ID for context retrieval
+        user_prompt = self._build_bootstrap_user_prompt(task_id)
         
         return command, user_prompt
     
     def _build_role_system_prompt(self, context: ExecutionContext) -> str:
-        """Build system prompt for role-based execution using --append-system-prompt."""
+        """Build system prompt for role-based execution using --append-system-prompt.
+        
+        Implements length limits to prevent CLI crashes in WSL2/Bun environments.
+        """
+        # Maximum system prompt length to prevent CLI crashes
+        # Ultra-conservative limit for Bun v1.2.19 in WSL2 environment
+        import platform
+        is_wsl = "microsoft" in platform.uname().release.lower()
+        MAX_SYSTEM_PROMPT_LENGTH = 1000 if is_wsl else 2000  # Extra conservative for WSL2
+        
         system_parts = [
             f"You are operating as a {context.role.display_name}.",
             context.role.system_prompt,
@@ -308,7 +352,39 @@ class ClaudeExecutor:
                 restriction_info = f" (restricted to: {options.file_regex})" if hasattr(options, 'file_regex') and options.file_regex else ""
                 system_parts.append(f"- ✓ {group.value}{restriction_info}")
         
-        return "\n".join(system_parts)
+        # Build full prompt
+        full_prompt = "\n".join(system_parts)
+        
+        # Implement length limit with graceful fallback
+        if len(full_prompt) > MAX_SYSTEM_PROMPT_LENGTH:
+            logger.warning(f"System prompt too long ({len(full_prompt)} chars), using fallback for role {context.role.name}")
+            
+            # Fallback to minimal essential prompt
+            max_role_prompt = 500 if is_wsl else 1000  # Very short for WSL2
+            fallback_parts = [
+                f"You are operating as a {context.role.display_name}.",
+                context.role.system_prompt[:max_role_prompt] + "..." if len(context.role.system_prompt) > max_role_prompt else context.role.system_prompt,
+                "",
+                "# Essential Tool Access",
+            ]
+            
+            # Add only most critical tool groups
+            essential_groups = []
+            for group_entry in context.role.tool_groups[:3]:  # Limit to first 3 groups
+                if isinstance(group_entry, ToolGroup):
+                    essential_groups.append(f"- ✓ {group_entry.value}")
+                elif isinstance(group_entry, tuple):
+                    group, _ = group_entry
+                    essential_groups.append(f"- ✓ {group.value}")
+            
+            fallback_parts.extend(essential_groups)
+            full_prompt = "\n".join(fallback_parts)
+            
+            # Final safety check
+            if len(full_prompt) > MAX_SYSTEM_PROMPT_LENGTH:
+                full_prompt = full_prompt[:MAX_SYSTEM_PROMPT_LENGTH - 100] + "\n\n[TRUNCATED FOR CLI STABILITY]"
+        
+        return full_prompt
     
     def _build_user_prompt(self, context: ExecutionContext, task_id: str) -> str:
         """Build user prompt (task description) that goes to stdin."""
@@ -328,6 +404,87 @@ class ClaudeExecutor:
             prompt_parts.extend(["", "## Referenced Documents"])
             for doc in context.linked_documents:
                 prompt_parts.append(f"- {doc}")
+        
+        return "\n".join(prompt_parts)
+    
+    def _build_user_prompt_with_role_info(self, context: ExecutionContext, task_id: str) -> str:
+        """Build user prompt with embedded role information for WSL2 Bun compatibility."""
+        prompt_parts = [
+            f"# Task: {context.task_prompt}",
+            "",
+            f"Task ID: {task_id}",
+            "",
+            f"## Your Role: {context.role.display_name}",
+            f"**Description**: {context.role.description}",
+            "",
+            "## Role Capabilities",
+        ]
+        
+        # Add essential tool groups
+        tool_groups = []
+        for group_entry in context.role.tool_groups[:3]:  # Limit to essential groups
+            if isinstance(group_entry, ToolGroup):
+                tool_groups.append(f"- {group_entry.value}")
+            elif isinstance(group_entry, tuple):
+                group, _ = group_entry
+                tool_groups.append(f"- {group.value}")
+        
+        if tool_groups:
+            prompt_parts.extend(tool_groups)
+        
+        prompt_parts.extend([
+            "",
+            "Please complete this task according to your role as a {}.".format(context.role.display_name),
+        ])
+        
+        # Add any additional context
+        if hasattr(context, 'project_context') and context.project_context:
+            prompt_parts.extend(["", "## Project Context", context.project_context])
+        
+        if hasattr(context, 'linked_documents') and context.linked_documents:
+            prompt_parts.extend(["", "## Referenced Documents"])
+            for doc in context.linked_documents:
+                prompt_parts.append(f"- {doc}")
+        
+        return "\n".join(prompt_parts)
+    
+    def _build_bootstrap_user_prompt(self, task_id: str) -> str:
+        """Build comprehensive bootstrap prompt with embedded system context (no system prompt used)."""
+        prompt_parts = [
+            "# Claude AI Assistant - Task Bootstrap",
+            "",
+            "You are Claude, an AI assistant created by Anthropic. You're operating as a spawned agent in the Vespera Scriptorium task orchestration system.",
+            "",
+            f"**Task ID**: {task_id}",
+            "",
+            "## CRITICAL: Bootstrap Sequence Required",
+            "",
+            "You are starting with minimal context because system prompts cause CLI crashes. You must immediately:",
+            "",
+            "**STEP 1: CALL get_task_context**",
+            f"Call the MCP tool `get_task_context` with task_id='{task_id}' to retrieve:",
+            "- Your assigned role (architect, coder, tester, etc.) and specific capabilities",
+            "- Complete task description and requirements",  
+            "- Project context and working directory information",
+            "- Tool access permissions and restrictions",
+            "- All context needed for successful task completion",
+            "",
+            "**STEP 2: PROCEED WITH TASK**",
+            "Only after successfully retrieving context can you:",
+            "- Use other MCP tools and file operations",
+            "- Begin actual task work according to your role",
+            "- Apply role-specific restrictions and guidelines",
+            "",
+            "**ERROR HANDLING**",
+            "If you encounter MCP tool errors during execution:",
+            f"- Call `pause_for_triage` with task_id='{task_id}' and error details",
+            "- This will pause execution and log issues for human review",
+            "",
+            "**START NOW**",
+            f"Your first action must be: get_task_context(task_id='{task_id}')",
+            "",
+            "Do NOT attempt any other tools or actions until you have successfully retrieved your task context."
+        ]
         
         return "\n".join(prompt_parts)
     
@@ -477,6 +634,7 @@ class ClaudeExecutor:
                 stderr=asyncio.subprocess.PIPE,
                 cwd=validated_working_dir,
                 # Add process limits (available on Unix-like systems)
+                preexec_fn=self._setup_process_limits
                 preexec_fn=self._setup_process_limits if hasattr(__import__('os'), 'setrlimit') else None
             )
             
@@ -489,11 +647,14 @@ class ClaudeExecutor:
             log_progress("EXECUTING", 25, "Sending task prompt to Claude CLI")
             logger.info(f"User prompt: {user_prompt[:200]}...")
             
+            platform_timeout = self._get_platform_timeout()
+            log_progress("EXECUTING", 30, f"Waiting for Claude response (timeout: {platform_timeout}s)")
             log_progress("EXECUTING", 30, f"Waiting for Claude response (timeout: {self.config.timeout}s)")
             # Wait for completion with extended timeout for LLM processing
             try:
                 # Monitor execution with progress updates
                 execution_start = time.time()
+                timeout_increment = platform_timeout / 10  # Update every 10% of timeout
                 timeout_increment = self.config.timeout / 10  # Update every 10% of timeout
                 
                 # Use a loop to provide progress updates during long execution
@@ -505,12 +666,14 @@ class ClaudeExecutor:
                 progress_step = 35
                 while not communication_task.done():
                     elapsed = time.time() - execution_start
+                    if elapsed > platform_timeout:
                     if elapsed > self.config.timeout:
                         communication_task.cancel()
                         raise asyncio.TimeoutError()
                     
                     # Update progress based on elapsed time
                     if progress_step < 75:  # Cap at 75% during execution
+                        execution_progress = min(int((elapsed / platform_timeout) * 40), 40)
                         execution_progress = min(int((elapsed / self.config.timeout) * 40), 40)
                         current_progress = 35 + execution_progress
                         if current_progress >= progress_step:
@@ -523,6 +686,11 @@ class ClaudeExecutor:
                 log_progress("EXECUTING", 80, f"Claude execution completed (return code: {process.returncode})")
                 
             except asyncio.TimeoutError:
+                log_progress("EXECUTING", -1, f"TIMEOUT after {platform_timeout} seconds")
+                logger.error(f"Subprocess timed out after {platform_timeout} seconds")
+                process.kill()
+                await process.wait()
+                raise TimeoutError(f"Claude execution timed out after {platform_timeout} seconds")
                 log_progress("EXECUTING", -1, f"TIMEOUT after {self.config.timeout} seconds")
                 logger.error(f"Subprocess timed out after {self.config.timeout} seconds")
                 process.kill()
