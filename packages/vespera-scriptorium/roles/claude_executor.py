@@ -635,6 +635,7 @@ class ClaudeExecutor:
                 cwd=validated_working_dir,
                 # Add process limits (available on Unix-like systems)
                 preexec_fn=self._setup_process_limits
+                preexec_fn=self._setup_process_limits if hasattr(__import__('os'), 'setrlimit') else None
             )
             
             log_progress("SPAWNING", 15, f"Subprocess created with PID: {process.pid}")
@@ -648,11 +649,13 @@ class ClaudeExecutor:
             
             platform_timeout = self._get_platform_timeout()
             log_progress("EXECUTING", 30, f"Waiting for Claude response (timeout: {platform_timeout}s)")
+            log_progress("EXECUTING", 30, f"Waiting for Claude response (timeout: {self.config.timeout}s)")
             # Wait for completion with extended timeout for LLM processing
             try:
                 # Monitor execution with progress updates
                 execution_start = time.time()
                 timeout_increment = platform_timeout / 10  # Update every 10% of timeout
+                timeout_increment = self.config.timeout / 10  # Update every 10% of timeout
                 
                 # Use a loop to provide progress updates during long execution
                 communication_task = asyncio.create_task(
@@ -664,12 +667,14 @@ class ClaudeExecutor:
                 while not communication_task.done():
                     elapsed = time.time() - execution_start
                     if elapsed > platform_timeout:
+                    if elapsed > self.config.timeout:
                         communication_task.cancel()
                         raise asyncio.TimeoutError()
                     
                     # Update progress based on elapsed time
                     if progress_step < 75:  # Cap at 75% during execution
                         execution_progress = min(int((elapsed / platform_timeout) * 40), 40)
+                        execution_progress = min(int((elapsed / self.config.timeout) * 40), 40)
                         current_progress = 35 + execution_progress
                         if current_progress >= progress_step:
                             log_progress("EXECUTING", progress_step, f"Claude processing... ({elapsed:.1f}s elapsed)")
@@ -686,6 +691,11 @@ class ClaudeExecutor:
                 process.kill()
                 await process.wait()
                 raise TimeoutError(f"Claude execution timed out after {platform_timeout} seconds")
+                log_progress("EXECUTING", -1, f"TIMEOUT after {self.config.timeout} seconds")
+                logger.error(f"Subprocess timed out after {self.config.timeout} seconds")
+                process.kill()
+                await process.wait()
+                raise TimeoutError(f"Claude execution timed out after {self.config.timeout} seconds")
             
             # Phase 3: Processing (80-95%)
             log_progress("PROCESSING", 82, "Cleaning up subprocess")
