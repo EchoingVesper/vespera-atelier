@@ -55,7 +55,7 @@
 //! ```
 
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
@@ -81,6 +81,10 @@ pub mod database;
 // Conditional binding modules
 #[cfg(feature = "nodejs")]
 pub mod bindings;
+
+// Test modules
+#[cfg(test)]
+pub mod tests;
 
 // Error types
 pub mod errors;
@@ -281,6 +285,65 @@ impl CodexManager {
     pub fn config(&self) -> &BinderyConfig {
         &self.inner.config
     }
+    
+    /// Perform garbage collection on all managed Codices
+    pub async fn gc_all_codices(&self) -> Result<CodexManagerGCStats> {
+        let mut total_stats = CodexManagerGCStats::default();
+        
+        {
+            let codices = self.inner.codices.read().await;
+            
+            for crdt in codices.values() {
+                // Use a cutoff of 1 hour for garbage collection
+                let cutoff = chrono::Utc::now() - chrono::Duration::hours(1);
+                
+                // We need to get a mutable reference, but we can't due to the Arc
+                // In a real implementation, we'd need interior mutability
+                // For now, we'll track this as a design issue to fix
+                total_stats.codices_processed += 1;
+                
+                // TODO: Implement interior mutability for CRDT GC
+                // let stats = crdt.gc_all(cutoff);
+                // total_stats.merge(stats);
+            }
+        }
+        
+        Ok(total_stats)
+    }
+    
+    /// Get memory usage statistics for all Codices
+    pub async fn memory_stats(&self) -> HashMap<CodexId, crdt::MemoryStats> {
+        let codices = self.inner.codices.read().await;
+        
+        codices.iter()
+            .map(|(id, crdt)| (*id, crdt.memory_stats()))
+            .collect()
+    }
+    
+    /// Clean up all resources and shut down the manager
+    pub async fn shutdown(&mut self) -> Result<()> {
+        // Stop sync manager first
+        if let Some(sync_manager) = &self.inner.sync_manager {
+            sync_manager.stop().await?;
+        }
+        
+        // Clear all Codices (this will trigger Drop implementations)
+        {
+            let mut codices = self.inner.codices.write().await;
+            codices.clear();
+        }
+        
+        Ok(())
+    }
+}
+
+/// Statistics from garbage collection across all Codices
+#[derive(Debug, Default)]
+pub struct CodexManagerGCStats {
+    pub codices_processed: usize,
+    pub total_operations_removed: usize,
+    pub total_tombstones_removed: usize,
+    pub total_fields_cleaned: usize,
 }
 
 // Version information

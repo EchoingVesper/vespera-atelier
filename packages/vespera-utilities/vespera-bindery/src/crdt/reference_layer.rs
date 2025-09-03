@@ -278,6 +278,25 @@ where
         
         self_elements.union(&other_elements).cloned().collect()
     }
+    
+    /// Clean up all resources and shrink collections
+    pub fn cleanup(&mut self) {
+        self.elements.clear();
+        self.elements.shrink_to_fit();
+        
+        self.removed_tags.clear();
+        self.removed_tags.shrink_to_fit();
+    }
+    
+    /// Shrink collections to fit their contents
+    pub fn shrink_to_fit(&mut self) {
+        self.elements.shrink_to_fit();
+        self.removed_tags.shrink_to_fit();
+        
+        for tags in self.elements.values_mut() {
+            tags.shrink_to_fit();
+        }
+    }
 }
 
 /// Result of merging two OR-Sets
@@ -303,6 +322,16 @@ where
 {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Implement Drop to ensure proper cleanup of ORSet resources
+impl<T> Drop for ORSet<T>
+where
+    T: Clone + Eq + std::hash::Hash + Serialize + std::fmt::Debug,
+{
+    fn drop(&mut self) {
+        self.cleanup();
     }
 }
 

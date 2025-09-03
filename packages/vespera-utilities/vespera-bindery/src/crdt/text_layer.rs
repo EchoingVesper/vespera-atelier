@@ -142,11 +142,52 @@ impl YTextCRDT {
     pub fn field_count(&self) -> usize {
         self.text_fields.len()
     }
+    
+    /// Garbage collect unused fields and clean up resources
+    pub fn gc_fields(&mut self) -> usize {
+        let initial_count = self.text_fields.len();
+        
+        // Remove empty fields
+        self.text_fields.retain(|_, field| !field.content.is_empty());
+        
+        // Shrink remaining fields' capacity
+        for field in self.text_fields.values_mut() {
+            field.content.shrink_to_fit();
+        }
+        
+        // Shrink the map itself
+        self.text_fields.shrink_to_fit();
+        
+        initial_count - self.text_fields.len()
+    }
+    
+    /// Clean up all resources
+    pub fn cleanup(&mut self) {
+        // Clear all Y-CRDT document state (when integrated)
+        for field in self.text_fields.values_mut() {
+            if let Some(ref mut y_doc) = field.y_doc {
+                // TODO: Implement proper Y-CRDT cleanup when integrated
+                // y_doc.destroy(); // or equivalent cleanup method
+            }
+            field.content.clear();
+            field.content.shrink_to_fit();
+        }
+        
+        self.text_fields.clear();
+        self.text_fields.shrink_to_fit();
+    }
 }
 
 impl Default for YTextCRDT {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Implement Drop to ensure proper cleanup of Y-CRDT resources
+impl Drop for YTextCRDT {
+    fn drop(&mut self) {
+        self.cleanup();
     }
 }
 

@@ -271,6 +271,21 @@ where
         initial_count - self.tombstones.len()
     }
     
+    /// Clean up all resources and shrink collections
+    pub fn cleanup(&mut self) {
+        self.entries.clear();
+        self.entries.shrink_to_fit();
+        
+        self.tombstones.clear();
+        self.tombstones.shrink_to_fit();
+    }
+    
+    /// Shrink collections to fit their contents
+    pub fn shrink_to_fit(&mut self) {
+        self.entries.shrink_to_fit();
+        self.tombstones.shrink_to_fit();
+    }
+    
     // Private helper methods
     
     fn should_update<T>(&self, existing: &LWWEntry<T>, new: &LWWEntry<V>) -> bool {
@@ -304,6 +319,17 @@ where
 {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Implement Drop to ensure proper cleanup of LWWMap resources
+impl<K, V> Drop for LWWMap<K, V>
+where
+    K: Clone + Eq + std::hash::Hash + Serialize,
+    V: Clone + Serialize,
+{
+    fn drop(&mut self) {
+        self.cleanup();
     }
 }
 

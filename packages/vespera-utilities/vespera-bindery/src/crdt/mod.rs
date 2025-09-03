@@ -24,8 +24,8 @@ pub mod reference_layer;
 // Re-export CRDT implementations
 pub use text_layer::YTextCRDT;
 pub use tree_layer::VesperaTreeCRDT;
-pub use metadata_layer::LWWMap;
-pub use reference_layer::ORSet;
+pub use metadata_layer::{LWWMap, LWWMapStats};
+pub use reference_layer::{ORSet, ORSetStats};
 
 /// The main CRDT structure that orchestrates all CRDT layers
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -272,8 +272,11 @@ impl VesperaCRDT {
             }
         }
         
-        // Add to operation log
+        // Add to operation log with bounded growth
         self.operation_log.push(operation.clone());
+        
+        // Prevent unbounded growth by garbage collecting old operations
+        self.gc_operation_log_if_needed();
         
         // Update timestamps
         self.updated_at = operation.timestamp;
@@ -406,6 +409,109 @@ impl VesperaCRDT {
         }
         
         Ok(applied_operations)
+    }
+    
+    /// Garbage collect the operation log to prevent unbounded growth
+    pub fn gc_operation_log(&mut self, max_operations: usize) -> usize {
+        let removed_count = if self.operation_log.len() > max_operations {
+            let to_remove = self.operation_log.len() - max_operations;
+            self.operation_log.drain(0..to_remove);
+            to_remove
+        } else {
+            0
+        };
+        
+        removed_count
+    }
+    
+    /// Garbage collect operation log if it exceeds the threshold
+    fn gc_operation_log_if_needed(&mut self) {
+        const DEFAULT_MAX_OPERATIONS: usize = 1000;
+        if self.operation_log.len() > DEFAULT_MAX_OPERATIONS {
+            self.gc_operation_log(DEFAULT_MAX_OPERATIONS / 2); // Keep half
+        }
+    }
+    
+    /// Perform comprehensive garbage collection
+    pub fn gc_all(&mut self, operation_cutoff: DateTime<Utc>) -> GarbageCollectionStats {
+        // GC operation log
+        let old_operations_removed = self.gc_operation_log(500); // Keep last 500 operations
+        
+        // GC metadata layer tombstones
+        let metadata_tombstones_removed = self.metadata_layer.gc_tombstones(operation_cutoff);
+        
+        // GC reference layer removed tags
+        let reference_tags_removed = self.reference_layer.gc_removed_tags(operation_cutoff);
+        
+        // GC text layer (when Y-CRDT integration is complete)
+        let text_fields_cleaned = self.text_layer.gc_fields();
+        
+        // GC tree layer tombstones  
+        self.tree_layer.gc_tombstones(100);
+        
+        GarbageCollectionStats {
+            operations_removed: old_operations_removed,
+            metadata_tombstones_removed,
+            reference_tags_removed,
+            text_fields_cleaned,
+        }
+    }
+    
+    /// Get memory usage statistics
+    pub fn memory_stats(&self) -> MemoryStats {
+        MemoryStats {
+            operation_log_size: self.operation_log.len(),
+            metadata_stats: self.metadata_layer.stats(),
+            reference_stats: self.reference_layer.stats(),
+            text_field_count: self.text_layer.field_count(),
+        }
+    }
+    
+    /// Clean up resources when CRDT is no longer needed
+    pub fn cleanup(&mut self) {
+        self.operation_log.clear();
+        self.operation_log.shrink_to_fit();
+        
+        self.metadata_layer.clear();
+        self.reference_layer.clear();
+        self.tree_layer.cleanup();
+        self.text_layer.cleanup();
+    }
+}
+
+/// Statistics from garbage collection
+#[derive(Debug, Clone)]
+pub struct GarbageCollectionStats {
+    pub operations_removed: usize,
+    pub metadata_tombstones_removed: usize,
+    pub reference_tags_removed: usize,
+    pub text_fields_cleaned: usize,
+}
+
+/// Memory usage statistics
+#[derive(Debug, Clone)]
+pub struct MemoryStats {
+    pub operation_log_size: usize,
+    pub metadata_stats: LWWMapStats,
+    pub reference_stats: ORSetStats,
+    pub text_field_count: usize,
+}
+
+/// Implement Drop to ensure proper cleanup of CRDT resources
+impl Drop for VesperaCRDT {
+    fn drop(&mut self) {
+        // Clear all data structures to free memory
+        self.operation_log.clear();
+        self.operation_log.shrink_to_fit();
+        
+        // Cleanup all layers
+        self.metadata_layer.clear();
+        self.reference_layer.clear();
+        self.tree_layer.cleanup();
+        self.text_layer.cleanup();
+        
+        // Clear vector clock
+        self.vector_clock.clear();
     }
 }
 

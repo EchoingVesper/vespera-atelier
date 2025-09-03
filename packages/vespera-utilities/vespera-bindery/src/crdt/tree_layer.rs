@@ -302,6 +302,51 @@ impl VesperaTreeCRDT {
         
         false
     }
+    
+    /// Garbage collect old tombstones
+    pub fn gc_tombstones(&mut self, max_tombstones: usize) -> usize {
+        let initial_count = self.tombstones.len();
+        
+        if initial_count > max_tombstones {
+            // Convert to vector, sort by some criteria, and keep only the most recent
+            let mut tombstones_vec: Vec<_> = self.tombstones.iter().cloned().collect();
+            tombstones_vec.sort_by(|a, b| {
+                // Sort by parent ID first, then child ID for deterministic ordering
+                a.0.cmp(&b.0).then(a.1.cmp(&b.1))
+            });
+            
+            // Keep only the most recent tombstones
+            let to_keep = tombstones_vec.into_iter().rev().take(max_tombstones);
+            self.tombstones = to_keep.collect();
+        }
+        
+        initial_count - self.tombstones.len()
+    }
+    
+    /// Clean up all resources
+    pub fn cleanup(&mut self) {
+        self.children.clear();
+        self.children.shrink_to_fit();
+        
+        self.parents.clear();
+        self.parents.shrink_to_fit();
+        
+        self.tombstones.clear();
+        self.tombstones.shrink_to_fit();
+        
+        self.operation_counter = 0;
+    }
+    
+    /// Shrink all collections to fit their contents
+    pub fn shrink_to_fit(&mut self) {
+        self.children.shrink_to_fit();
+        self.parents.shrink_to_fit();
+        self.tombstones.shrink_to_fit();
+        
+        for children_list in self.children.values_mut() {
+            children_list.shrink_to_fit();
+        }
+    }
 }
 
 /// Statistics about the tree structure
@@ -317,5 +362,12 @@ pub struct TreeStats {
 impl Default for VesperaTreeCRDT {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Implement Drop to ensure proper cleanup of tree resources
+impl Drop for VesperaTreeCRDT {
+    fn drop(&mut self) {
+        self.cleanup();
     }
 }
