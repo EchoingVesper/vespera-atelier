@@ -7,11 +7,11 @@ import * as vscode from 'vscode';
  * DEPRECATED - These functions are no longer available for security reasons
  * Use CredentialManager.storeCredential() and CredentialManager.retrieveCredential() instead
  */
-export async function encrypt(value: string): Promise<string> {
+export async function encrypt(_value: string): Promise<string> {
   throw new Error('DEPRECATED: encrypt() function removed for security reasons. Use CredentialManager.storeCredential() instead.');
 }
 
-export async function decrypt(encrypted: string): Promise<string> {
+export async function decrypt(_encrypted: string): Promise<string> {
   throw new Error('DEPRECATED: decrypt() function removed for security reasons. Use CredentialManager.retrieveCredential() instead.');
 }
 

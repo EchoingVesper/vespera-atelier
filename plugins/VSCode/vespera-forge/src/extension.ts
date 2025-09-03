@@ -71,7 +71,7 @@ export async function deactivate(): Promise<void> {
     log('Deactivating Vespera Forge extension...');
     
     // Disconnect from Bindery service
-    const { disposeBinderyService } = await import('./services/bindery.js');
+    const { disposeBinderyService } = await import('./services/bindery');
     await disposeBinderyService();
     
     log('Vespera Forge extension deactivation completed');

@@ -1,6 +1,6 @@
 {
 	"compilerOptions": {
-		"module": "Node16",
+		"module": "CommonJS",
 		"target": "ES2022",
 		"lib": [
 			"ES2022"
@@ -24,7 +24,7 @@
 		"declarationMap": true,
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
-		"moduleResolution": "Node16",
+		"moduleResolution": "Node",
 		"baseUrl": "./src",
 		"paths": {
 			"@/*": ["*"],
@@ -41,7 +41,6 @@
 		"node_modules",
 		"out",
 		"dist",
-		"**/*.test.ts",
 		"src/chat/**/*"
 	],
 	"ts-node": {

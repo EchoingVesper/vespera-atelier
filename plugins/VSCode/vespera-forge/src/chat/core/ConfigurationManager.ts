@@ -831,24 +831,33 @@ export class ChatConfigurationManager {
           // If decoding succeeds and looks like a valid credential, use it
           if (decoded && decoded.length > 0 && decoded !== legacyValue) {
             actualCredential = decoded;
-            console.log(`[ConfigurationManager] Decoded legacy base64 credential for ${providerId}.${fieldName}`);\n          }
+            console.log(`[ConfigurationManager] Decoded legacy base64 credential for ${providerId}.${fieldName}`);
+          }
         } catch (decodeError) {
           // If base64 decode fails, assume it's already plain text
-          console.log(`[ConfigurationManager] Legacy credential for ${providerId}.${fieldName} is not base64, using as-is`);\n        }
+          console.log(`[ConfigurationManager] Legacy credential for ${providerId}.${fieldName} is not base64, using as-is`);
+        }
       }
       
       // Store the credential securely
       const credentialKey = `${providerId}.${fieldName}`;
       await CredentialManager.storeCredential(this.context, credentialKey, actualCredential);
-      console.log(`[ConfigurationManager] Successfully migrated legacy credential for ${providerId}.${fieldName}`);\n      
+      console.log(`[ConfigurationManager] Successfully migrated legacy credential for ${providerId}.${fieldName}`);
+      
       // Update the config to reference the secure storage
+      const currentProvider = this.config.providers[providerId];
+      if (!currentProvider) {
+        throw new Error(`Provider ${providerId} not found in current configuration`);
+      }
+      
       const updates: Partial<ChatConfiguration> = {
         providers: {
           ...this.config.providers,
           [providerId]: {
-            ...this.config.providers[providerId],
+            enabled: currentProvider.enabled,
+            isDefault: currentProvider.isDefault,
             config: {
-              ...this.config.providers[providerId].config,
+              ...currentProvider.config,
               [fieldName]: `[STORED_SECURELY:${credentialKey}]`
             }
           }
@@ -857,7 +866,8 @@ export class ChatConfigurationManager {
       
       // Update configuration to remove legacy credential
       await this.updateUserConfiguration(updates);
-      console.log(`[ConfigurationManager] Updated configuration after credential migration for ${providerId}.${fieldName}`);\n      
+      console.log(`[ConfigurationManager] Updated configuration after credential migration for ${providerId}.${fieldName}`);
+      
       // Show migration success message
       vscode.window.showInformationMessage(
         `Migrated ${fieldName} for ${providerId} to secure storage for better security.`,
