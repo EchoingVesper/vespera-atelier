@@ -93,8 +93,8 @@ suite('Critical Integration Tests - Security Fixes', () => {
   suite('API Key Security Integration', () => {
     test('ClaudeCodeProvider uses secure configuration manager', async () => {
       // Create configuration manager with secure storage
-      const templateRegistry = new ChatTemplateRegistry(mockContext.extensionUri);
       const eventRouter = new ChatEventRouter();
+      const templateRegistry = new ChatTemplateRegistry(mockContext.extensionUri, eventRouter);
       const configManager = new ChatConfigurationManager(mockContext, templateRegistry, eventRouter);
 
       // Configure provider with API key
@@ -125,8 +125,8 @@ suite('Critical Integration Tests - Security Fixes', () => {
     });
 
     test('Provider factory respects configuration manager parameter', async () => {
-      const templateRegistry = new ChatTemplateRegistry(mockContext.extensionUri);
       const eventRouter = new ChatEventRouter();
+      const templateRegistry = new ChatTemplateRegistry(mockContext.extensionUri, eventRouter);
       const configManager = new ChatConfigurationManager(mockContext, templateRegistry, eventRouter);
 
       // Import ProviderFactory dynamically to avoid circular dependencies
@@ -267,6 +267,9 @@ suite('Critical Integration Tests - Security Fixes', () => {
   suite('Error Handling and Validation', () => {
     test('Provider creation handles invalid templates gracefully', async () => {
       const { ProviderFactory } = await import('../chat/providers/ProviderFactory');
+      const eventRouter = new ChatEventRouter();
+      const templateRegistry = new ChatTemplateRegistry(mockContext.extensionUri, eventRouter);
+      const configManager = new ChatConfigurationManager(mockContext, templateRegistry, eventRouter);
       
       // Test with invalid provider type
       const invalidTemplate = {
@@ -287,8 +290,8 @@ suite('Critical Integration Tests - Security Fixes', () => {
     });
 
     test('Configuration validation prevents invalid configs', async () => {
-      const templateRegistry = new ChatTemplateRegistry(mockContext.extensionUri);
       const eventRouter = new ChatEventRouter();
+      const templateRegistry = new ChatTemplateRegistry(mockContext.extensionUri, eventRouter);
       const configManager = new ChatConfigurationManager(mockContext, templateRegistry, eventRouter);
 
       // Test with invalid configuration (missing required field)

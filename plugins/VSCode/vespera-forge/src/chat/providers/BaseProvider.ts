@@ -11,10 +11,9 @@ export abstract class ChatProvider {
   protected status: ProviderStatus = ProviderStatus.Disconnected;
   protected eventEmitter = new EventEmitter();
   
-  constructor(template: ProviderTemplate, config: ProviderConfig, configManager?: any) {
+  constructor(template: ProviderTemplate, config: ProviderConfig) {
     this.template = template;
     this.config = config;
-    // Subclasses can override this constructor to use configManager if needed
   }
   
   // Abstract methods that must be implemented by concrete providers
@@ -22,6 +21,30 @@ export abstract class ChatProvider {
   abstract disconnect(): Promise<void>;
   abstract sendMessage(message: ChatMessage): Promise<ChatResponse>;
   abstract streamMessage(message: ChatMessage): AsyncIterable<ChatChunk>;
+  
+  // Streaming support methods
+  supportsStreaming(): boolean {
+    return this.template.capabilities.streaming;
+  }
+  
+  async sendStreamingMessage(message: ChatMessage, onChunk?: (chunk: ChatChunk) => void): Promise<ChatResponse> {
+    if (!this.supportsStreaming()) {
+      throw new Error('Streaming is not supported by this provider');
+    }
+    
+    let fullContent = '';
+    let lastMetadata: any = {};
+    
+    for await (const chunk of this.streamMessage(message)) {
+      fullContent += chunk.content;
+      if (chunk.metadata) {
+        lastMetadata = chunk.metadata;
+      }
+      onChunk?.(chunk);
+    }
+    
+    return this.createResponse(fullContent, lastMetadata);
+  }
   
   // Configuration management
   async configure(newConfig: Partial<ProviderConfig>): Promise<void> {

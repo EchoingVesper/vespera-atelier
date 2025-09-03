@@ -149,7 +149,7 @@ export const Message: React.FC<MessageProps> = ({
             <textarea
               className="message__edit-textarea"
               value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditContent(e.target.value)}
               rows={Math.max(3, editContent.split('\n').length)}
               autoFocus
             />

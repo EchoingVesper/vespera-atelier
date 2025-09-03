@@ -36,9 +36,9 @@ export const ChatIntegrationExample: React.FC<ChatIntegrationExampleProps> = ({ 
     const initializeChatManager = async () => {
       try {
         // Create dependencies
-        const templateRegistry = new ChatTemplateRegistry(context);
-        const configManager = new ChatConfigurationManager(context);
         const eventRouter = new ChatEventRouter();
+        const templateRegistry = new ChatTemplateRegistry(context.extensionUri, eventRouter);
+        const configManager = new ChatConfigurationManager(context, templateRegistry, eventRouter);
         
         // Create chat manager
         const chatManager = new ChatManager(
@@ -155,6 +155,7 @@ export const ChatIntegrationExample: React.FC<ChatIntegrationExampleProps> = ({ 
         content: chunk.content,
         timestamp: new Date(),
         threadId: 'default',
+        sessionId: `session_${Date.now()}`,
         metadata: {
           provider: selectedProviderId
         }
@@ -256,14 +257,17 @@ export const ChatIntegrationExample: React.FC<ChatIntegrationExampleProps> = ({ 
       
       // Update message content
       const updatedMessages = [...messages];
-      updatedMessages[messageIndex].content = newContent;
+      const messageToUpdate = updatedMessages[messageIndex];
+      if (!messageToUpdate) return;
+      
+      messageToUpdate.content = newContent;
       
       // Remove subsequent messages and retry
       const messagesToKeep = updatedMessages.slice(0, messageIndex + 1);
       setMessages(messagesToKeep);
       
       // If it's a user message, resend it
-      if (updatedMessages[messageIndex].role === 'user') {
+      if (messageToUpdate.role === 'user') {
         await handleSendMessage(newContent);
       }
       

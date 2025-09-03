@@ -56,7 +56,7 @@ export const InputBehaviorSettings: React.FC<InputBehaviorSettingsProps> = ({
             <select
               className="input-behavior-settings__select"
               value={hotkeys.send}
-              onChange={(e) => handleHotkeyChange('send', e.target.value as any)}
+              onChange={(e) => handleHotkeyChange('send', e.target.value as HotkeyConfig['send'])}
               disabled={disabled}
             >
               <option value="enter">Enter</option>
@@ -75,7 +75,7 @@ export const InputBehaviorSettings: React.FC<InputBehaviorSettingsProps> = ({
             <select
               className="input-behavior-settings__select"
               value={hotkeys.newLine}
-              onChange={(e) => handleHotkeyChange('newLine', e.target.value as any)}
+              onChange={(e) => handleHotkeyChange('newLine', e.target.value as HotkeyConfig['newLine'])}
               disabled={disabled}
             >
               <option value="shift_enter">Shift+Enter</option>

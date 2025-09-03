@@ -94,7 +94,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   };
 
   // Handle command detection
-  const handleCommandDetected = React.useCallback((command: string, args: string[]): boolean => {
+  const handleCommandDetected = React.useCallback((command: string, _args: string[]): boolean => {
     switch (command.toLowerCase()) {
       case 'clear':
         if (onClearHistory) {

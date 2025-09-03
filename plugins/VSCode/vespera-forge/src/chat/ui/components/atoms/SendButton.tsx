@@ -28,7 +28,7 @@ export const SendButton: React.FC<SendButtonProps> = ({
   showText = true,
   ariaLabel
 }) => {
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (!disabled && !loading && onClick) {
       onClick();

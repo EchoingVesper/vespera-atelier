@@ -360,7 +360,7 @@ export const ConfigurationFlyout: React.FC<ConfigurationFlyoutProps> = ({
   const getDefaultProvider = () => {
     return configuredProviders.find(p => 
       configuredProviders.length === 1 || // Single provider is default
-      p.config.isDefault === true
+      p.config['isDefault'] === true
     );
   };
   

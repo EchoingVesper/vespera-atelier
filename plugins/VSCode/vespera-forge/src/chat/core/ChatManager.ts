@@ -21,6 +21,7 @@ export class ChatManager {
   private providers = new Map<string, ChatProvider>();
   private activeProviderId?: string;
   private currentThread?: ChatThread;
+  private currentSessionId: string;
   private messageHistory: ChatMessage[] = [];
   private streamingCallbacks: StreamingCallback[] = [];
   private isStreaming = false;
@@ -31,6 +32,7 @@ export class ChatManager {
     private readonly configManager: ChatConfigurationManager,
     private readonly eventRouter: ChatEventRouter
   ) {
+    this.currentSessionId = this.generateSessionId();
     this.setupEventListeners();
   }
   
@@ -124,7 +126,8 @@ export class ChatManager {
       role: 'user',
       content,
       timestamp: new Date(),
-      threadId: this.currentThread?.id || 'default'
+      threadId: this.currentThread?.id || 'default',
+      sessionId: this.currentSessionId
     };
     
     // Add to history
@@ -161,6 +164,7 @@ export class ChatManager {
         content: response.content,
         timestamp: response.timestamp,
         threadId: userMessage.threadId,
+        sessionId: this.currentSessionId,
         metadata: {
           provider: targetProviderId,
           ...response.metadata
@@ -196,6 +200,7 @@ export class ChatManager {
         content: 'Sorry, I encountered an error while processing your message.',
         timestamp: new Date(),
         threadId: userMessage.threadId,
+        sessionId: this.currentSessionId,
         metadata: {
           provider: targetProviderId,
           error: error instanceof Error ? error.message : 'Unknown error'
@@ -324,6 +329,7 @@ export class ChatManager {
       createdAt: new Date(),
       updatedAt: new Date(),
       providerId: this.activeProviderId || 'unknown',
+      sessionId: this.currentSessionId,
       metadata: {}
     };
     
@@ -409,6 +415,7 @@ export class ChatManager {
           createdAt: new Date(),
           updatedAt: new Date(),
           providerId: this.activeProviderId || 'unknown',
+          sessionId: this.currentSessionId,
           metadata: {}
         };
       }
@@ -422,6 +429,7 @@ export class ChatManager {
         createdAt: new Date(),
         updatedAt: new Date(),
         providerId: this.activeProviderId || 'unknown',
+        sessionId: this.currentSessionId,
         metadata: {}
       };
     }
@@ -441,7 +449,7 @@ export class ChatManager {
   
   private async reloadProviders(config: any): Promise<void> {
     // TODO: Reload providers when configuration changes
-    console.log('[ChatManager] Reloading providers due to configuration change');
+    console.log('[ChatManager] Reloading providers due to configuration change', config);
   }
   
   private addMessageToHistory(message: ChatMessage): void {
@@ -462,6 +470,10 @@ export class ChatManager {
   
   private generateMessageId(): string {
     return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  private generateSessionId(): string {
+    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
   
   private exportAsMarkdown(): string {
@@ -521,6 +533,9 @@ export class ChatManager {
     }
     
     const message = this.messageHistory[messageIndex];
+    if (!message) {
+      throw new Error('Message not found');
+    }
     if (message.role !== 'user') {
       throw new Error('Can only retry user messages');
     }

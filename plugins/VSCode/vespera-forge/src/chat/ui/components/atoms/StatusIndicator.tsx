@@ -19,7 +19,7 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
   size = 'medium',
   animated = true
 }) => {
-  const getStatusColor = (status: ProviderStatus): string => {
+  const getStatusColor = (status: ProviderStatus): 'success' | 'warning' | 'error' | 'inactive' => {
     switch (status) {
       case ProviderStatus.Connected:
         return 'success';

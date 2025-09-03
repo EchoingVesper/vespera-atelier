@@ -57,7 +57,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const [inputHistory, setInputHistory] = React.useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = React.useState(-1);
   const [isDraftSaved, setIsDraftSaved] = React.useState(false);
-  const draftTimeoutRef = React.useRef<NodeJS.Timeout>();
+  const draftTimeoutRef = React.useRef<NodeJS.Timeout | undefined>();
 
   // Load persisted draft and history on mount
   React.useEffect(() => {
@@ -70,7 +70,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       const savedHistory = localStorage.getItem(`vespera-forge-history-${historyKey}`);
       if (savedHistory) {
         try {
-          const history = JSON.parse(savedHistory);
+          const history = JSON.parse(savedHistory) as string[];
           setInputHistory(history);
           onHistoryChange?.(history);
         } catch (error) {
@@ -118,6 +118,8 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     const parts = trimmed.slice(1).split(/\s+/);
     const command = parts[0];
     const args = parts.slice(1);
+    
+    if (!command) return false;
     
     return onCommandDetected(command, args);
   }, [enableCommandDetection, onCommandDetected]);
@@ -168,11 +170,13 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     if (direction === 'up') {
       const newIndex = Math.min(historyIndex + 1, inputHistory.length - 1);
       setHistoryIndex(newIndex);
-      onChange(inputHistory[newIndex] || '');
+      const historyItem = inputHistory[newIndex];
+      onChange(historyItem ?? '');
     } else {
       const newIndex = Math.max(historyIndex - 1, -1);
       setHistoryIndex(newIndex);
-      onChange(newIndex === -1 ? '' : inputHistory[newIndex] || '');
+      const historyItem = newIndex === -1 ? '' : inputHistory[newIndex];
+      onChange(historyItem ?? '');
     }
   }, [enableHistoryNavigation, inputHistory, historyIndex, onChange]);
 

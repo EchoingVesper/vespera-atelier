@@ -3,8 +3,12 @@
 		"module": "CommonJS",
 		"target": "ES2022",
 		"lib": [
-			"ES2022"
+			"ES2022",
+			"DOM",
+			"DOM.Iterable"
 		],
+		"jsx": "react-jsx",
+		"jsxImportSource": "react",
 		"outDir": "out",
 		"sourceMap": true,
 		"rootDir": "src",
@@ -40,8 +44,7 @@
 	"exclude": [
 		"node_modules",
 		"out",
-		"dist",
-		"src/chat/ui/**/*"
+		"dist"
 	],
 	"ts-node": {
 		"esm": true

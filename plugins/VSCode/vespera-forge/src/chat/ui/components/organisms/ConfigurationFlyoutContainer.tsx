@@ -10,7 +10,7 @@ interface WebViewAPI {
   postMessage: (message: { type: string; data?: any; requestId?: string }) => void;
 }
 
-// Global WebView API (injected by VS Code)
+// Global WebView API (injected by VS Code) and DOM globals
 declare global {
   const vscode: WebViewAPI;
 }
@@ -246,7 +246,7 @@ export const ConfigurationFlyoutContainer: React.FC<ConfigurationFlyoutContainer
   
   // Remove provider
   const handleRemoveProvider = async (providerId: string) => {
-    if (!confirm(`Are you sure you want to remove the "${providerId}" provider?`)) {
+    if (!(window as any).confirm(`Are you sure you want to remove the "${providerId}" provider?`)) {
       return;
     }
     
@@ -259,7 +259,7 @@ export const ConfigurationFlyoutContainer: React.FC<ConfigurationFlyoutContainer
       await loadProviderData();
     } catch (error) {
       console.error('Failed to remove provider:', error);
-      alert(`Failed to remove provider: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      (window as any).alert(`Failed to remove provider: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
   
@@ -274,7 +274,7 @@ export const ConfigurationFlyoutContainer: React.FC<ConfigurationFlyoutContainer
       await loadProviderData();
     } catch (error) {
       console.error('Failed to set default provider:', error);
-      alert(`Failed to set default provider: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      (window as any).alert(`Failed to set default provider: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
   
@@ -293,15 +293,15 @@ export const ConfigurationFlyoutContainer: React.FC<ConfigurationFlyoutContainer
       const message = response.message;
       
       if (success) {
-        alert(`✅ ${message}`);
+        (window as any).alert(`✅ ${message}`);
       } else {
-        alert(`❌ ${message}`);
+        (window as any).alert(`❌ ${message}`);
       }
       
       return success;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Connection test failed';
-      alert(`❌ ${message}`);
+      (window as any).alert(`❌ ${message}`);
       return false;
     }
   };

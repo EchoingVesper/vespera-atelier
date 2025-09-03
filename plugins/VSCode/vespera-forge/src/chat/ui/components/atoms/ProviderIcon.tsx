@@ -67,7 +67,7 @@ export const ProviderIcon: React.FC<ProviderIconProps> = ({
     `provider-icon--${status}`
   ].join(' ');
 
-  const tooltipText = showTooltip 
+  const tooltipText: string | undefined = showTooltip 
     ? `${providerName} - ${getStatusText(status)}`
     : undefined;
 
