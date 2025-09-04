@@ -692,8 +692,9 @@ export class ChatConfigurationManager {
       const remainingProviders = Object.keys(updates.providers);
       if (remainingProviders.length > 0) {
         const firstProviderId = remainingProviders[0];
-        if (firstProviderId && updates.providers[firstProviderId]) {
-          updates.providers[firstProviderId]!.isDefault = true;
+        const firstProvider = firstProviderId ? updates.providers[firstProviderId] : undefined;
+        if (firstProviderId && firstProvider) {
+          firstProvider.isDefault = true;
         }
       }
     }
