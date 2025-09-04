@@ -353,6 +353,83 @@ export function getChatWebViewContent(
             <button class="error-notice__dismiss" title="Dismiss" type="button" style="display: none;">✕</button>
         </div>
     </template>
+
+    <!-- Context Display Templates for Enhanced UI -->
+    <template id="context-container-template">
+        <div class="context-display" data-context-id="" data-sanitized="false" data-threats="false" data-blocked="false" role="region" aria-labelledby="">
+            <div class="context-header" role="button" tabindex="0" aria-expanded="true" aria-controls="">
+                <div class="context-title">
+                    <button class="context-toggle expanded" type="button" aria-label="Toggle context visibility" data-context-id="" tabindex="-1">
+                        <span class="context-toggle__icon" aria-hidden="true">▼</span>
+                    </button>
+                    <span class="context-label">File Context</span>
+                    <span class="context-security-indicator" aria-hidden="true"></span>
+                    <span class="context-summary"></span>
+                </div>
+                <div class="context-metadata">
+                    <span class="context-count" aria-label="Number of context items">0 items</span>
+                    <span class="context-threats" style="display: none;" aria-label="Security threats detected"></span>
+                    <span class="context-timestamp" aria-label="Context creation time"></span>
+                </div>
+                <div class="context-actions">
+                    <button class="context-action context-action--expand-all" type="button" title="Expand all items" aria-label="Expand all context items">⊞</button>
+                    <button class="context-action context-action--collapse-all" type="button" title="Collapse all items" aria-label="Collapse all context items">⊟</button>
+                    <button class="context-action context-action--refresh" type="button" title="Refresh context" aria-label="Refresh context data">↻</button>
+                </div>
+            </div>
+            <div class="context-content visible" role="region" data-context-id="" aria-labelledby="">
+                <!-- Context items will be inserted here -->
+            </div>
+        </div>
+    </template>
+
+    <template id="context-item-template">
+        <div class="context-item" data-type="" data-expanded="false" role="article" aria-labelledby="">
+            <div class="context-item-header" role="button" tabindex="0" aria-expanded="false" aria-controls="">
+                <div class="context-item-info">
+                    <div class="context-item-icon" aria-hidden="true">
+                        <span class="file-type-icon"></span>
+                    </div>
+                    <div class="context-item-details">
+                        <span class="context-item-path" title=""></span>
+                        <div class="context-item-tags">
+                            <span class="context-item-language" style="display: none;"></span>
+                            <span class="context-item-lines" style="display: none;"></span>
+                            <span class="context-item-type" style="display: none;"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="context-item-actions">
+                    <button class="context-item-action context-item-action--navigate" type="button" title="Go to file" aria-label="Navigate to file">↗</button>
+                    <button class="context-item-action context-item-action--expand" type="button" title="Expand content" aria-label="Expand file content">⊞</button>
+                </div>
+            </div>
+            <div class="context-item-preview" role="region" style="display: none;" aria-labelledby="">
+                <div class="context-item-content">
+                    <pre><code></code></pre>
+                </div>
+                <div class="context-item-footer">
+                    <span class="context-item-size"></span>
+                    <span class="context-item-modified"></span>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="context-empty-template">
+        <div class="context-empty" role="status" aria-live="polite">
+            <div class="context-empty__icon" aria-hidden="true">📄</div>
+            <div class="context-empty__message">No context items available</div>
+            <div class="context-empty__hint">Context will appear here when files are referenced in the conversation</div>
+        </div>
+    </template>
+
+    <template id="context-loading-template">
+        <div class="context-loading" role="status" aria-live="polite">
+            <div class="context-loading__spinner" aria-hidden="true">⟳</div>
+            <div class="context-loading__message">Loading context...</div>
+        </div>
+    </template>
     
     <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>

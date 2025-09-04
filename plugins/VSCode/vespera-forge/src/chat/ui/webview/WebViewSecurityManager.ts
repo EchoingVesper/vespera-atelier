@@ -772,6 +772,45 @@ export class WebViewSecurityManager {
   }
 
   /**
+   * Sanitize content for safe webview display
+   */
+  async sanitizeForDisplay(
+    content: string,
+    context?: Record<string, any>
+  ): Promise<string> {
+    if (this.disposed) {
+      throw new Error('WebViewSecurityManager has been disposed');
+    }
+
+    try {
+      const sanitizationResult = await this.sanitizer.sanitize(
+        content,
+        SanitizationScope.WEBVIEW_CONTENT,
+        context
+      );
+
+      if (sanitizationResult.blocked) {
+        this.logger.warn('Content blocked during display sanitization', {
+          threats: sanitizationResult.threats.length,
+          context
+        });
+        return '[Content blocked by security policy]';
+      }
+
+      if (sanitizationResult.sanitized !== null) {
+        return sanitizationResult.sanitized as string;
+      }
+
+      return content;
+
+    } catch (error) {
+      this.logger.error('Display sanitization failed', error, { context });
+      // Fail-open for display purposes - return original content
+      return content;
+    }
+  }
+
+  /**
    * Dispose the security manager
    */
   dispose(): void {
