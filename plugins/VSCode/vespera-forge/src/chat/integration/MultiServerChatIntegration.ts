@@ -12,7 +12,6 @@
 import * as vscode from 'vscode';
 import { VesperaLogger } from '../../core/logging/VesperaLogger';
 import { VesperaErrorHandler } from '../../core/error-handling/VesperaErrorHandler';
-import { SecurityEnhancedVesperaCoreServices } from '../../core/security/SecurityEnhancedCoreServices';
 
 // Import notification system
 import { 
@@ -25,7 +24,6 @@ import {
 import { TaskServerManager } from '../servers/TaskServerManager';
 import { MultiChatStateManager } from '../state/MultiChatStateManager';
 import { SecureSessionPersistenceManager } from '../persistence/SecureSessionPersistenceManager';
-import { TaskChatIntegration } from './TaskChatIntegration';
 import { EnhancedChatWebViewProvider } from '../ui/webview/EnhancedChatWebViewProvider';
 
 // Event interfaces
@@ -80,13 +78,10 @@ export class MultiServerChatIntegration implements vscode.Disposable {
   private initialized = false;
 
   constructor(
-    private readonly context: vscode.ExtensionContext,
-    private readonly coreServices: SecurityEnhancedVesperaCoreServices,
     private readonly notificationSystem: VesperaNotificationSystem,
     private readonly taskServerManager: TaskServerManager,
     private readonly stateManager: MultiChatStateManager,
     private readonly persistenceManager: SecureSessionPersistenceManager,
-    private readonly taskIntegration: TaskChatIntegration,
     private readonly webViewProvider: EnhancedChatWebViewProvider,
     private readonly logger: VesperaLogger,
     private readonly errorHandler: VesperaErrorHandler

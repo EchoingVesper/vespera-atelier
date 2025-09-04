@@ -187,12 +187,12 @@ export class AnthropicProvider extends ChatProvider {
     }
     
     // Add other Anthropic-specific parameters if configured
-    if (this.config.topP !== undefined) {
-      requestBody.top_p = Math.max(0.0, Math.min(1.0, this.config.topP));
+    if (this.config['topP'] !== undefined) {
+      requestBody.top_p = Math.max(0.0, Math.min(1.0, this.config['topP']));
     }
     
-    if (this.config.topK !== undefined) {
-      requestBody.top_k = Math.max(1, Math.floor(this.config.topK));
+    if (this.config['topK'] !== undefined) {
+      requestBody.top_k = Math.max(1, Math.floor(this.config['topK']));
     }
     
     return requestBody;

@@ -332,7 +332,7 @@ export class SessionPersistenceIntegration {
 
     // Setup workspace change handlers
     this.disposables.push(
-      vscode.workspace.onDidChangeWorkspaceFolders(async (event) => {
+      vscode.workspace.onDidChangeWorkspaceFolders(async (_event) => {
         // Reinitialize Codex templates if workspace changes
         if (this.templateManager) {
           await this.templateManager.initialize();
@@ -523,7 +523,6 @@ export class SessionPersistenceIntegration {
         return;
       }
 
-      const currentState = this.stateManager.getState();
       const mcpStatus = this.taskIntegration?.getMCPConnectionStatus() || 'not initialized';
       
       const status = {

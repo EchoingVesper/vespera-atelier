@@ -279,42 +279,42 @@ export class VesperaCoreServices implements vscode.Disposable {
     // Check logger
     try {
       logger.debug('Health check: Logger test');
-      serviceChecks.logger = { healthy: true };
+      serviceChecks['logger'] = { healthy: true };
     } catch (error) {
-      serviceChecks.logger = { healthy: false, error: String(error) };
+      serviceChecks['logger'] = { healthy: false, error: String(error) };
     }
 
     // Check error handler
     try {
       // Test that error handler exists and has strategies
       const unknownStrategy = errorHandler.getStrategy(9000); // UNKNOWN_ERROR
-      serviceChecks.errorHandler = { healthy: !!unknownStrategy };
+      serviceChecks['errorHandler'] = { healthy: !!unknownStrategy };
     } catch (error) {
-      serviceChecks.errorHandler = { healthy: false, error: String(error) };
+      serviceChecks['errorHandler'] = { healthy: false, error: String(error) };
     }
 
     // Check context manager
     try {
       const memStats = contextManager.getMemoryStats();
-      serviceChecks.contextManager = { healthy: !!memStats };
+      serviceChecks['contextManager'] = { healthy: !!memStats };
     } catch (error) {
-      serviceChecks.contextManager = { healthy: false, error: String(error) };
+      serviceChecks['contextManager'] = { healthy: false, error: String(error) };
     }
 
     // Check telemetry service
     try {
       const isEnabled = telemetryService.isEnabled();
-      serviceChecks.telemetryService = { healthy: typeof isEnabled === 'boolean' };
+      serviceChecks['telemetryService'] = { healthy: typeof isEnabled === 'boolean' };
     } catch (error) {
-      serviceChecks.telemetryService = { healthy: false, error: String(error) };
+      serviceChecks['telemetryService'] = { healthy: false, error: String(error) };
     }
 
     // Check disposal manager
     try {
       const stats = disposalManager.getStats();
-      serviceChecks.disposalManager = { healthy: !!stats };
+      serviceChecks['disposalManager'] = { healthy: !!stats };
     } catch (error) {
-      serviceChecks.disposalManager = { healthy: false, error: String(error) };
+      serviceChecks['disposalManager'] = { healthy: false, error: String(error) };
     }
 
     const allHealthy = Object.values(serviceChecks).every(check => check.healthy);

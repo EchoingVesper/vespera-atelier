@@ -260,20 +260,20 @@ export class LMStudioProvider extends ChatProvider {
     }
     
     // Add other parameters if configured (LM Studio supports most OpenAI parameters)
-    if (this.config.topP !== undefined) {
-      requestBody.top_p = Math.max(0.0, Math.min(1.0, this.config.topP));
+    if (this.config['topP'] !== undefined) {
+      requestBody.top_p = Math.max(0.0, Math.min(1.0, this.config['topP']));
     }
     
-    if (this.config.frequencyPenalty !== undefined) {
-      requestBody.frequency_penalty = Math.max(-2.0, Math.min(2.0, this.config.frequencyPenalty));
+    if (this.config['frequencyPenalty'] !== undefined) {
+      requestBody.frequency_penalty = Math.max(-2.0, Math.min(2.0, this.config['frequencyPenalty']));
     }
     
-    if (this.config.presencePenalty !== undefined) {
-      requestBody.presence_penalty = Math.max(-2.0, Math.min(2.0, this.config.presencePenalty));
+    if (this.config['presencePenalty'] !== undefined) {
+      requestBody.presence_penalty = Math.max(-2.0, Math.min(2.0, this.config['presencePenalty']));
     }
     
-    if (this.config.stop && Array.isArray(this.config.stop)) {
-      requestBody.stop = this.config.stop.slice(0, 4); // Limit stop sequences
+    if (this.config['stop'] && Array.isArray(this.config['stop'])) {
+      requestBody.stop = this.config['stop'].slice(0, 4); // Limit stop sequences
     }
     
     return requestBody;

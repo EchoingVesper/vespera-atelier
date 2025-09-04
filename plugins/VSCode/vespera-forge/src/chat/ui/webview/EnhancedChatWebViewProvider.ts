@@ -531,39 +531,6 @@ export class EnhancedChatWebViewProvider implements vscode.WebviewViewProvider {
     }
   }
 
-  /**
-   * Handle request server status
-   */
-  private async handleRequestServerStatus(message: MultiServerWebViewMessage): Promise<WebViewResponse> {
-    try {
-      const serverId = message.serverId;
-      if (!serverId) {
-        return { success: false, error: 'Server ID required' };
-      }
-
-      const server = this.persistenceManager.getServer(serverId);
-      if (!server) {
-        return { success: false, error: 'Server not found' };
-      }
-
-      // Get task server state if it's a task server
-      const taskServerState = server.serverType === 'task' 
-        ? this.taskServerManager.getTaskServer(server.taskId || '')
-        : undefined;
-
-      return {
-        success: true,
-        data: {
-          server,
-          taskServerState,
-          connectionStatus: this.taskIntegration.getMCPConnectionStatus()
-        }
-      };
-
-    } catch (error) {
-      return { success: false, error: 'Failed to get server status' };
-    }
-  }
 
   /**
    * Handle request agent progress
@@ -584,33 +551,6 @@ export class EnhancedChatWebViewProvider implements vscode.WebviewViewProvider {
 
     } catch (error) {
       return { success: false, error: 'Failed to get agent progress' };
-    }
-  }
-
-  /**
-   * Handle request task progress
-   */
-  private async handleRequestTaskProgress(message: MultiServerWebViewMessage): Promise<WebViewResponse> {
-    try {
-      const taskId = message.data?.taskId;
-      if (!taskId) {
-        return { success: false, error: 'Task ID required' };
-      }
-
-      const taskMapping = this.taskIntegration.getTaskMapping(taskId);
-      const taskServerState = this.taskServerManager.getTaskServer(taskId);
-
-      return {
-        success: true,
-        data: {
-          taskMapping,
-          taskServerState,
-          mcpStatus: this.taskIntegration.getMCPConnectionStatus()
-        }
-      };
-
-    } catch (error) {
-      return { success: false, error: 'Failed to get task progress' };
     }
   }
 
@@ -1354,41 +1294,6 @@ export class EnhancedChatWebViewProvider implements vscode.WebviewViewProvider {
     return { success: true, data: { message: 'Standard message handling not yet implemented' } };
   }
 
-  /**
-   * Handle send message with server/channel context
-   */
-  private async handleSendMessageWithContext(message: MultiServerWebViewMessage): Promise<WebViewResponse> {
-    try {
-      // Add server and channel context to the message
-      const contextualMessage = {
-        ...message,
-        serverId: message.serverId || this.stateManager.getState().activeServerId,
-        channelId: message.channelId || this.stateManager.getState().activeChannelId,
-        timestamp: Date.now()
-      };
-
-      // Send through task integration if it's a task channel
-      if (contextualMessage.serverId?.startsWith('task_')) {
-        await this.taskIntegration.sendMessageToTaskChannel(contextualMessage);
-      }
-
-      // Update message history
-      await this.persistenceManager.addMessage({
-        messageId: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        serverId: contextualMessage.serverId!,
-        channelId: contextualMessage.channelId!,
-        content: contextualMessage.content || '',
-        timestamp: contextualMessage.timestamp,
-        messageType: 'user'
-      });
-
-      return { success: true, data: contextualMessage };
-
-    } catch (error) {
-      this.logger.error('Failed to send message with context', error);
-      return { success: false, error: error.message };
-    }
-  }
 
   /**
    * Handle server status requests
@@ -1407,26 +1312,6 @@ export class EnhancedChatWebViewProvider implements vscode.WebviewViewProvider {
           mcpConnectionStatus: this.taskIntegration.getMCPConnectionStatus()
         }
       };
-
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  }
-
-  /**
-   * Handle agent progress requests
-   */
-  private async handleRequestAgentProgress(message: MultiServerWebViewMessage): Promise<WebViewResponse> {
-    try {
-      // This would integrate with the agent tracking system
-      const agentProgress = {
-        activeAgents: 0,
-        completedTasks: 0,
-        inProgressTasks: 0,
-        failedTasks: 0
-      };
-
-      return { success: true, data: agentProgress };
 
     } catch (error) {
       return { success: false, error: error.message };

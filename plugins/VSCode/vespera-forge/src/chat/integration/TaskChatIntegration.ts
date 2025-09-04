@@ -13,7 +13,6 @@
 import * as vscode from 'vscode';
 import { VesperaLogger } from '../../core/logging/VesperaLogger';
 import { VesperaErrorHandler } from '../../core/error-handling/VesperaErrorHandler';
-import { SecurityEnhancedVesperaCoreServices } from '../../core/security/SecurityEnhancedCoreServices';
 import { 
   SecureSessionPersistenceManager,
   MessageHistoryState
@@ -26,7 +25,6 @@ import {
   AgentProgressUpdate
 } from '../servers/TaskServerManager';
 import { MultiChatStateManager } from '../state/MultiChatStateManager';
-import { ChatServerTemplateManager } from '../templates/ChatServerTemplateManager';
 
 // MCP Integration interfaces
 export interface MCPTaskEvent {
@@ -146,8 +144,6 @@ export class TaskChatIntegration {
     private readonly persistenceManager: SecureSessionPersistenceManager,
     private readonly taskServerManager: TaskServerManager,
     private readonly stateManager: MultiChatStateManager,
-    private readonly templateManager: ChatServerTemplateManager,
-    private readonly coreServices: SecurityEnhancedVesperaCoreServices,
     private readonly logger: VesperaLogger,
     private readonly errorHandler: VesperaErrorHandler
   ) {
