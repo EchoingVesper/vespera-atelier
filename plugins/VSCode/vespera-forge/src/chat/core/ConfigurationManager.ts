@@ -692,8 +692,9 @@ export class ChatConfigurationManager {
       const remainingProviders = Object.keys(updates.providers);
       if (remainingProviders.length > 0) {
         const firstProviderId = remainingProviders[0];
-        if (firstProviderId && updates.providers[firstProviderId]) {
-          updates.providers[firstProviderId]!.isDefault = true;
+        const firstProvider = firstProviderId ? updates.providers[firstProviderId] : undefined;
+        if (firstProviderId && firstProvider) {
+          firstProvider.isDefault = true;
         }
       }
     }
@@ -1234,8 +1235,12 @@ export class ChatConfigurationManager {
       
       // Request missing consents
       const purposesToRequest: string[] = [];
-      if (!hasStorageConsent) purposesToRequest.push('credential_storage');
-      if (!hasMigrationConsent) purposesToRequest.push('credential_migration');
+      if (!hasStorageConsent) {
+        purposesToRequest.push('credential_storage');
+      }
+      if (!hasMigrationConsent) {
+        purposesToRequest.push('credential_migration');
+      }
       
       const consentRecord = await this.consentManager.requestConsent(
         userId,
@@ -1322,10 +1327,14 @@ export class ChatConfigurationManager {
     
     try {
       for (const [providerId, providerData] of Object.entries(this.config.providers)) {
-        if (!providerData.enabled) continue;
+        if (!providerData.enabled) {
+          continue;
+        }
         
         const template = this.templateRegistry.getTemplate(providerId);
-        if (!template?.ui_schema?.config_fields) continue;
+        if (!template?.ui_schema?.config_fields) {
+          continue;
+        }
         
         for (const field of template.ui_schema.config_fields) {
           if (field.type === 'password' && field.name in providerData.config) {
@@ -1403,10 +1412,14 @@ export class ChatConfigurationManager {
     
     // Count credentials by type
     for (const [providerId, providerData] of Object.entries(this.config.providers)) {
-      if (!providerData.enabled) continue;
+      if (!providerData.enabled) {
+        continue;
+      }
       
       const template = this.templateRegistry.getTemplate(providerId);
-      if (!template?.ui_schema?.config_fields) continue;
+      if (!template?.ui_schema?.config_fields) {
+        continue;
+      }
       
       for (const field of template.ui_schema.config_fields) {
         if (field.type === 'password' && field.name in providerData.config) {

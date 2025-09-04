@@ -1,0 +1,75 @@
+{
+	"compilerOptions": {
+		"module": "ESNext",
+		"target": "ES2022",
+		"lib": [
+			"ES2022",
+			"DOM",
+			"DOM.Iterable"
+		],
+		"jsx": "react-jsx",
+		"jsxImportSource": "react",
+		"outDir": "./dist",
+		"sourceMap": true,
+		"strict": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"exactOptionalPropertyTypes": false,
+		"noImplicitOverride": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noUncheckedIndexedAccess": true,
+		
+		// Additional Strict Checks
+		"allowUnreachableCode": false,
+		"allowUnusedLabels": false,
+		"noImplicitAny": true,
+		"strictNullChecks": true,
+		"strictFunctionTypes": true,
+		"strictBindCallApply": true,
+		"strictPropertyInitialization": true,
+		"noImplicitThis": true,
+		"alwaysStrict": true,
+		
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
+		"forceConsistentCasingInFileNames": true,
+		"declaration": true,
+		"declarationMap": true,
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"moduleResolution": "Node",
+		"baseUrl": ".",
+		"paths": {
+			"@packages/*": ["packages/*"],
+			"@plugins/*": ["plugins/*"],
+			"@docs/*": ["docs/*"],
+			"@tools/*": ["tools/*"]
+		}
+	},
+	"include": [
+		"packages/**/*",
+		"plugins/**/*",
+		"tools/**/*"
+	],
+	"exclude": [
+		"node_modules",
+		"**/node_modules",
+		"**/out",
+		"**/dist",
+		"archive",
+		"PRPs"
+	],
+	"references": [
+		{
+			"path": "./packages/vespera-scriptorium"
+		},
+		{
+			"path": "./plugins/VSCode/vespera-forge"
+		},
+		{
+			"path": "./plugins/Obsidian/vespera-scriptorium"
+		}
+	]
+}

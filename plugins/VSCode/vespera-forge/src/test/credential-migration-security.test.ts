@@ -11,21 +11,7 @@ import { ChatConfigurationManager } from '../chat/core/ConfigurationManager';
 import { CredentialManager } from '../chat/utils/encryption';
 import { ChatTemplateRegistry } from '../chat/core/TemplateRegistry';
 import { ChatEventRouter } from '../chat/events/ChatEventRouter';
-import { VesperaSecurityManager } from '../core/security/VesperaSecurityManager';
-import { VesperaRateLimiter } from '../core/security/rate-limiting/VesperaRateLimiter';
-import { VesperaConsentManager } from '../core/security/consent/VesperaConsentManager';
-import { 
-  RateLimitingConfiguration, 
-  ConsentConfiguration,
-  SecurityConfiguration,
-  ConsentPurpose,
-  ConsentCategory,
-  LegalBasis,
-  TokenBucketConfig
-} from '../types/security';
-import { VesperaLogger } from '../core/logging/VesperaLogger';
-import { VesperaErrorHandler } from '../core/error-handling/VesperaErrorHandler';
-import { VesperaContextManager } from '../core/memory-management/VesperaContextManager';
+import { ConsentPurpose } from '../types/security';
 
 // Enhanced mock implementations for security testing
 class MockSecretStorage implements vscode.SecretStorage {
@@ -246,7 +232,6 @@ suite('Enhanced Credential Migration Security Tests', () => {
     mockSecurityManager.registerService('consentManager', mockConsentManager);
     
     // Mock security manager singleton
-    (VesperaSecurityManager as any).instance = mockSecurityManager;
     
     // Create configuration manager with mocked dependencies
     const templateRegistry = new ChatTemplateRegistry(mockContext);

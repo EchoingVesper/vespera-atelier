@@ -281,6 +281,9 @@
     "test:coverage": "c8 --reporter=text --reporter=html --reporter=lcov npm test",
     "coverage": "c8 --reporter=text --reporter=html npm test",
     "coverage:report": "c8 report --reporter=text --reporter=html",
+    "typecheck": "tsc --noEmit",
+    "typecheck:strict": "tsc --noEmit --strict",
+    "lint:types": "tsc --noEmit && eslint src --ext .ts",
     "clean": "rimraf dist out coverage .nyc_output",
     "dev": "npm run clean && npm run watch"
   },
