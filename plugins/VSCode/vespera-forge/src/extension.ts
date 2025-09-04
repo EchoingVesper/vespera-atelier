@@ -16,9 +16,11 @@ import {
   VesperaCoreServicesConfig,
   VesperaContextManager
 } from '@/core';
+import { SecurityIntegrationManager } from './security-integration';
 
 // Core services instance - managed by VesperaCoreServices singleton
 let coreServices: Awaited<ReturnType<typeof VesperaCoreServices.initialize>> | undefined;
+let securityIntegration: SecurityIntegrationManager | undefined;
 
 /**
  * Extension activation function with enhanced memory management
@@ -48,6 +50,26 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     coreServices = await VesperaCoreServices.initialize(context, coreConfig);
     const { logger, contextManager, disposalManager, errorHandler } = coreServices;
+
+    // Initialize enterprise-grade security integration
+    logger.info('Initializing security integration...');
+    try {
+      securityIntegration = await SecurityIntegrationManager.initializeFromConfig(context);
+      const securityStatus = securityIntegration.getStatus();
+      
+      if (securityStatus.healthStatus.overall === 'healthy') {
+        logger.info(`Security integration initialized successfully in ${securityStatus.performanceMetrics.initializationTime.toFixed(2)}ms`);
+        logger.info(`Security overhead: ${securityStatus.performanceMetrics.totalSecurityOverhead.toFixed(2)}%`);
+      } else {
+        logger.warn(`Security integration initialized with ${securityStatus.healthStatus.overall} status`);
+        logger.warn(`Failed components: ${securityStatus.performanceMetrics.failedComponents.join(', ')}`);
+      }
+      
+      // Register security integration for disposal
+      disposalManager.add(securityIntegration);
+    } catch (error) {
+      logger.error('Security integration initialization failed - continuing with reduced security', error);
+    }
 
     logger.info('Vespera Forge activation started', {
       vsCodeVersion: vscode.version,
