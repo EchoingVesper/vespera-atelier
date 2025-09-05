@@ -814,7 +814,7 @@ export class MultiChatNotificationManager implements vscode.Disposable {
         );
         processedContent = result.sanitized;
       } catch (error) {
-        this.logger.warn('Failed to sanitize message content', error);
+        this.logger.warn('Failed to sanitize message content', { error });
       }
     }
 
@@ -867,7 +867,7 @@ export class MultiChatNotificationManager implements vscode.Disposable {
         // For now, we'll just clean up old tracking data
         this.cleanupUnreadTracking();
       } catch (error) {
-        this.logger.warn('Unread message polling failed', error);
+        this.logger.warn('Unread message polling failed', { error });
       }
     }, this.config.unreadMessages.updateInterval);
 
@@ -1037,7 +1037,7 @@ export class MultiChatNotificationManager implements vscode.Disposable {
           this.processBatchedNotifications();
         }
       } catch (error) {
-        this.logger.warn('Multi-chat notification cleanup failed', error);
+        this.logger.warn('Multi-chat notification cleanup failed', { error });
       }
     }, 300000); // Run every 5 minutes
 

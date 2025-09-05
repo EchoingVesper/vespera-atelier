@@ -886,7 +886,7 @@ export class AgentProgressNotifier implements vscode.Disposable {
           }
         }
       } catch (error) {
-        this.logger.warn('Progress notifier cleanup failed', error);
+        this.logger.warn('Progress notifier cleanup failed', { error });
       }
     }, 300000); // Run every 5 minutes
 

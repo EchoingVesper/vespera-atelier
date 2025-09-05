@@ -14,7 +14,8 @@ import { VesperaSecurityAuditLogger } from '../core/security/audit/VesperaSecuri
 
 export enum NotificationLevel {
   CRITICAL = 'critical',
-  IMPORTANT = 'important', 
+  IMPORTANT = 'important',
+  SUCCESS = 'success',
   INFO = 'info',
   DEBUG = 'debug'
 }
@@ -22,7 +23,9 @@ export enum NotificationLevel {
 export enum NotificationType {
   AGENT_COMPLETION = 'agent_completion',
   TASK_PROGRESS = 'task_progress',
+  TASK_UPDATE = 'task_update',
   TASK_SERVER_EVENT = 'task_server_event',
+  AGENT_STATUS = 'agent_status',
   CHAT_MESSAGE = 'chat_message',
   SECURITY_ALERT = 'security_alert',
   SYSTEM_STATUS = 'system_status',
@@ -265,7 +268,7 @@ export class SecureNotificationManager implements vscode.Disposable {
         deliveryMethods.push('vscode');
         vscodeDelivered = true;
       } catch (error) {
-        this.logger.warn('Failed to show VS Code notification', error, { id: notificationId });
+        this.logger.warn('Failed to show VS Code notification', { error, id: notificationId });
       }
 
       // OS toast notification if enabled and appropriate
@@ -276,7 +279,7 @@ export class SecureNotificationManager implements vscode.Disposable {
           await this.showOSToastNotification(filteredRequest);
           deliveryMethods.push('os-toast');
         } catch (error) {
-          this.logger.warn('Failed to show OS toast notification', error, { id: notificationId });
+          this.logger.warn('Failed to show OS toast notification', { error, id: notificationId });
         }
       }
 
@@ -489,7 +492,7 @@ export class SecureNotificationManager implements vscode.Disposable {
           privacyFiltered = true;
         }
       } catch (error) {
-        this.logger.warn('Failed to sanitize notification content', error);
+        this.logger.warn('Failed to sanitize notification content', { error });
       }
     }
 
@@ -575,7 +578,7 @@ export class SecureNotificationManager implements vscode.Disposable {
         await this.showVSCodeToastFallback(request);
       }
     } catch (error) {
-      this.logger.warn('OS toast notification failed, using VS Code fallback', error);
+      this.logger.warn('OS toast notification failed, using VS Code fallback', { error });
       await this.showVSCodeToastFallback(request);
     }
   }
@@ -649,7 +652,7 @@ export class SecureNotificationManager implements vscode.Disposable {
         }
       );
     } catch (error) {
-      this.logger.warn('Failed to log notification event', error);
+      this.logger.warn('Failed to log notification event', { error });
     }
   }
 
@@ -761,7 +764,19 @@ export class SecureNotificationManager implements vscode.Disposable {
           showInToast: false,
           playSound: false
         },
+        [NotificationType.TASK_UPDATE]: {
+          enabled: true,
+          level: NotificationLevel.INFO,
+          showInToast: false,
+          playSound: false
+        },
         [NotificationType.TASK_SERVER_EVENT]: {
+          enabled: true,
+          level: NotificationLevel.INFO,
+          showInToast: true,
+          playSound: false
+        },
+        [NotificationType.AGENT_STATUS]: {
           enabled: true,
           level: NotificationLevel.INFO,
           showInToast: true,
@@ -836,7 +851,7 @@ export class SecureNotificationManager implements vscode.Disposable {
         }
 
       } catch (error) {
-        this.logger.warn('Notification cleanup failed', error);
+        this.logger.warn('Notification cleanup failed', { error });
       }
     }, 60000); // Run every minute
 

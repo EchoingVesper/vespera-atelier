@@ -13,15 +13,12 @@ import { SecurityEnhancedVesperaCoreServices } from '../core/security/SecurityEn
 import { 
   TaskServerManager, 
   TaskServerEvent,
-  TaskProgressUpdate,
-  TaskServerConfig,
-  AgentChannelConfig
+  TaskProgressUpdate
 } from '../chat/servers/TaskServerManager';
 import { 
   SecureNotificationManager, 
   NotificationLevel, 
-  NotificationType, 
-  NotificationAction 
+  NotificationType
 } from './SecureNotificationManager';
 import { 
   AgentProgressNotifier,
@@ -933,7 +930,7 @@ export class TaskServerNotificationIntegration implements vscode.Disposable {
           // Could add logic to check task completion time and clean accordingly
         }
       } catch (error) {
-        this.logger.warn('Task server notification cleanup failed', error);
+        this.logger.warn('Task server notification cleanup failed', { error });
       }
     }, 3600000); // Run every hour
 

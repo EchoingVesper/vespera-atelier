@@ -514,7 +514,7 @@ export class TaskChatIntegration {
       }
 
       // Remove mappings for completed/cancelled tasks
-      for (const [taskId, mapping] of this.taskMappings) {
+      for (const [taskId, _mapping] of this.taskMappings) {
         const task = activeTasks.find(t => t.taskId === taskId);
         if (!task || task.status === 'completed' || task.status === 'cancelled') {
           await this.handleTaskCompleted(task || { 
@@ -655,12 +655,6 @@ export class TaskChatIntegration {
     }
   }
 
-  /**
-   * Save configuration
-   */
-  private async saveConfiguration(): Promise<void> {
-    await this.context.globalState.update('taskChatIntegration.config', this.config);
-  }
 
   /**
    * Restore task mappings from session
@@ -719,7 +713,7 @@ export class TaskChatIntegration {
   /**
    * Sync task mapping with MCP data
    */
-  private async syncTaskMapping(task: MCPTaskData, mapping: TaskChatMapping): Promise<void> {
+  private async syncTaskMapping(_task: MCPTaskData, mapping: TaskChatMapping): Promise<void> {
     // Update mapping with latest task data
     mapping.lastSync = Date.now();
     mapping.syncErrors = 0; // Reset errors on successful sync
@@ -777,12 +771,13 @@ export class TaskChatIntegration {
    */
   private async postProgressUpdateMessage(
     progressData: MCPProgressData,
-    serverId: string
+    _serverId: string
   ): Promise<void> {
-    // Would post to progress channel
-    const progressMessage = `📊 Task Progress Update: ${progressData.overallProgress}%`;
-    
-    // Implementation would find progress channel and post message
+    // Log progress update for now - future implementation would post to progress channel
+    this.logger?.info(`Task Progress Update: ${progressData.overallProgress}%`, {
+      taskId: progressData.taskId,
+      progress: progressData.overallProgress
+    });
   }
 
   /**
@@ -790,12 +785,15 @@ export class TaskChatIntegration {
    */
   private async postTaskCompletionMessage(
     taskData: MCPTaskData,
-    serverId: string
+    _serverId: string
   ): Promise<void> {
-    const statusEmoji = taskData.status === 'completed' ? '✅' : '❌';
-    const message = `${statusEmoji} Task "${taskData.title}" ${taskData.status}`;
-    
-    // Implementation would find general/planning channel and post message
+    // Log task completion for now - future implementation would post to channel
+    const emoji = taskData.status === 'completed' ? '✅' : '❌';
+    this.logger?.info(`${emoji} Task "${taskData.title}" ${taskData.status}`, {
+      taskId: taskData.id,
+      status: taskData.status,
+      title: taskData.title
+    });
   }
 
   /**
