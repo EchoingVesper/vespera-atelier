@@ -6,7 +6,6 @@
  * 1000+ files/second throughput with batch operations.
  */
 
-import * as vscode from 'vscode';
 import { SecurityEnhancedCoreServices } from '../core/security/SecurityEnhancedCoreServices';
 import { FileOperationsSecurityManager, FileOperationAudit } from '../security/file-operations-security';
 import { RustFileOpsSecurityWrapper, SecurityValidationResult } from '../rust-file-ops/security-wrapper';
@@ -77,10 +76,7 @@ export class McpSecureFileTools {
     lastReset: Date.now()
   };
 
-  // Batch processing for high throughput
-  private batchQueue: McpFileOperation[] = [];
-  private readonly BATCH_SIZE = 100;
-  private readonly BATCH_TIMEOUT = 100; // ms
+  // Batch processing for high throughput (placeholder for future implementation)
   private batchTimer: NodeJS.Timeout | null = null;
 
   private constructor() {}
@@ -123,7 +119,6 @@ export class McpSecureFileTools {
       sessionId?: string;
     }
   ): Promise<McpSecurityResult> {
-    const startTime = performance.now();
     
     try {
       const operation: McpFileOperation = {
@@ -165,7 +160,6 @@ export class McpSecureFileTools {
       sessionId?: string;
     }
   ): Promise<McpSecurityResult> {
-    const startTime = performance.now();
     
     try {
       const operation: McpFileOperation = {
@@ -207,7 +201,6 @@ export class McpSecureFileTools {
       sessionId?: string;
     }
   ): Promise<McpSecurityResult> {
-    const startTime = performance.now();
     
     try {
       const operation: McpFileOperation = {
@@ -377,7 +370,7 @@ export class McpSecureFileTools {
       let fileValidation: any;
       if (this.fileSecurityManager) {
         fileValidation = await this.fileSecurityManager.validateFileOperation(
-          operation.operation,
+          operation.operation === 'info' ? 'stat' : operation.operation,
           operation.path,
           operation.content,
           context

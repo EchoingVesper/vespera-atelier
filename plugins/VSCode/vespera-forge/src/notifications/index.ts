@@ -85,6 +85,13 @@ import { SecurityEnhancedVesperaCoreServices } from '../core/security/SecurityEn
 import { ChatManager } from '../chat/core/ChatManager';
 import { TaskServerManager } from '../chat/servers/TaskServerManager';
 import { FileContextCollector } from '../chat/context/FileContextCollector';
+import { SecureNotificationManager, NotificationLevel, NotificationType } from './SecureNotificationManager';
+import { AgentProgressNotifier } from './AgentProgressNotifier';
+import { TaskServerNotificationIntegration } from './TaskServerNotificationIntegration';
+import { MultiChatNotificationManager } from './MultiChatNotificationManager';
+import { NotificationConfigManager, NotificationAnalytics } from './NotificationConfigManager';
+import { CrossPlatformNotificationHandler } from './platform/CrossPlatformNotificationHandler';
+import { ChatNotificationIntegration } from './ChatNotificationIntegration';
 
 export interface NotificationSystemConfig {
   enabled: boolean;
@@ -111,11 +118,11 @@ export class VesperaNotificationSystem implements vscode.Disposable {
   public readonly chatNotificationIntegration: ChatNotificationIntegration;
 
   private constructor(
-    private readonly context: vscode.ExtensionContext,
+    private readonly _context: vscode.ExtensionContext,
     private readonly coreServices: SecurityEnhancedVesperaCoreServices,
-    private readonly chatManager: ChatManager,
-    private readonly taskServerManager: TaskServerManager,
-    private readonly contextCollector: FileContextCollector,
+    private readonly _chatManager: ChatManager,
+    private readonly _taskServerManager: TaskServerManager,
+    private readonly _contextCollector: FileContextCollector,
     secureNotificationManager: SecureNotificationManager,
     agentProgressNotifier: AgentProgressNotifier,
     taskServerNotificationIntegration: TaskServerNotificationIntegration,
@@ -284,7 +291,7 @@ export class VesperaNotificationSystem implements vscode.Disposable {
       });
     } catch (error) {
       // Don't fail system initialization if ready notification fails
-      this.coreServices.logger.warn('Failed to show system ready notification', error);
+      this.coreServices.logger.warn('Failed to show system ready notification', { error });
     }
   }
 

@@ -7,17 +7,10 @@
 
 import * as vscode from 'vscode';
 import { VesperaLogger } from '../../core/logging/VesperaLogger';
-import { VesperaErrorHandler } from '../../core/error-handling/VesperaErrorHandler';
-import { VesperaContextManager } from '../../core/memory-management/VesperaContextManager';
-import { VesperaTelemetryService } from '../../core/telemetry/VesperaTelemetryService';
 
 // Security services
-import { VesperaSecurityManager } from '../../core/security/VesperaSecurityManager';
 import { VesperaRateLimiter } from '../../core/security/rate-limiting/VesperaRateLimiter';
-import { VesperaConsentManager } from '../../core/security/consent/VesperaConsentManager';
 import { VesperaInputSanitizer } from '../../core/security/sanitization/VesperaInputSanitizer';
-import { VesperaSecurityAuditLogger } from '../../core/security/audit/VesperaSecurityAuditLogger';
-import { SecurityEnhancedVesperaCoreServices } from '../../core/security/SecurityEnhancedCoreServices';
 
 // Types
 import {
@@ -32,7 +25,6 @@ import {
   RateLimitContext,
   SanitizationRule,
   SanitizationScope,
-  ThreatPattern,
   ThreatType,
   ThreatSeverity,
   ThreatAction,
@@ -41,7 +33,6 @@ import {
 } from '../../types/security';
 
 import { 
-  DEFAULT_SECURITY_CONFIG,
   createDevelopmentSecurityConfig,
   createConsentPurpose,
   createRateLimitRule,
@@ -162,7 +153,7 @@ export class MockLogger implements Pick<VesperaLogger, 'debug' | 'info' | 'warn'
     this.logs.push({ level: 'fatal', message, error, data });
   }
 
-  createChild(name: string): MockLogger {
+  createChild(_name: string): MockLogger {
     const child = new MockLogger();
     child.logs = this.logs; // Share logs with parent for testing
     return child;
@@ -203,7 +194,7 @@ export class MockContextManager {
   public resources = new Map<string, vscode.Disposable>();
   private disposed = false;
 
-  registerResource(resource: vscode.Disposable, name: string, id: string): void {
+  registerResource(resource: vscode.Disposable, _name: string, id: string): void {
     this.resources.set(id, resource);
   }
 

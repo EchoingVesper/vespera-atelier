@@ -733,8 +733,8 @@ export class NotificationConfigManager implements vscode.Disposable {
   private evaluateTimeCondition(params: Record<string, any>): boolean {
     const now = new Date();
     const currentTime = now.getHours() * 60 + now.getMinutes();
-    const startTime = this.parseTime(params.startTime);
-    const endTime = this.parseTime(params.endTime);
+    const startTime = this.parseTime(params['startTime']);
+    const endTime = this.parseTime(params['endTime']);
 
     if (startTime <= endTime) {
       return currentTime >= startTime && currentTime <= endTime;
@@ -876,7 +876,7 @@ export class NotificationConfigManager implements vscode.Disposable {
       try {
         listener(config);
       } catch (error) {
-        this.logger.warn('Configuration change listener error', error);
+        this.logger.warn('Configuration change listener error', { error });
       }
     }
   }
@@ -902,7 +902,7 @@ export class NotificationConfigManager implements vscode.Disposable {
         }
       );
     } catch (error) {
-      this.logger.warn('Failed to track configuration change', error);
+      this.logger.warn('Failed to track configuration change', { error });
     }
   }
 

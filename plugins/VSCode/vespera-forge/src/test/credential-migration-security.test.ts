@@ -112,7 +112,7 @@ class MockVesperaRateLimiter {
   private requestCount = 0;
   private rejectionThreshold = Infinity;
   
-  async checkRateLimit(context: any) {
+  async checkRateLimit(_context: any) {
     this.requestCount++;
     
     if (this.requestCount > this.rejectionThreshold) {
@@ -151,7 +151,7 @@ class MockVesperaConsentManager {
     return this.consents.get(`${userId}:${purposeId}`) === true;
   }
   
-  async requestConsent(userId: string, purposeIds: string[], context?: any) {
+  async requestConsent(userId: string, purposeIds: string[], _context?: any) {
     this.consentRequests.push({ userId, purposeIds, timestamp: Date.now() });
     
     // Simulate user granting consent
@@ -171,7 +171,7 @@ class MockVesperaConsentManager {
     };
   }
   
-  addPurpose(purpose: ConsentPurpose) {
+  addPurpose(_purpose: ConsentPurpose) {
     // Mock implementation
   }
   
@@ -234,8 +234,8 @@ suite('Enhanced Credential Migration Security Tests', () => {
     // Mock security manager singleton
     
     // Create configuration manager with mocked dependencies
-    const templateRegistry = new ChatTemplateRegistry(mockContext);
     const eventRouter = new ChatEventRouter();
+    const templateRegistry = new ChatTemplateRegistry(mockContext.extensionUri, eventRouter);
     
     configManager = new ChatConfigurationManager(mockContext, templateRegistry, eventRouter);
     
@@ -307,13 +307,13 @@ suite('Enhanced Credential Migration Security Tests', () => {
       await mockGlobalState.update(`vespera-chat-credentials.${providerId}`, legacyCredential);
       
       // Configure provider in ConfigurationManager
-      const providerConfig = {
+      const _providerConfig = {
         [fieldName]: legacyCredential,
         baseUrl: 'https://api.example.com'
       };
       
       // Mock template for the provider
-      const mockTemplate = {
+      const _mockTemplate = {
         id: providerId,
         name: 'Test Provider',
         ui_schema: {
@@ -559,13 +559,13 @@ suite('Enhanced Credential Migration Security Tests', () => {
           }
         } else if (activity.action === 'invalid_credential_format') {
           try {
-            await CredentialManager.storeCredential(mockContext, 'test-provider', activity.credential);
+            await CredentialManager.storeCredential(mockContext, 'test-provider', activity.credential || 'invalid-credential');
           } catch (error) {
             // Expected to fail validation
           }
         } else if (activity.action === 'unauthorized_provider_access') {
           try {
-            await CredentialManager.retrieveCredential(mockContext, activity.provider);
+            await CredentialManager.retrieveCredential(mockContext, activity.provider || 'unauthorized-provider');
           } catch (error) {
             // Expected to fail due to sanitization
           }
@@ -618,7 +618,7 @@ suite('Enhanced Credential Migration Security Tests', () => {
       
       // Perform concurrent operations
       const storePromises = providers.map((provider, i) =>
-        CredentialManager.storeCredential(mockContext, provider, credentials[i])
+        CredentialManager.storeCredential(mockContext, provider, credentials[i] || `credential-${i}`)
       );
       
       await Promise.all(storePromises);

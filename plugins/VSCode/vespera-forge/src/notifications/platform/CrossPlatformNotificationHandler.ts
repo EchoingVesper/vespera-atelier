@@ -204,7 +204,7 @@ export class CrossPlatformNotificationHandler implements vscode.Disposable {
       return new Promise((resolve) => {
         exec(`powershell -Command "${powershellScript}"`, { timeout: 5000 }, (error, stdout, stderr) => {
           if (error) {
-            this.logger.warn('Windows PowerShell notification failed', error);
+            this.logger.warn('Windows PowerShell notification failed', { error });
             resolve(this.createResult(false, 'vscode-fallback', error, 
               [NotificationCapability.BASIC_TOAST]));
           } else {
@@ -230,7 +230,7 @@ export class CrossPlatformNotificationHandler implements vscode.Disposable {
       return new Promise((resolve) => {
         exec(`osascript -e '${applescript}'`, { timeout: 5000 }, (error, stdout, stderr) => {
           if (error) {
-            this.logger.warn('macOS osascript notification failed', error);
+            this.logger.warn('macOS osascript notification failed', { error });
             resolve(this.createResult(false, 'vscode-fallback', error, 
               [NotificationCapability.BASIC_TOAST]));
           } else {
@@ -260,7 +260,7 @@ export class CrossPlatformNotificationHandler implements vscode.Disposable {
             return result;
           }
         } catch (error) {
-          this.logger.debug(`Linux notification system ${system} failed`, error);
+          this.logger.debug(`Linux notification system ${system} failed`, { error });
         }
       }
 
@@ -629,7 +629,7 @@ export class CrossPlatformNotificationHandler implements vscode.Disposable {
       });
 
     } catch (error) {
-      this.logger.warn('Failed to validate notification assets', error);
+      this.logger.warn('Failed to validate notification assets', { error });
     }
   }
 

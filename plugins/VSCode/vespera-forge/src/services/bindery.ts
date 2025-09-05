@@ -14,10 +14,8 @@ import * as vscode from 'vscode';
 
 // Security imports
 import { SecurityEnhancedCoreServices } from '../core/security/SecurityEnhancedCoreServices';
-import { VesperaSecurityError } from '../core/security/VesperaSecurityErrors';
 import { 
   VesperaSecurityEvent, 
-  SecurityEventContext,
   VesperaSecurityErrorCode,
   ThreatSeverity 
 } from '../types/security';
@@ -28,14 +26,11 @@ import {
   BinderySecurityAudit,
   BinderySecurityThreat,
   BinderyContentProtection,
-  SecureBinderyRequest,
-  SecureBinderyResponse,
   BinderySecurityMetrics,
   BinderySecurityContext
 } from '../types/bindery-security';
 
 import {
-  BinderyConfig,
   BinderyConnectionStatus,
   BinderyConnectionInfo,
   BinderyRequest,
@@ -51,7 +46,6 @@ import {
   TaskExecutionResult,
   DependencyAnalysis,
   Role,
-  RoleExecutionResult,
   Codex,
   HookAgent,
   TimedAgent,
@@ -525,7 +519,7 @@ export class BinderyService extends EventEmitter {
   public async disconnect(): Promise<void> {
     if (this.process) {
       // Cancel all pending requests
-      for (const [id, request] of this.pendingRequests.entries()) {
+      for (const [_id, request] of this.pendingRequests.entries()) {
         clearTimeout(request.timeout);
         request.reject({ code: -1, message: 'Connection closed' });
       }
@@ -879,9 +873,9 @@ export class BinderyService extends EventEmitter {
         cwd: this.config.workspaceRoot,
         env: {
           // Restricted environment variables for security
-          PATH: process.env.PATH,
-          HOME: process.env.HOME,
-          USER: process.env.USER,
+          PATH: process.env['PATH'],
+          HOME: process.env['HOME'],
+          USER: process.env['USER'],
           // Remove potentially dangerous env vars
           ...this.getSecureEnvironmentVariables()
         },
@@ -1117,7 +1111,7 @@ export class BinderyService extends EventEmitter {
   }
 
   private async sendRequest<T>(method: string, params?: any): Promise<BinderyResult<T>> {
-    const requestStart = performance.now();
+    const _requestStart = performance.now();
     this.log(`Sending request: ${method}, connected: ${this.isConnected()}, status: ${this.connectionInfo.status}`);
     
     if (!this.isConnected()) {
@@ -1157,7 +1151,7 @@ export class BinderyService extends EventEmitter {
     }
 
     // Use sanitized request if available
-    const sanitizedRequest = requestValidation.sanitizedRequest || request;
+    const _sanitizedRequest = requestValidation.sanitizedRequest || request;
 
     return new Promise((resolve) => {
       const timeout = setTimeout(() => {

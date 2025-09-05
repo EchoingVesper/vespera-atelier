@@ -98,7 +98,7 @@ export class SecureWebViewExample {
             config: {
               domPurify: {
                 allowedTags: ['p', 'br', 'strong', 'em', 'code', 'pre'],
-                allowedAttributes: [],
+                allowedAttributes: {} as Record<string, string[]>,
                 stripIgnoreTag: true,
                 stripIgnoreTagBody: true
               }
@@ -223,12 +223,12 @@ export class SecureWebViewExample {
    */
   private async createSecureWebViewProvider(): Promise<void> {
     const eventRouter = new ChatEventRouter();
+    const templateRegistry = new ChatTemplateRegistry(this.context.extensionUri, eventRouter);
     const configManager = new ChatConfigurationManager(
       this.context, 
-      this.logger, 
-      this.errorHandler
+      templateRegistry, 
+      eventRouter
     );
-    const templateRegistry = new ChatTemplateRegistry(this.logger);
 
     // Create ChatWebViewProvider with security dependencies
     this.chatProvider = new ChatWebViewProvider(

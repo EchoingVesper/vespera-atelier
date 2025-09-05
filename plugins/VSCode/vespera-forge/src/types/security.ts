@@ -69,7 +69,9 @@ export enum VesperaSecurityEvent {
   SANITIZATION_APPLIED = 'sanitization_applied',
   SECURITY_BREACH = 'security_breach',
   CIRCUIT_BREAKER_OPENED = 'circuit_breaker_opened',
-  CIRCUIT_BREAKER_CLOSED = 'circuit_breaker_closed'
+  CIRCUIT_BREAKER_CLOSED = 'circuit_breaker_closed',
+  API_ACCESS = 'api_access',
+  API_ERROR = 'api_error'
 }
 
 export interface SecurityEventContext {
@@ -140,6 +142,7 @@ export interface RateLimitResult {
   rule?: RateLimitRule;
   remainingTokens?: number;
   retryAfter?: number;
+  resetTime?: number;
   actions: RateLimitAction[];
 }
 
@@ -264,7 +267,13 @@ export enum SanitizationScope {
   MESSAGE = 'message',
   CONFIGURATION = 'configuration',
   FILE_CONTENT = 'file_content',
-  USER_INPUT = 'user_input'
+  USER_INPUT = 'user_input',
+  API_REQUEST = 'api_request',
+  API_RESPONSE = 'api_response',
+  HTML_CONTENT = 'html_content',
+  MESSAGE_DATA = 'message_data',
+  CONFIG_DATA = 'config_data',
+  WEBVIEW_CONTENT = 'webview_content'
 }
 
 export interface SanitizationProcessor {
@@ -333,6 +342,7 @@ export interface SanitizationResult {
   threats: DetectedThreat[];
   applied: string[]; // Applied processor IDs
   blocked: boolean;
+  modified: boolean;
 }
 
 export interface DetectedThreat {
@@ -375,6 +385,7 @@ export interface ThreatDetectionConfig {
 // ============================================================================
 
 export enum VesperaSecurityErrorCode {
+  // Core security errors (3001-3099)
   RATE_LIMIT_EXCEEDED = 3001,
   CONSENT_REQUIRED = 3002,
   CONSENT_WITHDRAWN = 3003,
@@ -385,7 +396,47 @@ export enum VesperaSecurityErrorCode {
   UNAUTHORIZED_ACCESS = 3008,
   DATA_BREACH_DETECTED = 3009,
   THREAT_DETECTED = 3010,
-  CIRCUIT_BREAKER_OPEN = 3011
+  CIRCUIT_BREAKER_OPEN = 3011,
+  
+  // Provider connection errors (3100-3199)
+  PROVIDER_NOT_CONNECTED = 3100,
+  HTTP_CLIENT_NOT_INITIALIZED = 3101,
+  API_REQUEST_ERROR = 3102,
+  API_HTTP_ERROR = 3103,
+  EMPTY_API_RESPONSE = 3104,
+  INVALID_MODEL_CONFIG = 3105,
+  INVALID_MESSAGE_CONFIG = 3106,
+  INVALID_MODELS_RESPONSE = 3107,
+  NO_MODELS_AVAILABLE = 3108,
+  NO_MODELS_LOADED = 3109,
+  CREDENTIAL_ENCRYPTION_ERROR = 3110,
+  
+  // LM Studio specific errors (3200-3249)
+  LMSTUDIO_CONNECTION_ERROR = 3200,
+  LMSTUDIO_API_ERROR = 3201,
+  LMSTUDIO_STREAM_ERROR = 3202,
+  LMSTUDIO_CONNECTION_REFUSED = 3203,
+  LMSTUDIO_MODELS_FETCH_ERROR = 3204,
+  LMSTUDIO_CONNECTION_TEST_FAILED = 3205,
+  LMSTUDIO_CONNECTION_TIMEOUT = 3206,
+  LMSTUDIO_ENDPOINT_NOT_FOUND = 3207,
+  LMSTUDIO_SERVER_ERROR = 3208,
+  LMSTUDIO_HTTP_ERROR = 3209,
+  LMSTUDIO_INVALID_RESPONSE = 3210,
+  LMSTUDIO_UNEXPECTED_RESPONSE = 3211,
+  
+  // OpenAI specific errors (3250-3299)
+  OPENAI_CONNECTION_ERROR = 3250,
+  OPENAI_API_ERROR = 3251,
+  OPENAI_STREAM_ERROR = 3252,
+  OPENAI_CONNECTION_TEST_FAILED = 3253,
+  OPENAI_HTTP_ERROR = 3254,
+  OPENAI_INVALID_RESPONSE = 3255,
+  OPENAI_UNEXPECTED_RESPONSE = 3256,
+  OPENAI_INVALID_API_KEY = 3257,
+  OPENAI_ACCESS_DENIED = 3258,
+  OPENAI_RATE_LIMIT_EXCEEDED = 3259,
+  OPENAI_SERVER_ERROR = 3260
 }
 
 export interface SecurityMetrics {

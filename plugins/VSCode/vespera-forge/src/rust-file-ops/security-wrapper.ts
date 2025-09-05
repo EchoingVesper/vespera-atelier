@@ -377,7 +377,9 @@ export class RustFileOpsSecurityWrapper {
     if (this.validationCache.size >= this.MAX_CACHE_SIZE) {
       // Remove oldest entries (simple LRU)
       const oldestKey = this.validationCache.keys().next().value;
-      this.validationCache.delete(oldestKey);
+      if (oldestKey) {
+        this.validationCache.delete(oldestKey);
+      }
     }
 
     this.validationCache.set(key, {
