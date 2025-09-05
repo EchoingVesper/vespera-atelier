@@ -102,6 +102,13 @@ export class VesperaInputSanitizer implements VesperaInputSanitizerInterface {
   private threatPatterns: ThreatPattern[] = [];
   private disposed = false;
   
+  /**
+   * Check if service is disposed
+   */
+  public get isDisposed(): boolean {
+    return this.disposed;
+  }
+  
   // Statistics tracking
   private stats = {
     totalSanitizations: 0,

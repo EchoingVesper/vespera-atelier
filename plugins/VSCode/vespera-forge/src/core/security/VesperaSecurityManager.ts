@@ -17,7 +17,8 @@ import {
   SecurityAuditLoggerInterface,
   SecurityMetrics,
   VesperaSecurityEvent,
-  SecurityEventContext
+  SecurityEventContext,
+  VesperaSecurityErrorCode
 } from '../../types/security';
 import { VesperaSecurityError } from './VesperaSecurityErrors';
 
@@ -52,31 +53,38 @@ export class SecurityEventBus extends vscode.EventEmitter<{
    */
   emitSecurityEvent(event: VesperaSecurityEvent, context: SecurityEventContext): void {
     this.logger.debug('Emitting security event', { event, context });
-    this.fire('securityEvent', event, context);
-    
-    // Emit specific event types for targeted listeners
-    switch (event) {
-      case VesperaSecurityEvent.RATE_LIMIT_EXCEEDED:
-        this.fire('rateLimitExceeded', context.resourceId || 'unknown', context);
-        break;
-      case VesperaSecurityEvent.CONSENT_GRANTED:
-      case VesperaSecurityEvent.CONSENT_WITHDRAWN:
-        this.fire('consentChanged', 
-          context.userId || 'unknown', 
-          context.metadata?.purposeIds || [], 
-          event === VesperaSecurityEvent.CONSENT_GRANTED
-        );
-        break;
-      case VesperaSecurityEvent.THREAT_DETECTED:
-        this.fire('threatDetected', context.threat?.type || 'unknown', context);
-        break;
-      case VesperaSecurityEvent.CSP_VIOLATION:
-        this.fire('cspViolation', context.metadata?.violationType || 'unknown', context);
-        break;
-    }
+    (this as any).fire('securityEvent', event, context);
+  }
+  
+  /**
+   * Add listener for security events
+   */
+  onSecurityEvent(listener: (event: VesperaSecurityEvent, context: SecurityEventContext) => void): vscode.Disposable {
+    return (this as any).event('securityEvent', listener);
+  }
+  
+  /**
+   * Add listener for rate limit events
+   */
+  onRateLimitExceeded(listener: (resourceId: string, context: any) => void): vscode.Disposable {
+    return (this as any).event('rateLimitExceeded', listener);
+  }
+  
+  /**
+   * Add listener for consent changes
+   */
+  onConsentChanged(listener: (userId: string, purposeIds: string[], granted: boolean) => void): vscode.Disposable {
+    return (this as any).event('consentChanged', listener);
+  }
+  
+  /**
+   * Add listener for threat detection
+   */
+  onThreatDetected(listener: (threatType: string, context: any) => void): vscode.Disposable {
+    return (this as any).event('threatDetected', listener);
   }
 
-  dispose(): void {
+  override dispose(): void {
     this.logger.debug('SecurityEventBus disposed');
     super.dispose();
   }
@@ -90,11 +98,19 @@ export class VesperaSecurityManager implements vscode.Disposable {
   
   private eventBus: SecurityEventBus;
   private initialized = false;
+  private _isDisposed = false;
   private readonly securityServices: Map<string, vscode.Disposable> = new Map();
+  
+  /**
+   * Check if manager is disposed
+   */
+  public get isDisposed(): boolean {
+    return this._isDisposed;
+  }
 
   private constructor(
     private logger: VesperaLogger,
-    private errorHandler: VesperaErrorHandler,
+    _errorHandler: VesperaErrorHandler,
     private contextManager: VesperaContextManager,
     private config: SecurityConfiguration
   ) {
@@ -137,7 +153,7 @@ export class VesperaSecurityManager implements vscode.Disposable {
    */
   public static getInstance(): VesperaSecurityManager {
     if (!VesperaSecurityManager.instance) {
-      throw new VesperaSecurityError('SecurityManager not initialized');
+      throw new VesperaSecurityError('SecurityManager not initialized', VesperaSecurityErrorCode.UNAUTHORIZED_ACCESS);
     }
     return VesperaSecurityManager.instance;
   }
@@ -260,9 +276,9 @@ export class VesperaSecurityManager implements vscode.Disposable {
 
     // Check event bus
     try {
-      serviceChecks.eventBus = { healthy: !this.eventBus.disposed };
+      serviceChecks['eventBus'] = { healthy: !!this.eventBus };
     } catch (error) {
-      serviceChecks.eventBus = { 
+      serviceChecks['eventBus'] = { 
         healthy: false, 
         error: error instanceof Error ? error.message : String(error) 
       };
@@ -355,7 +371,7 @@ export class VesperaSecurityManager implements vscode.Disposable {
 
     } catch (error) {
       this.logger.error('Failed to initialize security services', error);
-      throw new VesperaSecurityError('Security services initialization failed', undefined, undefined, {
+      throw new VesperaSecurityError('Security services initialization failed', VesperaSecurityErrorCode.UNAUTHORIZED_ACCESS, undefined, {
         originalError: error
       });
     }
@@ -387,10 +403,12 @@ export class VesperaSecurityManager implements vscode.Disposable {
       this.eventBus.dispose();
 
       this.initialized = false;
+      this._isDisposed = true;
       this.logger.info('Security manager shutdown completed');
 
     } catch (error) {
       this.logger.error('Error during security manager shutdown', error);
+      this._isDisposed = true;
       throw error;
     }
   }

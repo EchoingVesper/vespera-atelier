@@ -5,10 +5,8 @@
 
 import * as vscode from 'vscode';
 import { FileContextCollector, FileContextItem, FileContextOptions } from './FileContextCollector';
-import { VesperaInputSanitizer } from '../../core/security/sanitization/VesperaInputSanitizer';
-import { VesperaSecurityAuditLogger } from '../../core/security/audit/VesperaSecurityAuditLogger';
 import { VesperaLogger } from '../../core/logging/VesperaLogger';
-import { SanitizationScope } from '../../types/security';
+import { SanitizationScope, VesperaSecurityEvent } from '../../types/security';
 import { SecurityEnhancedVesperaCoreServices } from '../../core/security/SecurityEnhancedCoreServices';
 
 export interface SecureContextData {
@@ -26,6 +24,9 @@ export interface SecureContextMessage {
   contextData: SecureContextData | null;
   messageId: string;
   timestamp: number;
+  hasContext: boolean;
+  contextualContent: string;
+  contextSummary: string;
 }
 
 export interface FileContextConfig {
@@ -45,11 +46,11 @@ export class SecureFileContextCollector {
   private collector: FileContextCollector;
   private config: FileContextConfig;
   private disposables: vscode.Disposable[] = [];
-  private inputSanitizer?: VesperaInputSanitizer;
-  private auditLogger?: VesperaSecurityAuditLogger;
-  private logger?: VesperaLogger;
-  private coreServices?: SecurityEnhancedVesperaCoreServices;
   private disposed = false;
+  
+  // Core services integration
+  private logger: VesperaLogger;
+  private coreServices?: SecurityEnhancedVesperaCoreServices;
 
   constructor(
     config: Partial<FileContextConfig> = {},
@@ -88,17 +89,43 @@ export class SecureFileContextCollector {
     this.collector = new FileContextCollector(this.config.contextOptions);
     this.coreServices = coreServices;
     
-    if (coreServices) {
+    // Initialize logger
+    if (coreServices?.logger) {
       this.logger = coreServices.logger.createChild('SecureFileContextCollector');
-      this.inputSanitizer = coreServices.inputSanitizer;
-      this.auditLogger = coreServices.securityAuditLogger;
-      
-      this.logger.info('SecureFileContextCollector initialized with security services');
     } else {
-      console.log('SecureFileContextCollector initialized without security services');
+      this.logger = console as any;
+    }
+    
+    if (coreServices) {
+      this.logger.info('SecureFileContextCollector initialized with core services integration');
+    } else {
+      console.log('SecureFileContextCollector initialized without core services');
     }
     
     this.setupEventListeners();
+  }
+
+  /**
+   * Create a contextual message from user input and file context
+   */
+  async createContextualMessage(userMessage: string): Promise<SecureContextMessage> {
+    const contextMessage = await this.collectSecureContext(userMessage);
+    
+    // Ensure all required properties are set
+    const hasContext = contextMessage.contextData !== null && contextMessage.contextData.hasContext;
+    const contextSummary = contextMessage.contextData?.contextSummary || 'No context available';
+    
+    let contextualContent = userMessage;
+    if (hasContext && contextMessage.contextData) {
+      contextualContent = this._formatContextForLLM(contextMessage.contextData.contextItems);
+    }
+
+    return {
+      ...contextMessage,
+      hasContext,
+      contextualContent,
+      contextSummary
+    };
   }
 
   /**
@@ -114,7 +141,10 @@ export class SecureFileContextCollector {
         originalMessage: userMessage,
         contextData: null,
         messageId: this.generateMessageId(),
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        hasContext: false,
+        contextualContent: userMessage,
+        contextSummary: 'No context available'
       };
     }
 
@@ -134,7 +164,10 @@ export class SecureFileContextCollector {
           originalMessage: userMessage,
           contextData: null,
           messageId,
-          timestamp
+          timestamp,
+          hasContext: false,
+          contextualContent: userMessage,
+          contextSummary: 'No context available'
         };
       }
 
@@ -156,23 +189,31 @@ export class SecureFileContextCollector {
       // Log security event
       await this.logContextCollectionEvent(contextData, messageId);
 
+      const contextualContent = this._formatContextForLLM(sanitizedContextItems);
+
       return {
         originalMessage: userMessage,
         contextData,
         messageId,
-        timestamp
+        timestamp,
+        hasContext: true,
+        contextualContent,
+        contextSummary
       };
     } catch (error) {
       this.logger?.error('Secure context collection failed', error, { messageId });
       
       // Log security error
-      if (this.auditLogger) {
-        await this.auditLogger.logSecurityEvent('SECURITY_BREACH', {
-          timestamp,
+      if (this.coreServices?.securityAuditLogger) {
+        await this.coreServices.securityAuditLogger.logSecurityEvent({
+          type: VesperaSecurityEvent.FILE_ACCESS_DENIED,
+          severity: 'high',
+          message: 'Context collection failed',
           metadata: {
             action: 'context_collection_failed',
             messageId,
-            error: error instanceof Error ? error.message : String(error)
+            error: error instanceof Error ? error.message : String(error),
+            timestamp
           }
         });
       }
@@ -181,7 +222,10 @@ export class SecureFileContextCollector {
         originalMessage: userMessage,
         contextData: null,
         messageId,
-        timestamp
+        timestamp,
+        hasContext: false,
+        contextualContent: userMessage,
+        contextSummary: 'Context collection failed'
       };
     }
   }
@@ -189,7 +233,7 @@ export class SecureFileContextCollector {
   /**
    * Format context items for LLM consumption
    */
-  private formatContextForLLM(items: FileContextItem[]): string {
+  private _formatContextForLLM(items: FileContextItem[]): string {
     const formatted: string[] = [];
 
     for (const item of items) {
@@ -253,35 +297,36 @@ export class SecureFileContextCollector {
   }
 
   /**
-   * Sanitize context items for security
+   * Sanitize context items for security using core services
    */
   private async sanitizeContextItems(contextItems: FileContextItem[]): Promise<FileContextItem[]> {
-    if (!this.inputSanitizer) {
-      return contextItems; // No sanitization available
-    }
-
     const sanitizedItems: FileContextItem[] = [];
     let totalThreatCount = 0;
 
     for (const item of contextItems) {
       try {
-        const sanitizationResult = await this.inputSanitizer.sanitize(
-          item.content,
-          SanitizationScope.FILE_CONTENT,
-          { filepath: item.filepath, language: item.language }
-        );
-
-        if (!sanitizationResult.blocked && sanitizationResult.sanitized !== null) {
-          sanitizedItems.push({
-            ...item,
-            content: sanitizationResult.sanitized as string
-          });
-          totalThreatCount += sanitizationResult.threats.length;
+        // Use core services for sanitization if available
+        if (this.coreServices?.inputSanitizer) {
+          const sanitizationResult = await this.coreServices.inputSanitizer.sanitize(
+            item.content,
+            SanitizationScope.FILE_CONTENT
+          );
+          
+          if (sanitizationResult.sanitizedContent !== null) {
+            sanitizedItems.push({
+              ...item,
+              content: sanitizationResult.sanitizedContent
+            });
+            totalThreatCount += sanitizationResult.threats.length;
+          } else {
+            this.logger?.warn('Context item blocked by security policy', {
+              filepath: item.filepath,
+              threats: sanitizationResult.threats.length
+            });
+          }
         } else {
-          this.logger?.warn('Context item blocked by security policy', {
-            filepath: item.filepath,
-            threats: sanitizationResult.threats.length
-          });
+          // Fallback: include original item
+          sanitizedItems.push(item);
         }
       } catch (error) {
         this.logger?.error('Context sanitization failed', error, { filepath: item.filepath });
@@ -371,26 +416,30 @@ export class SecureFileContextCollector {
   }
 
   /**
-   * Log context collection security event
+   * Log context collection security event using core services
    */
   private async logContextCollectionEvent(
     contextData: SecureContextData,
     messageId: string
   ): Promise<void> {
-    if (!this.auditLogger) return;
-
     try {
-      await this.auditLogger.logSecurityEvent('SECURITY_BREACH', {
-        timestamp: contextData.timestamp,
-        metadata: {
-          action: 'secure_context_collected',
-          contextId: contextData.contextId,
-          messageId,
-          itemCount: contextData.contextItems.length,
-          sanitized: contextData.sanitized,
-          threatCount: contextData.threatCount
-        }
-      });
+      // Use core services for audit logging
+      if (this.coreServices?.securityAuditLogger) {
+        await this.coreServices.securityAuditLogger.logSecurityEvent({
+          type: VesperaSecurityEvent.FILE_ACCESS_GRANTED,
+          severity: 'info',
+          message: 'Secure context collected',
+          metadata: {
+            action: 'secure_context_collected',
+            contextId: contextData.contextId,
+            messageId,
+            itemCount: contextData.contextItems.length,
+            sanitized: contextData.sanitized,
+            threatCount: contextData.threatCount,
+            filePaths: contextData.contextItems.map(item => item.filepath)
+          }
+        });
+      }
     } catch (error) {
       this.logger?.error('Failed to log context collection event', error);
     }
