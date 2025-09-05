@@ -78,6 +78,7 @@ export class VesperaError extends Error {
   public readonly category: VesperaErrorCategory;
   public readonly metadata: VesperaErrorMetadata;
   public readonly isRetryable: boolean;
+  public readonly cause?: Error;
 
   constructor(
     message: string,

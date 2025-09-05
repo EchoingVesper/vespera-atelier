@@ -114,7 +114,7 @@ export class ConsentUI implements vscode.Disposable {
    */
   async requestConsent(
     purposes: ConsentPurpose[], 
-    context?: Record<string, any>
+    _context?: Record<string, any>
   ): Promise<ConsentUIResponse> {
     if (this.disposed) {
       throw new Error('ConsentUI has been disposed');
@@ -217,7 +217,7 @@ export class ConsentUI implements vscode.Disposable {
    */
   private async showModalConsentDialog(
     purposes: ConsentPurpose[], 
-    context?: Record<string, any>
+    _context?: Record<string, any>
   ): Promise<ConsentUIResponse> {
     const items: vscode.QuickPickItem[] = purposes.map(purpose => ({
       label: purpose.name,
@@ -250,7 +250,7 @@ export class ConsentUI implements vscode.Disposable {
     purposes: ConsentPurpose[], 
     context?: Record<string, any>
   ): Promise<ConsentUIResponse> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, _reject) => {
       const panel = vscode.window.createWebviewPanel(
         'vesperaConsentRequest',
         'Privacy Consent Required',
@@ -425,7 +425,7 @@ export class ConsentUI implements vscode.Disposable {
   /**
    * Generate HTML for consent request webview
    */
-  private generateConsentRequestHTML(purposes: ConsentPurpose[], context?: Record<string, any>): string {
+  private generateConsentRequestHTML(purposes: ConsentPurpose[], _context?: Record<string, any>): string {
     const purposeItems = purposes.map(purpose => `
       <div class="purpose-item ${purpose.required ? 'required' : 'optional'}">
         <label>
@@ -560,7 +560,7 @@ export class ConsentUI implements vscode.Disposable {
   /**
    * Generate HTML for consent preferences panel
    */
-  private generateConsentPreferencesHTML(currentConsents: ConsentPurposeGrant[]): string {
+  private generateConsentPreferencesHTML(_currentConsents: ConsentPurposeGrant[]): string {
     // Simplified implementation for scaffolding
     return `
     <!DOCTYPE html>

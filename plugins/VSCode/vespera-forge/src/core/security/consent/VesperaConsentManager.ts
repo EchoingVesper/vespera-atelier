@@ -37,20 +37,27 @@ export class VesperaConsentManager implements VesperaConsentManagerInterface {
   private activeConsents: Map<string, ConsentRecord> = new Map();
   private disposed = false;
   
+  /**
+   * Check if service is disposed
+   */
+  public get isDisposed(): boolean {
+    return this.disposed;
+  }
+  
   // Cleanup and monitoring
   private cleanupTimer?: NodeJS.Timeout;
   private consentExpirationTimer?: NodeJS.Timeout;
 
   private constructor(
-    private storage: vscode.Memento,
+    private _storage: vscode.Memento,
     private logger: VesperaLogger,
-    private config: ConsentConfiguration
+    private _config: ConsentConfiguration
   ) {
     this.logger = logger.createChild('ConsentManager');
-    this.consentStore = new ConsentStore(storage, logger, config.encryption);
-    this.consentUI = new ConsentUI(config.uiMode, logger);
+    this.consentStore = new ConsentStore(_storage, logger, _config.encryption);
+    this.consentUI = new ConsentUI(_config.uiMode, logger);
     
-    this.initializePurposes(config.purposes);
+    this.initializePurposes(_config.purposes);
     this.setupPeriodicCleanup();
   }
 
@@ -585,6 +592,7 @@ export class VesperaConsentManager implements VesperaConsentManagerInterface {
     // Get currently granted purposes (simplified - would need user context)
     const grantedPurposeIds = Array.from(this.activeConsents.keys())
       .map(key => key.split(':')[1])
+      .filter((value): value is string => value !== undefined)
       .filter((value, index, self) => self.indexOf(value) === index);
 
     this.consentUI.updateConsentStatus(grantedPurposeIds, allPurposeIds);

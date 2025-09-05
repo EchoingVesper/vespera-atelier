@@ -5,14 +5,11 @@
  * with comprehensive audit logging, threat detection, and rollback capabilities.
  */
 
-import * as vscode from 'vscode';
 import { SecurityEnhancedCoreServices } from '../core/security/SecurityEnhancedCoreServices';
-import { SecureToolManager, ToolOverrideConfig, ToolOverrideResult } from '../config/tool-management';
+import { ToolOverrideConfig } from '../config/tool-management';
 import { 
   VesperaSecurityEvent, 
-  SecurityEventContext,
-  VesperaSecurityErrorCode,
-  ThreatSeverity 
+  VesperaSecurityErrorCode
 } from '../types/security';
 import { VesperaSecurityError } from '../core/security/VesperaSecurityErrors';
 
@@ -214,7 +211,7 @@ export class ToolOverrideSecurityManager {
     const startTime = performance.now();
     const auditId = this.generateAuditId();
 
-    const profile = this.getOrCreateSecurityProfile(toolName);
+    const _profile = this.getOrCreateSecurityProfile(toolName);
 
     // Tool disable has lower risk than override
     const riskAssessment = {
@@ -383,7 +380,7 @@ export class ToolOverrideSecurityManager {
    * Assess tool risk based on profile and configuration
    */
   private assessToolRisk(
-    toolName: string, 
+    _toolName: string, 
     config: ToolOverrideConfig, 
     profile: ToolSecurityProfile
   ): { level: 'low' | 'medium' | 'high' | 'critical'; factors: string[]; score: number } {
@@ -447,7 +444,7 @@ export class ToolOverrideSecurityManager {
    * Perform compliance checks
    */
   private async performComplianceChecks(
-    toolName: string, 
+    _toolName: string, 
     config: ToolOverrideConfig, 
     profile: ToolSecurityProfile
   ): Promise<{ passed: boolean; checks: Array<{ name: string; passed: boolean; details?: string }> }> {
@@ -596,7 +593,7 @@ export class ToolOverrideSecurityManager {
    */
   private async logSecurityEvent(
     audit: ToolSecurityAudit, 
-    context?: any,
+    _context?: any,
     eventType: VesperaSecurityEvent = VesperaSecurityEvent.SECURITY_BREACH
   ): Promise<void> {
     if (this.securityServices?.securityAuditLogger) {

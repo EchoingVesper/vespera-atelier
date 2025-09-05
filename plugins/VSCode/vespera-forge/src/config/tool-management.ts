@@ -6,8 +6,7 @@
  * high-performance rust-file-ops while maintaining security compliance.
  */
 
-import * as vscode from 'vscode';
-import { SecurityEnhancedCoreServices } from '../core/security/SecurityEnhancedCoreServices';
+import { SecurityEnhancedVesperaCoreServices } from '../core/security/SecurityEnhancedCoreServices';
 import { FileOperationsSecurityManager } from '../security/file-operations-security';
 import { 
   VesperaSecurityEvent, 
@@ -56,7 +55,7 @@ export interface ToolOverrideResult {
  */
 export class SecureToolManager {
   private static instance: SecureToolManager | null = null;
-  private securityServices: SecurityEnhancedCoreServices | null = null;
+  private securityServices: SecurityEnhancedVesperaCoreServices | null = null;
   private fileSecurityManager: FileOperationsSecurityManager | null = null;
   
   private activeOverrides = new Map<string, ToolOverrideConfig>();
@@ -108,7 +107,7 @@ export class SecureToolManager {
 
     try {
       // Initialize security services
-      manager.securityServices = SecurityEnhancedCoreServices.getInstance();
+      manager.securityServices = SecurityEnhancedVesperaCoreServices.getInstance();
       manager.fileSecurityManager = await FileOperationsSecurityManager.initialize();
       
       console.log('SecureToolManager initialized with policy:', finalPolicy);
@@ -405,6 +404,9 @@ export class SecureToolManager {
    */
   private async measureToolPerformance(toolName: string): Promise<number> {
     const startTime = performance.now();
+    
+    // Log performance measurement for specific tool
+    this.logger?.debug(`Measuring performance for tool: ${toolName}`);
     
     // Simulate tool operation to measure baseline
     try {

@@ -750,7 +750,9 @@ export class McpMessageValidator {
   private addToCache(key: string, result: McpValidationResult): void {
     if (this.validationCache.size >= this.MAX_CACHE_SIZE) {
       const oldestKey = this.validationCache.keys().next().value;
-      this.validationCache.delete(oldestKey);
+      if (oldestKey) {
+        this.validationCache.delete(oldestKey);
+      }
     }
 
     this.validationCache.set(key, {
