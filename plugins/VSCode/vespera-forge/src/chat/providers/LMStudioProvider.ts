@@ -4,8 +4,9 @@
 import { ChatProvider } from './BaseProvider';
 import { ProviderTemplate, ProviderConfig, ProviderStatus } from '../types/provider';
 import { ChatMessage, ChatResponse, ChatChunk } from '../types/chat';
-import { SecureChatProviderClient, StreamEvent } from './SecureChatProviderClient';
+import { SecureChatProviderClient } from './SecureChatProviderClient';
 import { VesperaSecurityError, VesperaRateLimitError } from '../../core/security';
+import { VesperaSecurityErrorCode } from '../../types/security';
 
 export class LMStudioProvider extends ChatProvider {
   private httpClient?: SecureChatProviderClient;
@@ -47,7 +48,7 @@ export class LMStudioProvider extends ChatProvider {
       
       throw new VesperaSecurityError(
         `LM Studio connection failed: ${errorMessage}`,
-        'LMSTUDIO_CONNECTION_ERROR',
+        VesperaSecurityErrorCode.LMSTUDIO_CONNECTION_ERROR,
         undefined,
         { originalError: error }
       );
@@ -56,7 +57,7 @@ export class LMStudioProvider extends ChatProvider {
   
   async sendMessage(message: ChatMessage): Promise<ChatResponse> {
     if (!this.httpClient) {
-      throw new VesperaSecurityError('Provider not connected', 'PROVIDER_NOT_CONNECTED');
+      throw new VesperaSecurityError('Provider not connected', VesperaSecurityErrorCode.PROVIDER_NOT_CONNECTED);
     }
     
     const requestBody = this.buildRequestBody(message, false);
@@ -66,7 +67,7 @@ export class LMStudioProvider extends ChatProvider {
       const response = await this.httpClient.post('/v1/chat/completions', requestBody);
       
       if (!response.data) {
-        throw new VesperaSecurityError('Empty response from LM Studio', 'EMPTY_API_RESPONSE');
+        throw new VesperaSecurityError('Empty response from LM Studio', VesperaSecurityErrorCode.EMPTY_API_RESPONSE);
       }
       
       return this.parseResponse(response.data);
@@ -80,7 +81,7 @@ export class LMStudioProvider extends ChatProvider {
       
       throw new VesperaSecurityError(
         `LM Studio API request failed: ${errorMessage}`,
-        'LMSTUDIO_API_ERROR',
+        VesperaSecurityErrorCode.LMSTUDIO_API_ERROR,
         undefined,
         { originalError: error }
       );
@@ -89,7 +90,7 @@ export class LMStudioProvider extends ChatProvider {
   
   async* streamMessage(message: ChatMessage): AsyncIterable<ChatChunk> {
     if (!this.httpClient) {
-      throw new VesperaSecurityError('Provider not connected', 'PROVIDER_NOT_CONNECTED');
+      throw new VesperaSecurityError('Provider not connected', VesperaSecurityErrorCode.PROVIDER_NOT_CONNECTED);
     }
     
     const requestBody = this.buildRequestBody(message, true);
@@ -102,7 +103,7 @@ export class LMStudioProvider extends ChatProvider {
         if (event.type === 'error') {
           throw new VesperaSecurityError(
             `Streaming error: ${event.error}`,
-            'LMSTUDIO_STREAM_ERROR'
+            VesperaSecurityErrorCode.LMSTUDIO_STREAM_ERROR
           );
         }
         
@@ -157,7 +158,7 @@ export class LMStudioProvider extends ChatProvider {
       
       throw new VesperaSecurityError(
         `LM Studio streaming failed: ${errorMessage}`,
-        'LMSTUDIO_STREAM_ERROR',
+        VesperaSecurityErrorCode.LMSTUDIO_STREAM_ERROR,
         undefined,
         { originalError: error }
       );
@@ -166,7 +167,7 @@ export class LMStudioProvider extends ChatProvider {
   
   async listAvailableModels(): Promise<string[]> {
     if (!this.httpClient) {
-      throw new VesperaSecurityError('Provider not connected', 'PROVIDER_NOT_CONNECTED');
+      throw new VesperaSecurityError('Provider not connected', VesperaSecurityErrorCode.PROVIDER_NOT_CONNECTED);
     }
     
     try {
@@ -174,7 +175,7 @@ export class LMStudioProvider extends ChatProvider {
       const response = await this.httpClient.get('/v1/models');
       
       if (!response.data || !response.data.data) {
-        throw new VesperaSecurityError('Invalid models response from LM Studio', 'INVALID_MODELS_RESPONSE');
+        throw new VesperaSecurityError('Invalid models response from LM Studio', VesperaSecurityErrorCode.INVALID_MODELS_RESPONSE);
       }
       
       // Extract model IDs from the response
@@ -185,7 +186,7 @@ export class LMStudioProvider extends ChatProvider {
       if (models.length === 0) {
         throw new VesperaSecurityError(
           'No models available in LM Studio. Please load a model in LM Studio first.',
-          'NO_MODELS_AVAILABLE'
+          VesperaSecurityErrorCode.NO_MODELS_AVAILABLE
         );
       }
       
@@ -201,13 +202,13 @@ export class LMStudioProvider extends ChatProvider {
       if (errorMessage.includes('ECONNREFUSED') || errorMessage.includes('ENOTFOUND')) {
         throw new VesperaSecurityError(
           'Cannot connect to LM Studio server. Make sure LM Studio is running and the server is started.',
-          'LMSTUDIO_CONNECTION_REFUSED'
+          VesperaSecurityErrorCode.LMSTUDIO_CONNECTION_REFUSED
         );
       }
       
       throw new VesperaSecurityError(
         `Failed to fetch available models: ${errorMessage}`,
-        'LMSTUDIO_MODELS_FETCH_ERROR',
+        VesperaSecurityErrorCode.LMSTUDIO_MODELS_FETCH_ERROR,
         undefined,
         { originalError: error }
       );
@@ -232,11 +233,11 @@ export class LMStudioProvider extends ChatProvider {
     const maxTokens = this.config.maxTokens || this.template.provider_config.max_tokens;
     
     if (!model) {
-      throw new VesperaSecurityError('Model configuration is required', 'INVALID_MODEL_CONFIG');
+      throw new VesperaSecurityError('Model configuration is required', VesperaSecurityErrorCode.INVALID_MODEL_CONFIG);
     }
     
     if (!messages || messages.length === 0) {
-      throw new VesperaSecurityError('At least one message is required', 'INVALID_MESSAGE_CONFIG');
+      throw new VesperaSecurityError('At least one message is required', VesperaSecurityErrorCode.INVALID_MESSAGE_CONFIG);
     }
     
     const requestBody: any = {
@@ -293,7 +294,7 @@ export class LMStudioProvider extends ChatProvider {
   
   private async testConnection(): Promise<void> {
     if (!this.httpClient) {
-      throw new VesperaSecurityError('HTTP client not initialized', 'HTTP_CLIENT_NOT_INITIALIZED');
+      throw new VesperaSecurityError('HTTP client not initialized', VesperaSecurityErrorCode.HTTP_CLIENT_NOT_INITIALIZED);
     }
     
     try {
@@ -303,7 +304,7 @@ export class LMStudioProvider extends ChatProvider {
       if (models.length === 0) {
         throw new VesperaSecurityError(
           'No models loaded in LM Studio. Please load a model first.',
-          'NO_MODELS_LOADED'
+          VesperaSecurityErrorCode.NO_MODELS_LOADED
         );
       }
       
@@ -312,7 +313,9 @@ export class LMStudioProvider extends ChatProvider {
         id: 'test-connection',
         role: 'user',
         content: 'Hi',
-        timestamp: new Date()
+        timestamp: new Date(),
+        threadId: 'test-thread',
+        sessionId: 'test-session'
       };
       
       // Override model to use first available model
@@ -331,7 +334,7 @@ export class LMStudioProvider extends ChatProvider {
         if (!response.data || !response.data.choices || response.data.choices.length === 0) {
           throw new VesperaSecurityError(
             'Invalid response format from LM Studio',
-            'LMSTUDIO_INVALID_RESPONSE'
+            VesperaSecurityErrorCode.LMSTUDIO_INVALID_RESPONSE
           );
         }
         
@@ -340,7 +343,7 @@ export class LMStudioProvider extends ChatProvider {
         if (!choice.message || typeof choice.message.content !== 'string') {
           throw new VesperaSecurityError(
             'Unexpected response format from LM Studio',
-            'LMSTUDIO_UNEXPECTED_RESPONSE'
+            VesperaSecurityErrorCode.LMSTUDIO_UNEXPECTED_RESPONSE
           );
         }
         
@@ -360,14 +363,14 @@ export class LMStudioProvider extends ChatProvider {
       if (errorMessage.includes('ECONNREFUSED') || errorMessage.includes('ENOTFOUND')) {
         throw new VesperaSecurityError(
           'Cannot connect to LM Studio server. Make sure LM Studio is running and the server is started.',
-          'LMSTUDIO_CONNECTION_REFUSED'
+          VesperaSecurityErrorCode.LMSTUDIO_CONNECTION_REFUSED
         );
       }
       
       if (errorMessage.includes('timeout') || errorMessage.includes('ETIMEDOUT')) {
         throw new VesperaSecurityError(
           'Connection timeout to LM Studio. The server may be overloaded or the model may be slow to respond.',
-          'LMSTUDIO_CONNECTION_TIMEOUT'
+          VesperaSecurityErrorCode.LMSTUDIO_CONNECTION_TIMEOUT
         );
       }
       
@@ -378,17 +381,17 @@ export class LMStudioProvider extends ChatProvider {
           case 404:
             throw new VesperaSecurityError(
               'LM Studio API endpoint not found. Make sure you are using the correct server URL and that the server is properly configured.',
-              'LMSTUDIO_ENDPOINT_NOT_FOUND'
+              VesperaSecurityErrorCode.LMSTUDIO_ENDPOINT_NOT_FOUND
             );
           case 500:
             throw new VesperaSecurityError(
               'LM Studio server error. The model may have failed to load or respond.',
-              'LMSTUDIO_SERVER_ERROR'
+              VesperaSecurityErrorCode.LMSTUDIO_SERVER_ERROR
             );
           default:
             throw new VesperaSecurityError(
               `LM Studio HTTP error: ${status}`,
-              'LMSTUDIO_HTTP_ERROR',
+              VesperaSecurityErrorCode.LMSTUDIO_HTTP_ERROR,
               undefined,
               { status }
             );
@@ -397,7 +400,7 @@ export class LMStudioProvider extends ChatProvider {
       
       throw new VesperaSecurityError(
         `Connection test failed: ${errorMessage}`,
-        'LMSTUDIO_CONNECTION_TEST_FAILED',
+        VesperaSecurityErrorCode.LMSTUDIO_CONNECTION_TEST_FAILED,
         undefined,
         { originalError: error }
       );

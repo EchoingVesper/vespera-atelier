@@ -12,18 +12,13 @@
 import * as vscode from 'vscode';
 import { VesperaLogger } from '../../core/logging/VesperaLogger';
 import { VesperaErrorHandler } from '../../core/error-handling/VesperaErrorHandler';
-import { SecurityEnhancedVesperaCoreServices } from '../../core/security/SecurityEnhancedCoreServices';
 import { 
   SecureSessionPersistenceManager,
-  ChatSession,
   ServerState,
   ChannelState,
-  TaskServerState,
-  MessageHistoryState,
-  FileContextState,
-  SessionUserPreferences
+  MessageHistoryState
 } from '../persistence/SecureSessionPersistenceManager';
-import { TaskServerManager, TaskServerEvent } from '../servers/TaskServerManager';
+import { TaskServerManager } from '../servers/TaskServerManager';
 
 // State management interfaces
 export interface MultiChatState {
@@ -120,10 +115,8 @@ export class MultiChatStateManager {
   private disposables: vscode.Disposable[] = [];
 
   constructor(
-    private readonly context: vscode.ExtensionContext,
     private readonly persistenceManager: SecureSessionPersistenceManager,
     private readonly taskServerManager: TaskServerManager,
-    private readonly coreServices: SecurityEnhancedVesperaCoreServices,
     private readonly logger: VesperaLogger,
     private readonly errorHandler: VesperaErrorHandler
   ) {

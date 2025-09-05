@@ -13,9 +13,8 @@
 import * as vscode from 'vscode';
 import { VesperaLogger } from '../../core/logging/VesperaLogger';
 import { VesperaErrorHandler } from '../../core/error-handling/VesperaErrorHandler';
-import { SecurityEnhancedVesperaCoreServices } from '../../core/security/SecurityEnhancedCoreServices';
 import { VesperaInputSanitizer } from '../../core/security/sanitization/VesperaInputSanitizer';
-import { VesperaSecurityAuditLogger } from '../../core/security/audit/VesperaSecurityAuditLogger';
+import { SanitizationScope } from '../../types/security';
 
 // Session data interfaces
 export interface ChatSession {
@@ -118,7 +117,6 @@ export class SecureSessionPersistenceManager {
   
   constructor(
     private readonly context: vscode.ExtensionContext,
-    private readonly coreServices: SecurityEnhancedVesperaCoreServices,
     private readonly logger: VesperaLogger,
     private readonly errorHandler: VesperaErrorHandler
   ) {
@@ -306,6 +304,22 @@ export class SecureSessionPersistenceManager {
       taskId,
       serverId: taskState?.serverId
     });
+  }
+
+  /**
+   * Add direct message to history (converts to MessageHistoryState)
+   */
+  public async addDirectMessage(dmData: { messageId: string; content: string; fromUserId: string; toUserId: string; timestamp: number; }): Promise<void> {
+    const messageState: MessageHistoryState = {
+      messageId: dmData.messageId,
+      serverId: `dm-${dmData.fromUserId}-${dmData.toUserId}`,
+      channelId: `dm-${dmData.fromUserId}-${dmData.toUserId}`,
+      content: dmData.content,
+      role: 'user',
+      timestamp: dmData.timestamp,
+      sanitized: false
+    };
+    await this.addMessage(messageState);
   }
 
   /**
@@ -536,26 +550,36 @@ export class SecureSessionPersistenceManager {
     
     // Sanitize message history
     const sanitizedMessages = await Promise.all(
-      session.messageHistory.map(async (msg) => ({
-        ...msg,
-        content: await sanitizer.sanitizeInput(msg.content, { type: 'message' }),
-        sanitized: true
-      }))
+      session.messageHistory.map(async (msg) => {
+        const sanitizedContent = await sanitizer.sanitize(msg.content, SanitizationScope.MESSAGE);
+        return {
+          ...msg,
+          content: sanitizedContent.sanitized,
+          sanitized: true
+        };
+      })
     );
     
     // Sanitize server names
     const sanitizedServers = await Promise.all(
-      session.servers.map(async (server) => ({
-        ...server,
-        serverName: await sanitizer.sanitizeInput(server.serverName, { type: 'displayName' }),
-        channels: await Promise.all(server.channels.map(async (channel) => ({
-          ...channel,
-          channelName: await sanitizer.sanitizeInput(channel.channelName, { type: 'displayName' }),
-          lastMessage: channel.lastMessage 
-            ? await sanitizer.sanitizeInput(channel.lastMessage, { type: 'message' })
-            : undefined
-        })))
-      }))
+      session.servers.map(async (server) => {
+        const sanitizedServerName = await sanitizer.sanitize(server.serverName, SanitizationScope.USER_INPUT);
+        return {
+          ...server,
+          serverName: sanitizedServerName.sanitized,
+          channels: await Promise.all(server.channels.map(async (channel) => {
+            const sanitizedChannelName = await sanitizer.sanitize(channel.channelName, SanitizationScope.USER_INPUT);
+            const sanitizedLastMessage = channel.lastMessage 
+              ? await sanitizer.sanitize(channel.lastMessage, SanitizationScope.MESSAGE)
+              : null;
+            return {
+              ...channel,
+              channelName: sanitizedChannelName.sanitized,
+              lastMessage: sanitizedLastMessage?.sanitized
+            };
+          }))
+        };
+      })
     );
     
     return {
@@ -607,9 +631,8 @@ export class SecureSessionPersistenceManager {
     // Validate file paths are within allowed directories
     const validatedPaths = await Promise.all(
       context.filePaths.map(async (path) => {
-        // Use core services for path validation
-        const isValid = await this.coreServices.fileAccess.validatePath(path);
-        if (!isValid) {
+        // Basic path validation
+        if (!path || path.includes('..') || path.includes('<') || path.includes('>')) {
           throw new Error(`Invalid file path: ${path}`);
         }
         return path;
@@ -629,14 +652,13 @@ export class SecureSessionPersistenceManager {
   private async sanitizeMessage(message: MessageHistoryState): Promise<MessageHistoryState> {
     const sanitizer = VesperaInputSanitizer.getInstance();
     
-    const sanitizedContent = await sanitizer.sanitizeInput(message.content, { 
-      type: 'message',
+    const sanitizedContent = await sanitizer.sanitize(message.content, SanitizationScope.MESSAGE, { 
       preserveFormatting: true 
     });
     
     return {
       ...message,
-      content: sanitizedContent,
+      content: sanitizedContent.sanitized,
       sanitized: true
     };
   }

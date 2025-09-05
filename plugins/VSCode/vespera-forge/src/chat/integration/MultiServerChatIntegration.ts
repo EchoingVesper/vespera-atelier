@@ -27,6 +27,14 @@ import { SecureSessionPersistenceManager } from '../persistence/SecureSessionPer
 import { EnhancedChatWebViewProvider } from '../ui/webview/EnhancedChatWebViewProvider';
 
 // Event interfaces
+export interface DirectMessageData {
+  messageId: string;
+  content: string;
+  fromUserId: string;
+  toUserId: string;
+  timestamp: number;
+}
+
 export interface MultiServerChatEvent {
   type: 'serverCreated' | 'serverArchived' | 'channelCreated' | 'messageReceived' | 
         'agentStatusChanged' | 'taskProgressUpdated' | 'directMessageReceived';

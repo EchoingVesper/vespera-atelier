@@ -150,7 +150,6 @@ export class SessionPersistenceIntegration {
     if (this.config.enableSecureStorage) {
       this.persistenceManager = new SecureSessionPersistenceManager(
         this.context,
-        this.coreServices,
         this.logger,
         this.errorHandler
       );
@@ -161,9 +160,7 @@ export class SessionPersistenceIntegration {
     // 2. Initialize TaskServerManager (depends on persistence)
     if (this.config.enableTaskServerIntegration) {
       this.taskServerManager = new TaskServerManager(
-        this.context,
         this.persistenceManager,
-        this.coreServices,
         this.logger,
         this.errorHandler
       );
@@ -172,10 +169,8 @@ export class SessionPersistenceIntegration {
 
     // 3. Initialize MultiChatStateManager (depends on persistence and task manager)
     this.stateManager = new MultiChatStateManager(
-      this.context,
       this.persistenceManager,
       this.taskServerManager,
-      this.coreServices,
       this.logger,
       this.errorHandler
     );
@@ -185,8 +180,6 @@ export class SessionPersistenceIntegration {
     // 4. Initialize ChatServerTemplateManager (Codex integration)
     if (this.config.enableCodexTemplates) {
       this.templateManager = new ChatServerTemplateManager(
-        this.context,
-        this.coreServices,
         this.logger,
         this.errorHandler
       );
@@ -201,8 +194,6 @@ export class SessionPersistenceIntegration {
         this.persistenceManager,
         this.taskServerManager,
         this.stateManager,
-        this.templateManager,
-        this.coreServices,
         this.logger,
         this.errorHandler
       );

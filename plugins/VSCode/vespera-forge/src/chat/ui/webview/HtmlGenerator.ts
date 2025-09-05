@@ -2,7 +2,6 @@
  * HTML Generator for Chat WebView with Security Integration
  */
 import * as vscode from 'vscode';
-import * as path from 'path';
 import { VesperaInputSanitizer } from '../../../core/security/sanitization/VesperaInputSanitizer';
 import { SanitizationScope } from '../../../types/security';
 

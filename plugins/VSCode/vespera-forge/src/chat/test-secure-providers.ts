@@ -13,10 +13,10 @@ import { SecureChatProviderClient } from './providers/SecureChatProviderClient';
 
 // Import security services
 import { 
-  SecurityEnhancedVesperaCoreServices,
   VesperaSecurityError,
   VesperaRateLimitError
 } from '../core/security';
+import { VesperaSecurityErrorCode } from '../types/security';
 
 // Import types
 import { ProviderTemplate, ProviderConfig, ProviderStatus } from './types/provider';
@@ -31,18 +31,22 @@ const createMockTemplate = (providerName: string): ProviderTemplate => ({
   description: `Test template for ${providerName}`,
   version: '1.0.0',
   provider_config: {
+    provider_type: 'test',
     model: 'test-model',
     api_endpoint: `https://api.${providerName.toLowerCase()}.com`,
-    max_tokens: 1000
+    supports_streaming: true,
+    supports_functions: false,
+    max_tokens: 1000,
+    context_window: 4096
   },
   authentication: {
     type: 'api_key',
+    key_name: 'api_key',
     header: 'Authorization',
     format: 'Bearer {key}'
   },
   capabilities: {
     streaming: true,
-    system_messages: true,
     function_calling: false,
     vision: false
   },
@@ -82,6 +86,8 @@ const createTestMessage = (): ChatMessage => ({
   id: 'test-message-1',
   role: 'user',
   content: 'Hello, this is a test message',
+  threadId: 'test-thread-1',
+  sessionId: 'test-session-1',
   timestamp: new Date()
 });
 
@@ -205,7 +211,7 @@ async function testSecurityErrorHandling(): Promise<void> {
   try {
     // Test VesperaSecurityError
     try {
-      throw new VesperaSecurityError('Test security error', 'TEST_ERROR_CODE');
+      throw new VesperaSecurityError('Test security error', VesperaSecurityErrorCode.THREAT_DETECTED);
     } catch (error) {
       if (error instanceof VesperaSecurityError) {
         console.log('  ✅ VesperaSecurityError thrown and caught correctly');
@@ -216,7 +222,7 @@ async function testSecurityErrorHandling(): Promise<void> {
     
     // Test VesperaRateLimitError (if available)
     try {
-      throw new VesperaRateLimitError('Test rate limit error', 'test-resource', Date.now() + 60000);
+      throw new VesperaRateLimitError('Test rate limit error', 60, 100);
     } catch (error) {
       if (error instanceof VesperaRateLimitError) {
         console.log('  ✅ VesperaRateLimitError thrown and caught correctly');

@@ -12,7 +12,6 @@
 import * as vscode from 'vscode';
 import { VesperaLogger } from '../../core/logging/VesperaLogger';
 import { VesperaErrorHandler } from '../../core/error-handling/VesperaErrorHandler';
-import { SecurityEnhancedVesperaCoreServices } from '../../core/security/SecurityEnhancedCoreServices';
 import { 
   ServerState, 
   ChannelState, 
@@ -97,9 +96,7 @@ export class TaskServerManager {
   private disposables: vscode.Disposable[] = [];
 
   constructor(
-    private readonly context: vscode.ExtensionContext,
     private readonly persistenceManager: SecureSessionPersistenceManager,
-    private readonly coreServices: SecurityEnhancedVesperaCoreServices,
     private readonly logger: VesperaLogger,
     private readonly errorHandler: VesperaErrorHandler
   ) {

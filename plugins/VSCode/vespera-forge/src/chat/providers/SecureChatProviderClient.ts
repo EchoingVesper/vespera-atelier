@@ -11,13 +11,17 @@ import {
   VesperaRateLimitError,
   VesperaSanitizationError
 } from '../../core/security';
+import { VesperaSeverity } from '../../core/error-handling/VesperaErrors';
+import { VesperaSecurityErrorCode } from '../../types/security';
 import { 
-  SecurityConfiguration,
+  isSecurityServicesReady, 
+  getSecurityServicesOrFallback 
+} from '../../security/integration';
+import { 
   RateLimitContext,
   SanitizationScope,
   VesperaSecurityEvent,
-  SecurityEventContext,
-  ThreatType
+  SecurityEventContext
 } from '../../types/security';
 import { VesperaLogger } from '../../core/logging/VesperaLogger';
 
@@ -78,10 +82,11 @@ export class SecureChatProviderClient {
     // Initialize logger
     this.logger = new VesperaLogger('SecureChatProviderClient', { provider: this.providerName });
     
-    // Try to get security services if available
+    // Try to get security services if available using type-safe scaffolding
     try {
-      if (SecurityEnhancedVesperaCoreServices.isInitialized()) {
-        this.securityServices = SecurityEnhancedVesperaCoreServices.getInstance();
+      const services = getSecurityServicesOrFallback(SecurityEnhancedVesperaCoreServices.getInstance());
+      if (isSecurityServicesReady(services)) {
+        this.securityServices = services;
       }
     } catch (error) {
       this.logger.warn('Security services not available, operating in degraded mode', { error });
@@ -112,7 +117,7 @@ export class SecureChatProviderClient {
         this.defaultHeaders['Authorization'] = `Bearer ${apiKey}`;
       } catch (error) {
         this.logger.error('Failed to encrypt API key', error);
-        throw new VesperaSecurityError('API key encryption failed', 'CREDENTIAL_ENCRYPTION_ERROR');
+        throw new VesperaSecurityError('API key encryption failed', VesperaSecurityErrorCode.CREDENTIAL_ENCRYPTION_ERROR);
       }
     } else {
       this.defaultHeaders['Authorization'] = `Bearer ${apiKey}`;
@@ -155,8 +160,8 @@ export class SecureChatProviderClient {
         
         throw new VesperaRateLimitError(
           `Rate limit exceeded for ${resourceId}`,
-          rateLimitContext.resourceId,
-          result.resetTime
+          result.retryAfter || result.resetTime || 0,
+          result.remainingTokens || 0
         );
       }
     } catch (error) {
@@ -200,12 +205,16 @@ export class SecureChatProviderClient {
         if (highSeverityThreats.length > 0) {
           throw new VesperaSanitizationError(
             'High-severity security threat detected in request data',
-            result.threats
+            highSeverityThreats[0]?.type || 'unknown',
+            JSON.stringify(request).length,
+            result.sanitized ? JSON.stringify(result.sanitized).length : 0,
+            VesperaSeverity.HIGH,
+            { threats: result.threats }
           );
         }
       }
 
-      return result.sanitizedData;
+      return result.sanitized;
     } catch (error) {
       if (error instanceof VesperaSanitizationError) {
         throw error;
@@ -241,7 +250,7 @@ export class SecureChatProviderClient {
       }
 
       return {
-        data: result.sanitizedData,
+        data: result.sanitized,
         sanitized: result.threats.length > 0 || result.modified
       };
     } catch (error) {
@@ -376,7 +385,7 @@ export class SecureChatProviderClient {
       
       throw new VesperaSecurityError(
         `Streaming request failed: ${errorMessage}`,
-        'API_REQUEST_ERROR',
+        VesperaSecurityErrorCode.API_REQUEST_ERROR,
         undefined,
         { originalError: error, provider: this.providerName }
       );
@@ -465,7 +474,7 @@ export class SecureChatProviderClient {
         
         throw new VesperaSecurityError(
           `HTTP ${response.status}: ${response.statusText}`,
-          'API_HTTP_ERROR',
+          VesperaSecurityErrorCode.API_HTTP_ERROR,
           undefined,
           { status: response.status, provider: this.providerName }
         );
@@ -494,7 +503,7 @@ export class SecureChatProviderClient {
       
       throw new VesperaSecurityError(
         `Request failed: ${errorMessage}`,
-        'API_REQUEST_ERROR',
+        VesperaSecurityErrorCode.API_REQUEST_ERROR,
         undefined,
         { originalError: error, provider: this.providerName }
       );

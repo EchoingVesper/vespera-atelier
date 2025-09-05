@@ -4,8 +4,9 @@
 import { ChatProvider } from './BaseProvider';
 import { ProviderTemplate, ProviderConfig, ProviderStatus } from '../types/provider';
 import { ChatMessage, ChatResponse, ChatChunk } from '../types/chat';
-import { SecureChatProviderClient, StreamEvent } from './SecureChatProviderClient';
+import { SecureChatProviderClient } from './SecureChatProviderClient';
 import { VesperaSecurityError, VesperaRateLimitError } from '../../core/security';
+import { VesperaSecurityErrorCode } from '../../types/security';
 
 export class OpenAIProvider extends ChatProvider {
   private httpClient?: SecureChatProviderClient;
@@ -47,7 +48,7 @@ export class OpenAIProvider extends ChatProvider {
       
       throw new VesperaSecurityError(
         `OpenAI connection failed: ${errorMessage}`,
-        'OPENAI_CONNECTION_ERROR',
+        VesperaSecurityErrorCode.OPENAI_CONNECTION_ERROR,
         undefined,
         { originalError: error }
       );
@@ -56,7 +57,7 @@ export class OpenAIProvider extends ChatProvider {
   
   async sendMessage(message: ChatMessage): Promise<ChatResponse> {
     if (!this.httpClient) {
-      throw new VesperaSecurityError('Provider not connected', 'PROVIDER_NOT_CONNECTED');
+      throw new VesperaSecurityError('Provider not connected', VesperaSecurityErrorCode.PROVIDER_NOT_CONNECTED);
     }
     
     const requestBody = this.buildRequestBody(message, false);
@@ -66,7 +67,7 @@ export class OpenAIProvider extends ChatProvider {
       const response = await this.httpClient.post('/v1/chat/completions', requestBody);
       
       if (!response.data) {
-        throw new VesperaSecurityError('Empty response from OpenAI API', 'EMPTY_API_RESPONSE');
+        throw new VesperaSecurityError('Empty response from OpenAI API', VesperaSecurityErrorCode.EMPTY_API_RESPONSE);
       }
       
       return this.parseResponse(response.data);
@@ -80,7 +81,7 @@ export class OpenAIProvider extends ChatProvider {
       
       throw new VesperaSecurityError(
         `OpenAI API request failed: ${errorMessage}`,
-        'OPENAI_API_ERROR',
+        VesperaSecurityErrorCode.OPENAI_API_ERROR,
         undefined,
         { originalError: error }
       );
@@ -89,7 +90,7 @@ export class OpenAIProvider extends ChatProvider {
   
   async* streamMessage(message: ChatMessage): AsyncIterable<ChatChunk> {
     if (!this.httpClient) {
-      throw new VesperaSecurityError('Provider not connected', 'PROVIDER_NOT_CONNECTED');
+      throw new VesperaSecurityError('Provider not connected', VesperaSecurityErrorCode.PROVIDER_NOT_CONNECTED);
     }
     
     const requestBody = this.buildRequestBody(message, true);
@@ -102,7 +103,7 @@ export class OpenAIProvider extends ChatProvider {
         if (event.type === 'error') {
           throw new VesperaSecurityError(
             `Streaming error: ${event.error}`,
-            'OPENAI_STREAM_ERROR'
+            VesperaSecurityErrorCode.OPENAI_STREAM_ERROR
           );
         }
         
@@ -155,7 +156,7 @@ export class OpenAIProvider extends ChatProvider {
       
       throw new VesperaSecurityError(
         `OpenAI streaming failed: ${errorMessage}`,
-        'OPENAI_STREAM_ERROR',
+        VesperaSecurityErrorCode.OPENAI_STREAM_ERROR,
         undefined,
         { originalError: error }
       );
@@ -180,11 +181,11 @@ export class OpenAIProvider extends ChatProvider {
     const maxTokens = this.config.maxTokens || this.template.provider_config.max_tokens;
     
     if (!model) {
-      throw new VesperaSecurityError('Model configuration is required', 'INVALID_MODEL_CONFIG');
+      throw new VesperaSecurityError('Model configuration is required', VesperaSecurityErrorCode.INVALID_MODEL_CONFIG);
     }
     
     if (!messages || messages.length === 0) {
-      throw new VesperaSecurityError('At least one message is required', 'INVALID_MESSAGE_CONFIG');
+      throw new VesperaSecurityError('At least one message is required', VesperaSecurityErrorCode.INVALID_MESSAGE_CONFIG);
     }
     
     const requestBody: any = {
@@ -239,7 +240,7 @@ export class OpenAIProvider extends ChatProvider {
   
   private async testConnection(): Promise<void> {
     if (!this.httpClient) {
-      throw new VesperaSecurityError('HTTP client not initialized', 'HTTP_CLIENT_NOT_INITIALIZED');
+      throw new VesperaSecurityError('HTTP client not initialized', VesperaSecurityErrorCode.HTTP_CLIENT_NOT_INITIALIZED);
     }
     
     try {
@@ -248,7 +249,9 @@ export class OpenAIProvider extends ChatProvider {
         id: 'test-connection',
         role: 'user',
         content: 'Hi',
-        timestamp: new Date()
+        timestamp: new Date(),
+        threadId: 'test-thread',
+        sessionId: 'test-session'
       };
       
       const testRequestBody = this.buildRequestBody(testMessage, false);
@@ -262,7 +265,7 @@ export class OpenAIProvider extends ChatProvider {
       if (!response.data || !response.data.choices || response.data.choices.length === 0) {
         throw new VesperaSecurityError(
           'Invalid response format from OpenAI API',
-          'OPENAI_INVALID_RESPONSE'
+          VesperaSecurityErrorCode.OPENAI_INVALID_RESPONSE
         );
       }
       
@@ -271,7 +274,7 @@ export class OpenAIProvider extends ChatProvider {
       if (!choice.message || typeof choice.message.content !== 'string') {
         throw new VesperaSecurityError(
           'Unexpected response format from OpenAI API',
-          'OPENAI_UNEXPECTED_RESPONSE'
+          VesperaSecurityErrorCode.OPENAI_UNEXPECTED_RESPONSE
         );
       }
       
@@ -289,17 +292,17 @@ export class OpenAIProvider extends ChatProvider {
           case 401:
             throw new VesperaSecurityError(
               'Invalid API key for OpenAI',
-              'OPENAI_INVALID_API_KEY'
+              VesperaSecurityErrorCode.OPENAI_INVALID_API_KEY
             );
           case 403:
             throw new VesperaSecurityError(
               'Access denied to OpenAI API',
-              'OPENAI_ACCESS_DENIED'
+              VesperaSecurityErrorCode.OPENAI_ACCESS_DENIED
             );
           case 429:
             throw new VesperaSecurityError(
               'Rate limit exceeded during connection test',
-              'OPENAI_RATE_LIMIT_EXCEEDED'
+              VesperaSecurityErrorCode.OPENAI_RATE_LIMIT_EXCEEDED
             );
           case 500:
           case 502:
@@ -307,12 +310,12 @@ export class OpenAIProvider extends ChatProvider {
           case 504:
             throw new VesperaSecurityError(
               'OpenAI API server error',
-              'OPENAI_SERVER_ERROR'
+              VesperaSecurityErrorCode.OPENAI_SERVER_ERROR
             );
           default:
             throw new VesperaSecurityError(
               `OpenAI API HTTP error: ${status}`,
-              'OPENAI_HTTP_ERROR',
+              VesperaSecurityErrorCode.OPENAI_HTTP_ERROR,
               undefined,
               { status }
             );
@@ -321,7 +324,7 @@ export class OpenAIProvider extends ChatProvider {
       
       throw new VesperaSecurityError(
         `Connection test failed: ${errorMessage}`,
-        'OPENAI_CONNECTION_TEST_FAILED',
+        VesperaSecurityErrorCode.OPENAI_CONNECTION_TEST_FAILED,
         undefined,
         { originalError: error }
       );

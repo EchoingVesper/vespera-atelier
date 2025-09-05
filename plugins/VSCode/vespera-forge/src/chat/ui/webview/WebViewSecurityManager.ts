@@ -6,22 +6,16 @@
  * designed for VS Code WebView environments.
  */
 
-import * as vscode from 'vscode';
 import { VesperaInputSanitizer } from '../../../core/security/sanitization/VesperaInputSanitizer';
 import { VesperaSecurityAuditLogger } from '../../../core/security/audit/VesperaSecurityAuditLogger';
 import { VesperaLogger } from '../../../core/logging/VesperaLogger';
 import { VesperaErrorHandler } from '../../../core/error-handling/VesperaErrorHandler';
 import {
   WebViewMessage,
-  WebViewResponse,
-  WebViewMessageType,
-  SendMessageRequest,
-  ConfigureProviderRequest,
-  TestProviderConnectionRequest
+  WebViewMessageType
 } from '../../types/webview';
 import {
   SanitizationScope,
-  SanitizationResult,
   VesperaSecurityEvent,
   ThreatInfo,
   ThreatType,
@@ -576,6 +570,12 @@ export class WebViewSecurityManager {
     let allThreats: ThreatInfo[] = [];
     let blocked = false;
     let sanitized = false;
+
+    // Log sanitization attempt with context
+    this.logger?.debug('Sanitizing message', { 
+      originalLength: originalMessage.length, 
+      contextId: context.sessionId 
+    });
 
     // Sanitize based on message type
     switch (message.type) {

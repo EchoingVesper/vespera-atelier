@@ -14,12 +14,9 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { VesperaLogger } from '../../core/logging/VesperaLogger';
 import { VesperaErrorHandler } from '../../core/error-handling/VesperaErrorHandler';
-import { SecurityEnhancedVesperaCoreServices } from '../../core/security/SecurityEnhancedCoreServices';
 import { 
   TaskServerTemplate, 
-  ChannelTemplate, 
-  TaskServerPermissions, 
-  ChannelPermissions,
+  ChannelTemplate,
   TaskServerConfig,
   AgentChannelConfig
 } from '../servers/TaskServerManager';
@@ -188,13 +185,8 @@ export class ChatServerTemplateManager {
   private codexIntegration: Map<string, string> = new Map(); // templateId -> codexPath
   private disposables: vscode.Disposable[] = [];
   
-  private readonly TEMPLATE_EXTENSIONS = ['.json5', '.json', '.yaml', '.yml'];
-  private readonly CACHE_DURATION = 300000; // 5 minutes
-  private readonly CODEX_TEMPLATE_PATTERN = /\.codex\.template\.(json5|json|yaml|yml)$/;
 
   constructor(
-    private readonly context: vscode.ExtensionContext,
-    private readonly coreServices: SecurityEnhancedVesperaCoreServices,
     private readonly logger: VesperaLogger,
     private readonly errorHandler: VesperaErrorHandler
   ) {}
@@ -596,8 +588,9 @@ export class ChatServerTemplateManager {
           try {
             await this.loadCodexTemplate(file);
           } catch (error) {
-            this.logger.warn('Failed to load Codex template', error, {
-              file: file.fsPath
+            this.logger.warn('Failed to load Codex template', {
+              file: file.fsPath,
+              error: error
             });
           }
         }
@@ -735,10 +728,10 @@ export class ChatServerTemplateManager {
    */
   private async findCodexTemplate(
     taskType: string,
-    taskConfig?: TaskServerConfig
+    _taskConfig?: TaskServerConfig
   ): Promise<ChatServerTemplate | null> {
     // Look for templates with Codex integration that match task type
-    for (const [templateId, codexPath] of this.codexIntegration) {
+    for (const [templateId, _codexPath] of this.codexIntegration) {
       const template = this.templates.get(templateId);
       if (template && (template.taskTypes.includes(taskType) || template.taskTypes.includes('*'))) {
         return template;
