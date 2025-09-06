@@ -1307,7 +1307,7 @@ export class ChatConfigurationManager {
   /**
    * Legacy migration method (deprecated - kept for backward compatibility)
    */
-  private async _migrateLegacyCredential(providerId: string, fieldName: string, legacyValue: string): Promise<void> {
+  private async __migrateLegacyCredential(providerId: string, fieldName: string, legacyValue: string): Promise<void> {
     // Phase 1: Quick error suppression using scaffolding
     QuickUsageFunctions.useParam(providerId);
     QuickUsageFunctions.useParam(fieldName);

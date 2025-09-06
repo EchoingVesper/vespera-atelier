@@ -183,7 +183,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   ].filter(Boolean).join(' ');
 
   const hasMessages = messages.length > 0;
-  const _canSend = connected && !loading && inputValue.trim().length > 0;
 
   return (
     <div className={windowClasses}>

@@ -668,7 +668,7 @@ export class EnhancedChatWebViewProvider implements vscode.WebviewViewProvider {
   /**
    * Get agent status for channel
    */
-  private getAgentStatus(channelId: string): 'idle' | 'active' | 'waiting' | 'error' | 'completed' | undefined {
+  private _getAgentStatus(channelId: string): 'idle' | 'active' | 'waiting' | 'error' | 'completed' | undefined {
     const agentState = this.stateManager.getState().agentProgressStates.get(channelId);
     return agentState?.status;
   }
@@ -684,7 +684,7 @@ export class EnhancedChatWebViewProvider implements vscode.WebviewViewProvider {
   /**
    * Calculate overall server progress
    */
-  private calculateServerProgress(serverId: string): number {
+  private _calculateServerProgress(serverId: string): number {
     const server = this.persistenceManager.getServer(serverId);
     if (!server || server.serverType !== 'task') {
       return 0;
