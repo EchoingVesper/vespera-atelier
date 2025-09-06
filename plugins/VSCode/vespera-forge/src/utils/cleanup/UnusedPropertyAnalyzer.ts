@@ -157,6 +157,12 @@ export enum BenefitLevel {
     HIGH = 'high'
 }
 
+export enum PropertyRemovalRisk {
+    LOW = 'low',        // Safe to remove, no side effects expected
+    MEDIUM = 'medium',  // Some risk, needs testing verification
+    HIGH = 'high'       // High risk, requires thorough investigation
+}
+
 export interface IntegrationOpportunity {
     type: IntegrationType;
     description: string;

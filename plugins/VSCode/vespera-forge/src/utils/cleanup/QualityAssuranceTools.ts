@@ -16,6 +16,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as cp from 'child_process';
+import * as crypto from 'crypto';
 import { UnusedVariable, ProcessingPhase, ErrorCategory, UnusedVariableType } from './UnusedVariableClassifier';
 import { PropertyAnalysisResult, PropertyUsagePattern, PropertyRemovalRisk } from './UnusedPropertyAnalyzer';
 
@@ -1031,7 +1032,7 @@ export class QualityAssuranceTools {
         }
 
         const backupContent = JSON.stringify(files);
-        const checksum = require('crypto').createHash('sha256').update(backupContent).digest('hex');
+        const checksum = crypto.createHash('sha256').update(backupContent).digest('hex');
 
         return {
             files,
