@@ -16,7 +16,6 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as cp from 'child_process';
-import { UnusedVariable } from './UnusedVariableClassifier';
 
 export interface ValidationResult {
     valid: boolean;
@@ -368,7 +367,6 @@ export class QualityAssuranceTools {
      * Measures current performance metrics
      */
     public static async measurePerformance(): Promise<PerformanceMetrics> {
-        const startTime = Date.now();
 
         try {
             // Measure TypeScript compilation time
@@ -378,7 +376,6 @@ export class QualityAssuranceTools {
 
             // Measure test execution time
             const testStart = Date.now();
-            const testResult = await this.runQuickTests();
             const testExecutionTime = Date.now() - testStart;
 
             // Measure bundle size
@@ -699,7 +696,7 @@ export class QualityAssuranceTools {
         command: string,
         options: { cwd?: string } = {}
     ): Promise<{ exitCode: number; output: string }> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve, _reject) => {
             cp.exec(command, { cwd: options.cwd }, (error, stdout, stderr) => {
                 const output = stdout + stderr;
                 if (error) {

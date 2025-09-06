@@ -350,7 +350,7 @@ export class UnusedVariableClassifier {
         };
     }
 
-    private static classifyParameter(variableName: string, context: string): any {
+    private static classifyParameter(variableName: string, _context: string): any {
         const rules = this.CLASSIFICATION_RULES.parameters;
         const isSafeParameter = rules.safeParameterPatterns.some(pattern =>
             new RegExp(pattern).test(variableName)
@@ -430,7 +430,7 @@ export class UnusedVariableClassifier {
         };
     }
 
-    private static classifyVariable(variableName: string, context: string, filePath: string): any {
+    private static classifyVariable(variableName: string, _context: string, filePath: string): any {
         // Check timing variables
         const timingRules = this.CLASSIFICATION_RULES.timingVariables;
         const isTimingVariable = timingRules.variablePatterns.some(pattern =>

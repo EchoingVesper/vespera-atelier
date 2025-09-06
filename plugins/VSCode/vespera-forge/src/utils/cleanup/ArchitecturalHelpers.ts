@@ -11,10 +11,7 @@
  * Focuses on high-risk, high-value architectural improvements.
  */
 
-import * as vscode from 'vscode';
-import * as fs from 'fs';
-import * as path from 'path';
-import { UnusedVariable, ErrorCategory, UnusedVariableType } from './UnusedVariableClassifier';
+import { UnusedVariable, ErrorCategory } from './UnusedVariableClassifier';
 
 export interface ArchitecturalComponent {
     variable: UnusedVariable;
@@ -1161,7 +1158,7 @@ export const unhandledRejectionHandler = UnhandledRejectionHandler.getInstance()
         return ComponentType.ENTERPRISE_FEATURE;
     }
 
-    private static generateSecurityImplications(variable: UnusedVariable, pattern: any): SecurityImplication[] {
+    private static generateSecurityImplications(variable: UnusedVariable, _pattern: any): SecurityImplication[] {
         const implications: SecurityImplication[] = [];
         
         if (variable.category === ErrorCategory.SECURITY_INTEGRATION) {
@@ -1183,7 +1180,7 @@ export const unhandledRejectionHandler = UnhandledRejectionHandler.getInstance()
         return implications;
     }
 
-    private static generateGenericSecurityImplications(variable: UnusedVariable): SecurityImplication[] {
+    private static generateGenericSecurityImplications(_variable: UnusedVariable): SecurityImplication[] {
         return [{
             type: 'validation',
             description: 'Component requires security validation',
@@ -1201,7 +1198,7 @@ export const unhandledRejectionHandler = UnhandledRejectionHandler.getInstance()
         }));
     }
 
-    private static generateValidationRequirements(variable: UnusedVariable, pattern: any): ValidationRequirement[] {
+    private static generateValidationRequirements(variable: UnusedVariable, _pattern: any): ValidationRequirement[] {
         const requirements: ValidationRequirement[] = [];
         
         requirements.push({
@@ -1227,7 +1224,7 @@ export const unhandledRejectionHandler = UnhandledRejectionHandler.getInstance()
         return requirements;
     }
 
-    private static generateCoreServicesManager(component: ArchitecturalComponent): string {
+    private static generateCoreServicesManager(_component: ArchitecturalComponent): string {
         return `
 /**
  * Core Services Manager

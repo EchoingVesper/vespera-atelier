@@ -13,8 +13,8 @@ import { VesperaSecurityAuditLogger } from '../core/security/audit/VesperaSecuri
 import { VesperaLogger } from '../core/logging/VesperaLogger';
 import { VesperaErrorHandler } from '../core/error-handling/VesperaErrorHandler';
 import { sanitizeHtmlContent, generateSecureCSP, generateSecureTemplate } from '../chat/ui/webview/HtmlGenerator';
-import { WebViewMessage, WebViewMessageType } from '../chat/types/webview';
-import { SanitizationScope, ThreatType, ThreatSeverity } from '../types/security';
+import { WebViewMessage } from '../chat/types/webview';
+import { ThreatType, ThreatSeverity } from '../types/security';
 
 // Mock VS Code API
 jest.mock('vscode');
@@ -25,7 +25,6 @@ describe('WebView Security Integration', () => {
   let mockAuditLogger: jest.Mocked<VesperaSecurityAuditLogger>;
   let mockLogger: jest.Mocked<VesperaLogger>;
   let mockErrorHandler: jest.Mocked<VesperaErrorHandler>;
-  let mockWebview: jest.Mocked<vscode.Webview>;
 
   beforeEach(async () => {
     // Create mocks

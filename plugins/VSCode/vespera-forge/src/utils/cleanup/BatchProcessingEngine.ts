@@ -12,9 +12,6 @@
  * Optimizes the systematic elimination of 188 TS6133 errors across 52 files.
  */
 
-import * as vscode from 'vscode';
-import * as fs from 'fs';
-import * as path from 'path';
 import { 
     UnusedVariable, 
     UnusedVariableClassifier, 
@@ -23,10 +20,10 @@ import {
     UnusedVariableType,
     RiskLevel
 } from './UnusedVariableClassifier';
-import { SafeRemovalHelpers, RemovalResult } from './SafeRemovalHelpers';
-import { IntegrationScaffolding, IntegrationCandidate, IntegrationResult } from './IntegrationScaffolding';
-import { ArchitecturalHelpers, ArchitecturalComponent, ArchitecturalResult } from './ArchitecturalHelpers';
-import { QualityAssuranceTools, ValidationResult, ChangeSnapshot } from './QualityAssuranceTools';
+import { SafeRemovalHelpers } from './SafeRemovalHelpers';
+import { IntegrationScaffolding } from './IntegrationScaffolding';
+import { ArchitecturalHelpers } from './ArchitecturalHelpers';
+import { QualityAssuranceTools, ValidationResult } from './QualityAssuranceTools';
 
 export interface BatchProcessingOptions {
     maxConcurrent?: number;

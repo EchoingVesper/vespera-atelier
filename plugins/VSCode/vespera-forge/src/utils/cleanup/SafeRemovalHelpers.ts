@@ -11,9 +11,7 @@
  * All operations include rollback capabilities and validation checks.
  */
 
-import * as vscode from 'vscode';
 import * as fs from 'fs';
-import * as path from 'path';
 import { UnusedVariable, UnusedVariableType, ErrorCategory } from './UnusedVariableClassifier';
 
 export interface RemovalResult {

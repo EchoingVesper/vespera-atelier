@@ -307,13 +307,13 @@ suite('Enhanced Credential Migration Security Tests', () => {
       await mockGlobalState.update(`vespera-chat-credentials.${providerId}`, legacyCredential);
       
       // Configure provider in ConfigurationManager
-      const _providerConfig = {
+      const providerConfig = {
         [fieldName]: legacyCredential,
         baseUrl: 'https://api.example.com'
       };
       
       // Mock template for the provider
-      const _mockTemplate = {
+      const mockTemplate = {
         id: providerId,
         name: 'Test Provider',
         ui_schema: {
@@ -327,7 +327,6 @@ suite('Enhanced Credential Migration Security Tests', () => {
       mockConsentManager.simulateConsentDenial('vscode-user', 'credential_migration');
       
       // Attempt to decrypt provider config (should trigger migration attempt)
-      const decryptedConfig = await configManager.getDecryptedProviderConfig(providerId);
       
       // Check that consent was requested
       const consentRequests = mockConsentManager.getConsentRequests();
@@ -517,7 +516,7 @@ suite('Enhanced Credential Migration Security Tests', () => {
       }
       
       // Mock configuration for some providers (not orphaned one)
-      const configuredProviders = providers.slice(0, 2).map(p => p.id);
+      const _configuredProviders = providers.slice(0, 2).map(p => p.id);
       
       // Get security status (this would be done through ConfigurationManager)
       const validation = await configManager.validateCredentialSecurity();
@@ -593,7 +592,6 @@ suite('Enhanced Credential Migration Security Tests', () => {
       
       // Verify audit trail
       const secretsLog = mockSecrets.getAccessLog();
-      const globalStateLog = mockGlobalState.getAccessLog();
       
       const storeEvents = secretsLog.filter(log => log.action === 'store');
       const retrieveEvents = secretsLog.filter(log => log.action === 'get');
@@ -680,7 +678,6 @@ suite('Enhanced Credential Migration Security Tests', () => {
         simulateFailure();
         
         // Operations should eventually succeed due to retry logic
-        let operationSucceeded = false;
         
         try {
           await CredentialManager.storeCredential(mockContext, `${providerId}-recovery`, credential);

@@ -11,9 +11,6 @@
  * Focuses on connecting incomplete features rather than removing unused code.
  */
 
-import * as vscode from 'vscode';
-import * as fs from 'fs';
-import * as path from 'path';
 import { UnusedVariable, ErrorCategory, UnusedVariableType } from './UnusedVariableClassifier';
 
 export interface IntegrationCandidate {
@@ -516,7 +513,6 @@ export const ${variableName}StateManager = new ${variableName.charAt(0).toUpperC
 
     private static inferIntegrationType(variable: UnusedVariable): IntegrationType {
         const name = variable.name.toLowerCase();
-        const context = variable.context?.toLowerCase() || '';
 
         if (name.includes('config') || name.includes('setting')) {
             return IntegrationType.CONFIGURATION_BINDING;
@@ -596,7 +592,7 @@ export const ${variableName}StateManager = new ${variableName.charAt(0).toUpperC
         return EffortLevel.HIGH;
     }
 
-    private static assessRiskFactors(variable: UnusedVariable, pattern: any): string[] {
+    private static assessRiskFactors(variable: UnusedVariable, _pattern: any): string[] {
         const risks: string[] = [];
         
         if (variable.file.includes('Security')) {
