@@ -1461,6 +1461,74 @@ export class ChatConfigurationManager {
     };
   }
   
+  /**
+   * Show provider configuration dialog
+   */
+  async showProviderConfiguration(providerId: string): Promise<void> {
+    try {
+      const template = this.templateRegistry.getTemplate(providerId);
+      if (!template) {
+        await vscode.window.showErrorMessage(`Provider template not found: ${providerId}`);
+        return;
+      }
+
+      // Get current configuration
+      const currentConfig = this.config.providers[providerId]?.config || {};
+      
+      if (template.ui_schema?.config_fields) {
+        // Show configuration form for each field
+        const newConfig: Record<string, any> = {};
+        
+        for (const field of template.ui_schema.config_fields) {
+          let value: string | undefined;
+          
+          if (field.type === 'password') {
+            value = await vscode.window.showInputBox({
+              prompt: field.description || `Enter ${field.name}`,
+              placeHolder: field.placeholder || field.name,
+              password: true,
+              value: currentConfig[field.name] ? '••••••••' : undefined
+            });
+          } else {
+            value = await vscode.window.showInputBox({
+              prompt: field.description || `Enter ${field.name}`,
+              placeHolder: field.placeholder || field.name,
+              value: currentConfig[field.name] || field.default || ''
+            });
+          }
+          
+          if (value !== undefined && value !== '••••••••') {
+            newConfig[field.name] = value;
+          } else if (currentConfig[field.name] !== undefined) {
+            // Keep existing value if user didn't change it
+            newConfig[field.name] = currentConfig[field.name];
+          }
+        }
+        
+        // Configure the provider with new settings
+        if (Object.keys(newConfig).length > 0) {
+          await this.configureProvider(providerId, newConfig, 'user');
+          await vscode.window.showInformationMessage(`Provider ${providerId} configured successfully`);
+        }
+      } else {
+        // Simple configuration for providers without UI schema
+        const apiKey = await vscode.window.showInputBox({
+          prompt: 'Enter API Key',
+          password: true,
+          placeHolder: 'Your API key'
+        });
+        
+        if (apiKey) {
+          await this.configureProvider(providerId, { apiKey }, 'user');
+          await vscode.window.showInformationMessage(`Provider ${providerId} configured successfully`);
+        }
+      }
+    } catch (error) {
+      console.error(`[ConfigurationManager] Error configuring provider ${providerId}:`, error);
+      await vscode.window.showErrorMessage(`Failed to configure provider: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  
   dispose(): void {
     this.disposables.forEach(d => d.dispose());
     this.disposables.length = 0;

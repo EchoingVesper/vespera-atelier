@@ -979,11 +979,110 @@ export class ChatServerTemplateManager {
         
       case '.yaml':
       case '.yml':
-        // Would need yaml parser
-        throw new Error('YAML parsing not implemented');
+        // Simple YAML parser fallback - converts basic YAML to JSON
+        return this.parseSimpleYaml(text);
         
       default:
         throw new Error(`Unsupported template file extension: ${extension}`);
+    }
+  }
+
+  /**
+   * Simple YAML parser fallback for basic YAML structures
+   * This is a minimal implementation that handles common cases
+   */
+  private parseSimpleYaml(yamlText: string): any {
+    try {
+      const lines = yamlText.split('\n');
+      const result: any = {};
+      let currentObj = result;
+      const stack: any[] = [result];
+      let currentIndent = 0;
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        
+        // Skip empty lines and comments
+        if (!trimmed || trimmed.startsWith('#')) {
+          continue;
+        }
+
+        // Calculate indentation
+        const indent = line.length - line.trimLeft().length;
+        
+        // Handle indentation changes
+        if (indent < currentIndent) {
+          // Pop from stack until we reach the correct level
+          while (stack.length > 1 && indent < currentIndent) {
+            stack.pop();
+            currentIndent -= 2; // Assuming 2-space indentation
+          }
+          currentObj = stack[stack.length - 1];
+        }
+
+        // Parse key-value pairs
+        if (trimmed.includes(':')) {
+          const [key, ...valueParts] = trimmed.split(':');
+          const value = valueParts.join(':').trim();
+          
+          if (value) {
+            // Handle different value types
+            let parsedValue: any = value;
+            
+            // Boolean
+            if (value === 'true') parsedValue = true;
+            else if (value === 'false') parsedValue = false;
+            // Number
+            else if (!isNaN(Number(value)) && value !== '') parsedValue = Number(value);
+            // String (remove quotes if present)
+            else if (value.startsWith('"') && value.endsWith('"')) {
+              parsedValue = value.slice(1, -1);
+            } else if (value.startsWith("'") && value.endsWith("'")) {
+              parsedValue = value.slice(1, -1);
+            }
+            
+            currentObj[key.trim()] = parsedValue;
+          } else {
+            // Object (no value after colon)
+            currentObj[key.trim()] = {};
+            stack.push(currentObj[key.trim()]);
+            currentObj = currentObj[key.trim()];
+            currentIndent = indent;
+          }
+        } else if (trimmed.startsWith('- ')) {
+          // Array item
+          const item = trimmed.substring(2).trim();
+          const parentKey = Object.keys(currentObj).pop();
+          
+          if (parentKey && !Array.isArray(currentObj[parentKey])) {
+            currentObj[parentKey] = [];
+          }
+          
+          if (parentKey && Array.isArray(currentObj[parentKey])) {
+            // Parse array item value
+            let parsedItem: any = item;
+            if (item === 'true') parsedItem = true;
+            else if (item === 'false') parsedItem = false;
+            else if (!isNaN(Number(item)) && item !== '') parsedItem = Number(item);
+            else if (item.startsWith('"') && item.endsWith('"')) {
+              parsedItem = item.slice(1, -1);
+            } else if (item.startsWith("'") && item.endsWith("'")) {
+              parsedItem = item.slice(1, -1);
+            }
+            
+            currentObj[parentKey].push(parsedItem);
+          }
+        }
+      }
+
+      return result;
+    } catch (error) {
+      // Fallback: try to parse as JSON in case it's actually JSON with .yaml extension
+      try {
+        return JSON.parse(yamlText);
+      } catch {
+        throw new Error(`Failed to parse YAML: ${error instanceof Error ? error.message : String(error)}`);
+      }
     }
   }
 
