@@ -42,7 +42,6 @@ import { ChatSessionManager } from './core/ChatSessionManager';
 import { ChatEventRouter } from './events/ChatEventRouter';
 import { ChatWebViewProvider } from './ui/webview/ChatWebViewProvider';
 import { ChatMessage, ChatSession, SessionSummary } from './types/chat';
-import { QuickUsageFunctions } from './integration/UnusedVariableIntegrationExamples';
 
 export class VesperaChatSystem {
   private templateRegistry: ChatTemplateRegistry;
@@ -63,10 +62,6 @@ export class VesperaChatSystem {
     this.historyManager = new ChatHistoryManager(this._context);
     this.sessionManager = new ChatSessionManager(this._context, this.historyManager);
     this.webViewProvider = new ChatWebViewProvider(this._context, this.eventRouter, this.configurationManager, this.templateRegistry);
-    
-    // Phase 1: Quick error suppression using scaffolding
-    QuickUsageFunctions.useProp(this.providers);
-    QuickUsageFunctions.useProp(this.activeProvider);
   }
 
   /**

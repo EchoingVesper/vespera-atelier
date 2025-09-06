@@ -12,13 +12,12 @@
  * Ensures safe, reliable, and reversible changes throughout the cleanup process.
  */
 
-import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as cp from 'child_process';
 import * as crypto from 'crypto';
-import { UnusedVariable, ProcessingPhase, ErrorCategory, UnusedVariableType } from './UnusedVariableClassifier';
-import { PropertyAnalysisResult, PropertyUsagePattern, PropertyRemovalRisk } from './UnusedPropertyAnalyzer';
+import { UnusedVariable, UnusedVariableType } from './UnusedVariableClassifier';
+import { PropertyAnalysisResult, PropertyUsagePattern } from './UnusedPropertyAnalyzer';
 
 export interface ValidationResult {
     valid: boolean;

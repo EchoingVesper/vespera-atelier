@@ -15,20 +15,15 @@ import { FileContextCollector } from '../chat/context/FileContextCollector';
 import { 
   SecureNotificationManager, 
   NotificationLevel, 
-  NotificationType, 
-  NotificationAction 
+  NotificationType 
 } from './SecureNotificationManager';
 import { 
-  MultiChatNotificationManager,
-  ChatEventType,
-  ChatEvent
+  MultiChatNotificationManager
 } from './MultiChatNotificationManager';
 import {
-  getLogger,
   logSecurityEvent,
   trackEvent
 } from '../core/integration/CoreServicesIntegrationHelpers';
-import { QuickUsageFunctions } from '../chat/integration/UnusedVariableIntegrationExamples';
 
 export enum ChatIntegrationEventType {
   PROVIDER_ERROR = 'provider_error',
@@ -137,12 +132,6 @@ export class ChatNotificationIntegration implements vscode.Disposable {
     private readonly _errorHandler: VesperaErrorHandler
   ) {
     this.config = this.getDefaultConfig();
-    
-    // Phase 1: Quick error suppression using scaffolding
-    QuickUsageFunctions.useProp(this._multiChatManager);
-    QuickUsageFunctions.useProp(this._chatManager);
-    QuickUsageFunctions.useProp(this._contextCollector);
-    QuickUsageFunctions.useProp(this._errorHandler);
   }
 
   /**

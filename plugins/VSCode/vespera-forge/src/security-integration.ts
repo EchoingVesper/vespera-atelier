@@ -24,7 +24,6 @@ import {
   SecurityEventContext 
 } from './types/security';
 import { VesperaSecurityError } from './core/security/VesperaSecurityErrors';
-import { QuickUsageFunctions } from './chat/integration/UnusedVariableIntegrationExamples';
 
 export interface SecurityIntegrationConfig {
   securityLevel: 'strict' | 'standard' | 'permissive';
@@ -417,10 +416,7 @@ export class SecurityIntegrationManager implements EnhancedDisposable {
     let totalOverhead = 0;
     let validTests = 0;
     
-    results.forEach((result, index) => {
-      // Phase 1: Quick error suppression using scaffolding
-      QuickUsageFunctions.useParam(index);
-      
+    results.forEach((result, _index) => {
       if (result.status === 'fulfilled' && result.value.overhead !== undefined) {
         totalOverhead += result.value.overhead;
         validTests++;

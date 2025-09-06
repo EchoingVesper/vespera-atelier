@@ -11,8 +11,7 @@ import { RustFileOpsSecurityWrapper, FileOperationContext, SecurityValidationRes
 import { 
   VesperaSecurityEvent, 
   SecurityEventContext,
-  VesperaSecurityErrorCode,
-  ThreatSeverity 
+  VesperaSecurityErrorCode
 } from '../types/security';
 import { VesperaSecurityError } from '../core/security/VesperaSecurityErrors';
 

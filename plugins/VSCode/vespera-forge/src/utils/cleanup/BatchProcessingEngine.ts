@@ -17,7 +17,6 @@ import {
     UnusedVariableClassifier, 
     ProcessingPhase, 
     ErrorCategory,
-    UnusedVariableType,
     RiskLevel
 } from './UnusedVariableClassifier';
 import { SafeRemovalHelpers } from './SafeRemovalHelpers';

@@ -22,12 +22,10 @@ import {
   VesperaRateLimiterInterface,
   TokenBucketState,
   CircuitBreakerState,
-  VesperaSecurityEvent,
   VesperaSecurityErrorCode
 } from '../../../types/security';
 import { 
   VesperaRateLimitError, 
-  VesperaCircuitBreakerError, 
   VesperaSecurityError 
 } from '../VesperaSecurityErrors';
 

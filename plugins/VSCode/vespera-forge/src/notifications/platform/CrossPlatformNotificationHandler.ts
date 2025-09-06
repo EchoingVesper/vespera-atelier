@@ -15,7 +15,6 @@ import { VesperaErrorHandler } from '../../core/error-handling/VesperaErrorHandl
 import { SecurityEnhancedVesperaCoreServices } from '../../core/security/SecurityEnhancedCoreServices';
 import { 
   NotificationRequest,
-  NotificationResult,
   NotificationLevel 
 } from '../SecureNotificationManager';
 

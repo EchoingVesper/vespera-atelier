@@ -40,7 +40,6 @@ import {
 import { TaskServerManager } from '../../servers/TaskServerManager';
 import { ChatServerTemplateManager } from '../../templates/ChatServerTemplateManager';
 import { TaskChatIntegration } from '../../integration/TaskChatIntegration';
-import { QuickUsageFunctions } from '../../integration/UnusedVariableIntegrationExamples';
 
 // Enhanced WebView message types
 export interface MultiServerWebViewMessage extends WebViewMessage {
@@ -122,10 +121,6 @@ export class EnhancedChatWebViewProvider implements vscode.WebviewViewProvider {
   ) {
     this._sessionId = `enhanced_chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     this.setupStateChangeHandlers();
-    
-    // Phase 1: Quick error suppression using scaffolding
-    QuickUsageFunctions.useProp(this._templateRegistry);
-    QuickUsageFunctions.useProp(this._contextCollector);
   }
 
   /**

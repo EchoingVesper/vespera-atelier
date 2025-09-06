@@ -19,17 +19,13 @@
  * Implements systematic investigation methodology for complex property scenarios.
  */
 
-import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as cp from 'child_process';
 import { 
     UnusedVariable, 
-    ProcessingPhase, 
-    ErrorCategory,
     RiskLevel 
 } from './UnusedVariableClassifier';
-import { PropertyAnalysisResult, InvestigationFindings } from './UnusedPropertyAnalyzer';
+import { PropertyAnalysisResult } from './UnusedPropertyAnalyzer';
 
 export interface PropertyInvestigationResult {
     property: UnusedVariable;

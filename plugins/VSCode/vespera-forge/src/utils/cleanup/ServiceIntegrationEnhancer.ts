@@ -19,22 +19,16 @@
  * - AgentProgressNotifier (both services usage)
  */
 
-import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { 
     UnusedVariable, 
-    ProcessingPhase, 
-    ErrorCategory,
     RiskLevel 
 } from './UnusedVariableClassifier';
 import { 
     PropertyAnalysisResult, 
     IntegrationOpportunity,
-    IntegrationType,
-    EffortLevel,
-    BenefitLevel,
-    ServiceConnection
+    IntegrationType
 } from './UnusedPropertyAnalyzer';
 
 export interface ServiceIntegrationResult {

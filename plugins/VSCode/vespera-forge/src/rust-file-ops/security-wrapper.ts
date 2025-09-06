@@ -11,8 +11,7 @@ import {
   VesperaSecurityEvent, 
   SecurityEventContext, 
   SanitizationScope,
-  ThreatSeverity,
-  VesperaSecurityErrorCode
+  ThreatSeverity
 } from '../types/security';
 
 export interface SecurityValidationResult {

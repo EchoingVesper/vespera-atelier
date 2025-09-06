@@ -8,10 +8,8 @@
 import { SecurityEnhancedCoreServices } from '../core/security/SecurityEnhancedCoreServices';
 import { 
   VesperaSecurityEvent, 
-  SecurityEventContext,
   VesperaSecurityErrorCode,
-  ThreatSeverity,
-  SanitizationScope
+  ThreatSeverity
 } from '../types/security';
 import { VesperaSecurityError } from '../core/security/VesperaSecurityErrors';
 

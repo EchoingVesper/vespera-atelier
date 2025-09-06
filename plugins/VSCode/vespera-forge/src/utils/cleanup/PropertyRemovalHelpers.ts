@@ -16,13 +16,10 @@
  * Implements proven safety patterns from Phase 1A success.
  */
 
-import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { 
     UnusedVariable, 
-    ProcessingPhase, 
-    ErrorCategory,
     RiskLevel 
 } from './UnusedVariableClassifier';
 import { PropertyAnalysisResult, ConstructorUsageDetails } from './UnusedPropertyAnalyzer';

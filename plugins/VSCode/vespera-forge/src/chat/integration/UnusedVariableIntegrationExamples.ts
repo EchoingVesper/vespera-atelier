@@ -284,7 +284,7 @@ export class MigrationHelpers {
     checklist.push('');
     checklist.push('Tasks:');
     
-    analysis.suggestions.forEach((suggestion, index) => {
+    analysis.suggestions.forEach((suggestion, _index) => {
       checklist.push(`- [ ] ${suggestion}`);
     });
 

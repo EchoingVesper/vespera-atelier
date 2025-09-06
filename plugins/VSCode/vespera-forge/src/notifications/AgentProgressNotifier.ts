@@ -12,8 +12,7 @@ import { SecurityEnhancedVesperaCoreServices } from '../core/security/SecurityEn
 import { 
   SecureNotificationManager, 
   NotificationLevel, 
-  NotificationType, 
-  NotificationAction 
+  NotificationType 
 } from './SecureNotificationManager';
 
 export enum OperationStatus {

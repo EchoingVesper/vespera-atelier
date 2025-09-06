@@ -15,15 +15,11 @@
  * - Phase 2C: System investigation and resolution (5 properties, HIGH complexity)
  */
 
-import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { 
     UnusedVariable, 
-    ProcessingPhase, 
-    ErrorCategory, 
-    RiskLevel,
-    UnusedVariableType 
+    RiskLevel
 } from './UnusedVariableClassifier';
 
 export interface PropertyAnalysisResult {
