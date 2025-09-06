@@ -5,7 +5,6 @@
  * comprehensive threat detection, and minimal performance overhead (<1ms per message).
  */
 
-import * as vscode from 'vscode';
 import { SecurityEnhancedCoreServices } from '../core/security/SecurityEnhancedCoreServices';
 import { 
   VesperaSecurityEvent, 
@@ -537,7 +536,7 @@ export class McpMessageValidator {
   /**
    * Rate limiting validation
    */
-  private validateRate(config: any, message: McpMessage, context?: any): { valid: boolean; description?: string; location?: string } {
+  private validateRate(config: any, _message: McpMessage, context?: any): { valid: boolean; description?: string; location?: string } {
     if (!config.maxRequestsPerMinute || !context?.clientId) {
       return { valid: true };
     }

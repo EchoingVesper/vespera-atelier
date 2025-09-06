@@ -1111,7 +1111,6 @@ export class BinderyService extends EventEmitter {
   }
 
   private async sendRequest<T>(method: string, params?: any): Promise<BinderyResult<T>> {
-    const _requestStart = performance.now();
     this.log(`Sending request: ${method}, connected: ${this.isConnected()}, status: ${this.connectionInfo.status}`);
     
     if (!this.isConnected()) {
@@ -1151,7 +1150,6 @@ export class BinderyService extends EventEmitter {
     }
 
     // Use sanitized request if available
-    const _sanitizedRequest = requestValidation.sanitizedRequest || request;
 
     return new Promise((resolve) => {
       const timeout = setTimeout(() => {

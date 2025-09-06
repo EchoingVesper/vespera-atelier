@@ -5,7 +5,6 @@
  * with enterprise-grade audit logging and threat detection.
  */
 
-import * as vscode from 'vscode';
 import * as path from 'path';
 import { SecurityEnhancedCoreServices } from '../core/security/SecurityEnhancedCoreServices';
 import { RustFileOpsSecurityWrapper, FileOperationContext, SecurityValidationResult } from '../rust-file-ops/security-wrapper';

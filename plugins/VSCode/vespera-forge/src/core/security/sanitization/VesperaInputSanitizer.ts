@@ -5,7 +5,6 @@
  * schema validation, threat detection, and CSP management.
  */
 
-import * as vscode from 'vscode';
 import { VesperaLogger } from '../../logging/VesperaLogger';
 import { VesperaErrorHandler } from '../../error-handling/VesperaErrorHandler';
 import {
@@ -25,7 +24,6 @@ import {
   ThreatDetectionConfig
 } from '../../../types/security';
 import { VesperaSanitizationError, VesperaThreatError } from '../VesperaSecurityErrors';
-import { VesperaSecurityErrorCode } from '../../../types/security';
 import { VesperaSeverity } from '../../error-handling/VesperaErrors';
 
 // Default configurations
@@ -610,7 +608,7 @@ export class VesperaInputSanitizer implements VesperaInputSanitizerInterface {
   /**
    * Apply DOMPurify sanitization (placeholder - would need actual DOMPurify integration)
    */
-  private applyDOMPurify(input: any, config?: ProcessorConfig['domPurify']): any {
+  private applyDOMPurify(input: any, _config?: ProcessorConfig['domPurify']): any {
     if (typeof input !== 'string') return input;
 
     // This is a placeholder implementation

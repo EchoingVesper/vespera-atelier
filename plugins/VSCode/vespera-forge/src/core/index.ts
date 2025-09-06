@@ -6,7 +6,7 @@
  */
 
 import * as vscode from 'vscode';
-import { VesperaLogger, LoggerConfiguration, LogLevel } from './logging/VesperaLogger';
+import { VesperaLogger, LoggerConfiguration } from './logging/VesperaLogger';
 import { VesperaErrorHandler } from './error-handling/VesperaErrorHandler';
 import { VesperaContextManager } from './memory-management/VesperaContextManager';
 import { VesperaTelemetryService } from './telemetry/VesperaTelemetryService';

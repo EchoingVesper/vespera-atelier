@@ -5,11 +5,8 @@
  * while maintaining the 3-15x performance gains from rust-file-ops.
  */
 
-import * as vscode from 'vscode';
 import * as path from 'path';
 import { SecurityEnhancedCoreServices } from '../core/security/SecurityEnhancedCoreServices';
-import { VesperaInputSanitizer } from '../core/security/sanitization/VesperaInputSanitizer';
-import { VesperaSecurityAuditLogger } from '../core/security/audit/VesperaSecurityAuditLogger';
 import { 
   VesperaSecurityEvent, 
   SecurityEventContext, 
@@ -17,7 +14,6 @@ import {
   ThreatSeverity,
   VesperaSecurityErrorCode
 } from '../types/security';
-import { VesperaSecurityError } from '../core/security/VesperaSecurityErrors';
 
 export interface SecurityValidationResult {
   allowed: boolean;

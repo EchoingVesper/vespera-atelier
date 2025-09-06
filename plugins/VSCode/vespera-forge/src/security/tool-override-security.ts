@@ -211,7 +211,6 @@ export class ToolOverrideSecurityManager {
     const startTime = performance.now();
     const auditId = this.generateAuditId();
 
-    const _profile = this.getOrCreateSecurityProfile(toolName);
 
     // Tool disable has lower risk than override
     const riskAssessment = {

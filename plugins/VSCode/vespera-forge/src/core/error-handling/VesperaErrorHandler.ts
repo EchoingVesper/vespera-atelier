@@ -337,7 +337,7 @@ export class VesperaErrorHandler implements vscode.Disposable {
 
   private setupGlobalErrorHandling(): void {
     // Handle unhandled promise rejections
-    const unhandledRejectionHandler = (event: any) => {
+    const _unhandledRejectionHandler = (event: any) => {
       this.handleError(new VesperaError(
         `Unhandled promise rejection: ${event.reason}`,
         VesperaErrorCode.UNKNOWN_ERROR,
@@ -360,7 +360,7 @@ export class VesperaErrorHandler implements vscode.Disposable {
       ));
     });
 
-    process.on('unhandledRejection', (reason, promise) => {
+    process.on('unhandledRejection', (reason, _promise) => {
       this.handleError(new VesperaError(
         `Unhandled promise rejection: ${reason}`,
         VesperaErrorCode.UNKNOWN_ERROR,

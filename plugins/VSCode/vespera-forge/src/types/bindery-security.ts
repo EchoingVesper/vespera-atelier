@@ -5,7 +5,7 @@
  * with process isolation, JSON-RPC validation, and RAG content protection.
  */
 
-import { BinderyRequest, BinderyResponse, BinderyError } from './bindery';
+import { BinderyRequest, BinderyResponse } from './bindery';
 import { SecurityEventContext, ThreatSeverity } from './security';
 
 export interface BinderySecurityConfig {
