@@ -50,6 +50,13 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
   private alerts: SecurityAlert[] = [];
   private disposed = false;
   
+  /**
+   * Check if service is disposed
+   */
+  public get isDisposed(): boolean {
+    return this.disposed;
+  }
+  
   // Statistics
   private metrics: SecurityMetrics = {
     rateLimiting: {
@@ -348,7 +355,7 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
       const dayAlerts = this.alerts.filter(a => a.timestamp >= dayStart && a.timestamp < dayEnd);
       
       trends.push({
-        date: new Date(dayStart).toISOString().split('T')[0],
+        date: new Date(dayStart).toISOString().split('T')[0]!,
         eventCount: dayEvents.length,
         alertCount: dayAlerts.length
       });
@@ -426,7 +433,9 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
       [VesperaSecurityEvent.SANITIZATION_APPLIED]: 'low',
       [VesperaSecurityEvent.SECURITY_BREACH]: 'critical',
       [VesperaSecurityEvent.CIRCUIT_BREAKER_OPENED]: 'medium',
-      [VesperaSecurityEvent.CIRCUIT_BREAKER_CLOSED]: 'low'
+      [VesperaSecurityEvent.CIRCUIT_BREAKER_CLOSED]: 'low',
+      [VesperaSecurityEvent.API_ACCESS]: 'low',
+      [VesperaSecurityEvent.API_ERROR]: 'medium'
     };
 
     let severity = baseSeverity[event] || 'medium';

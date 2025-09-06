@@ -48,7 +48,7 @@ export class VesperaLogger implements vscode.Disposable {
   private flushInterval?: NodeJS.Timeout;
   private disposables: vscode.Disposable[] = [];
 
-  private constructor(context: vscode.ExtensionContext, config: Partial<LoggerConfiguration> = {}) {
+  private constructor(_context: vscode.ExtensionContext, config: Partial<LoggerConfiguration> = {}) {
     this.sessionId = this.generateSessionId();
     this.config = this.mergeConfiguration(config);
     
@@ -82,7 +82,7 @@ export class VesperaLogger implements vscode.Disposable {
   }
 
   private mergeConfiguration(config: Partial<LoggerConfiguration>): LoggerConfiguration {
-    const isDevelopment = vscode.env.appName.includes('Insiders') || process.env.NODE_ENV === 'development';
+    const isDevelopment = vscode.env.appName.includes('Insiders') || process.env['NODE_ENV'] === 'development';
     
     return {
       level: config.level ?? (isDevelopment ? LogLevel.DEBUG : LogLevel.INFO),
@@ -306,6 +306,15 @@ export class VesperaLogger implements vscode.Disposable {
    */
   public clearOutput(): void {
     this.outputChannel.clear();
+  }
+
+  /**
+   * Create a child logger with additional context
+   */
+  public createChild(_context: string): VesperaLogger {
+    // For now, return the same instance with context
+    // In a full implementation, this would create a new instance with context
+    return this;
   }
 
   public dispose(): void {

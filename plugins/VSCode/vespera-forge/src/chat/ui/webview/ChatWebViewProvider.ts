@@ -21,6 +21,8 @@ import { VesperaInputSanitizer } from '../../../core/security/sanitization/Vespe
 import { VesperaSecurityAuditLogger } from '../../../core/security/audit/VesperaSecurityAuditLogger';
 import { VesperaLogger } from '../../../core/logging/VesperaLogger';
 import { VesperaErrorHandler } from '../../../core/error-handling/VesperaErrorHandler';
+import { SecureFileContextCollector, SecureContextData } from '../../context/FileContextManager';
+import { SecurityEnhancedVesperaCoreServices } from '../../../core/security/SecurityEnhancedCoreServices';
 
 export class ChatWebViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'vesperaForge.chatView';
@@ -29,6 +31,9 @@ export class ChatWebViewProvider implements vscode.WebviewViewProvider {
   private _disposables: vscode.Disposable[] = [];
   private _securityManager?: WebViewSecurityManager;
   private _sessionId: string;
+  private _contextCollector?: SecureFileContextCollector;
+  private _contextState: Map<string, SecureContextData> = new Map();
+  private _coreServices?: SecurityEnhancedVesperaCoreServices;
   
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -36,9 +41,11 @@ export class ChatWebViewProvider implements vscode.WebviewViewProvider {
     private readonly configManager: ChatConfigurationManager,
     private readonly templateRegistry: ChatTemplateRegistry,
     private readonly logger?: VesperaLogger,
-    private readonly errorHandler?: VesperaErrorHandler
+    private readonly errorHandler?: VesperaErrorHandler,
+    coreServices?: SecurityEnhancedVesperaCoreServices
   ) {
     this._sessionId = `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    this._coreServices = coreServices;
   }
 
   /**
@@ -69,9 +76,19 @@ export class ChatWebViewProvider implements vscode.WebviewViewProvider {
         }
       });
 
-      this.logger.info('WebView security manager initialized', { 
+      // Initialize secure context collector
+      this._contextCollector = new SecureFileContextCollector(
+        {
+          enabled: true,
+          autoCollect: true
+        },
+        this._coreServices
+      );
+      
+      this.logger.info('WebView security manager and context collector initialized', { 
         sessionId: this._sessionId,
-        viewType: ChatWebViewProvider.viewType 
+        viewType: ChatWebViewProvider.viewType,
+        hasContextCollector: !!this._contextCollector
       });
     } catch (error) {
       this.logger?.error('Failed to initialize security manager', error);
@@ -324,6 +341,12 @@ export class ChatWebViewProvider implements vscode.WebviewViewProvider {
       case 'requestHistory':
         return this.handleRequestHistory();
         
+      case 'requestContextDetails':
+        return this.handleRequestContextDetails(message.data);
+        
+      case 'toggleContextVisibility':
+        return this.handleToggleContextVisibility(message.data);
+        
       default:
         return {
           success: false,
@@ -333,26 +356,58 @@ export class ChatWebViewProvider implements vscode.WebviewViewProvider {
   }
   
   private async handleSendMessage(data: any): Promise<WebViewResponse> {
-    // TODO: Implement actual message sending logic
-    console.log('[ChatWebView] Sending message:', data);
-    
-    // Emit chat event
-    this.eventRouter.emit({
-      type: 'chatMessageSent',
-      data: {
-        messageId: `msg_${Date.now()}`,
-        content: data.content,
-        provider: data.providerId || 'unknown'
+    try {
+      this.logger?.info('Processing secure message send', { 
+        sessionId: this._sessionId,
+        hasContent: !!data.content,
+        providerId: data.providerId 
+      });
+      
+      // Collect secure context separately from message
+      let contextData: SecureContextData | null = null;
+      if (this._contextCollector && data.includeContext !== false) {
+        const contextMessage = await this._contextCollector.collectSecureContext(data.content);
+        contextData = contextMessage.contextData;
+        
+        // Store context for later display
+        if (contextData) {
+          this._contextState.set(contextData.contextId, contextData);
+          
+          // Send context data to webview separately
+          await this.postContextToWebview(contextData, contextMessage.messageId);
+        }
       }
-    });
-    
-    return {
-      success: true,
-      data: {
-        messageId: `msg_${Date.now()}`,
-        timestamp: new Date().toISOString()
-      }
-    };
+      
+      const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Emit chat event with separated context
+      this.eventRouter.emit({
+        type: 'chatMessageSent',
+        data: {
+          messageId,
+          content: data.content, // Pure user message without context injection
+          provider: data.providerId || 'unknown',
+          contextId: contextData?.contextId,
+          hasContext: !!contextData
+        }
+      });
+      
+      return {
+        success: true,
+        data: {
+          messageId,
+          timestamp: new Date().toISOString(),
+          contextId: contextData?.contextId,
+          hasContext: !!contextData
+        }
+      };
+    } catch (error) {
+      this.logger?.error('Secure message send failed', error, { sessionId: this._sessionId });
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Message send failed'
+      };
+    }
   }
   
   private async handleSwitchProvider(data: any): Promise<WebViewResponse> {
@@ -677,6 +732,71 @@ export class ChatWebViewProvider implements vscode.WebviewViewProvider {
     };
   }
   
+  /**
+   * Handle request for detailed context information
+   */
+  private async handleRequestContextDetails(data: any): Promise<WebViewResponse> {
+    try {
+      const contextId = data.contextId;
+      const contextData = this._contextState.get(contextId);
+      
+      if (!contextData) {
+        return {
+          success: false,
+          error: 'Context data not found'
+        };
+      }
+      
+      // Return detailed context information
+      return {
+        success: true,
+        data: {
+          contextId,
+          contextItems: contextData.contextItems,
+          contextSummary: contextData.contextSummary,
+          timestamp: contextData.timestamp,
+          sanitized: contextData.sanitized,
+          threatCount: contextData.threatCount
+        }
+      };
+      
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to get context details'
+      };
+    }
+  }
+  
+  /**
+   * Handle context visibility toggle
+   */
+  private async handleToggleContextVisibility(data: any): Promise<WebViewResponse> {
+    try {
+      // Store visibility preference
+      // TODO: Persist this setting
+      
+      this.logger?.debug('Context visibility toggled', {
+        contextId: data.contextId,
+        visible: data.visible
+      });
+      
+      return {
+        success: true,
+        data: {
+          contextId: data.contextId,
+          visible: data.visible
+        }
+      };
+      
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to toggle context visibility'
+      };
+    }
+  }
+  
   private setupEventListeners(): void {
     // Listen for configuration changes
     this.configManager.watchConfiguration('ui', (config, changeType) => {
@@ -703,6 +823,89 @@ export class ChatWebViewProvider implements vscode.WebviewViewProvider {
     }
   }
   
+  /**
+   * Send context data to webview for separate display
+   */
+  private async postContextToWebview(
+    contextData: SecureContextData,
+    messageId: string
+  ): Promise<void> {
+    if (!this._view) return;
+    
+    try {
+      // Sanitize context data for webview display
+      const sanitizedContextData = await this.sanitizeContextForDisplay(contextData);
+      
+      await this._view.webview.postMessage({
+        type: 'contextDataReceived',
+        data: {
+          contextId: contextData.contextId,
+          messageId,
+          contextSummary: sanitizedContextData.contextSummary,
+          contextItems: sanitizedContextData.contextItems.map(item => ({
+            filepath: item.filepath,
+            language: item.language,
+            type: item.type,
+            startLine: item.startLine,
+            endLine: item.endLine,
+            contentPreview: item.content.substring(0, 200) + (item.content.length > 200 ? '...' : ''),
+            fullContent: item.content // For collapsible display
+          })),
+          timestamp: contextData.timestamp,
+          sanitized: contextData.sanitized,
+          threatCount: contextData.threatCount
+        }
+      });
+      
+      this.logger?.debug('Context data sent to webview', {
+        contextId: contextData.contextId,
+        itemCount: contextData.contextItems.length
+      });
+      
+    } catch (error) {
+      this.logger?.error('Failed to send context to webview', error, {
+        contextId: contextData.contextId
+      });
+    }
+  }
+  
+  /**
+   * Sanitize context data for safe webview display
+   */
+  private async sanitizeContextForDisplay(
+    contextData: SecureContextData
+  ): Promise<SecureContextData> {
+    if (!this._securityManager) {
+      return contextData;
+    }
+    
+    try {
+      // Create sanitized copy
+      const sanitizedItems = await Promise.all(
+        contextData.contextItems.map(async (item) => {
+          const sanitizedContent = await this._securityManager!.sanitizeForDisplay(
+            item.content,
+            { filepath: item.filepath, language: item.language }
+          );
+          
+          return {
+            ...item,
+            content: sanitizedContent
+          };
+        })
+      );
+      
+      return {
+        ...contextData,
+        contextItems: sanitizedItems
+      };
+      
+    } catch (error) {
+      this.logger?.error('Context sanitization for display failed', error);
+      return contextData; // Fail-open for context display
+    }
+  }
+  
   public reveal(): void {
     if (this._view) {
       this._view.show?.(true);
@@ -720,13 +923,23 @@ export class ChatWebViewProvider implements vscode.WebviewViewProvider {
       this._securityManager.dispose();
       this._securityManager = undefined;
     }
+    
+    // Dispose context collector
+    if (this._contextCollector) {
+      this._contextCollector.dispose();
+      this._contextCollector = undefined;
+    }
+    
+    // Clear context state
+    this._contextState.clear();
 
     // Dispose all registered disposables
     this._disposables.forEach(d => d.dispose());
     this._disposables.length = 0;
 
     this.logger?.info('ChatWebViewProvider disposed successfully', {
-      sessionId: this._sessionId
+      sessionId: this._sessionId,
+      contextStatesCleared: this._contextState.size
     });
   }
 }

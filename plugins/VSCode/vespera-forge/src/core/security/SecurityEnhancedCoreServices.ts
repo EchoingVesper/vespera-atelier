@@ -15,7 +15,7 @@ import { VesperaLogger } from '../logging/VesperaLogger';
 import { VesperaErrorHandler } from '../error-handling/VesperaErrorHandler';
 import { VesperaContextManager } from '../memory-management/VesperaContextManager';
 import { VesperaTelemetryService } from '../telemetry/VesperaTelemetryService';
-import { DisposalManager } from '../disposal/DisposalManager';
+import { DisposalManager, EnhancedDisposable } from '../disposal/DisposalManager';
 
 // Security services
 import { VesperaSecurityManager, SecurityEnhancedCoreServices } from './VesperaSecurityManager';
@@ -29,7 +29,8 @@ import {
   SecurityConfiguration,
   SecurityMetrics,
   VesperaSecurityEvent,
-  SecurityEventContext
+  SecurityEventContext,
+  VesperaSecurityErrorCode
 } from '../../types/security';
 import { VesperaSecurityError } from './VesperaSecurityErrors';
 
@@ -127,11 +128,11 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
   /**
    * Get the singleton instance
    */
-  public static getInstance(): SecurityEnhancedCoreServices {
+  public static getInstance(): SecurityEnhancedVesperaCoreServices {
     if (!SecurityEnhancedVesperaCoreServices.instance?.initialized) {
-      throw new VesperaSecurityError('SecurityEnhancedCoreServices not initialized');
+      throw new VesperaSecurityError('SecurityEnhancedCoreServices not initialized', VesperaSecurityErrorCode.UNAUTHORIZED_ACCESS);
     }
-    return SecurityEnhancedVesperaCoreServices.instance as SecurityEnhancedCoreServices;
+    return SecurityEnhancedVesperaCoreServices.instance;
   }
 
   /**
@@ -275,11 +276,22 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
 
       throw new VesperaSecurityError(
         `Security services initialization failed: ${errorMessage}`,
-        undefined,
+        VesperaSecurityErrorCode.UNAUTHORIZED_ACCESS,
         undefined,
         { originalError: error }
       );
     }
+  }
+
+  /**
+   * Wrap a vscode.Disposable to make it compatible with EnhancedDisposable
+   */
+  private wrapDisposable(disposable: vscode.Disposable): EnhancedDisposable {
+    return {
+      dispose: () => disposable.dispose(),
+      get isDisposed() { return false; }, // VS Code disposables don't track this
+      disposalPriority: 1
+    };
   }
 
   /**
@@ -289,28 +301,36 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
     const eventBus = this.securityManager.getEventBus();
     
     // Listen for security events and forward to audit logger
-    eventBus.onEvent('securityEvent', async (event: VesperaSecurityEvent, context: SecurityEventContext) => {
-      try {
-        await this.securityAuditLogger.logSecurityEvent(event, context);
-      } catch (error) {
-        this.logger.error('Failed to log security event to audit logger', error);
-      }
-    });
+    this.disposalManager.add(this.wrapDisposable(
+      eventBus.onSecurityEvent(async (event: VesperaSecurityEvent, context: SecurityEventContext) => {
+        try {
+          await this.securityAuditLogger.logSecurityEvent(event, context);
+        } catch (error) {
+          this.logger.error('Failed to log security event to audit logger', error);
+        }
+      })
+    ));
 
     // Listen for rate limit events
-    eventBus.onEvent('rateLimitExceeded', (resourceId: string, context: any) => {
-      this.logger.warn('Rate limit exceeded', { resourceId, context });
-    });
+    this.disposalManager.add(this.wrapDisposable(
+      eventBus.onRateLimitExceeded((resourceId: string, context: any) => {
+        this.logger.warn('Rate limit exceeded', { resourceId, context });
+      })
+    ));
 
     // Listen for consent changes
-    eventBus.onEvent('consentChanged', (userId: string, purposeIds: string[], granted: boolean) => {
-      this.logger.info('Consent changed', { userId, purposeIds: purposeIds.length, granted });
-    });
+    this.disposalManager.add(this.wrapDisposable(
+      eventBus.onConsentChanged((userId: string, purposeIds: string[], granted: boolean) => {
+        this.logger.info('Consent changed', { userId, purposeIds: purposeIds.length, granted });
+      })
+    ));
 
     // Listen for threat detection
-    eventBus.onEvent('threatDetected', (threatType: string, context: any) => {
-      this.logger.warn('Threat detected', { threatType, context });
-    });
+    this.disposalManager.add(this.wrapDisposable(
+      eventBus.onThreatDetected((threatType: string, context: any) => {
+        this.logger.warn('Threat detected', { threatType, context });
+      })
+    ));
 
     this.logger.debug('Security event handling configured');
   }
@@ -370,7 +390,7 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
       } catch (error) {
         this.logger.error('Failed to get security statistics', error);
         securityStats.healthStatus.healthy = false;
-        securityStats.healthStatus.services.error = {
+        securityStats.healthStatus.services['error'] = {
           healthy: false,
           error: error instanceof Error ? error.message : String(error)
         };
@@ -420,7 +440,7 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
         securityHealth.metrics = securityHealthCheck.metrics;
       } catch (error) {
         securityHealth.healthy = false;
-        securityHealth.services.error = {
+        securityHealth.services['error'] = {
           healthy: false,
           error: error instanceof Error ? error.message : String(error)
         };

@@ -19,12 +19,12 @@ export abstract class BaseDisposable implements EnhancedDisposable {
   private _disposing = false;
   protected logger: VesperaLogger;
   public readonly disposalPriority: number = 0;
-  private readonly createdAt: number;
+  private readonly _createdAt: number;
 
   constructor(logger?: VesperaLogger, disposalPriority?: number) {
     this.logger = logger || VesperaLogger.getInstance();
     this.disposalPriority = disposalPriority || 0;
-    this.createdAt = Date.now();
+    this._createdAt = Date.now();
   }
 
   /**
@@ -102,7 +102,7 @@ export abstract class BaseDisposable implements EnhancedDisposable {
    * Get creation timestamp
    */
   public get createdAt(): number {
-    return this.createdAt;
+    return this._createdAt;
   }
 
   /**

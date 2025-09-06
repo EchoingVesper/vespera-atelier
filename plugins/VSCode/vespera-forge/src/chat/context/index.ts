@@ -4,12 +4,12 @@
  */
 
 export { FileContextCollector } from './FileContextCollector';
-export { FileContextManager } from './FileContextManager';
+export { SecureFileContextCollector as FileContextManager } from './FileContextManager';
 export type { 
   FileContextItem, 
   FileContextOptions 
 } from './FileContextCollector';
 export type { 
-  ContextualMessage, 
+  SecureContextMessage as ContextualMessage, 
   FileContextConfig 
 } from './FileContextManager';

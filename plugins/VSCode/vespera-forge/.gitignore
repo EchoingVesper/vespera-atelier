@@ -1,5 +1,8 @@
 # VS Code Extension - Build and Test Artifacts
 
+# Temporary Staging Area
+tmp/
+
 # VS Code Extension Testing
 .vscode-test/
 *.vsix

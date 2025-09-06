@@ -43,6 +43,12 @@ export class VesperaErrorHandler implements vscode.Disposable {
   ) {
     this.logger = logger;
     this.telemetryService = telemetryService;
+    
+    // Log initialization with context info
+    this.logger.info('VesperaErrorHandler initialized', { 
+      extensionId: context.extension.id 
+    });
+    
     this.initializeStrategies();
     this.setupGlobalErrorHandling();
   }
@@ -302,9 +308,6 @@ export class VesperaErrorHandler implements vscode.Disposable {
     );
   }
 
-  private getStrategy(code: VesperaErrorCode): ErrorHandlingStrategy {
-    return this.strategies.get(code) || this.strategies.get(VesperaErrorCode.UNKNOWN_ERROR)!;
-  }
 
   private async notifyUser(error: VesperaError): Promise<void> {
     const action = error.isRetryable ? 'Retry' : 'OK';
@@ -334,7 +337,7 @@ export class VesperaErrorHandler implements vscode.Disposable {
 
   private setupGlobalErrorHandling(): void {
     // Handle unhandled promise rejections
-    const unhandledRejectionHandler = (event: any) => {
+    const _unhandledRejectionHandler = (event: any) => {
       this.handleError(new VesperaError(
         `Unhandled promise rejection: ${event.reason}`,
         VesperaErrorCode.UNKNOWN_ERROR,
@@ -357,7 +360,7 @@ export class VesperaErrorHandler implements vscode.Disposable {
       ));
     });
 
-    process.on('unhandledRejection', (reason, promise) => {
+    process.on('unhandledRejection', (reason, _promise) => {
       this.handleError(new VesperaError(
         `Unhandled promise rejection: ${reason}`,
         VesperaErrorCode.UNKNOWN_ERROR,

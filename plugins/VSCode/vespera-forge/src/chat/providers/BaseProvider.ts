@@ -143,11 +143,82 @@ export abstract class ChatProvider {
   
   // Helper methods for concrete implementations
   protected formatMessages(thread: ChatMessage[]): any[] {
-    // TODO: Implement message formatting based on provider requirements
-    return thread.map(msg => ({
-      role: msg.role,
-      content: msg.content
-    }));
+    // Format messages with proper validation and sanitization
+    return thread
+      .filter(msg => {
+        // Filter out invalid messages
+        if (!msg || typeof msg !== 'object') {
+          console.warn('Invalid message object filtered out:', msg);
+          return false;
+        }
+        
+        if (!msg.role || !msg.content) {
+          console.warn('Message missing required fields filtered out:', msg);
+          return false;
+        }
+        
+        if (!['user', 'assistant', 'system'].includes(msg.role)) {
+          console.warn('Message with invalid role filtered out:', msg.role);
+          return false;
+        }
+        
+        return true;
+      })
+      .map(msg => {
+        // Sanitize and format message content
+        let content = msg.content;
+        
+        // Basic content sanitization
+        if (typeof content === 'string') {
+          // Trim whitespace
+          content = content.trim();
+          
+          // Remove potentially dangerous content patterns
+          content = content.replace(/javascript:/gi, ''); // Remove javascript: URLs
+          content = content.replace(/<script[^>]*>.*?<\/script>/gis, ''); // Remove script tags
+          content = content.replace(/on\w+\s*=/gi, ''); // Remove event handlers
+        }
+        
+        // Ensure content is not empty after sanitization
+        if (!content || content.length === 0) {
+          content = '[Empty message]';
+        }
+        
+        // Return standardized message format
+        const formattedMessage: any = {
+          role: msg.role,
+          content: content
+        };
+        
+        // Add timestamp if available (for debugging/audit purposes)
+        if (msg.timestamp) {
+          formattedMessage.timestamp = msg.timestamp.toISOString();
+        }
+        
+        // Add message ID if available (for conversation tracking)
+        if (msg.id) {
+          formattedMessage.id = msg.id;
+        }
+        
+        // Add metadata if available (for provider-specific features)
+        if (msg.metadata && typeof msg.metadata === 'object') {
+          // Only include safe metadata properties
+          const safeMetadata: any = {};
+          const allowedKeys = ['model', 'temperature', 'max_tokens', 'usage', 'finish_reason'];
+          
+          for (const key of allowedKeys) {
+            if (key in msg.metadata) {
+              safeMetadata[key] = msg.metadata[key];
+            }
+          }
+          
+          if (Object.keys(safeMetadata).length > 0) {
+            formattedMessage.metadata = safeMetadata;
+          }
+        }
+        
+        return formattedMessage;
+      });
   }
   
   protected generateMessageId(): string {

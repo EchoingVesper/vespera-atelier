@@ -5,7 +5,7 @@
  * for security-related issues including rate limiting, consent, and input sanitization.
  */
 
-import { VesperaError, VesperaSeverity } from '../error-handling/VesperaErrors';
+import { VesperaError, VesperaSeverity, VesperaErrorCode } from '../error-handling/VesperaErrors';
 import { VesperaSecurityErrorCode } from '../../types/security';
 
 /**
@@ -18,7 +18,7 @@ export class VesperaSecurityError extends VesperaError {
     severity: VesperaSeverity = VesperaSeverity.MEDIUM,
     details?: any
   ) {
-    super(message, code, severity, details);
+    super(message, code as unknown as VesperaErrorCode, severity, details);
     this.name = 'VesperaSecurityError';
   }
 }

@@ -66,9 +66,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [inputValue, setInputValue] = React.useState('');
   const [isConfigFlyoutOpen, setIsConfigFlyoutOpen] = React.useState(false);
   const [isConfigFlyoutPinned, setIsConfigFlyoutPinned] = React.useState(false);
-  const [streamingMessageId, setStreamingMessageId] = React.useState<string | null>(null);
+  const [streamingMessageId, _setStreamingMessageId] = React.useState<string | null>(null);
   const [isUserScrolled, setIsUserScrolled] = React.useState(false);
-  const [inputHistory, setInputHistory] = React.useState<string[]>([]);
+  const [_inputHistory, setInputHistory] = React.useState<string[]>([]);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const messagesContainerRef = React.useRef<HTMLDivElement>(null);
   const lastMessageCountRef = React.useRef(messages.length);
@@ -183,7 +183,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   ].filter(Boolean).join(' ');
 
   const hasMessages = messages.length > 0;
-  const canSend = connected && !loading && inputValue.trim().length > 0;
 
   return (
     <div className={windowClasses}>

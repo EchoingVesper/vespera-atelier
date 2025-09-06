@@ -5,6 +5,8 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import * as fsSync from 'fs';
+import { spawn } from 'child_process';
 
 export interface BinderyConfiguration {
   executablePath: string | null;
@@ -117,8 +119,7 @@ function getMonorepoBinderyPath(buildType: 'debug' | 'release'): string | null {
     
     try {
       // Synchronous check for structure (we're already in a detection flow)
-      const fs = require('fs');
-      if (fs && fs.existsSync && fs.existsSync(packagePath)) {
+      if (fsSync && fsSync.existsSync && fsSync.existsSync(packagePath)) {
         return binderyPath;
       }
     } catch (error) {
@@ -196,7 +197,6 @@ async function getBinderyVersionInfo(executablePath: string): Promise<{
   features: string[];
 }> {
   return new Promise((resolve, reject) => {
-    const { spawn } = require('child_process');
     const child = spawn(executablePath, ['--version'], {
       stdio: ['pipe', 'pipe', 'pipe'],
       timeout: 5000

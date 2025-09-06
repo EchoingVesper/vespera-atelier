@@ -167,6 +167,10 @@ reference/
 **/session_context.json
 **/.session_context.json
 
+# Private/internal documentation
+.private/
+*.internal.md
+
 # VS Code Extension Development
 .vscode-test/
 *.vsix

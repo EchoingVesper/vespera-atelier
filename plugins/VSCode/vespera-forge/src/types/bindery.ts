@@ -3,7 +3,6 @@
  * These types mirror the Rust structs for interoperability
  */
 
-import { UUID } from 'crypto';
 
 // Core Bindery Types
 export type CodexId = string; // UUID string representation

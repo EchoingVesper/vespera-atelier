@@ -9,6 +9,8 @@
  * - Seamless integration with VesperaCoreServices
  */
 
+import * as vscode from 'vscode';
+
 // ============================================================================
 // Core Security Services
 // ============================================================================
@@ -162,7 +164,7 @@ export type {
 export async function initializeDevelopmentSecurity(
   context: vscode.ExtensionContext,
   baseConfig: any = {}
-): Promise<SecurityEnhancedVesperaCoreServices> {
+): Promise<import('./SecurityEnhancedCoreServices').SecurityEnhancedVesperaCoreServices> {
   const { createDevelopmentSecurityConfig } = await import('./SecurityDefaults');
   const { SecurityEnhancedVesperaCoreServices } = await import('./SecurityEnhancedCoreServices');
   
@@ -178,7 +180,7 @@ export async function initializeDevelopmentSecurity(
 export async function initializeProductionSecurity(
   context: vscode.ExtensionContext,
   baseConfig: any = {}
-): Promise<SecurityEnhancedVesperaCoreServices> {
+): Promise<import('./SecurityEnhancedCoreServices').SecurityEnhancedVesperaCoreServices> {
   const { createProductionSecurityConfig } = await import('./SecurityDefaults');
   const { SecurityEnhancedVesperaCoreServices } = await import('./SecurityEnhancedCoreServices');
   
@@ -203,7 +205,7 @@ export function isSecurityInitialized(): boolean {
 /**
  * Get security service instance (throws if not initialized)
  */
-export function getSecurityServices(): SecurityEnhancedVesperaCoreServices {
+export function getSecurityServices(): import('./SecurityEnhancedCoreServices').SecurityEnhancedVesperaCoreServices {
   const { SecurityEnhancedVesperaCoreServices } = require('./SecurityEnhancedCoreServices');
   return SecurityEnhancedVesperaCoreServices.getInstance();
 }

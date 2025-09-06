@@ -8,8 +8,6 @@ import { getBinderyService } from '../services/bindery';
 import { VesperaEvents } from '../utils/events';
 import {
   TaskDashboard,
-  TaskSummary,
-  TaskStatus,
   TaskPriority,
   CodexId,
   BinderyConnectionStatus
@@ -119,7 +117,7 @@ export class TaskDashboardWebviewProvider implements vscode.WebviewViewProvider 
     const isDark = colorTheme.kind === vscode.ColorThemeKind.Dark;
     
     const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'dashboard.css'));
-    const _scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'dashboard.js'));
+    const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'dashboard.js'));
 
     return `<!DOCTYPE html>
     <html lang="en">
@@ -157,6 +155,7 @@ export class TaskDashboardWebviewProvider implements vscode.WebviewViewProvider 
             ${this._dashboardData ? this.renderDashboard() : this.renderNoData()}
         </div>
 
+        <script src="${scriptUri}"></script>
         <script>
             const vscode = acquireVsCodeApi();
             

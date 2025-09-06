@@ -143,3 +143,6 @@ export function log(message: string, ...args: any[]): void {
   // Always log for debugging - will revert to isDevelopment() check later
   console.log(`[Vespera] ${message}`, ...args);
 }
+
+// Re-export the comprehensive unused variable cleanup system
+export * from './cleanup';

@@ -35,7 +35,7 @@ export async function testFileContextIntegration(): Promise<void> {
     console.log('[FileContextTest] Contextual message created:', {
       hasContext: contextualMessage.hasContext,
       contextSummary: contextualMessage.contextSummary,
-      originalLength: contextualMessage.originalContent.length,
+      originalLength: contextualMessage.originalMessage.length,
       contextualLength: contextualMessage.contextualContent.length
     });
 
