@@ -254,6 +254,19 @@ export class AgentProgressNotifier implements vscode.Disposable {
       // Setup progress monitoring
       this.setupProgressMonitoring(operation);
 
+      // Security audit logging for agent operation tracking
+      await this.coreServices.securityAuditLogger.logSecurityEvent(
+        'agent_operation_started',
+        'low',
+        {
+          operationId: id,
+          agentType,
+          operationName: name,
+          phase: options.phase,
+          timestamp: Date.now()
+        }
+      );
+
     } catch (error) {
       this.logger.error('Failed to start operation tracking', error, { operationId: id });
       await this.errorHandler.handleError(error as Error);

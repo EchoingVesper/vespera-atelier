@@ -1,19 +1,29 @@
 /**
- * Unused Variable Cleanup System - Main Export
+ * Unused Variable & Property Cleanup System - Main Export
  * 
- * Comprehensive infrastructure for systematically eliminating 188 TS6133 unused variable errors
- * across the Vespera Forge TypeScript codebase using a three-phase strategic approach.
+ * Comprehensive infrastructure for systematically eliminating TypeScript errors across 
+ * the Vespera Forge codebase using a six-phase strategic approach.
+ * 
+ * PHASE 1 - Unused Variables (188 TS6133 errors):
+ * - Phase 1A: Safe Removals (113 errors - 60%)
+ * - Phase 1B: Integration Connections (56 errors - 30%) 
+ * - Phase 1C: Architectural Improvements (19 errors - 10%)
+ * 
+ * PHASE 2 - Unused Properties (14 TS6138 errors):
+ * - Phase 2A: Constructor Refactoring (2 properties - LOW risk)
+ * - Phase 2B: Service Integration Enhancement (7 properties - MEDIUM risk)
+ * - Phase 2C: System Investigation and Resolution (5 properties - HIGH complexity)
  * 
  * This system provides:
- * - Automated classification of unused variables into strategic phases
- * - Safe removal utilities with rollback capabilities
- * - Integration scaffolding for incomplete features
- * - Architectural enhancement tools for security and core systems
+ * - Automated classification with property-specific analysis
+ * - Safe removal utilities with constructor refactoring
+ * - Service integration enhancement with proven patterns
+ * - Advanced investigation tools for complex property scenarios
  * - Quality assurance and validation infrastructure
  * - Batch processing engine for efficient execution
  * 
- * Target: 37% total error reduction (188/505 TypeScript errors)
- * Strategy: Phase 1A (60% - Safe) → Phase 1B (30% - Integration) → Phase 1C (10% - Architectural)
+ * Target: 40% total error reduction (202/505 TypeScript errors)
+ * Strategy: Variable elimination + Property elimination + Service enhancement
  */
 
 // Core Classification System
@@ -94,6 +104,124 @@ export {
     batchProcessingEngine
 } from './BatchProcessingEngine';
 
+// Phase 2A: Property Removal Infrastructure
+export {
+    PropertyRemovalResult,
+    PropertyChange,
+    PropertyChangeType,
+    ChangeLocation,
+    PropertyRollbackInfo,
+    RollbackStep,
+    PropertyValidationResult,
+    PropertyValidationType,
+    BatchPropertyRemovalOptions,
+    BatchPropertyRemovalResult,
+    ConstructorRefactoringPlan,
+    ConstructorRefactoringType,
+    ConstructorUsagePattern,
+    SafetyCheck,
+    SafetyCheckType,
+    PropertyRemovalHelpers
+} from './PropertyRemovalHelpers';
+
+// Phase 2B: Service Integration Infrastructure
+export {
+    ServiceIntegrationResult,
+    IntegrationChange,
+    IntegrationChangeType,
+    CodeLocation,
+    PatternReference,
+    PatternConfidence,
+    IntegrationValidationResult,
+    IntegrationValidationType,
+    PerformanceImpact,
+    ServiceIntegrationPlan,
+    TargetService,
+    ServiceType,
+    ServiceMethod,
+    Parameter,
+    UsagePattern,
+    PatternApplicability,
+    IntegrationStrategy,
+    ImplementationStep,
+    RiskMitigation,
+    IntegrationComplexity,
+    PatternMatch,
+    ServiceRollbackPlan,
+    ServiceIntegrationEnhancer
+} from './ServiceIntegrationEnhancer';
+
+// Phase 2: Advanced Property Analysis
+export {
+    PropertyAnalysisResult,
+    PropertyUsageAnalysis,
+    PropertyUsagePattern,
+    UsageLocation,
+    UsageType,
+    ConstructorUsageDetails,
+    InitializationPattern,
+    RuntimeUsageDetails,
+    AccessPattern,
+    AccessContext,
+    DependencyAnalysis,
+    ServiceConnection,
+    ConnectionType,
+    IntegrationPoint,
+    IntegrationType,
+    EffortLevel,
+    BenefitLevel,
+    IntegrationOpportunity,
+    InvestigationFindings,
+    CompilerIssue,
+    CompilerIssueType,
+    CodeAnalysisFindings,
+    PropertyAction,
+    ConfidenceLevel,
+    InvestigationReport,
+    UnusedPropertyAnalyzer
+} from './UnusedPropertyAnalyzer';
+
+// Phase 2C: Property Investigation Infrastructure
+export {
+    PropertyInvestigationResult,
+    InvestigationType,
+    DetailedInvestigationFindings,
+    ActualUsageLocation,
+    ActualUsageType,
+    UsageConfidence,
+    CompilerDetectionStatus,
+    FalsePositiveEvidence,
+    FalsePositiveEvidenceType,
+    EvidenceStrength,
+    CompilerLimitation,
+    CompilerLimitationType,
+    CompilerImpact,
+    DynamicAccessPattern,
+    DynamicAccessMethod,
+    ArchitecturalContext,
+    ImplementationStatus,
+    FutureUsagePlan,
+    FeaturePriority,
+    IncompleteFeatureAnalysis,
+    ImplementationBarrier,
+    BarrierType,
+    BarrierSeverity,
+    CompletionEffort,
+    EffortComplexity,
+    BusinessValue,
+    CrossFileReference,
+    ReferenceType,
+    GitHistoryInsight,
+    GitChangeType,
+    InvestigationResolution,
+    ResolutionType,
+    InvestigationConfidence,
+    RecommendedAction,
+    ActionType,
+    AlternativeAction,
+    PropertyInvestigationTools
+} from './PropertyInvestigationTools';
+
 /**
  * Main Cleanup Orchestrator
  * 
@@ -113,8 +241,9 @@ export class UnusedVariableCleanupOrchestrator {
     }
 
     /**
-     * Executes the complete three-phase cleanup strategy
+     * Executes the complete six-phase cleanup strategy
      * 
+     * PHASE 1 - Unused Variables (188 TS6133 errors):
      * Phase 1A: Safe Removals (113 errors - 60%)
      * - Import cleanup automation
      * - Parameter removal with type safety
@@ -129,6 +258,22 @@ export class UnusedVariableCleanupOrchestrator {
      * - Security integration
      * - Error handling enhancement
      * - Core system completion
+     * 
+     * PHASE 2 - Unused Properties (14 TS6138 errors):
+     * Phase 2A: Constructor Refactoring (2 properties - LOW risk)
+     * - Parameter to local variable conversion
+     * - Property declaration cleanup
+     * - Constructor optimization
+     * 
+     * Phase 2B: Service Integration Enhancement (7 properties - MEDIUM risk)
+     * - Core services integration
+     * - Error handler implementation
+     * - Security audit logging
+     * 
+     * Phase 2C: System Investigation and Resolution (5 properties - HIGH complexity)
+     * - False positive detection
+     * - Incomplete feature analysis
+     * - Architectural preparation cleanup
      */
     public async executeCompleteCleanup(options: BatchProcessingOptions = {}): Promise<BatchProcessingResult> {
         const defaultOptions: BatchProcessingOptions = {
@@ -137,7 +282,7 @@ export class UnusedVariableCleanupOrchestrator {
             validateEach: true,
             createSnapshots: true,
             dryRun: false,
-            phaseFilter: [ProcessingPhase.PHASE_1A, ProcessingPhase.PHASE_1B, ProcessingPhase.PHASE_1C],
+            phaseFilter: [ProcessingPhase.PHASE_1A, ProcessingPhase.PHASE_1B, ProcessingPhase.PHASE_1C, ProcessingPhase.PHASE_2A, ProcessingPhase.PHASE_2B, ProcessingPhase.PHASE_2C],
             riskFilter: [RiskLevel.LOW, RiskLevel.MEDIUM, RiskLevel.HIGH]
         };
 
@@ -182,6 +327,54 @@ export class UnusedVariableCleanupOrchestrator {
         return this.executeCompleteCleanup({
             ...options,
             phaseFilter: [ProcessingPhase.PHASE_1C]
+        });
+    }
+
+    /**
+     * Executes Phase 2A only: Constructor Refactoring
+     * Target: 2 properties (LOW risk)
+     * Time Estimate: 1-2 hours
+     */
+    public async executePhase2A(options: BatchProcessingOptions = {}): Promise<BatchProcessingResult> {
+        return this.executeCompleteCleanup({
+            ...options,
+            phaseFilter: [ProcessingPhase.PHASE_2A]
+        });
+    }
+
+    /**
+     * Executes Phase 2B only: Service Integration Enhancement
+     * Target: 7 properties (MEDIUM risk)
+     * Time Estimate: 2-4 hours
+     */
+    public async executePhase2B(options: BatchProcessingOptions = {}): Promise<BatchProcessingResult> {
+        return this.executeCompleteCleanup({
+            ...options,
+            phaseFilter: [ProcessingPhase.PHASE_2B]
+        });
+    }
+
+    /**
+     * Executes Phase 2C only: System Investigation and Resolution
+     * Target: 5 properties (HIGH complexity)
+     * Time Estimate: 3-6 hours
+     */
+    public async executePhase2C(options: BatchProcessingOptions = {}): Promise<BatchProcessingResult> {
+        return this.executeCompleteCleanup({
+            ...options,
+            phaseFilter: [ProcessingPhase.PHASE_2C]
+        });
+    }
+
+    /**
+     * Executes all Phase 2 property operations
+     * Target: 14 properties total
+     * Time Estimate: 6-12 hours
+     */
+    public async executePhase2All(options: BatchProcessingOptions = {}): Promise<BatchProcessingResult> {
+        return this.executeCompleteCleanup({
+            ...options,
+            phaseFilter: [ProcessingPhase.PHASE_2A, ProcessingPhase.PHASE_2B, ProcessingPhase.PHASE_2C]
         });
     }
 
@@ -498,9 +691,9 @@ export interface ReadinessCheck {
 /**
  * Usage Examples:
  * 
- * // Analyze unused variables without making changes
+ * // Analyze unused variables and properties without making changes
  * const analysis = await cleanupOrchestrator.analyzeUnusedVariables();
- * console.log(`Found ${analysis.totalVariables} unused variables`);
+ * console.log(`Found ${analysis.totalVariables} unused variables and properties`);
  * 
  * // Validate readiness for cleanup
  * const readiness = await cleanupOrchestrator.validateReadiness();
@@ -525,7 +718,7 @@ export interface ReadinessCheck {
  * const report = batchProcessingEngine.generateExecutionReport(result);
  * console.log(report);
  * 
- * // Execute phases individually for controlled approach
+ * // Execute Phase 1 (Variables) sequentially
  * const phase1aResult = await cleanupOrchestrator.executePhase1A({ dryRun: true });
  * if (phase1aResult.success) {
  *     const phase1bResult = await cleanupOrchestrator.executePhase1B();
@@ -533,4 +726,43 @@ export interface ReadinessCheck {
  *         const phase1cResult = await cleanupOrchestrator.executePhase1C();
  *     }
  * }
+ * 
+ * // Execute Phase 2 (Properties) with enhanced tooling
+ * const phase2aResult = await cleanupOrchestrator.executePhase2A({ validateEach: true });
+ * console.log(`Phase 2A: Constructor refactoring completed (${phase2aResult.successfulProcessing}/2)`);
+ * 
+ * const phase2bResult = await cleanupOrchestrator.executePhase2B({ maxConcurrent: 2 });
+ * console.log(`Phase 2B: Service integration enhanced (${phase2bResult.successfulProcessing}/7)`);
+ * 
+ * const phase2cResult = await cleanupOrchestrator.executePhase2C({ pauseOnError: true });
+ * console.log(`Phase 2C: Investigation completed (${phase2cResult.successfulProcessing}/5)`);
+ * 
+ * // Execute all Phase 2 operations together
+ * const allPhase2Result = await cleanupOrchestrator.executePhase2All({
+ *     validateEach: true,
+ *     createSnapshots: true
+ * });
+ * 
+ * // Property-specific operations using enhanced infrastructure
+ * import { UnusedPropertyAnalyzer, PropertyRemovalHelpers, ServiceIntegrationEnhancer, PropertyInvestigationTools } from './cleanup';
+ * 
+ * // Analyze individual properties
+ * const properties = await UnusedVariableClassifier.classifyFromDiagnostics();
+ * const propertyErrors = properties.filter(p => p.type.includes('property'));
+ * const analysis = await UnusedPropertyAnalyzer.analyzeUnusedProperties(propertyErrors);
+ * 
+ * // Remove constructor-only properties (Phase 2A)
+ * const phase2aProps = propertyErrors.filter(p => p.phase === ProcessingPhase.PHASE_2A);
+ * const removalResults = await PropertyRemovalHelpers.batchRemoveUnusedProperties(phase2aProps, analysis);
+ * 
+ * // Enhance service integrations (Phase 2B) 
+ * const phase2bProps = propertyErrors.filter(p => p.phase === ProcessingPhase.PHASE_2B);
+ * const opportunities = await UnusedPropertyAnalyzer.identifyIntegrationOpportunities(phase2bProps);
+ * const integrationResults = await ServiceIntegrationEnhancer.batchEnhanceServiceIntegrations(phase2bProps, analysis, opportunities);
+ * 
+ * // Investigate complex properties (Phase 2C)
+ * const phase2cProps = propertyErrors.filter(p => p.phase === ProcessingPhase.PHASE_2C);
+ * const investigations = await PropertyInvestigationTools.batchInvestigateProperties(phase2cProps, analysis);
+ * const investigationReport = PropertyInvestigationTools.generateInvestigationReport(investigations);
+ * console.log(investigationReport);
  */

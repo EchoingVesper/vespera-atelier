@@ -156,6 +156,18 @@ export class CrossPlatformNotificationHandler implements vscode.Disposable {
         level: request.level
       });
 
+      // Security audit logging for cross-platform notifications
+      await this.coreServices.securityAuditLogger.logSecurityEvent(
+        'platform_notification_shown',
+        'low',
+        {
+          platform: this.platform,
+          notificationLevel: request.level,
+          hasActions: (request.actions?.length || 0) > 0,
+          timestamp: Date.now()
+        }
+      );
+
       let result: PlatformNotificationResult;
 
       // Try platform-specific notification
@@ -189,6 +201,7 @@ export class CrossPlatformNotificationHandler implements vscode.Disposable {
 
     } catch (error) {
       this.logger.error('Failed to show platform notification', error);
+      await this.errorHandler.handleError(error as Error);
       return this.createResult(false, 'console-fallback', error as Error);
     }
   }

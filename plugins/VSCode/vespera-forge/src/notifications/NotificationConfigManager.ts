@@ -281,6 +281,7 @@ export class NotificationConfigManager implements vscode.Disposable {
 
     } catch (error) {
       this.logger.error('Failed to update global configuration', error);
+      await this.errorHandler.handleError(error as Error);
       throw error;
     }
   }
@@ -307,6 +308,7 @@ export class NotificationConfigManager implements vscode.Disposable {
 
     } catch (error) {
       this.logger.error('Failed to update server configuration', error, { serverId });
+      await this.errorHandler.handleError(error as Error);
       throw error;
     }
   }

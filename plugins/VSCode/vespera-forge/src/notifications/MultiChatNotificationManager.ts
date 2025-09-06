@@ -303,6 +303,7 @@ export class MultiChatNotificationManager implements vscode.Disposable {
         eventType: event.type,
         serverId: event.serverId
       });
+      await this.errorHandler.handleError(error as Error);
     }
   }
 
@@ -656,6 +657,7 @@ export class MultiChatNotificationManager implements vscode.Disposable {
       this.pendingNotifications.clear();
     } catch (error) {
       this.logger.error('Failed to process batched notifications', error);
+      await this.errorHandler.handleError(error as Error);
     }
   }
 

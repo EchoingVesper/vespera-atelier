@@ -30,7 +30,11 @@ export enum UnusedVariableType {
     FUNCTION_PARAMETER = 'parameter',
     LOCAL_VARIABLE = 'variable',
     FUNCTION_DECLARATION = 'function',
-    CONSTANT_CONFIGURATION = 'constant'
+    CONSTANT_CONFIGURATION = 'constant',
+    // Phase 2 Property Types
+    CLASS_PROPERTY = 'property',
+    OBJECT_PROPERTY = 'object_property',
+    CONSTRUCTOR_PROPERTY = 'constructor_property'
 }
 
 export enum RiskLevel {
@@ -42,7 +46,11 @@ export enum RiskLevel {
 export enum ProcessingPhase {
     PHASE_1A = '1a',       // Safe Removals (113 errors - 60%)
     PHASE_1B = '1b',       // Integration Connections (56 errors - 30%) 
-    PHASE_1C = '1c'        // Architectural Improvements (19 errors - 10%)
+    PHASE_1C = '1c',       // Architectural Improvements (19 errors - 10%)
+    // Phase 2 Property Phases
+    PHASE_2A = '2a',       // Constructor Refactoring (2 properties - LOW risk)
+    PHASE_2B = '2b',       // Service Integration Enhancement (7 properties - MEDIUM risk)
+    PHASE_2C = '2c'        // System Investigation and Resolution (5 properties - HIGH complexity)
 }
 
 export enum ErrorCategory {
@@ -59,7 +67,21 @@ export enum ErrorCategory {
     // Phase 1C Categories
     SECURITY_INTEGRATION = 'security_integration',
     ERROR_HANDLING = 'error_handling',
-    CORE_SYSTEM = 'core_system'
+    CORE_SYSTEM = 'core_system',
+    
+    // Phase 2A Categories - Constructor Refactoring
+    CONSTRUCTOR_ONLY_USAGE = 'constructor_only_usage',
+    PARAMETER_TO_LOCAL = 'parameter_to_local',
+    
+    // Phase 2B Categories - Service Integration Enhancement  
+    SERVICE_INTEGRATION_GAP = 'service_integration_gap',
+    ERROR_HANDLER_INTEGRATION = 'error_handler_integration',
+    CORE_SERVICES_INTEGRATION = 'core_services_integration',
+    
+    // Phase 2C Categories - System Investigation
+    FALSE_POSITIVE_INVESTIGATION = 'false_positive_investigation',
+    INCOMPLETE_FEATURE_ANALYSIS = 'incomplete_feature_analysis',
+    ARCHITECTURAL_PREPARATION = 'architectural_preparation'
 }
 
 export class UnusedVariableClassifier {
@@ -137,6 +159,44 @@ export class UnusedVariableClassifier {
             phase: ProcessingPhase.PHASE_1C,
             risk: RiskLevel.HIGH,
             category: ErrorCategory.ERROR_HANDLING
+        },
+        
+        // Phase 2A: Constructor Refactoring Properties
+        constructorOnlyProperties: {
+            propertyPatterns: [
+                '_storage', '_config', '_options', '_settings'
+            ],
+            usagePatterns: ['constructor-only'],
+            phase: ProcessingPhase.PHASE_2A,
+            risk: RiskLevel.LOW,
+            category: ErrorCategory.CONSTRUCTOR_ONLY_USAGE
+        },
+        
+        // Phase 2B: Service Integration Properties
+        serviceIntegrationProperties: {
+            propertyPatterns: [
+                'coreServices', 'errorHandler', '_coreServices', '_errorHandler'
+            ],
+            contextPatterns: [
+                'AgentProgressNotifier', 'TaskServerNotificationIntegration',
+                'CrossPlatformNotificationHandler', 'MultiChatNotificationManager',
+                'NotificationConfigManager'
+            ],
+            phase: ProcessingPhase.PHASE_2B,
+            risk: RiskLevel.MEDIUM,
+            category: ErrorCategory.SERVICE_INTEGRATION_GAP
+        },
+        
+        // Phase 2C: System Investigation Properties
+        systemContextProperties: {
+            propertyPatterns: [
+                'context', '_context', '_chatManager', '_taskServerManager', 
+                '_contextCollector'
+            ],
+            investigationRequired: true,
+            phase: ProcessingPhase.PHASE_2C,
+            risk: RiskLevel.HIGH,
+            category: ErrorCategory.FALSE_POSITIVE_INVESTIGATION
         }
     };
 
@@ -162,10 +222,42 @@ export class UnusedVariableClassifier {
                 if (classified) {
                     classifiedVariables.push(classified);
                 }
+            } else if (error.code === 'TS6138') {
+                // Phase 2: Handle unused property errors
+                const classified = await this.classifyUnusedProperty(error);
+                if (classified) {
+                    classifiedVariables.push(classified);
+                }
             }
         }
         
         return classifiedVariables;
+    }
+
+    /**
+     * Classifies a single unused property (TS6138) based on Phase 2 patterns
+     */
+    public static async classifyUnusedProperty(error: any): Promise<UnusedVariable | null> {
+        const propertyName = this.extractPropertyName(error.message);
+        if (!propertyName) return null;
+
+        const fileContent = await this.getFileContent(error.file);
+        const context = this.extractContext(fileContent, error.line);
+        
+        const classification = this.determinePropertyClassification(propertyName, context, error.file);
+        
+        return {
+            name: propertyName,
+            file: error.file,
+            line: error.line,
+            column: error.column,
+            type: classification.type,
+            riskLevel: classification.riskLevel,
+            phase: classification.phase,
+            category: classification.category,
+            context,
+            relatedCode: this.extractRelatedCode(fileContent, error.line)
+        };
     }
 
     /**
@@ -201,7 +293,10 @@ export class UnusedVariableClassifier {
         const grouped = {
             [ProcessingPhase.PHASE_1A]: [],
             [ProcessingPhase.PHASE_1B]: [],
-            [ProcessingPhase.PHASE_1C]: []
+            [ProcessingPhase.PHASE_1C]: [],
+            [ProcessingPhase.PHASE_2A]: [],
+            [ProcessingPhase.PHASE_2B]: [],
+            [ProcessingPhase.PHASE_2C]: []
         } as Record<ProcessingPhase, UnusedVariable[]>;
 
         variables.forEach(variable => {
@@ -499,6 +594,115 @@ export class UnusedVariableClassifier {
         });
 
         return grouped;
+    }
+
+    // Property-specific helper methods for Phase 2
+
+    private static extractPropertyName(message: string): string | null {
+        // TS6138: "Property 'propertyName' is declared but its value is never read."
+        const match = message.match(/'([^']+)' is declared but its value is never read/);
+        return match ? match[1] : null;
+    }
+
+    private static determinePropertyClassification(
+        propertyName: string, 
+        context: string, 
+        filePath: string
+    ): {
+        type: UnusedVariableType,
+        riskLevel: RiskLevel,
+        phase: ProcessingPhase,
+        category: ErrorCategory
+    } {
+        // Check for constructor-only usage properties (Phase 2A)
+        if (this.isConstructorOnlyProperty(propertyName, context)) {
+            return {
+                type: UnusedVariableType.CONSTRUCTOR_PROPERTY,
+                riskLevel: RiskLevel.LOW,
+                phase: ProcessingPhase.PHASE_2A,
+                category: ErrorCategory.CONSTRUCTOR_ONLY_USAGE
+            };
+        }
+
+        // Check for service integration properties (Phase 2B)
+        if (this.isServiceIntegrationProperty(propertyName, context, filePath)) {
+            const category = propertyName.includes('errorHandler') || propertyName.includes('ErrorHandler') ?
+                ErrorCategory.ERROR_HANDLER_INTEGRATION :
+                ErrorCategory.CORE_SERVICES_INTEGRATION;
+
+            return {
+                type: UnusedVariableType.CLASS_PROPERTY,
+                riskLevel: RiskLevel.MEDIUM,
+                phase: ProcessingPhase.PHASE_2B,
+                category
+            };
+        }
+
+        // Check for system context properties requiring investigation (Phase 2C)
+        if (this.isSystemContextProperty(propertyName, context, filePath)) {
+            return {
+                type: UnusedVariableType.CLASS_PROPERTY,
+                riskLevel: RiskLevel.HIGH,
+                phase: ProcessingPhase.PHASE_2C,
+                category: ErrorCategory.FALSE_POSITIVE_INVESTIGATION
+            };
+        }
+
+        // Default classification for unknown properties
+        return {
+            type: UnusedVariableType.CLASS_PROPERTY,
+            riskLevel: RiskLevel.MEDIUM,
+            phase: ProcessingPhase.PHASE_2C,
+            category: ErrorCategory.INCOMPLETE_FEATURE_ANALYSIS
+        };
+    }
+
+    private static isConstructorOnlyProperty(propertyName: string, context: string): boolean {
+        const rules = this.CLASSIFICATION_RULES.constructorOnlyProperties;
+        const isKnownConstructorProperty = rules.propertyPatterns.some(pattern =>
+            new RegExp(pattern).test(propertyName)
+        );
+
+        // Additional context analysis for constructor-only usage
+        const hasConstructorUsage = context.includes('constructor') && 
+                                   (context.includes(propertyName) || context.includes(`this.${propertyName}`));
+
+        return isKnownConstructorProperty && hasConstructorUsage;
+    }
+
+    private static isServiceIntegrationProperty(propertyName: string, context: string, filePath: string): boolean {
+        const rules = this.CLASSIFICATION_RULES.serviceIntegrationProperties;
+        
+        // Check if property name matches service integration patterns
+        const isServiceProperty = rules.propertyPatterns.some(pattern =>
+            new RegExp(pattern).test(propertyName)
+        );
+
+        // Check if file context suggests notification/service integration
+        const isInServiceContext = rules.contextPatterns.some(pattern =>
+            filePath.includes(pattern) || context.includes(pattern)
+        );
+
+        return isServiceProperty && isInServiceContext;
+    }
+
+    private static isSystemContextProperty(propertyName: string, context: string, filePath: string): boolean {
+        const rules = this.CLASSIFICATION_RULES.systemContextProperties;
+        
+        // Check if property name matches system context patterns
+        const isContextProperty = rules.propertyPatterns.some(pattern =>
+            new RegExp(pattern).test(propertyName)
+        );
+
+        // Special handling for status-bar.ts context property (potential false positive)
+        const isPotentialFalsePositive = filePath.includes('status-bar.ts') && 
+                                        propertyName === 'context';
+
+        // Check for index.ts private properties (architectural preparation)
+        const isArchitecturalPrep = filePath.includes('index.ts') && 
+                                   propertyName.startsWith('_');
+
+        return isContextProperty && (isPotentialFalsePositive || isArchitecturalPrep);
     }
 }
 

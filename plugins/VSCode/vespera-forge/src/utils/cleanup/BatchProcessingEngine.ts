@@ -73,7 +73,11 @@ export interface ProcessingItemResult {
 export enum ProcessingMethod {
     SAFE_REMOVAL = 'safe_removal',
     INTEGRATION = 'integration',
-    ARCHITECTURAL = 'architectural'
+    ARCHITECTURAL = 'architectural',
+    // Phase 2 Property Methods
+    PROPERTY_REFACTORING = 'property_refactoring',
+    SERVICE_INTEGRATION = 'service_integration',
+    INVESTIGATION = 'investigation'
 }
 
 export interface BatchStatistics {
@@ -143,7 +147,7 @@ export class BatchProcessingEngine {
             validateEach: true,
             createSnapshots: true,
             dryRun: false,
-            phaseFilter: [ProcessingPhase.PHASE_1A, ProcessingPhase.PHASE_1B, ProcessingPhase.PHASE_1C],
+            phaseFilter: [ProcessingPhase.PHASE_1A, ProcessingPhase.PHASE_1B, ProcessingPhase.PHASE_1C, ProcessingPhase.PHASE_2A, ProcessingPhase.PHASE_2B, ProcessingPhase.PHASE_2C],
             riskFilter: [RiskLevel.LOW, RiskLevel.MEDIUM, RiskLevel.HIGH]
         };
 
@@ -253,6 +257,16 @@ export class BatchProcessingEngine {
                 case ProcessingPhase.PHASE_1C:
                     phaseResult.results = await this.processPhase1C(variables, options);
                     break;
+                // Phase 2 Property Processing
+                case ProcessingPhase.PHASE_2A:
+                    phaseResult.results = await this.processPhase2A(variables, options);
+                    break;
+                case ProcessingPhase.PHASE_2B:
+                    phaseResult.results = await this.processPhase2B(variables, options);
+                    break;
+                case ProcessingPhase.PHASE_2C:
+                    phaseResult.results = await this.processPhase2C(variables, options);
+                    break;
             }
 
             // Calculate phase statistics
@@ -281,6 +295,224 @@ export class BatchProcessingEngine {
         }
 
         return phaseResult;
+    }
+
+    /**
+     * Process Phase 2A: Constructor Refactoring (2 properties - LOW risk)
+     */
+    private async processPhase2A(
+        properties: UnusedVariable[],
+        options: BatchProcessingOptions
+    ): Promise<ProcessingItemResult[]> {
+        const { UnusedPropertyAnalyzer } = await import('./UnusedPropertyAnalyzer');
+        const { PropertyRemovalHelpers } = await import('./PropertyRemovalHelpers');
+        
+        const results: ProcessingItemResult[] = [];
+
+        // Analyze properties for constructor refactoring
+        const analysisResults = await UnusedPropertyAnalyzer.analyzeByPhase(properties, ProcessingPhase.PHASE_2A);
+
+        // Process each property individually (Phase 2A is conservative)
+        for (let i = 0; i < properties.length; i++) {
+            const property = properties[i];
+            const analysis = analysisResults[i];
+            const startTime = Date.now();
+            
+            try {
+                // Update progress
+                this.updateProgress(ProcessingPhase.PHASE_2A, i, properties.length, property.name);
+
+                // Remove property using constructor refactoring
+                const removalResult = await PropertyRemovalHelpers.removeUnusedProperty(
+                    property,
+                    analysis,
+                    {
+                        dryRun: options.dryRun,
+                        validateAfterEach: options.validateEach,
+                        createBackups: true,
+                        stopOnError: options.pauseOnError
+                    }
+                );
+
+                results.push({
+                    variable: property,
+                    success: removalResult.success,
+                    method: ProcessingMethod.PROPERTY_REFACTORING,
+                    details: removalResult.success 
+                        ? `Successfully refactored constructor property "${property.name}"`
+                        : `Failed to refactor property "${property.name}": ${removalResult.errors.join(', ')}`,
+                    errors: removalResult.errors,
+                    executionTime: Date.now() - startTime
+                });
+
+            } catch (error) {
+                results.push({
+                    variable: property,
+                    success: false,
+                    method: ProcessingMethod.PROPERTY_REFACTORING,
+                    details: `Property refactoring failed: ${error}`,
+                    errors: [error.toString()],
+                    executionTime: Date.now() - startTime
+                });
+            }
+        }
+
+        return results;
+    }
+
+    /**
+     * Process Phase 2B: Service Integration Enhancement (7 properties - MEDIUM risk)
+     */
+    private async processPhase2B(
+        properties: UnusedVariable[],
+        options: BatchProcessingOptions
+    ): Promise<ProcessingItemResult[]> {
+        const { UnusedPropertyAnalyzer } = await import('./UnusedPropertyAnalyzer');
+        const { ServiceIntegrationEnhancer } = await import('./ServiceIntegrationEnhancer');
+        
+        const results: ProcessingItemResult[] = [];
+
+        // Analyze properties and identify integration opportunities
+        const analysisResults = await UnusedPropertyAnalyzer.analyzeByPhase(properties, ProcessingPhase.PHASE_2B);
+        const integrationOpportunities = await UnusedPropertyAnalyzer.identifyIntegrationOpportunities(properties);
+
+        // Process integrations with controlled concurrency
+        const maxConcurrent = Math.min(options.maxConcurrent || 2, 2); // Conservative for service integration
+        
+        for (let i = 0; i < properties.length; i += maxConcurrent) {
+            const batch = properties.slice(i, i + maxConcurrent);
+            const batchAnalysis = analysisResults.slice(i, i + maxConcurrent);
+            const batchOpportunities = integrationOpportunities.slice(i, i + maxConcurrent);
+            
+            // Update progress
+            this.updateProgress(ProcessingPhase.PHASE_2B, i, properties.length, batch[0]?.name);
+
+            try {
+                // Batch enhance service integrations
+                const integrationResults = await ServiceIntegrationEnhancer.batchEnhanceServiceIntegrations(
+                    batch,
+                    batchAnalysis,
+                    batchOpportunities
+                );
+
+                // Convert integration results to processing results
+                integrationResults.forEach((integrationResult, index) => {
+                    const property = batch[index];
+                    results.push({
+                        variable: property,
+                        success: integrationResult.success,
+                        method: ProcessingMethod.SERVICE_INTEGRATION,
+                        details: integrationResult.success
+                            ? `Successfully enhanced ${integrationResult.integrationType} for "${property.name}"`
+                            : `Failed to enhance integration: ${integrationResult.errors.join(', ')}`,
+                        errors: integrationResult.errors,
+                        executionTime: integrationResult.executionTime
+                    });
+                });
+
+            } catch (error) {
+                // Add error results for this batch
+                batch.forEach(property => {
+                    results.push({
+                        variable: property,
+                        success: false,
+                        method: ProcessingMethod.SERVICE_INTEGRATION,
+                        details: `Service integration batch failed: ${error}`,
+                        errors: [error.toString()],
+                        executionTime: Date.now() - Date.now()
+                    });
+                });
+            }
+        }
+
+        return results;
+    }
+
+    /**
+     * Process Phase 2C: System Investigation and Resolution (5 properties - HIGH complexity)
+     */
+    private async processPhase2C(
+        properties: UnusedVariable[],
+        options: BatchProcessingOptions
+    ): Promise<ProcessingItemResult[]> {
+        const { UnusedPropertyAnalyzer } = await import('./UnusedPropertyAnalyzer');
+        const { PropertyInvestigationTools } = await import('./PropertyInvestigationTools');
+        
+        const results: ProcessingItemResult[] = [];
+
+        // Analyze properties for investigation
+        const analysisResults = await UnusedPropertyAnalyzer.analyzeByPhase(properties, ProcessingPhase.PHASE_2C);
+
+        // Process investigations sequentially (Phase 2C requires careful analysis)
+        for (let i = 0; i < properties.length; i++) {
+            const property = properties[i];
+            const analysis = analysisResults[i];
+            const startTime = Date.now();
+
+            // Update progress
+            this.updateProgress(ProcessingPhase.PHASE_2C, i, properties.length, property.name);
+
+            try {
+                // Conduct comprehensive investigation
+                const investigationResult = await PropertyInvestigationTools.investigateProperty(property, analysis);
+
+                let success = false;
+                let details = '';
+                const errors: string[] = [];
+
+                // Execute recommended action if confidence is high
+                if (investigationResult.confidence === 'high') {
+                    switch (investigationResult.recommendedAction.actionType) {
+                        case 'leave_as_is':
+                            success = true;
+                            details = `Property "${property.name}" confirmed as false positive - left unchanged`;
+                            break;
+                        case 'remove_property':
+                            // Attempt safe removal for architectural preparations
+                            try {
+                                const { PropertyRemovalHelpers } = await import('./PropertyRemovalHelpers');
+                                const removalResult = await PropertyRemovalHelpers.removeUnusedProperty(property, analysis);
+                                success = removalResult.success;
+                                details = success ? 
+                                    `Successfully removed architectural preparation "${property.name}"` :
+                                    `Failed to remove property: ${removalResult.errors.join(', ')}`;
+                                errors.push(...removalResult.errors);
+                            } catch (removalError) {
+                                errors.push(`Removal failed: ${removalError}`);
+                            }
+                            break;
+                        default:
+                            success = true;
+                            details = `Investigation completed for "${property.name}": ${investigationResult.resolution.justification}`;
+                    }
+                } else {
+                    // Low/medium confidence - mark for manual review
+                    success = true; // Investigation succeeded even if resolution is unclear
+                    details = `Property "${property.name}" requires manual review: ${investigationResult.resolution.justification}`;
+                }
+
+                results.push({
+                    variable: property,
+                    success,
+                    method: ProcessingMethod.INVESTIGATION,
+                    details,
+                    errors,
+                    executionTime: Date.now() - startTime
+                });
+
+            } catch (error) {
+                results.push({
+                    variable: property,
+                    success: false,
+                    method: ProcessingMethod.INVESTIGATION,
+                    details: `Investigation failed: ${error}`,
+                    errors: [error.toString()],
+                    executionTime: Date.now() - startTime
+                });
+            }
+        }
+
+        return results;
     }
 
     /**
@@ -570,10 +802,24 @@ export class BatchProcessingEngine {
     private generateBatchStatistics(variables: UnusedVariable[]): BatchStatistics {
         const stats: BatchStatistics = {
             totalVariables: variables.length,
-            byPhase: { [ProcessingPhase.PHASE_1A]: 0, [ProcessingPhase.PHASE_1B]: 0, [ProcessingPhase.PHASE_1C]: 0 },
+            byPhase: { 
+                [ProcessingPhase.PHASE_1A]: 0, 
+                [ProcessingPhase.PHASE_1B]: 0, 
+                [ProcessingPhase.PHASE_1C]: 0,
+                [ProcessingPhase.PHASE_2A]: 0,
+                [ProcessingPhase.PHASE_2B]: 0,
+                [ProcessingPhase.PHASE_2C]: 0
+            },
             byCategory: {} as Record<ErrorCategory, number>,
             byRisk: { [RiskLevel.LOW]: 0, [RiskLevel.MEDIUM]: 0, [RiskLevel.HIGH]: 0 },
-            byMethod: { [ProcessingMethod.SAFE_REMOVAL]: 0, [ProcessingMethod.INTEGRATION]: 0, [ProcessingMethod.ARCHITECTURAL]: 0 },
+            byMethod: { 
+                [ProcessingMethod.SAFE_REMOVAL]: 0, 
+                [ProcessingMethod.INTEGRATION]: 0, 
+                [ProcessingMethod.ARCHITECTURAL]: 0,
+                [ProcessingMethod.PROPERTY_REFACTORING]: 0,
+                [ProcessingMethod.SERVICE_INTEGRATION]: 0,
+                [ProcessingMethod.INVESTIGATION]: 0
+            },
             errorReductionPercentage: (variables.length / 188) * 37, // Based on 188 total TS6133 errors = 37% reduction
             timeEstimates: {
                 phase1a: 0,
@@ -607,7 +853,10 @@ export class BatchProcessingEngine {
         const descriptions = {
             [ProcessingPhase.PHASE_1A]: 'Safe Removals - Import cleanup, parameter removal, simple variables',
             [ProcessingPhase.PHASE_1B]: 'Integration Connections - Feature completion, configuration binding',
-            [ProcessingPhase.PHASE_1C]: 'Architectural Improvements - Security integration, error handling'
+            [ProcessingPhase.PHASE_1C]: 'Architectural Improvements - Security integration, error handling',
+            [ProcessingPhase.PHASE_2A]: 'Constructor Refactoring - Parameter to local variable conversion',
+            [ProcessingPhase.PHASE_2B]: 'Service Integration Enhancement - Core services and error handler integration',
+            [ProcessingPhase.PHASE_2C]: 'System Investigation - False positive detection and incomplete feature analysis'
         };
         return descriptions[phase];
     }

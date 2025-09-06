@@ -49,15 +49,15 @@ export class VesperaConsentManager implements VesperaConsentManagerInterface {
   private consentExpirationTimer?: NodeJS.Timeout;
 
   private constructor(
-    private _storage: vscode.Memento,
+    storage: vscode.Memento,
     private logger: VesperaLogger,
-    private _config: ConsentConfiguration
+    config: ConsentConfiguration
   ) {
     this.logger = logger.createChild('ConsentManager');
-    this.consentStore = new ConsentStore(_storage, logger, _config.encryption);
-    this.consentUI = new ConsentUI(_config.uiMode, logger);
+    this.consentStore = new ConsentStore(storage, logger, config.encryption);
+    this.consentUI = new ConsentUI(config.uiMode, logger);
     
-    this.initializePurposes(_config.purposes);
+    this.initializePurposes(config.purposes);
     this.setupPeriodicCleanup();
   }
 

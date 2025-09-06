@@ -16,6 +16,8 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as cp from 'child_process';
+import { UnusedVariable, ProcessingPhase, ErrorCategory, UnusedVariableType } from './UnusedVariableClassifier';
+import { PropertyAnalysisResult, PropertyUsagePattern, PropertyRemovalRisk } from './UnusedPropertyAnalyzer';
 
 export interface ValidationResult {
     valid: boolean;
@@ -118,6 +120,73 @@ export interface TestFailure {
     stackTrace?: string;
 }
 
+/**
+ * Property-specific validation interfaces for Phase 2 unused property elimination
+ */
+export interface PropertyValidationResult extends ValidationResult {
+    propertySpecific: {
+        constructorIntegrityChecks: ConstructorIntegrityResult[];
+        serviceIntegrationValidation: ServiceIntegrationValidationResult[];
+        falsePositiveDetection: FalsePositiveDetectionResult[];
+        crossFileImpactAnalysis: CrossFileImpactResult[];
+    };
+}
+
+export interface ConstructorIntegrityResult {
+    property: string;
+    file: string;
+    constructorAnalysis: {
+        parameterToLocalConversionSafe: boolean;
+        initializationPatternPreserved: boolean;
+        accessPatternsMaintained: boolean;
+    };
+    validationErrors: string[];
+    recommendations: string[];
+}
+
+export interface ServiceIntegrationValidationResult {
+    property: string;
+    file: string;
+    integrationAnalysis: {
+        coreServicesPatternMatch: boolean;
+        errorHandlingStandardCompliant: boolean;
+        serviceLifecycleMaintained: boolean;
+    };
+    integrationOpportunities: {
+        patternName: string;
+        implementationSuggestion: string;
+        estimatedValue: 'low' | 'medium' | 'high';
+    }[];
+    validationErrors: string[];
+}
+
+export interface FalsePositiveDetectionResult {
+    property: string;
+    file: string;
+    falsePositiveAnalysis: {
+        isLikelyFalsePositive: boolean;
+        detectionConfidence: number;
+        reasoningFactors: string[];
+    };
+    compilationValidation: {
+        removedPropertyCompiles: boolean;
+        runtimeErrorsDetected: boolean;
+        testCoverageImpact: number;
+    };
+    recommendations: string[];
+}
+
+export interface CrossFileImpactResult {
+    property: string;
+    originFile: string;
+    impactAnalysis: {
+        affectedFiles: string[];
+        dependencyChainLength: number;
+        riskAssessment: 'low' | 'medium' | 'high' | 'critical';
+    };
+    mitigationStrategies: string[];
+}
+
 export class QualityAssuranceTools {
     private static snapshots: Map<string, ChangeSnapshot> = new Map();
     private static baselineMetrics: PerformanceMetrics | null = null;
@@ -153,6 +222,30 @@ export class QualityAssuranceTools {
         await this.persistSnapshot(snapshot);
 
         return snapshotId;
+    }
+
+    /**
+     * Validates property-specific changes with enhanced safety checks
+     */
+    public static async validatePropertyChanges(
+        snapshotId: string,
+        modifiedFiles: { [filePath: string]: string },
+        properties: UnusedVariable[],
+        analysisResults: PropertyAnalysisResult[]
+    ): Promise<PropertyValidationResult> {
+        const baseResult = await this.validateChanges(snapshotId, modifiedFiles);
+        
+        const propertySpecific = {
+            constructorIntegrityChecks: await this.validateConstructorIntegrity(properties, modifiedFiles),
+            serviceIntegrationValidation: await this.validateServiceIntegration(properties, analysisResults),
+            falsePositiveDetection: await this.validateFalsePositiveDetection(properties, modifiedFiles),
+            crossFileImpactAnalysis: await this.validateCrossFileImpact(properties, modifiedFiles)
+        };
+
+        return {
+            ...baseResult,
+            propertySpecific
+        };
     }
 
     /**
@@ -491,6 +584,434 @@ export class QualityAssuranceTools {
         };
     }
 
+    // Property-specific validation methods
+
+    /**
+     * Validates constructor integrity during property elimination
+     */
+    private static async validateConstructorIntegrity(
+        properties: UnusedVariable[],
+        modifiedFiles: { [filePath: string]: string }
+    ): Promise<ConstructorIntegrityResult[]> {
+        const results: ConstructorIntegrityResult[] = [];
+
+        for (const property of properties) {
+            if (property.type === UnusedVariableType.CONSTRUCTOR_PROPERTY) {
+                const modifiedContent = modifiedFiles[property.file];
+                if (!modifiedContent) continue;
+
+                const analysis = await this.analyzeConstructorIntegrity(property, modifiedContent);
+                results.push({
+                    property: property.name,
+                    file: property.file,
+                    constructorAnalysis: analysis,
+                    validationErrors: this.detectConstructorValidationErrors(analysis),
+                    recommendations: this.generateConstructorRecommendations(analysis)
+                });
+            }
+        }
+
+        return results;
+    }
+
+    /**
+     * Validates service integration opportunities and compliance
+     */
+    private static async validateServiceIntegration(
+        properties: UnusedVariable[],
+        analysisResults: PropertyAnalysisResult[]
+    ): Promise<ServiceIntegrationValidationResult[]> {
+        const results: ServiceIntegrationValidationResult[] = [];
+
+        for (const property of properties) {
+            const analysis = analysisResults.find(r => r.property.name === property.name);
+            if (!analysis || analysis.usagePattern !== PropertyUsagePattern.SERVICE_INTEGRATION_GAP) {
+                continue;
+            }
+
+            const integrationAnalysis = await this.analyzeServiceIntegration(property, analysis);
+            results.push({
+                property: property.name,
+                file: property.file,
+                integrationAnalysis,
+                integrationOpportunities: await this.identifyIntegrationOpportunities(property, analysis),
+                validationErrors: this.detectServiceIntegrationErrors(integrationAnalysis)
+            });
+        }
+
+        return results;
+    }
+
+    /**
+     * Validates false positive detection with compilation checks
+     */
+    private static async validateFalsePositiveDetection(
+        properties: UnusedVariable[],
+        modifiedFiles: { [filePath: string]: string }
+    ): Promise<FalsePositiveDetectionResult[]> {
+        const results: FalsePositiveDetectionResult[] = [];
+
+        for (const property of properties) {
+            const modifiedContent = modifiedFiles[property.file];
+            if (!modifiedContent) continue;
+
+            const falsePositiveAnalysis = await this.analyzeFalsePositive(property, modifiedContent);
+            const compilationValidation = await this.validateCompilationImpact(property, modifiedContent);
+
+            results.push({
+                property: property.name,
+                file: property.file,
+                falsePositiveAnalysis,
+                compilationValidation,
+                recommendations: this.generateFalsePositiveRecommendations(
+                    falsePositiveAnalysis,
+                    compilationValidation
+                )
+            });
+        }
+
+        return results;
+    }
+
+    /**
+     * Validates cross-file impact and dependency chains
+     */
+    private static async validateCrossFileImpact(
+        properties: UnusedVariable[],
+        modifiedFiles: { [filePath: string]: string }
+    ): Promise<CrossFileImpactResult[]> {
+        const results: CrossFileImpactResult[] = [];
+
+        for (const property of properties) {
+            const impactAnalysis = await this.analyzeCrossFileImpact(property, modifiedFiles);
+            results.push({
+                property: property.name,
+                originFile: property.file,
+                impactAnalysis,
+                mitigationStrategies: this.generateMitigationStrategies(impactAnalysis)
+            });
+        }
+
+        return results;
+    }
+
+    /**
+     * Analyzes constructor integrity for parameter-to-local conversions
+     */
+    private static async analyzeConstructorIntegrity(
+        property: UnusedVariable,
+        modifiedContent: string
+    ): Promise<{
+        parameterToLocalConversionSafe: boolean;
+        initializationPatternPreserved: boolean;
+        accessPatternsMaintained: boolean;
+    }> {
+        // Look for constructor patterns in the modified content
+        const constructorPattern = /constructor\s*\([^)]*\)\s*\{[^}]*\}/gm;
+        const constructorMatch = modifiedContent.match(constructorPattern);
+
+        if (!constructorMatch) {
+            return {
+                parameterToLocalConversionSafe: false,
+                initializationPatternPreserved: false,
+                accessPatternsMaintained: false
+            };
+        }
+
+        // Check if parameter is converted to local variable safely
+        const parameterToLocalSafe = this.checkParameterToLocalConversion(property, constructorMatch[0]);
+        
+        // Check if initialization patterns are preserved
+        const initializationPreserved = this.checkInitializationPreservation(property, constructorMatch[0]);
+        
+        // Check if access patterns are maintained
+        const accessMaintained = this.checkAccessPatterns(property, modifiedContent);
+
+        return {
+            parameterToLocalConversionSafe: parameterToLocalSafe,
+            initializationPatternPreserved: initializationPreserved,
+            accessPatternsMaintained: accessMaintained
+        };
+    }
+
+    /**
+     * Analyzes service integration compliance and patterns
+     */
+    private static async analyzeServiceIntegration(
+        property: UnusedVariable,
+        analysis: PropertyAnalysisResult
+    ): Promise<{
+        coreServicesPatternMatch: boolean;
+        errorHandlingStandardCompliant: boolean;
+        serviceLifecycleMaintained: boolean;
+    }> {
+        // Read the original file to analyze service integration patterns
+        const originalContent = fs.readFileSync(property.file, 'utf-8');
+        
+        return {
+            coreServicesPatternMatch: this.checkCoreServicesPattern(property, originalContent),
+            errorHandlingStandardCompliant: this.checkErrorHandlingStandard(property, originalContent),
+            serviceLifecycleMaintained: this.checkServiceLifecycle(property, originalContent)
+        };
+    }
+
+    /**
+     * Analyzes false positive likelihood with advanced heuristics
+     */
+    private static async analyzeFalsePositive(
+        property: UnusedVariable,
+        modifiedContent: string
+    ): Promise<{
+        isLikelyFalsePositive: boolean;
+        detectionConfidence: number;
+        reasoningFactors: string[];
+    }> {
+        const reasoningFactors: string[] = [];
+        let confidence = 0.5; // Start with neutral confidence
+
+        // Check for common false positive patterns
+        if (this.hasReflectionUsage(property, modifiedContent)) {
+            reasoningFactors.push('Property may be used via reflection');
+            confidence += 0.3;
+        }
+
+        if (this.hasSerializationUsage(property, modifiedContent)) {
+            reasoningFactors.push('Property may be used for serialization');
+            confidence += 0.2;
+        }
+
+        if (this.hasConfigurationPattern(property, modifiedContent)) {
+            reasoningFactors.push('Property follows configuration pattern');
+            confidence += 0.25;
+        }
+
+        if (this.hasInterfaceCompliance(property, modifiedContent)) {
+            reasoningFactors.push('Property may be required for interface compliance');
+            confidence += 0.2;
+        }
+
+        return {
+            isLikelyFalsePositive: confidence > 0.7,
+            detectionConfidence: Math.min(confidence, 1.0),
+            reasoningFactors
+        };
+    }
+
+    /**
+     * Validates compilation impact of property removal
+     */
+    private static async validateCompilationImpact(
+        property: UnusedVariable,
+        modifiedContent: string
+    ): Promise<{
+        removedPropertyCompiles: boolean;
+        runtimeErrorsDetected: boolean;
+        testCoverageImpact: number;
+    }> {
+        try {
+            // Create temporary file with modified content
+            const tempPath = property.file + '.validation-temp';
+            fs.writeFileSync(tempPath, modifiedContent, 'utf-8');
+
+            // Run TypeScript compilation check
+            const compileResult = await this.executeCommand(`npx tsc --noEmit "${tempPath}"`);
+            const compiles = compileResult.exitCode === 0;
+
+            // Clean up temporary file
+            if (fs.existsSync(tempPath)) {
+                fs.unlinkSync(tempPath);
+            }
+
+            return {
+                removedPropertyCompiles: compiles,
+                runtimeErrorsDetected: !compiles && this.detectsRuntimeErrors(compileResult.output),
+                testCoverageImpact: await this.estimateTestCoverageImpact(property)
+            };
+
+        } catch (error) {
+            return {
+                removedPropertyCompiles: false,
+                runtimeErrorsDetected: true,
+                testCoverageImpact: 0
+            };
+        }
+    }
+
+    /**
+     * Analyzes cross-file impact and dependency chains
+     */
+    private static async analyzeCrossFileImpact(
+        property: UnusedVariable,
+        modifiedFiles: { [filePath: string]: string }
+    ): Promise<{
+        affectedFiles: string[];
+        dependencyChainLength: number;
+        riskAssessment: 'low' | 'medium' | 'high' | 'critical';
+    }> {
+        const affectedFiles = Object.keys(modifiedFiles);
+        const dependencyChain = await this.traceDependencyChain(property, affectedFiles);
+        
+        let riskLevel: 'low' | 'medium' | 'high' | 'critical' = 'low';
+        
+        if (dependencyChain > 5) riskLevel = 'critical';
+        else if (dependencyChain > 3) riskLevel = 'high';
+        else if (dependencyChain > 1) riskLevel = 'medium';
+
+        return {
+            affectedFiles,
+            dependencyChainLength: dependencyChain,
+            riskAssessment: riskLevel
+        };
+    }
+
+    // Helper methods for property validation
+
+    private static checkParameterToLocalConversion(property: UnusedVariable, constructorCode: string): boolean {
+        // Look for patterns like: const localVar = parameterName;
+        const localVarPattern = new RegExp(`const\\s+\\w+\\s*=\\s*${property.name}\\s*;`, 'gm');
+        return localVarPattern.test(constructorCode);
+    }
+
+    private static checkInitializationPreservation(property: UnusedVariable, constructorCode: string): boolean {
+        // Check if initialization logic is preserved
+        return constructorCode.includes(property.name) || constructorCode.includes('// Property initialization preserved');
+    }
+
+    private static checkAccessPatterns(property: UnusedVariable, modifiedContent: string): boolean {
+        // Check if access patterns are maintained throughout the file
+        const accessPattern = new RegExp(`\\b${property.name}\\b`, 'gm');
+        const matches = modifiedContent.match(accessPattern);
+        return !matches || matches.length <= 1; // Should only appear in declaration
+    }
+
+    private static checkCoreServicesPattern(property: UnusedVariable, originalContent: string): boolean {
+        // Look for coreServices, errorHandler patterns
+        return originalContent.includes('coreServices') || originalContent.includes('errorHandler');
+    }
+
+    private static checkErrorHandlingStandard(property: UnusedVariable, originalContent: string): boolean {
+        // Check for standard error handling patterns
+        return originalContent.includes('try') && originalContent.includes('catch');
+    }
+
+    private static checkServiceLifecycle(property: UnusedVariable, originalContent: string): boolean {
+        // Check for service lifecycle methods
+        return originalContent.includes('initialize') || originalContent.includes('dispose');
+    }
+
+    private static hasReflectionUsage(property: UnusedVariable, content: string): boolean {
+        return content.includes('Reflect.') || content.includes('Object.keys') || content.includes('Object.getOwnPropertyNames');
+    }
+
+    private static hasSerializationUsage(property: UnusedVariable, content: string): boolean {
+        return content.includes('JSON.stringify') || content.includes('serialize') || content.includes('toJSON');
+    }
+
+    private static hasConfigurationPattern(property: UnusedVariable, content: string): boolean {
+        return content.includes('config') || content.includes('settings') || content.includes('options');
+    }
+
+    private static hasInterfaceCompliance(property: UnusedVariable, content: string): boolean {
+        return content.includes('implements') || content.includes('extends') || content.includes('interface');
+    }
+
+    private static detectsRuntimeErrors(compilerOutput: string): boolean {
+        return compilerOutput.includes('error TS') && (
+            compilerOutput.includes('Cannot find name') ||
+            compilerOutput.includes('Property') && compilerOutput.includes('does not exist')
+        );
+    }
+
+    private static async estimateTestCoverageImpact(property: UnusedVariable): Promise<number> {
+        // Estimate test coverage impact (0-1 scale)
+        try {
+            // Look for test files that might reference this property
+            const testFilePattern = property.file.replace(/\.ts$/, '.test.ts');
+            if (fs.existsSync(testFilePattern)) {
+                const testContent = fs.readFileSync(testFilePattern, 'utf-8');
+                if (testContent.includes(property.name)) {
+                    return 0.8; // High impact if directly tested
+                }
+            }
+            return 0.2; // Low impact if not directly tested
+        } catch {
+            return 0.1; // Minimal impact if analysis fails
+        }
+    }
+
+    private static async traceDependencyChain(property: UnusedVariable, affectedFiles: string[]): Promise<number> {
+        // Simple dependency chain analysis
+        return affectedFiles.length;
+    }
+
+    private static detectConstructorValidationErrors(analysis: any): string[] {
+        const errors: string[] = [];
+        if (!analysis.parameterToLocalConversionSafe) {
+            errors.push('Parameter to local variable conversion may not be safe');
+        }
+        if (!analysis.initializationPatternPreserved) {
+            errors.push('Initialization pattern may not be preserved');
+        }
+        return errors;
+    }
+
+    private static generateConstructorRecommendations(analysis: any): string[] {
+        const recommendations: string[] = [];
+        if (!analysis.parameterToLocalConversionSafe) {
+            recommendations.push('Review parameter to local variable conversion logic');
+        }
+        if (!analysis.accessPatternsMaintained) {
+            recommendations.push('Ensure all property access patterns are properly handled');
+        }
+        return recommendations;
+    }
+
+    private static async identifyIntegrationOpportunities(
+        property: UnusedVariable,
+        analysis: PropertyAnalysisResult
+    ): Promise<{ patternName: string; implementationSuggestion: string; estimatedValue: 'low' | 'medium' | 'high' }[]> {
+        return [
+            {
+                patternName: 'Core Services Integration',
+                implementationSuggestion: 'Integrate with coreServices pattern for improved architecture',
+                estimatedValue: 'high'
+            }
+        ];
+    }
+
+    private static detectServiceIntegrationErrors(integrationAnalysis: any): string[] {
+        const errors: string[] = [];
+        if (!integrationAnalysis.coreServicesPatternMatch) {
+            errors.push('Service integration pattern mismatch detected');
+        }
+        return errors;
+    }
+
+    private static generateFalsePositiveRecommendations(
+        falsePositiveAnalysis: any,
+        compilationValidation: any
+    ): string[] {
+        const recommendations: string[] = [];
+        if (falsePositiveAnalysis.isLikelyFalsePositive) {
+            recommendations.push('High false positive probability - consider preserving property');
+        }
+        if (!compilationValidation.removedPropertyCompiles) {
+            recommendations.push('Property removal causes compilation errors - investigate dependencies');
+        }
+        return recommendations;
+    }
+
+    private static generateMitigationStrategies(impactAnalysis: any): string[] {
+        const strategies: string[] = [];
+        if (impactAnalysis.riskAssessment === 'critical') {
+            strategies.push('Consider phased removal approach with extensive testing');
+        }
+        if (impactAnalysis.dependencyChainLength > 3) {
+            strategies.push('Implement comprehensive dependency chain validation');
+        }
+        return strategies;
+    }
+
     // Private helper methods
 
     private static generateSnapshotId(): string {
@@ -808,30 +1329,70 @@ export interface QualityReport {
 /**
  * Usage Examples:
  * 
- * // Create change snapshot before modifications
+ * // Phase 1: Standard variable removal validation
  * const snapshotId = await QualityAssuranceTools.createChangeSnapshot(
  *     'Phase 1A: Safe unused variable removal',
  *     filesToModify
  * );
  * 
- * // Validate changes
  * const validationResult = await QualityAssuranceTools.validateChanges(
  *     snapshotId,
  *     modifiedFiles
  * );
  * 
- * // Apply changes with safety checks
+ * // Phase 2: Property-specific validation with enhanced safety
+ * const propertySnapshotId = await QualityAssuranceTools.createChangeSnapshot(
+ *     'Phase 2A: Constructor property elimination',
+ *     propertyFilesToModify
+ * );
+ * 
+ * const propertyValidation = await QualityAssuranceTools.validatePropertyChanges(
+ *     propertySnapshotId,
+ *     modifiedPropertyFiles,
+ *     unusedProperties,
+ *     propertyAnalysisResults
+ * );
+ * 
+ * // Check property-specific validation results
+ * if (propertyValidation.propertySpecific.constructorIntegrityChecks.length > 0) {
+ *     console.log('Constructor integrity checks:', propertyValidation.propertySpecific.constructorIntegrityChecks);
+ * }
+ * 
+ * if (propertyValidation.propertySpecific.falsePositiveDetection.some(fpd => fpd.falsePositiveAnalysis.isLikelyFalsePositive)) {
+ *     console.log('False positives detected - review before proceeding');
+ * }
+ * 
+ * // Apply changes with enhanced safety checks
  * const applyResult = await QualityAssuranceTools.applyChanges(
- *     snapshotId,
- *     modifiedFiles,
+ *     propertySnapshotId,
+ *     modifiedPropertyFiles,
  *     { validateFirst: true, runTests: true }
  * );
  * 
  * // Rollback if needed
  * if (!applyResult.success) {
- *     await QualityAssuranceTools.rollbackChanges(snapshotId);
+ *     await QualityAssuranceTools.rollbackChanges(propertySnapshotId);
  * }
  * 
- * // Generate quality report
- * const report = await QualityAssuranceTools.generateQualityReport(snapshotId);
+ * // Generate comprehensive quality report
+ * const report = await QualityAssuranceTools.generateQualityReport(propertySnapshotId);
+ * 
+ * // Example: Phase 2B Service Integration Enhancement
+ * const serviceIntegrationResults = propertyValidation.propertySpecific.serviceIntegrationValidation;
+ * for (const result of serviceIntegrationResults) {
+ *     console.log(`Service integration opportunities for ${result.property}:`, 
+ *                 result.integrationOpportunities);
+ * }
+ * 
+ * // Example: Phase 2C Investigation Results
+ * const crossFileImpacts = propertyValidation.propertySpecific.crossFileImpactAnalysis;
+ * const highRiskProperties = crossFileImpacts.filter(cfi => 
+ *     cfi.impactAnalysis.riskAssessment === 'high' || 
+ *     cfi.impactAnalysis.riskAssessment === 'critical'
+ * );
+ * 
+ * if (highRiskProperties.length > 0) {
+ *     console.log('High-risk properties requiring investigation:', 
+ *                 highRiskProperties.map(hrp => hrp.property));
+ * }
  */

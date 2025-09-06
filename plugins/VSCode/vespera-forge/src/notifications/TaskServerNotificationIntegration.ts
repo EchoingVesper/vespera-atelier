@@ -196,6 +196,18 @@ export class TaskServerNotificationIntegration implements vscode.Disposable {
         serverId: event.serverId
       });
 
+      // Security audit logging for task server events
+      await this.coreServices.securityAuditLogger.logSecurityEvent(
+        'task_server_event_handled',
+        'low',
+        {
+          eventType: event.type,
+          taskId: event.taskId,
+          serverId: event.serverId,
+          timestamp: Date.now()
+        }
+      );
+
       switch (event.type) {
         case 'taskServerCreated':
           await this.handleServerCreated(event);
@@ -218,6 +230,7 @@ export class TaskServerNotificationIntegration implements vscode.Disposable {
         eventType: event.type,
         taskId: event.taskId
       });
+      await this.errorHandler.handleError(error as Error);
     }
   }
 

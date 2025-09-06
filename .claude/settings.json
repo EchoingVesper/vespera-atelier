@@ -80,7 +80,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if echo \"$CLAUDE_TOOL_PARAMS\" | grep -q \"^pip\\|^python\"; then if [[ ! \"$VIRTUAL_ENV\" ]]; then echo '\u26a0\ufe0f  Warning: No virtual environment active. Consider activating venv first.'; fi; fi"
+            "command": "bash -c \"if echo \\\"\\$CLAUDE_TOOL_PARAMS\\\" | grep -q \\\"^pip\\\\|^python\\\"; then if [[ ! \\\"\\$VIRTUAL_ENV\\\" ]]; then echo '⚠️  Warning: No virtual environment active. Consider activating venv first.'; fi; fi\""
           }
         ]
       },
@@ -127,7 +127,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if [[ -d \"PRPs\" ]]; then untagged=0; for file in PRPs/*.md; do [[ -f \"$file\" ]] || continue; basename=$(basename \"$file\"); if [[ \"$basename\" != \"README.md\" ]] && [[ \"$basename\" != \"CLAUDE.md\" ]] && [[ \"$file\" != *\"/completed/\"* ]]; then if [[ ! \"$basename\" =~ ^\\[ ]]; then untagged=$((untagged + 1)); fi; fi; done; if [[ $untagged -gt 0 ]]; then echo \"\ud83c\udff7\ufe0f $untagged PRPs missing status tags. Use: [CURRENT] [IN-PROGRESS] [DRAFT] [NEEDS-VALIDATION]\"; fi; fi"
+            "command": "bash -c \"if [[ -d \\\"PRPs\\\" ]]; then untagged=0; for file in PRPs/*.md; do [[ -f \\\"\\$file\\\" ]] || continue; basename=\\$(basename \\\"\\$file\\\"); if [[ \\\"\\$basename\\\" != \\\"README.md\\\" ]] && [[ \\\"\\$basename\\\" != \\\"CLAUDE.md\\\" ]] && [[ \\\"\\$file\\\" != *\\\"/completed/\\\"* ]]; then if [[ ! \\\"\\$basename\\\" =~ ^\\\\[ ]]; then untagged=\\$((untagged + 1)); fi; fi; done; if [[ \\$untagged -gt 0 ]]; then echo \\\"🏷️ \\$untagged PRPs missing status tags. Use: [CURRENT] [IN-PROGRESS] [DRAFT] [NEEDS-VALIDATION]\\\"; fi; fi\""
           }
         ]
       },
@@ -135,7 +135,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then uncommitted=$(git status --porcelain | wc -l); if [[ $uncommitted -gt 50 ]]; then echo \"\ud83d\udce6 Large changeset ($uncommitted files) - Consider: git add . && git commit -m 'feat: [describe changes]' && git push\"; elif [[ $uncommitted -gt 10 ]]; then echo \"\ud83d\udcdd $uncommitted files modified - Consider committing soon\"; fi; unpushed=$(git log @{u}..HEAD --oneline 2>/dev/null | wc -l || echo 0); if [[ $unpushed -gt 0 ]]; then echo \"\ud83d\udca1 $unpushed unpushed commits - Consider: git push origin $(git branch --show-current)\"; fi; fi"
+            "command": "bash -c \"if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then uncommitted=\\$(git status --porcelain | wc -l); if [[ \\$uncommitted -gt 50 ]]; then echo \\\"📦 Large changeset (\\$uncommitted files) - Consider: git add . && git commit -m 'feat: [describe changes]' && git push\\\"; elif [[ \\$uncommitted -gt 10 ]]; then echo \\\"📝 \\$uncommitted files modified - Consider committing soon\\\"; fi; unpushed=\\$(git log @{u}..HEAD --oneline 2>/dev/null | wc -l || echo 0); if [[ \\$unpushed -gt 0 ]]; then echo \\\"💡 \\$unpushed unpushed commits - Consider: git push origin \\$(git branch --show-current)\\\"; fi; fi\""
           }
         ]
       },
@@ -143,7 +143,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "todo_count=$(grep -r 'TODO\\|FIXME\\|XXX\\|HACK' --include='*.py' --include='*.md' . 2>/dev/null | wc -l || echo 0); if [[ $todo_count -gt 5 ]]; then echo \"\ud83d\udccc Technical debt: $todo_count TODOs/FIXMEs found\"; if [[ $todo_count -gt 20 ]]; then echo \"   \ud83d\udca1 High debt - consider cleanup tasks\"; fi; fi"
+            "command": "bash -c \"todo_count=\\$(grep -r 'TODO\\\\|FIXME\\\\|XXX\\\\|HACK' --include='*.py' --include='*.md' . 2>/dev/null | wc -l || echo 0); if [[ \\$todo_count -gt 5 ]]; then echo \\\"📌 Technical debt: \\$todo_count TODOs/FIXMEs found\\\"; if [[ \\$todo_count -gt 20 ]]; then echo \\\"   💡 High debt - consider cleanup tasks\\\"; fi; fi\""
           }
         ]
       }
