@@ -25,6 +25,7 @@ describe('WebView Security Integration', () => {
   let mockAuditLogger: jest.Mocked<VesperaSecurityAuditLogger>;
   let mockLogger: jest.Mocked<VesperaLogger>;
   let mockErrorHandler: jest.Mocked<VesperaErrorHandler>;
+  let mockWebview: jest.Mocked<any>;
 
   beforeEach(async () => {
     // Create mocks

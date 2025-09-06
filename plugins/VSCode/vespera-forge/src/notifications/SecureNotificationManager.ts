@@ -258,6 +258,7 @@ export class SecureNotificationManager implements vscode.Disposable {
 
       // Determine delivery methods
       const deliveryMethods: ('vscode' | 'os-toast' | 'console')[] = [];
+      let vscodeDelivered = false;
 
       // Always try VS Code notification as primary method
       try {

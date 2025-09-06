@@ -26,6 +26,26 @@
  * Strategy: Variable elimination + Property elimination + Service enhancement
  */
 
+// Imports for internal class usage
+import {
+    BatchProcessingOptions,
+    BatchProcessingResult,
+    batchProcessingEngine
+} from './BatchProcessingEngine';
+
+import {
+    ProcessingPhase,
+    RiskLevel,
+    UnusedVariable,
+    UnusedVariableClassifier,
+    UnusedVariableType,
+    ClassificationStatistics
+} from './UnusedVariableClassifier';
+
+import { IntegrationScaffolding } from './IntegrationScaffolding';
+
+import { ArchitecturalHelpers } from './ArchitecturalHelpers';
+
 // Core Classification System
 export {
     UnusedVariable,

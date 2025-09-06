@@ -666,6 +666,7 @@ suite('Enhanced Credential Migration Security Tests', () => {
     test('Error recovery maintains service availability', async () => {
       const providerId = 'recovery-test-provider';
       const credential = 'recovery-test-credential';
+      let operationSucceeded = false;
       
       // Simulate various failure scenarios
       const failureScenarios = [
