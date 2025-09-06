@@ -367,7 +367,6 @@ export class MultiChatNotificationManager implements vscode.Disposable {
       return;
     }
 
-    const message = event.message;
     
     // Check if this is a subscribed or important channel
     if (this.config.channelActivity.subscribedChannelsOnly) {

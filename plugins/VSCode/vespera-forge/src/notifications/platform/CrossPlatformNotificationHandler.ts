@@ -202,7 +202,7 @@ export class CrossPlatformNotificationHandler implements vscode.Disposable {
       const powershellScript = this.generateWindowsToastScript(request);
       
       return new Promise((resolve) => {
-        exec(`powershell -Command "${powershellScript}"`, { timeout: 5000 }, (error, stdout, stderr) => {
+        exec(`powershell -Command "${powershellScript}"`, { timeout: 5000 }, (error, _stdout, _stderr) => {
           if (error) {
             this.logger.warn('Windows PowerShell notification failed', { error });
             resolve(this.createResult(false, 'vscode-fallback', error, 
@@ -228,7 +228,7 @@ export class CrossPlatformNotificationHandler implements vscode.Disposable {
       const applescript = this.generateMacOSNotificationScript(request);
       
       return new Promise((resolve) => {
-        exec(`osascript -e '${applescript}'`, { timeout: 5000 }, (error, stdout, stderr) => {
+        exec(`osascript -e '${applescript}'`, { timeout: 5000 }, (error, _stdout, _stderr) => {
           if (error) {
             this.logger.warn('macOS osascript notification failed', { error });
             resolve(this.createResult(false, 'vscode-fallback', error, 

@@ -754,7 +754,7 @@ export class NotificationConfigManager implements vscode.Disposable {
   /**
    * Evaluate presence condition
    */
-  private evaluatePresenceCondition(params: Record<string, any>): boolean {
+  private evaluatePresenceCondition(_params: Record<string, any>): boolean {
     // Would integrate with presence detection
     return true;
   }
@@ -762,7 +762,7 @@ export class NotificationConfigManager implements vscode.Disposable {
   /**
    * Evaluate workload condition
    */
-  private evaluateWorkloadCondition(params: Record<string, any>): boolean {
+  private evaluateWorkloadCondition(_params: Record<string, any>): boolean {
     // Would integrate with workload detection
     return true;
   }

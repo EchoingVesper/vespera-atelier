@@ -9,8 +9,6 @@ import * as vscode from 'vscode';
 import { VesperaLogger } from '../core/logging/VesperaLogger';
 import { VesperaErrorHandler } from '../core/error-handling/VesperaErrorHandler';
 import { SecurityEnhancedVesperaCoreServices } from '../core/security/SecurityEnhancedCoreServices';
-import { VesperaInputSanitizer } from '../core/security/sanitization/VesperaInputSanitizer';
-import { VesperaSecurityAuditLogger } from '../core/security/audit/VesperaSecurityAuditLogger';
 
 export enum NotificationLevel {
   CRITICAL = 'critical',
@@ -262,7 +260,6 @@ export class SecureNotificationManager implements vscode.Disposable {
       const deliveryMethods: ('vscode' | 'os-toast' | 'console')[] = [];
 
       // Always try VS Code notification as primary method
-      let vscodeDelivered = false;
       try {
         await this.showVSCodeNotification(filteredRequest);
         deliveryMethods.push('vscode');
@@ -413,7 +410,6 @@ export class SecureNotificationManager implements vscode.Disposable {
       return false;
     }
 
-    const key = `${request.type}_${this.sanitizeForLogging(request.title)}`;
     const now = Date.now();
     const windowStart = now - 60000; // 1 minute window
 
@@ -563,7 +559,6 @@ export class SecureNotificationManager implements vscode.Disposable {
     // For now, we'll use VS Code's notification system with enhanced styling
     
     const platform = process.platform;
-    const message = `${request.title}\n${request.message}`;
 
     try {
       // Cross-platform notification approach

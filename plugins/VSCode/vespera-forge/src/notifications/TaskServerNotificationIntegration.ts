@@ -922,7 +922,6 @@ export class TaskServerNotificationIntegration implements vscode.Disposable {
     const cleanupInterval = setInterval(() => {
       try {
         // Clean up old task notification tracking
-        const oneDayAgo = Date.now() - 86400000;
         
         // This would typically clean based on task completion times
         // For now, we'll clean up after a reasonable time period

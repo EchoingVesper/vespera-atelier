@@ -160,7 +160,7 @@ export class VesperaNotificationSystem implements vscode.Disposable {
     chatManager: ChatManager,
     taskServerManager: TaskServerManager,
     contextCollector: FileContextCollector,
-    config: NotificationSystemConfig = VesperaNotificationSystem.getDefaultConfig()
+    _config: NotificationSystemConfig = VesperaNotificationSystem.getDefaultConfig()
   ): Promise<VesperaNotificationSystem> {
     if (VesperaNotificationSystem.instance) {
       return VesperaNotificationSystem.instance;

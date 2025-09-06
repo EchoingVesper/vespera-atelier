@@ -783,7 +783,7 @@ export class AgentProgressNotifier implements vscode.Disposable {
   /**
    * Show error details
    */
-  private async showErrorDetails(operationId: string, error: string, details?: any): Promise<void> {
+  private async showErrorDetails(operationId: string, error: string, _details?: any): Promise<void> {
     this.logger.info('Error details requested', { operationId, error });
   }
 
