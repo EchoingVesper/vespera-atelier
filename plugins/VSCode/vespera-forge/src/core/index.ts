@@ -50,7 +50,13 @@ export interface VesperaCoreStats {
  */
 export class VesperaCoreServices implements vscode.Disposable {
   private static instance: VesperaCoreServices;
-  private services!: VesperaCoreServices;
+  private services!: {
+    logger: VesperaLogger;
+    errorHandler: VesperaErrorHandler;
+    contextManager: VesperaContextManager;
+    telemetryService: VesperaTelemetryService;
+    disposalManager: DisposalManager;
+  };
   private initialized = false;
   private initializeTime = 0;
   private masterDisposalManager: DisposalManager;
@@ -77,7 +83,13 @@ export class VesperaCoreServices implements vscode.Disposable {
   public static async initialize(
     context: vscode.ExtensionContext,
     config: VesperaCoreServicesConfig = {}
-  ): Promise<VesperaCoreServices> {
+  ): Promise<{
+    logger: VesperaLogger;
+    errorHandler: VesperaErrorHandler;
+    contextManager: VesperaContextManager;
+    telemetryService: VesperaTelemetryService;
+    disposalManager: DisposalManager;
+  }> {
     if (VesperaCoreServices.instance) {
       return VesperaCoreServices.instance.services;
     }
@@ -92,7 +104,13 @@ export class VesperaCoreServices implements vscode.Disposable {
   /**
    * Get the initialized core services
    */
-  public static getInstance(): VesperaCoreServices {
+  public static getInstance(): {
+    logger: VesperaLogger;
+    errorHandler: VesperaErrorHandler;
+    contextManager: VesperaContextManager;
+    telemetryService: VesperaTelemetryService;
+    disposalManager: DisposalManager;
+  } {
     if (!VesperaCoreServices.instance?.initialized) {
       throw new Error('VesperaCoreServices not initialized. Call initialize() first.');
     }

@@ -143,11 +143,10 @@ export class SecureChatProviderClient {
       const rateLimitContext: RateLimitContext = {
         resourceId: `${this.resourcePrefix}.${resourceId}`,
         userId: context.userId || 'anonymous',
-        clientId: this.providerName,
-        timestamp: Date.now(),
         metadata: {
           provider: this.providerName,
           operation: resourceId,
+          clientId: this.providerName,
           ...context
         }
       };

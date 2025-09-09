@@ -693,7 +693,11 @@ export class MultiChatStateManager {
       session.userPreferences = {
         ...session.userPreferences,
         collapsedServers: Array.from(this.currentState.serverNavigationState.collapsedServers),
-        notificationSettings: this.currentState.notificationSettings
+        notificationSettings: {
+          taskProgress: this.currentState.notificationSettings.enableTaskProgress,
+          agentActivity: this.currentState.notificationSettings.enableAgentActivity,
+          newMessages: this.currentState.notificationSettings.enableNewMessages
+        }
       };
 
       // Save session

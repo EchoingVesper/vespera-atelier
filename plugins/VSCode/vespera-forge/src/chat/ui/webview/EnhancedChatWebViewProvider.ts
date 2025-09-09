@@ -498,11 +498,7 @@ export class EnhancedChatWebViewProvider implements vscode.WebviewViewProvider {
         data: {
           messageId,
           content: message.data?.content,
-          serverId,
-          channelId,
-          provider: message.data?.providerId || 'unknown',
-          contextId: contextData?.contextId,
-          hasContext: !!contextData
+          provider: message.data?.providerId || 'unknown'
         }
       });
 

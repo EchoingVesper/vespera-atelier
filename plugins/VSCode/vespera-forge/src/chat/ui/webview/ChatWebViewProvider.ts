@@ -283,6 +283,8 @@ export class ChatWebViewProvider implements vscode.WebviewViewProvider {
     // Add security metadata if enabled
     if (this._securityManager && validationResult) {
       const securityInfo = {
+        sessionId: this._sessionId,
+        validated: true,
         sanitized: !!validationResult.sanitizedMessage,
         threatCount: validationResult.threats.length,
         processingTime: Date.now()
@@ -386,9 +388,7 @@ export class ChatWebViewProvider implements vscode.WebviewViewProvider {
         data: {
           messageId,
           content: data.content, // Pure user message without context injection
-          provider: data.providerId || 'unknown',
-          contextId: contextData?.contextId,
-          hasContext: !!contextData
+          provider: data.providerId || 'unknown'
         }
       });
       

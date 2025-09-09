@@ -523,8 +523,7 @@ export class UnusedVariableCleanupOrchestrator {
             estimatedTime: variables.length * 300000, // 5 minutes per variable
             riskLevel: 'LOW',
             keyFiles: this.getTopFilesByErrorCount(variables, 5),
-            patterns: this.identifyCommonPatterns(variables),
-            constructorOptimizations: variables.length
+            patterns: this.identifyCommonPatterns(variables)
         };
     }
 
@@ -536,7 +535,7 @@ export class UnusedVariableCleanupOrchestrator {
             riskLevel: 'MEDIUM',
             keyFiles: this.getTopFilesByErrorCount(variables, 5),
             patterns: this.identifyCommonPatterns(variables),
-            serviceIntegrations: variables.length
+            integrationOpportunities: variables.length
         };
     }
 
@@ -548,7 +547,7 @@ export class UnusedVariableCleanupOrchestrator {
             riskLevel: 'HIGH',
             keyFiles: this.getTopFilesByErrorCount(variables, 5),
             patterns: this.identifyCommonPatterns(variables),
-            investigationComplexity: variables.length
+            securityComponents: variables.length
         };
     }
 

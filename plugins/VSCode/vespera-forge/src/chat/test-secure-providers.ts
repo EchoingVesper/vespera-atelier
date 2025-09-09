@@ -26,10 +26,11 @@ import { ChatMessage } from './types/chat';
  * Mock provider template for testing
  */
 const createMockTemplate = (providerName: string): ProviderTemplate => ({
-  id: `test-${providerName}`,
+  template_id: `test-${providerName}`,
   name: `Test ${providerName}`,
   description: `Test template for ${providerName}`,
   version: '1.0.0',
+  category: 'llm_provider',
   provider_config: {
     provider_type: 'test',
     model: 'test-model',
@@ -48,7 +49,9 @@ const createMockTemplate = (providerName: string): ProviderTemplate => ({
   capabilities: {
     streaming: true,
     function_calling: false,
-    vision: false
+    image_analysis: false,
+    code_execution: false,
+    web_search: false
   },
   ui_schema: {
     config_fields: [
@@ -62,10 +65,7 @@ const createMockTemplate = (providerName: string): ProviderTemplate => ({
         }
       }
     ]
-  },
-  tags: ['test'],
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString()
+  }
 });
 
 /**
