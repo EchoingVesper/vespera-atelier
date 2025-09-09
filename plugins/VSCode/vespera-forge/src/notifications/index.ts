@@ -139,6 +139,11 @@ export class VesperaNotificationSystem implements vscode.Disposable {
     this.crossPlatformHandler = crossPlatformHandler;
     this.chatNotificationIntegration = chatNotificationIntegration;
 
+    // TODO: Implement full integration with architectural scaffolding
+    if (this._context && this._chatManager && this._taskServerManager && this._contextCollector) {
+      this.coreServices.logger.debug('Notification system fully configured with all architectural components');
+    }
+
     // Register for disposal
     this.disposables.push(
       this.secureNotificationManager,

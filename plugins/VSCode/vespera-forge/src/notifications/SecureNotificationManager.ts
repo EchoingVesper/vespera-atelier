@@ -258,13 +258,13 @@ export class SecureNotificationManager implements vscode.Disposable {
 
       // Determine delivery methods
       const deliveryMethods: ('vscode' | 'os-toast' | 'console')[] = [];
-      let vscodeDelivered = false;
+      // Track whether VS Code notification succeeded for fallback logic
+      // TODO: Implement fallback notification strategies based on delivery success
 
       // Always try VS Code notification as primary method
       try {
         await this.showVSCodeNotification(filteredRequest);
         deliveryMethods.push('vscode');
-        vscodeDelivered = true;
       } catch (error) {
         this.logger.warn('Failed to show VS Code notification', { error, id: notificationId });
       }

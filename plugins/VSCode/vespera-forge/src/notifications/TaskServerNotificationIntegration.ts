@@ -938,7 +938,7 @@ export class TaskServerNotificationIntegration implements vscode.Disposable {
         
         // This would typically clean based on task completion times
         // For now, we'll clean up after a reasonable time period
-        for (const [taskId, notifications] of this.activeTaskNotifications.entries()) {
+        for (const [_taskId, _notifications] of this.activeTaskNotifications.entries()) {
           // Could add logic to check task completion time and clean accordingly
         }
       } catch (error) {

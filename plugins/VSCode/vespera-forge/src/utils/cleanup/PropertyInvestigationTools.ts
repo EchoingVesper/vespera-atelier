@@ -378,7 +378,7 @@ export class PropertyInvestigationTools {
      */
     public static async investigateProperty(
         property: UnusedVariable,
-        analysisResult: PropertyAnalysisResult
+        _analysisResult: PropertyAnalysisResult
     ): Promise<PropertyInvestigationResult> {
         const startTime = Date.now();
         
@@ -422,7 +422,9 @@ export class PropertyInvestigationTools {
         
         for (let i = 0; i < prioritizedProperties.length; i++) {
             const property = prioritizedProperties[i];
-            const analysisResult = analysisResults.find(r => r.property.name === property.name);
+            if (!property) continue;
+            
+            const analysisResult = analysisResults.find(r => r?.property?.name === property.name);
             
             if (analysisResult) {
                 const investigationResult = await this.investigateProperty(property, analysisResult);
@@ -720,7 +722,7 @@ export class PropertyInvestigationTools {
         };
     }
 
-    private static determineResolution(findings: DetailedInvestigationFindings, investigationType: InvestigationType): InvestigationResolution {
+    private static determineResolution(findings: DetailedInvestigationFindings, _investigationType: InvestigationType): InvestigationResolution {
         let resolution: ResolutionType;
         let confidence: InvestigationConfidence;
         let justification: string;
@@ -921,7 +923,7 @@ export class PropertyInvestigationTools {
         return evidence;
     }
 
-    private static findReflectionEvidence(property: UnusedVariable, fileContent: string): string[] {
+    private static findReflectionEvidence(_property: UnusedVariable, fileContent: string): string[] {
         const evidence: string[] = [];
         
         if (fileContent.includes('Reflect.') || fileContent.includes('Object.keys') || fileContent.includes('Object.getOwnPropertyNames')) {
@@ -935,10 +937,10 @@ export class PropertyInvestigationTools {
         const lines = fileContent.split('\n');
         
         // Check line 58 specifically for context usage
-        if (lines.length > 58 && lines[57].includes('context')) {
+        if (lines.length > 58 && lines[57]?.includes('context')) {
             return {
                 line: 58,
-                content: lines[57].trim(),
+                content: lines[57]?.trim() || '',
                 usageType: 'VS Code extension context usage'
             };
         }
@@ -946,13 +948,13 @@ export class PropertyInvestigationTools {
         return null;
     }
 
-    private static findStrategicIncompleteFeature(property: UnusedVariable): any {
+    private static findStrategicIncompleteFeature(_property: UnusedVariable): any {
         return this.STRATEGIC_INVESTIGATION_TARGETS.incompleteFeatures.find(
             target => property.file.includes(target.file) && property.name === target.property
         );
     }
 
-    private static calculateFeatureCompletionPercentage(property: UnusedVariable, fileContent: string): number {
+    private static calculateFeatureCompletionPercentage(_property: UnusedVariable, fileContent: string): number {
         // Heuristic: check for related implementation code
         const implementationIndicators = [
             'constructor',
@@ -972,7 +974,7 @@ export class PropertyInvestigationTools {
         return Math.min(100, (indicatorCount / implementationIndicators.length) * 100);
     }
 
-    private static identifyMissingComponents(property: UnusedVariable, strategicTarget: any): string[] {
+    private static identifyMissingComponents(property: UnusedVariable, _strategicTarget: any): string[] {
         const baseComponents = [
             'Initialization logic',
             'Error handling',
@@ -989,7 +991,7 @@ export class PropertyInvestigationTools {
         return baseComponents;
     }
 
-    private static identifyImplementationBarriers(property: UnusedVariable, strategicTarget: any): ImplementationBarrier[] {
+    private static identifyImplementationBarriers(_property: UnusedVariable, _strategicTarget: any): ImplementationBarrier[] {
         return [
             {
                 type: BarrierType.TECHNICAL_COMPLEXITY,
@@ -1087,7 +1089,7 @@ export class PropertyInvestigationTools {
         return patterns;
     }
 
-    private static async analyzeArchitecturalContext(property: UnusedVariable): Promise<ArchitecturalContext> {
+    private static async analyzeArchitecturalContext(_property: UnusedVariable): Promise<ArchitecturalContext> {
         return {
             isArchitecturalPreparation: true,
             intendedPurpose: 'Prepared infrastructure for future feature development',
@@ -1103,12 +1105,12 @@ export class PropertyInvestigationTools {
         };
     }
 
-    private static async findCrossFileReferences(property: UnusedVariable): Promise<CrossFileReference[]> {
+    private static async findCrossFileReferences(_property: UnusedVariable): Promise<CrossFileReference[]> {
         // In a real implementation, this would search across the codebase
         return [];
     }
 
-    private static async analyzeGitHistory(property: UnusedVariable): Promise<GitHistoryInsight[]> {
+    private static async analyzeGitHistory(_property: UnusedVariable): Promise<GitHistoryInsight[]> {
         // In a real implementation, this would use git commands to analyze history
         return [];
     }
@@ -1177,7 +1179,7 @@ export class PropertyInvestigationTools {
         };
     }
 
-    private static generateAlternativeActions(actionType: ActionType, findings: DetailedInvestigationFindings): AlternativeAction[] {
+    private static generateAlternativeActions(actionType: ActionType, _findings: DetailedInvestigationFindings): AlternativeAction[] {
         const alternatives: AlternativeAction[] = [];
         
         if (actionType === ActionType.COMPLETE_FEATURE) {

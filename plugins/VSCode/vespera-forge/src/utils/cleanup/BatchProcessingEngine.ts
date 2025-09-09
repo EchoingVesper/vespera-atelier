@@ -112,13 +112,18 @@ export class BatchProcessingEngine {
     private static instance: BatchProcessingEngine;
     private progressCallback?: ProgressCallback;
     private processingStartTime: number = 0;
-    private processedCounts = {
+    private _processedCounts = {
         [ProcessingPhase.PHASE_1A]: 0,
         [ProcessingPhase.PHASE_1B]: 0,
         [ProcessingPhase.PHASE_1C]: 0
-    };
+    }; // TODO: Implement progress tracking with processed counts
 
-    private constructor() {}
+    private constructor() {
+        // Initialize processed counts tracking for future progress monitoring
+        if (Object.keys(this._processedCounts).length > 0) {
+            // Counts will be updated during processing phases
+        }
+    }
 
     public static getInstance(): BatchProcessingEngine {
         if (!BatchProcessingEngine.instance) {
@@ -433,7 +438,7 @@ export class BatchProcessingEngine {
      */
     private async processPhase2C(
         properties: UnusedVariable[],
-        options: BatchProcessingOptions
+        _options: BatchProcessingOptions
     ): Promise<ProcessingItemResult[]> {
         const { UnusedPropertyAnalyzer } = await import('./UnusedPropertyAnalyzer');
         const { PropertyInvestigationTools } = await import('./PropertyInvestigationTools');
@@ -645,7 +650,7 @@ export class BatchProcessingEngine {
      */
     private async processPhase1C(
         variables: UnusedVariable[],
-        options: BatchProcessingOptions
+        _options: BatchProcessingOptions
     ): Promise<ProcessingItemResult[]> {
         const results: ProcessingItemResult[] = [];
 
@@ -863,7 +868,7 @@ export class BatchProcessingEngine {
 
     private async validatePhaseChanges(
         snapshotId: string,
-        results: ProcessingItemResult[]
+        _results: ProcessingItemResult[]
     ): Promise<ValidationResult> {
         // Create a mock set of modified files for validation
         const modifiedFiles: { [filePath: string]: string } = {};

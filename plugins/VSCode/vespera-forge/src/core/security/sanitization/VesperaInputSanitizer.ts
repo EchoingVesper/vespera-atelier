@@ -574,7 +574,7 @@ export class VesperaInputSanitizer implements VesperaInputSanitizerInterface {
   private async applyProcessor(
     input: any,
     processor: SanitizationProcessor,
-    scope: SanitizationScope,
+    _scope: SanitizationScope,
     context?: Record<string, any>
   ): Promise<any> {
     switch (processor.type) {
@@ -696,7 +696,7 @@ export class VesperaInputSanitizer implements VesperaInputSanitizerInterface {
   private async applyCustomProcessor(
     input: any, 
     config?: ProcessorConfig['custom'], 
-    context?: Record<string, any>
+    _context?: Record<string, any>
   ): Promise<any> {
     if (!config) return input;
 

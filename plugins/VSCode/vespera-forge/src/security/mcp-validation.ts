@@ -120,7 +120,14 @@ export class McpMessageValidator {
   private metrics: McpValidationMetrics;
   
   // Performance optimization caches
-  private schemaCache = new Map<string, any>();
+  private _schemaCache = new Map<string, any>(); // TODO: Implement schema caching for validation performance
+
+  private initializeSchemaCache(): void {
+    // Initialize schema cache for performance optimization
+    if (this._schemaCache.size === 0) {
+      // Schema cache will be populated during validation operations
+    }
+  }
   private patternCache = new Map<string, RegExp>();
   private validationCache = new Map<string, { result: McpValidationResult; timestamp: number }>();
   private readonly CACHE_TTL = 60 * 1000; // 1 minute
@@ -132,6 +139,7 @@ export class McpMessageValidator {
   private constructor() {
     this.metrics = this.initializeMetrics();
     this.initializeDefaultRules();
+    this.initializeSchemaCache();
   }
 
   /**

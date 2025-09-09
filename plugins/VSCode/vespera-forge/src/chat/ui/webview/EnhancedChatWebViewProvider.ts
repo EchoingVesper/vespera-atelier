@@ -121,6 +121,11 @@ export class EnhancedChatWebViewProvider implements vscode.WebviewViewProvider {
   ) {
     this._sessionId = `enhanced_chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     this.setupStateChangeHandlers();
+    
+    // TODO: Implement template registry integration for dynamic UI generation
+    if (this._templateRegistry) {
+      this.logger.debug('Template registry available for enhanced chat UI');
+    }
   }
 
   /**

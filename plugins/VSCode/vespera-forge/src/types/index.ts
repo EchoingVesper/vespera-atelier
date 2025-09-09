@@ -9,7 +9,6 @@ import * as vscode from 'vscode';
 import type { 
   VesperaError, 
   VesperaErrorCode, 
-  VesperaSeverity, 
   VesperaErrorCategory 
 } from '@/core/error-handling/VesperaErrors';
 import type { LogLevel } from '@/core/logging/VesperaLogger';

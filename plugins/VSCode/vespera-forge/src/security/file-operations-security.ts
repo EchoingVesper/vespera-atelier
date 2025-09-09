@@ -278,7 +278,7 @@ export class FileOperationsSecurityManager {
    * Policy-based validation (fast path)
    */
   private validateAgainstPolicy(
-    operation: string, 
+    _operation: string, 
     filePath: string, 
     content?: string
   ): { allowed: boolean; threats: string[]; sanitizedPath?: string } {

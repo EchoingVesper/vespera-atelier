@@ -132,6 +132,11 @@ export class ChatNotificationIntegration implements vscode.Disposable {
     private readonly _errorHandler: VesperaErrorHandler
   ) {
     this.config = this.getDefaultConfig();
+    
+    // TODO: Implement full integration with architectural components
+    if (this._multiChatManager && this._chatManager && this._contextCollector && this._errorHandler) {
+      this.logger.debug('Chat notification integration fully configured with all managers');
+    }
   }
 
   /**

@@ -340,7 +340,7 @@ export class QualityAssuranceTools {
                 }
 
                 // Atomic move to final locations
-                for (const [filePath, content] of Object.entries(modifiedFiles)) {
+                for (const [filePath, _content] of Object.entries(modifiedFiles)) {
                     const tempPath = filePath + '.temp';
                     fs.renameSync(tempPath, filePath);
                 }
@@ -739,7 +739,7 @@ export class QualityAssuranceTools {
      */
     private static async analyzeServiceIntegration(
         property: UnusedVariable,
-        analysis: PropertyAnalysisResult
+        _analysis: PropertyAnalysisResult
     ): Promise<{
         coreServicesPatternMatch: boolean;
         errorHandlingStandardCompliant: boolean;
@@ -884,17 +884,17 @@ export class QualityAssuranceTools {
         return !matches || matches.length <= 1; // Should only appear in declaration
     }
 
-    private static checkCoreServicesPattern(property: UnusedVariable, originalContent: string): boolean {
+    private static checkCoreServicesPattern(_property: UnusedVariable, originalContent: string): boolean {
         // Look for coreServices, errorHandler patterns
         return originalContent.includes('coreServices') || originalContent.includes('errorHandler');
     }
 
-    private static checkErrorHandlingStandard(property: UnusedVariable, originalContent: string): boolean {
+    private static checkErrorHandlingStandard(_property: UnusedVariable, originalContent: string): boolean {
         // Check for standard error handling patterns
         return originalContent.includes('try') && originalContent.includes('catch');
     }
 
-    private static checkServiceLifecycle(property: UnusedVariable, originalContent: string): boolean {
+    private static checkServiceLifecycle(_property: UnusedVariable, originalContent: string): boolean {
         // Check for service lifecycle methods
         return originalContent.includes('initialize') || originalContent.includes('dispose');
     }

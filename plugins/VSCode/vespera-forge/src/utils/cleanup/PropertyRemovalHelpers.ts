@@ -151,7 +151,7 @@ export enum SafetyCheckType {
 }
 
 export class PropertyRemovalHelpers {
-    private static readonly STRATEGIC_TARGETS = {
+    private static readonly _STRATEGIC_TARGETS = { // TODO: Implement strategic target-based removal logic
         // Phase 2A: VesperaConsentManager constructor-only properties
         vesperaConsentManagerTargets: [
             {
@@ -510,7 +510,7 @@ export class PropertyRemovalHelpers {
 
     private static async executePropertyRemoval(
         plan: ConstructorRefactoringPlan, 
-        options: BatchPropertyRemovalOptions
+        _options: BatchPropertyRemovalOptions
     ): Promise<{ success: boolean; changes: PropertyChange[]; errors: string[] }> {
         const appliedChanges: PropertyChange[] = [];
         const errors: string[] = [];
@@ -552,7 +552,7 @@ export class PropertyRemovalHelpers {
         property: UnusedVariable, 
         fileContent: string, 
         refactoringType: ConstructorRefactoringType,
-        usagePattern: ConstructorUsagePattern
+        _usagePattern: ConstructorUsagePattern
     ): Promise<PropertyChange[]> {
         const changes: PropertyChange[] = [];
         const lines = fileContent.split('\n');
@@ -681,7 +681,7 @@ export class PropertyRemovalHelpers {
         return ConstructorUsagePattern.PARAMETER_PASSTHROUGH;
     }
 
-    private static generateSafetyChecks(property: UnusedVariable, refactoringType: ConstructorRefactoringType): SafetyCheck[] {
+    private static generateSafetyChecks(_property: UnusedVariable, _refactoringType: ConstructorRefactoringType): SafetyCheck[] {
         const checks: SafetyCheck[] = [];
 
         // Always check for external access
@@ -747,7 +747,7 @@ export class PropertyRemovalHelpers {
         return { valid: true };
     }
 
-    private static async executeSafetyCheck(check: SafetyCheck, filePath: string): Promise<{ passed: boolean; details?: any }> {
+    private static async executeSafetyCheck(check: SafetyCheck, _filePath: string): Promise<{ passed: boolean; details?: any }> {
         // Implementation would depend on the specific safety check type
         switch (check.type) {
             case SafetyCheckType.CONSTRUCTOR_ONLY_USAGE:
@@ -793,7 +793,7 @@ export class PropertyRemovalHelpers {
         fs.writeFileSync(change.location.file, newContent, 'utf-8');
     }
 
-    private static async validatePostRemoval(filePath: string, changes: PropertyChange[]): Promise<{ success: boolean; errors: string[] }> {
+    private static async validatePostRemoval(filePath: string, _changes: PropertyChange[]): Promise<{ success: boolean; errors: string[] }> {
         const errors: string[] = [];
         
         try {
