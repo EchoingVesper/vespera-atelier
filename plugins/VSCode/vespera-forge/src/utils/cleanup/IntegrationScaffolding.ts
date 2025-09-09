@@ -489,7 +489,7 @@ export const ${variableName}StateManager = new ${variableName.charAt(0).toUpperC
             ...this.INTEGRATION_PATTERNS.monitoringVariables
         };
 
-        const pattern = allPatterns[variable.name];
+        const pattern = (allPatterns as any)[variable.name];
         if (pattern) {
             return {
                 variable,

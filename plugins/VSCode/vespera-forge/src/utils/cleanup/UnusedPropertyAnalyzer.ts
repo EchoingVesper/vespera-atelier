@@ -889,7 +889,7 @@ export class UnusedPropertyAnalyzer {
 
     private static extractParameterSource(line: string): string | null {
         const match = line.match(/=\s*([a-zA-Z_$][a-zA-Z0-9_$]*)/);
-        return match ? match[1] : null;
+        return match?.[1] ?? null;
     }
 
     private static determineInitializationPattern(parameterSource: string | null, usedForInitialization: boolean): InitializationPattern {

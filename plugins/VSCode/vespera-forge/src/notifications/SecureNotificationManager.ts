@@ -36,6 +36,7 @@ export interface NotificationConfig {
   levels: {
     critical: boolean;
     important: boolean;
+    success: boolean;
     info: boolean;
     debug: boolean;
   };
@@ -744,6 +745,7 @@ export class SecureNotificationManager implements vscode.Disposable {
       levels: {
         critical: true,
         important: true,
+        success: true,
         info: true,
         debug: false
       },

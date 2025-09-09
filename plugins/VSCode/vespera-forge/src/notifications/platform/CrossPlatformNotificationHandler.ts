@@ -321,7 +321,7 @@ export class CrossPlatformNotificationHandler implements vscode.Disposable {
       
       childProcess.on('close', (code) => {
         if (code === 0) {
-          resolve(this.createResult(true, 'native', { system }, 
+          resolve(this.createResult(true, 'native', {} as any, 
             [NotificationCapability.BASIC_TOAST, NotificationCapability.AUDIO]));
         } else {
           resolve(this.createResult(false, 'vscode-fallback', new Error(`${system} exited with code ${code}`)));

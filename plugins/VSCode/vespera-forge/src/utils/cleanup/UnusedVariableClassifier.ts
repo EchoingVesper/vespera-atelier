@@ -352,8 +352,8 @@ export class UnusedVariableClassifier {
             if (match && match[4] === 'TS6133') {
                 errors.push({
                     file: match[1],
-                    line: parseInt(match[2]),
-                    column: parseInt(match[3]),
+                    line: parseInt(match[2] || '0'),
+                    column: parseInt(match[3] || '0'),
                     code: match[4],
                     message: match[5]
                 });
@@ -365,7 +365,7 @@ export class UnusedVariableClassifier {
 
     private static extractVariableName(message: string): string | null {
         const match = message.match(/'([^']+)' is declared but its value is never read/);
-        return match ? match[1] : null;
+        return match?.[1] ?? null;
     }
 
     private static async getFileContent(filePath: string): Promise<string> {
@@ -604,7 +604,7 @@ export class UnusedVariableClassifier {
     private static extractPropertyName(message: string): string | null {
         // TS6138: "Property 'propertyName' is declared but its value is never read."
         const match = message.match(/'([^']+)' is declared but its value is never read/);
-        return match ? match[1] : null;
+        return match?.[1] ?? null;
     }
 
     private static determinePropertyClassification(

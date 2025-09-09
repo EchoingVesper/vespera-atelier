@@ -275,7 +275,12 @@ export class VesperaRateLimiter implements VesperaRateLimiterInterface {
       rejectionRate: number;
     } }>;
     circuitBreakerStats: Array<{ key: string; stats: any }>;
-    globalStats: typeof this.stats;
+    globalStats: {
+      totalRequests: number;
+      totalRejections: number;
+      circuitBreakerActivations: number;
+      lastReset: number;
+    };
   } {
     let totalBucketRequests = 0;
     let totalBucketRejections = 0;

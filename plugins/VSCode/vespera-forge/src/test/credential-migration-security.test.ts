@@ -41,11 +41,12 @@ class MockSecretStorage implements vscode.SecretStorage {
     // Override methods to simulate failures for specific keys/actions
     const originalMethod = this[action as keyof MockSecretStorage];
     if (typeof originalMethod === 'function') {
+      const boundOriginalMethod = originalMethod.bind(this);
       (this as any)[action] = async (k: string, ...args: any[]) => {
         if (k === key) {
           throw new Error(`Simulated ${action} failure for ${key}`);
         }
-        return originalMethod.apply(this, [k, ...args]);
+        return (boundOriginalMethod as any)(k, ...args);
       };
     }
   }
@@ -144,7 +145,7 @@ class MockVesperaRateLimiter {
 }
 
 class MockVesperaConsentManager {
-  private consents = new Map<string, boolean>();
+  public consents = new Map<string, boolean>();
   private consentRequests: Array<{ userId: string; purposeIds: string[]; timestamp: number }> = [];
   
   hasConsent(userId: string, purposeId: string): boolean {
@@ -698,7 +699,7 @@ suite('Enhanced Credential Migration Security Tests', () => {
         
         // Reset the mock to normal operation
         mockSecrets = new MockSecretStorage();
-        mockContext.secrets = mockSecrets;
+        (mockContext as any).secrets = mockSecrets;
       }
       
       // Verify that at least some recovery attempts succeeded

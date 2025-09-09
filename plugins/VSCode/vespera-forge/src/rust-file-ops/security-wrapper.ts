@@ -6,7 +6,7 @@
  */
 
 import * as path from 'path';
-import { SecurityEnhancedCoreServices } from '../core/security/SecurityEnhancedCoreServices';
+import { SecurityEnhancedVesperaCoreServices } from '../core/security/SecurityEnhancedCoreServices';
 import { 
   VesperaSecurityEvent, 
   SecurityEventContext, 
@@ -47,7 +47,7 @@ export interface FileOperationContext {
  */
 export class RustFileOpsSecurityWrapper {
   private static instance: RustFileOpsSecurityWrapper | null = null;
-  private securityServices: SecurityEnhancedCoreServices | null = null;
+  private securityServices: SecurityEnhancedVesperaCoreServices | null = null;
   
   // Performance optimization: cache validation results
   private validationCache = new Map<string, { result: SecurityValidationResult; timestamp: number }>();
@@ -73,7 +73,7 @@ export class RustFileOpsSecurityWrapper {
   private constructor() {}
 
   /**
-   * Initialize security wrapper with SecurityEnhancedCoreServices
+   * Initialize security wrapper with SecurityEnhancedVesperaCoreServices
    */
   public static async initialize(): Promise<RustFileOpsSecurityWrapper> {
     if (RustFileOpsSecurityWrapper.instance) {
@@ -83,10 +83,10 @@ export class RustFileOpsSecurityWrapper {
     const wrapper = new RustFileOpsSecurityWrapper();
     
     try {
-      // Get SecurityEnhancedCoreServices instance
-      wrapper.securityServices = SecurityEnhancedCoreServices.getInstance();
+      // Get SecurityEnhancedVesperaCoreServices instance
+      wrapper.securityServices = SecurityEnhancedVesperaCoreServices.getInstance();
     } catch (error) {
-      console.warn('SecurityEnhancedCoreServices not initialized, running with reduced security');
+      console.warn('SecurityEnhancedVesperaCoreServices not initialized, running with reduced security');
     }
 
     RustFileOpsSecurityWrapper.instance = wrapper;
@@ -299,7 +299,7 @@ export class RustFileOpsSecurityWrapper {
   }
 
   /**
-   * Validate file content using SecurityEnhancedCoreServices
+   * Validate file content using SecurityEnhancedVesperaCoreServices
    */
   private async validateContent(content: string, filePath: string): Promise<SecurityValidationResult> {
     const startTime = performance.now();

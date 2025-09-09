@@ -78,6 +78,7 @@ export class VesperaError extends Error {
   public readonly category: VesperaErrorCategory;
   public readonly metadata: VesperaErrorMetadata;
   public readonly isRetryable: boolean;
+  // @ts-ignore: TS4114 - Error.cause is available in ES2022 but not properly recognized in all TypeScript lib configurations
   public readonly cause?: Error;
 
   constructor(

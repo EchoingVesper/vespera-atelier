@@ -10,6 +10,7 @@
  */
 
 import * as vscode from 'vscode';
+import type { SecurityEnhancedVesperaCoreServices } from './SecurityEnhancedCoreServices';
 
 // ============================================================================
 // Core Security Services
@@ -164,14 +165,14 @@ export type {
 export async function initializeDevelopmentSecurity(
   context: vscode.ExtensionContext,
   baseConfig: any = {}
-): Promise<import('./SecurityEnhancedCoreServices').SecurityEnhancedVesperaCoreServices> {
+): Promise<SecurityEnhancedVesperaCoreServices> {
   const { createDevelopmentSecurityConfig } = await import('./SecurityDefaults');
   const { SecurityEnhancedVesperaCoreServices } = await import('./SecurityEnhancedCoreServices');
   
   return SecurityEnhancedVesperaCoreServices.initialize(context, {
     ...baseConfig,
     security: createDevelopmentSecurityConfig()
-  });
+  }) as unknown as SecurityEnhancedVesperaCoreServices;
 }
 
 /**
@@ -180,14 +181,14 @@ export async function initializeDevelopmentSecurity(
 export async function initializeProductionSecurity(
   context: vscode.ExtensionContext,
   baseConfig: any = {}
-): Promise<import('./SecurityEnhancedCoreServices').SecurityEnhancedVesperaCoreServices> {
+): Promise<SecurityEnhancedVesperaCoreServices> {
   const { createProductionSecurityConfig } = await import('./SecurityDefaults');
   const { SecurityEnhancedVesperaCoreServices } = await import('./SecurityEnhancedCoreServices');
   
   return SecurityEnhancedVesperaCoreServices.initialize(context, {
     ...baseConfig,
     security: createProductionSecurityConfig()
-  });
+  }) as unknown as SecurityEnhancedVesperaCoreServices;
 }
 
 /**
@@ -205,7 +206,7 @@ export function isSecurityInitialized(): boolean {
 /**
  * Get security service instance (throws if not initialized)
  */
-export function getSecurityServices(): import('./SecurityEnhancedCoreServices').SecurityEnhancedVesperaCoreServices {
+export function getSecurityServices(): SecurityEnhancedVesperaCoreServices {
   const { SecurityEnhancedVesperaCoreServices } = require('./SecurityEnhancedCoreServices');
   return SecurityEnhancedVesperaCoreServices.getInstance();
 }

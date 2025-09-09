@@ -6,7 +6,7 @@
  * 1000+ files/second throughput with batch operations.
  */
 
-import { SecurityEnhancedCoreServices } from '../core/security/SecurityEnhancedCoreServices';
+import { SecurityEnhancedVesperaCoreServices } from '../core/security/SecurityEnhancedCoreServices';
 import { FileOperationsSecurityManager, FileOperationAudit } from '../security/file-operations-security';
 import { RustFileOpsSecurityWrapper, SecurityValidationResult } from '../rust-file-ops/security-wrapper';
 import { 
@@ -62,7 +62,7 @@ export interface McpBatchOperationResult {
  */
 export class McpSecureFileTools {
   private static instance: McpSecureFileTools | null = null;
-  private securityServices: SecurityEnhancedCoreServices | null = null;
+  private securityServices: SecurityEnhancedVesperaCoreServices | null = null;
   private fileSecurityManager: FileOperationsSecurityManager | null = null;
   private rustSecurityWrapper: RustFileOpsSecurityWrapper | null = null;
 
@@ -93,7 +93,7 @@ export class McpSecureFileTools {
 
     try {
       // Initialize security components
-      instance.securityServices = SecurityEnhancedCoreServices.getInstance();
+      instance.securityServices = SecurityEnhancedVesperaCoreServices.getInstance();
       instance.fileSecurityManager = await FileOperationsSecurityManager.initialize();
       instance.rustSecurityWrapper = await RustFileOpsSecurityWrapper.initialize();
       

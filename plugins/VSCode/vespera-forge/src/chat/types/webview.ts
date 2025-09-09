@@ -22,7 +22,11 @@ export type WebViewMessageType =
   | 'testProvider'
   | 'addProvider'
   | 'requestContextDetails'
-  | 'toggleContextVisibility';
+  | 'toggleContextVisibility'
+  | 'requestServerStatus'
+  | 'requestAgentProgress'
+  | 'requestTaskProgress'
+  | 'updateServerPreferences';
 
 export interface WebViewMessage {
   type: WebViewMessageType;

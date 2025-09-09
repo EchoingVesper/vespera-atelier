@@ -57,6 +57,9 @@ export class MockExtensionContext implements vscode.ExtensionContext {
   readonly extension = {} as any;
   readonly extensionMode = vscode.ExtensionMode.Test;
   readonly languageModelAccessInformation = {} as any;
+  readonly storagePath = '/test/storage';
+  readonly globalStoragePath = '/test/global';
+  readonly logPath = '/test/logs';
 
   asAbsolutePath(relativePath: string): string {
     return `/test/extension/${relativePath}`;
@@ -82,6 +85,12 @@ export class MockMemento implements vscode.Memento {
     } else {
       this.storage.set(key, value);
     }
+  }
+
+  setKeysForSync(keys: readonly string[]): void {
+    // Mock implementation - in real VS Code this would sync keys across instances
+    // For testing, we just store the keys for potential future reference
+    (this as any).__syncKeys = [...keys];
   }
 
   // Test helpers
@@ -153,10 +162,12 @@ export class MockLogger implements Pick<VesperaLogger, 'debug' | 'info' | 'warn'
     this.logs.push({ level: 'fatal', message, error, data });
   }
 
-  createChild(_name: string): MockLogger {
+  createChild(_name: string): VesperaLogger {
+    // For testing purposes, return this mock logger cast to VesperaLogger
+    // This satisfies the interface requirement while preserving test functionality
     const child = new MockLogger();
     child.logs = this.logs; // Share logs with parent for testing
-    return child;
+    return child as unknown as VesperaLogger;
   }
 
   // Test helpers

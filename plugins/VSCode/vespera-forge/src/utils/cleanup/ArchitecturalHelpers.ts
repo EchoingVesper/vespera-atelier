@@ -1105,7 +1105,7 @@ export const unhandledRejectionHandler = UnhandledRejectionHandler.getInstance()
             ...this.ARCHITECTURAL_PATTERNS.coreServices
         };
 
-        const pattern = allPatterns[variable.name];
+        const pattern = (allPatterns as any)[variable.name];
         if (pattern) {
             return {
                 variable,

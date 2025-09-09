@@ -709,6 +709,90 @@ export class MultiChatNotificationManager implements vscode.Disposable {
   }
 
   /**
+   * Batch unread notification
+   */
+  private async batchUnreadNotification(unreadData: any): Promise<void> {
+    const batchKey = `unread_${Date.now()}`;
+    
+    if (!this.pendingNotifications.has(batchKey)) {
+      this.pendingNotifications.set(batchKey, []);
+    }
+    
+    // Create a pseudo-event for unread batching
+    const unreadEvent: ChatEvent = {
+      type: ChatEventType.UNREAD_MESSAGES,
+      timestamp: Date.now(),
+      serverId: 'batch',
+      data: unreadData
+    };
+    
+    this.pendingNotifications.get(batchKey)!.push(unreadEvent);
+    
+    // Setup batch timer if not already running
+    if (!this.batchTimer) {
+      this.batchTimer = setTimeout(async () => {
+        await this.processBatchedNotifications();
+        this.batchTimer = undefined;
+      }, 5000); // 5 second batching window
+    }
+  }
+
+  /**
+   * Process batched unread messages
+   */
+  private async processBatchedUnreadMessages(events: ChatEvent[]): Promise<void> {
+    if (events.length === 0) {
+      return;
+    }
+    
+    let totalUnread = 0;
+    const serverCounts = new Map<string, number>();
+    
+    for (const event of events) {
+      if (event.data && event.data.unreadCounts) {
+        const counts = event.data.unreadCounts as Record<string, number>;
+        for (const [serverId, count] of Object.entries(counts)) {
+          const currentCount = serverCounts.get(serverId) || 0;
+          serverCounts.set(serverId, currentCount + count);
+          totalUnread += count;
+        }
+      }
+    }
+    
+    if (totalUnread === 0) {
+      return;
+    }
+    
+    const serverCount = serverCounts.size;
+    
+    await this.notificationManager.notify({
+      title: 'Unread Messages',
+      message: `${totalUnread} unread messages across ${serverCount} servers (batched)`,
+      type: NotificationType.CHAT_MESSAGE,
+      level: NotificationLevel.INFO,
+      data: {
+        totalUnread,
+        serverCount,
+        batchSize: events.length,
+        serverCounts: Object.fromEntries(serverCounts.entries())
+      },
+      showInToast: true,
+      actions: [
+        {
+          id: 'view_unread',
+          label: 'View Unread',
+          callback: () => this.viewUnreadMessages()
+        },
+        {
+          id: 'mark_all_read',
+          label: 'Mark All Read',
+          callback: () => this.markAllMessagesRead()
+        }
+      ]
+    });
+  }
+
+  /**
    * Show channel message notification
    */
   private async showChannelMessageNotification(event: ChatEvent): Promise<void> {

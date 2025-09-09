@@ -13,7 +13,7 @@ import * as fs from 'fs/promises';
 import * as vscode from 'vscode';
 
 // Security imports
-import { SecurityEnhancedCoreServices } from '../core/security/SecurityEnhancedCoreServices';
+import { SecurityEnhancedVesperaCoreServices } from '../core/security/SecurityEnhancedCoreServices';
 import { 
   VesperaSecurityEvent, 
   VesperaSecurityErrorCode,
@@ -84,7 +84,7 @@ export class BinderyService extends EventEmitter {
   private isConnecting = false;
 
   // Security components
-  private securityServices: SecurityEnhancedCoreServices | null = null;
+  private securityServices: SecurityEnhancedVesperaCoreServices | null = null;
   private securityAuditLog: BinderySecurityAudit[] = [];
   private securityMetrics: BinderySecurityMetrics;
   private readonly MAX_AUDIT_LOG_SIZE = 5000;
@@ -183,7 +183,7 @@ export class BinderyService extends EventEmitter {
    */
   private async initializeSecurityServices(): Promise<void> {
     try {
-      this.securityServices = SecurityEnhancedCoreServices.getInstance();
+      this.securityServices = SecurityEnhancedVesperaCoreServices.getInstance();
       this.log('Security services initialized for Bindery');
     } catch (error) {
       this.log('Security services not available, running with reduced security:', error);

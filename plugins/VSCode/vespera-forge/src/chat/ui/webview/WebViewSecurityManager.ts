@@ -21,7 +21,7 @@ import {
   ThreatType,
   ThreatSeverity
 } from '../../../types/security';
-import { VesperaSanitizationError, VesperaThreatError } from '../../../core/security/VesperaSecurityErrors';
+import { VesperaSanitizationError as _VesperaSanitizationError, VesperaThreatError as _VesperaThreatError } from '../../../core/security/VesperaSecurityErrors';
 
 export interface WebViewSecurityConfiguration {
   strictMode: boolean;

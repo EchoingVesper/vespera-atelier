@@ -98,7 +98,7 @@ export class AnthropicProvider extends ChatProvider {
     
     try {
       // Secure streaming request to Anthropic Messages API
-      const streamResponse = this.httpClient.postStream('/v1/messages', requestBody);
+      const streamResponse = await this.httpClient.postStream('/v1/messages', requestBody);
       
       for await (const event of streamResponse) {
         if (event.type === 'error') {

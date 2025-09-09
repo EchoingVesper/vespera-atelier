@@ -14,7 +14,7 @@ import {
 import { VesperaSeverity } from '../../core/error-handling/VesperaErrors';
 import { VesperaSecurityErrorCode } from '../../types/security';
 // Import main security integration
-import { SecurityIntegrationManager } from '../../security-integration';
+import { SecurityIntegrationManager as _SecurityIntegrationManager } from '../../security-integration';
 
 // Helper functions for security services
 const isSecurityServicesReady = (services: any): boolean => {

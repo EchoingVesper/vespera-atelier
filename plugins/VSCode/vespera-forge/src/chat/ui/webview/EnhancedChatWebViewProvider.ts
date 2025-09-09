@@ -339,7 +339,7 @@ export class EnhancedChatWebViewProvider implements vscode.WebviewViewProvider {
           
           // Handle multi-server specific messages
           if (this.isServerNavigationMessage(message)) {
-            const response = await this.handleServerNavigationMessage(message as ServerNavigationMessage);
+            const response = await this.handleServerNavigationMessage(message as unknown as ServerNavigationMessage);
             await this.sendResponse(message.requestId, response);
           } else {
             // Handle regular chat messages with server context

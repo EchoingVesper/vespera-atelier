@@ -5,7 +5,7 @@
  * comprehensive threat detection, and minimal performance overhead (<1ms per message).
  */
 
-import { SecurityEnhancedCoreServices } from '../core/security/SecurityEnhancedCoreServices';
+import { SecurityEnhancedVesperaCoreServices } from '../core/security/SecurityEnhancedCoreServices';
 import { 
   VesperaSecurityEvent, 
   VesperaSecurityErrorCode,
@@ -115,7 +115,7 @@ export interface McpValidationMetrics {
  */
 export class McpMessageValidator {
   private static instance: McpMessageValidator | null = null;
-  private securityServices: SecurityEnhancedCoreServices | null = null;
+  private securityServices: SecurityEnhancedVesperaCoreServices | null = null;
   private validationRules: Map<string, McpValidationRule> = new Map();
   private metrics: McpValidationMetrics;
   
@@ -153,7 +153,7 @@ export class McpMessageValidator {
     const validator = new McpMessageValidator();
 
     try {
-      validator.securityServices = SecurityEnhancedCoreServices.getInstance();
+      validator.securityServices = SecurityEnhancedVesperaCoreServices.getInstance();
       console.log('McpMessageValidator initialized with SecurityEnhancedCoreServices');
     } catch (error) {
       console.warn('McpMessageValidator initialized with reduced security:', error);

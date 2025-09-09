@@ -10,6 +10,7 @@
 import * as vscode from 'vscode';
 import { EnhancedDisposable } from './core/disposal/DisposalManager';
 import { SecurityEnhancedVesperaCoreServices } from './core/security/SecurityEnhancedCoreServices';
+import { LogLevel } from './core/logging/VesperaLogger';
 import { SecureToolManager, ToolManagementPolicy } from './config/tool-management';
 import { ToolOverrideSecurityManager } from './security/tool-override-security';
 import { FileOperationsSecurityManager, FileSecurityPolicy } from './security/file-operations-security';
@@ -221,10 +222,12 @@ export class SecurityIntegrationManager implements EnhancedDisposable {
       this.securityServices = await SecurityEnhancedVesperaCoreServices.initialize(
         this.context,
         {
-          logLevel: 'info',
+          logging: {
+            level: LogLevel.INFO
+          },
           security: securityConfig
         }
-      );
+      ) as unknown as SecurityEnhancedVesperaCoreServices;
       
       this.status.securityServicesReady = true;
       this.status.performanceMetrics.componentsInitialized++;

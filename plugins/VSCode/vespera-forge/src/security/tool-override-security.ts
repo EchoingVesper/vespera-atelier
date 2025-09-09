@@ -5,7 +5,7 @@
  * with comprehensive audit logging, threat detection, and rollback capabilities.
  */
 
-import { SecurityEnhancedCoreServices } from '../core/security/SecurityEnhancedCoreServices';
+import { SecurityEnhancedVesperaCoreServices } from '../core/security/SecurityEnhancedCoreServices';
 import { ToolOverrideConfig } from '../config/tool-management';
 import { 
   VesperaSecurityEvent, 
@@ -56,7 +56,7 @@ export interface ToolSecurityAudit {
  */
 export class ToolOverrideSecurityManager {
   private static instance: ToolOverrideSecurityManager | null = null;
-  private securityServices: SecurityEnhancedCoreServices | null = null;
+  private securityServices: SecurityEnhancedVesperaCoreServices | null = null;
   private securityProfiles = new Map<string, ToolSecurityProfile>();
   private auditLog: ToolSecurityAudit[] = [];
   private readonly MAX_AUDIT_LOG_SIZE = 5000;
@@ -88,7 +88,7 @@ export class ToolOverrideSecurityManager {
     const manager = new ToolOverrideSecurityManager();
 
     try {
-      manager.securityServices = SecurityEnhancedCoreServices.getInstance();
+      manager.securityServices = SecurityEnhancedVesperaCoreServices.getInstance();
       console.log('ToolOverrideSecurityManager initialized with SecurityEnhancedCoreServices');
     } catch (error) {
       console.warn('ToolOverrideSecurityManager initialized with reduced security:', error);

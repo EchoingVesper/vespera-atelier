@@ -457,7 +457,7 @@ export class ServiceIntegrationEnhancer {
         const applicablePatterns = this.getApplicablePatternsForType(integrationType);
         
         for (const pattern of applicablePatterns) {
-            if (pattern.applicableFiles.some(file => targetFile.includes(file.replace('.ts', '')))) {
+            if (pattern.applicableFiles.some((file: any) => targetFile.includes(file.replace('.ts', '')))) {
                 const match: PatternMatch = {
                     sourceClass: this.extractClassName(pattern.pattern),
                     sourceMethod: this.extractMethodName(pattern.pattern),

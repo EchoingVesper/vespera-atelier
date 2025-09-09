@@ -6,7 +6,7 @@
  */
 
 import * as path from 'path';
-import { SecurityEnhancedCoreServices } from '../core/security/SecurityEnhancedCoreServices';
+import { SecurityEnhancedVesperaCoreServices } from '../core/security/SecurityEnhancedCoreServices';
 import { RustFileOpsSecurityWrapper, FileOperationContext, SecurityValidationResult } from '../rust-file-ops/security-wrapper';
 import { 
   VesperaSecurityEvent, 
@@ -44,7 +44,7 @@ export interface FileOperationAudit {
 export class FileOperationsSecurityManager {
   private static instance: FileOperationsSecurityManager | null = null;
   private securityWrapper: RustFileOpsSecurityWrapper | null = null;
-  private securityServices: SecurityEnhancedCoreServices | null = null;
+  private securityServices: SecurityEnhancedVesperaCoreServices | null = null;
   private policy: FileSecurityPolicy;
   private auditLog: FileOperationAudit[] = [];
   private readonly MAX_AUDIT_LOG_SIZE = 10000;
@@ -98,7 +98,7 @@ export class FileOperationsSecurityManager {
       manager.securityWrapper = await RustFileOpsSecurityWrapper.initialize();
       
       // Get security services
-      manager.securityServices = SecurityEnhancedCoreServices.getInstance();
+      manager.securityServices = SecurityEnhancedVesperaCoreServices.getInstance();
       
       console.log('FileOperationsSecurityManager initialized with policy:', finalPolicy);
     } catch (error) {

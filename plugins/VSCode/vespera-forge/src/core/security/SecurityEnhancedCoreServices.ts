@@ -73,6 +73,7 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
   public readonly securityAuditLogger: VesperaSecurityAuditLogger;
   
   private baseCoreServices: VesperaCoreServices;
+  private baseCoreServicesInstance: any; // Actual class instance for methods like getStats/healthCheck
   private initialized = false;
   private initializeTime = 0;
 
@@ -81,8 +82,8 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
     private context: vscode.ExtensionContext,
     private config: SecurityEnhancedCoreServicesConfig
   ) {
-    // Store base services
-    this.baseCoreServices = baseServices;
+    // Store base services - we need to keep a reference to the class instance for proper disposal
+    this.baseCoreServices = baseServices as any; // Type assertion needed due to interface/class mismatch
     this.logger = baseServices.logger.createChild('SecurityEnhanced');
     this.errorHandler = baseServices.errorHandler;
     this.contextManager = baseServices.contextManager;
@@ -113,10 +114,13 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
     
     // Create enhanced instance
     const enhancedServices = new SecurityEnhancedVesperaCoreServices(
-      baseServices,
+      baseServices as unknown as VesperaCoreServices,
       context,
       config
     );
+    
+    // Store reference to actual class instance for method access
+    enhancedServices.baseCoreServicesInstance = VesperaCoreServices['instance'];
     
     // Initialize security services
     await enhancedServices.initializeSecurityServices();
@@ -352,7 +356,7 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
    * Get comprehensive statistics including security metrics
    */
   public async getStats(): Promise<SecurityEnhancedCoreStats> {
-    const baseStats = this.baseCoreServices.getStats();
+    const baseStats = this.baseCoreServicesInstance.getStats();
     
     let securityStats = {
       enabled: this.config.security.enabled,
@@ -418,7 +422,7 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
     stats: SecurityEnhancedCoreStats;
   }> {
     // Get base health check
-    const baseHealth = await this.baseCoreServices.healthCheck();
+    const baseHealth = await this.baseCoreServicesInstance.healthCheck();
     
     // Get security health check
     let securityHealth = {
@@ -496,7 +500,7 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
       }
 
       // Dispose base services
-      await this.baseCoreServices.dispose();
+      await this.baseCoreServicesInstance.dispose();
       
       this.initialized = false;
       this.logger.info('SecurityEnhancedCoreServices shutdown completed');

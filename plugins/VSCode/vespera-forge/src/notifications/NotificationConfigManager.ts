@@ -814,6 +814,7 @@ export class NotificationConfigManager implements vscode.Disposable {
         levels: {
           critical: true,
           important: false,
+          success: false,
           info: false,
           debug: false
         },
@@ -1048,6 +1049,7 @@ export class NotificationConfigManager implements vscode.Disposable {
       levels: {
         critical: true,
         important: true,
+        success: true,
         info: true,
         debug: false
       },
@@ -1064,7 +1066,19 @@ export class NotificationConfigManager implements vscode.Disposable {
           showInToast: false,
           playSound: false
         },
+        [NotificationType.TASK_UPDATE]: {
+          enabled: true,
+          level: NotificationLevel.INFO,
+          showInToast: false,
+          playSound: false
+        },
         [NotificationType.TASK_SERVER_EVENT]: {
+          enabled: true,
+          level: NotificationLevel.INFO,
+          showInToast: true,
+          playSound: false
+        },
+        [NotificationType.AGENT_STATUS]: {
           enabled: true,
           level: NotificationLevel.INFO,
           showInToast: true,
@@ -1195,8 +1209,24 @@ export class NotificationConfigManager implements vscode.Disposable {
   private getDefaultAnalytics(): NotificationAnalytics {
     return {
       totalNotificationsSent: 0,
-      notificationsByType: {},
-      notificationsByLevel: {},
+      notificationsByType: {
+        [NotificationType.AGENT_COMPLETION]: 0,
+        [NotificationType.TASK_PROGRESS]: 0,
+        [NotificationType.TASK_UPDATE]: 0,
+        [NotificationType.TASK_SERVER_EVENT]: 0,
+        [NotificationType.AGENT_STATUS]: 0,
+        [NotificationType.CHAT_MESSAGE]: 0,
+        [NotificationType.SECURITY_ALERT]: 0,
+        [NotificationType.SYSTEM_STATUS]: 0,
+        [NotificationType.ERROR]: 0
+      },
+      notificationsByLevel: {
+        [NotificationLevel.CRITICAL]: 0,
+        [NotificationLevel.IMPORTANT]: 0,
+        [NotificationLevel.SUCCESS]: 0,
+        [NotificationLevel.INFO]: 0,
+        [NotificationLevel.DEBUG]: 0
+      },
       dismissalRate: 0,
       actionClickRate: 0,
       quietHoursActivations: 0,

@@ -9,6 +9,8 @@
  * - Session persistence for cross-restart state management
  */
 
+import type { ChatEvent as _ChatEvent } from '../types/events';
+
 import * as vscode from 'vscode';
 import { VesperaLogger } from '../../core/logging/VesperaLogger';
 import { VesperaErrorHandler } from '../../core/error-handling/VesperaErrorHandler';
@@ -552,7 +554,7 @@ export class MultiServerChatIntegration implements vscode.Disposable {
         operationId: `${agentUpdate.serverId}_${agentUpdate.agentId}`,
         progress: agentUpdate.progress,
         status: agentUpdate.currentStatus === 'completed' ? OperationStatus.COMPLETED : 
-                agentUpdate.currentStatus === 'failed' ? OperationStatus.FAILED : OperationStatus.PROGRESS,
+                agentUpdate.currentStatus === 'error' ? OperationStatus.FAILED : OperationStatus.PROGRESS,
         currentAction: agentUpdate.currentAction || 'Working',
         message: `Agent ${agentUpdate.agentRole}: ${agentUpdate.currentAction || agentUpdate.currentStatus}`
       });
@@ -610,7 +612,7 @@ export class MultiServerChatIntegration implements vscode.Disposable {
         }
       };
       
-      await this.notificationSystem.multiChatNotificationManager.handleChatEvent(directMessageEvent);
+      await this.notificationSystem.multiChatNotificationManager.handleChatEvent(directMessageEvent as any);
 
       this.logger.info('Direct message sent', {
         messageId: dmData.messageId,

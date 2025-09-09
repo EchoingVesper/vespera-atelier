@@ -97,7 +97,7 @@ export class OpenAIProvider extends ChatProvider {
     
     try {
       // Secure streaming request to OpenAI Chat Completions API
-      const streamResponse = this.httpClient.postStream('/v1/chat/completions', requestBody);
+      const streamResponse = await this.httpClient.postStream('/v1/chat/completions', requestBody);
       
       for await (const event of streamResponse) {
         if (event.type === 'error') {

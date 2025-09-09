@@ -265,7 +265,8 @@ export class VesperaInputSanitizer implements VesperaInputSanitizerInterface {
         sanitized: blocked ? null : sanitized,
         threats,
         applied,
-        blocked
+        blocked,
+        modified: sanitized !== input
       };
 
       const processingTime = Date.now() - startTime;

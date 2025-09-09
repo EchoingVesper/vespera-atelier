@@ -20,7 +20,7 @@ export class VesperaStatusBarManager {
   private currentDashboard?: TaskDashboard;
   private refreshTimer?: NodeJS.Timeout;
 
-  constructor(private context: vscode.ExtensionContext) {
+  constructor(private __context: vscode.ExtensionContext) {
     // Create status bar items
     this.connectionStatusItem = vscode.window.createStatusBarItem(
       vscode.StatusBarAlignment.Left,
@@ -55,7 +55,7 @@ export class VesperaStatusBarManager {
     });
 
     // Register status bar items
-    context.subscriptions.push(
+    this.__context.subscriptions.push(
       this.connectionStatusItem,
       this.taskCountItem,
       this.quickActionsItem
