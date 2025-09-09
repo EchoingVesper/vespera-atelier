@@ -15,6 +15,12 @@ export interface ChatEventData extends VesperaEventData {
   chatThreadCreated: { threadId: string; title?: string };
   chatThreadDeleted: { threadId: string };
   chatUILayoutChanged: { mode: ChatLayoutMode; position: ChatPosition };
+  
+  // Streaming events
+  chatStreamStarted: { providerId?: string };
+  chatStreamChunk: { chunk: any };
+  chatStreamComplete: { messageId: string };
+  chatStreamError: { error: string };
 }
 
 export type ChatEventType = keyof ChatEventData;

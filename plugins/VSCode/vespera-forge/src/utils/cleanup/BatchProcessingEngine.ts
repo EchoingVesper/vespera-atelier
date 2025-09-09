@@ -284,7 +284,7 @@ export class BatchProcessingEngine {
 
         } catch (error) {
             phaseResult.results.push({
-                variable: variables[0], // Placeholder
+                variable: variables[0] || { name: 'unknown', type: 'unknown', file: '', line: 0, column: 0, usageCount: 0 }, // Placeholder with safe fallback
                 success: false,
                 method: ProcessingMethod.SAFE_REMOVAL,
                 details: `Phase processing failed: ${error}`,
@@ -322,6 +322,7 @@ export class BatchProcessingEngine {
                 this.updateProgress(ProcessingPhase.PHASE_2A, i, properties.length, property.name);
 
                 // Remove property using constructor refactoring
+                if (!property) continue;
                 const removalResult = await PropertyRemovalHelpers.removeUnusedProperty(
                     property,
                     analysis,
@@ -346,7 +347,7 @@ export class BatchProcessingEngine {
 
             } catch (error) {
                 results.push({
-                    variable: property,
+                    variable: property || { name: 'unknown', type: 'unknown', file: '', line: 0, column: 0, usageCount: 0 },
                     success: false,
                     method: ProcessingMethod.PROPERTY_REFACTORING,
                     details: `Property refactoring failed: ${error}`,
@@ -384,7 +385,7 @@ export class BatchProcessingEngine {
             const batchOpportunities = integrationOpportunities.slice(i, i + maxConcurrent);
             
             // Update progress
-            this.updateProgress(ProcessingPhase.PHASE_2B, i, properties.length, batch[0]?.name);
+            this.updateProgress(ProcessingPhase.PHASE_2B, i, properties.length, batch[0]?.name || 'unknown');
 
             try {
                 // Batch enhance service integrations

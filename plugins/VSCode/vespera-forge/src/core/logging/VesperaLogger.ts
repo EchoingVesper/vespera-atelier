@@ -6,6 +6,7 @@
  */
 
 import * as vscode from 'vscode';
+import { EnhancedDisposable } from '../disposal/DisposalManager';
 
 export enum LogLevel {
   DEBUG = 0,
@@ -39,7 +40,7 @@ export interface LoggerConfiguration {
 /**
  * Comprehensive logging service with VS Code integration and structured logging
  */
-export class VesperaLogger implements vscode.Disposable {
+export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
   private static instance: VesperaLogger;
   private outputChannel: vscode.OutputChannel;
   private config: LoggerConfiguration;
@@ -47,6 +48,7 @@ export class VesperaLogger implements vscode.Disposable {
   private logBuffer: LogEntry[] = [];
   private flushInterval?: NodeJS.Timeout;
   private disposables: vscode.Disposable[] = [];
+  private _isDisposed = false;
 
   private constructor(_context: vscode.ExtensionContext, config: Partial<LoggerConfiguration> = {}) {
     this.sessionId = this.generateSessionId();
@@ -317,7 +319,13 @@ export class VesperaLogger implements vscode.Disposable {
     return this;
   }
 
+  public get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
   public dispose(): void {
+    if (this._isDisposed) return;
+    
     if (this.flushInterval) {
       clearInterval(this.flushInterval);
     }
@@ -325,5 +333,6 @@ export class VesperaLogger implements vscode.Disposable {
     this.flushLogs();
     this.disposables.forEach(d => d.dispose());
     this.disposables = [];
+    this._isDisposed = true;
   }
 }

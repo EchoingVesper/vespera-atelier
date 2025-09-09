@@ -100,7 +100,7 @@ export class SecureWebViewExample {
                 allowedTags: ['p', 'br', 'strong', 'em', 'code', 'pre'],
                 allowedAttributes: {} as Record<string, string[]>,
                 stripIgnoreTag: true,
-                stripIgnoreTagBody: true
+                stripIgnoreTagBody: ['script', 'style']
               }
             }
           }
@@ -126,9 +126,9 @@ export class SecureWebViewExample {
             config: {
               domPurify: {
                 allowedTags: ['div', 'span', 'p', 'br', 'strong', 'em', 'code', 'pre', 'ul', 'ol', 'li'],
-                allowedAttributes: ['class', 'id'],
+                allowedAttributes: { 'div': ['class', 'id'], 'span': ['class', 'id'], 'p': ['class'], 'code': ['class'] } as Record<string, string[]>,
                 stripIgnoreTag: false,
-                stripIgnoreTagBody: true
+                stripIgnoreTagBody: ['script', 'style', 'object', 'embed']
               }
             }
           }

@@ -145,12 +145,11 @@ export class VesperaCoreServices implements vscode.Disposable {
       // 5. Create service disposal manager
       const disposalManager = new DisposalManager(logger);
 
-      // 6. Register all services for cleanup
+      // 6. Register all services for cleanup (except disposal manager itself)
       this.masterDisposalManager.addAll([
         logger,
         errorHandler,
-        contextManager,
-        disposalManager
+        contextManager
       ]);
 
       // 7. Register master disposal manager with VS Code

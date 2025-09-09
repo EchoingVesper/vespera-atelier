@@ -6,6 +6,7 @@
  */
 
 import * as vscode from 'vscode';
+import { EnhancedDisposable } from '../disposal/DisposalManager';
 import { VesperaError, VesperaErrorCode, VesperaSeverity } from './VesperaErrors';
 import { VesperaLogger } from '../logging/VesperaLogger';
 import { VesperaTelemetryService } from '../telemetry/VesperaTelemetryService';
@@ -28,11 +29,12 @@ export interface RetryMetadata {
 /**
  * Centralized error handling service with configurable strategies
  */
-export class VesperaErrorHandler implements vscode.Disposable {
+export class VesperaErrorHandler implements vscode.Disposable, EnhancedDisposable {
   private static instance: VesperaErrorHandler;
   private logger: VesperaLogger;
   private telemetryService: VesperaTelemetryService;
   private disposables: vscode.Disposable[] = [];
+  private _isDisposed = false;
   
   private strategies = new Map<VesperaErrorCode, ErrorHandlingStrategy>();
 
@@ -378,8 +380,15 @@ export class VesperaErrorHandler implements vscode.Disposable {
     this.strategies.set(code, strategy);
   }
 
+  public get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
   public dispose(): void {
+    if (this._isDisposed) return;
+    
     this.disposables.forEach(d => d.dispose());
     this.disposables = [];
+    this._isDisposed = true;
   }
 }

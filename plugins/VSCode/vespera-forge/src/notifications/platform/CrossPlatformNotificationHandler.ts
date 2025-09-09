@@ -638,7 +638,7 @@ export class CrossPlatformNotificationHandler implements vscode.Disposable {
       this.logger.debug('Notification assets validated', {
         iconExists: fs.existsSync(this.assets.iconPath),
         soundExists: fs.existsSync(this.assets.soundPath || ''),
-        logoExists: fs.existsSync(this.assets.logoPath)
+        logoExists: this.assets.logoPath ? fs.existsSync(this.assets.logoPath) : false
       });
 
     } catch (error) {

@@ -144,7 +144,19 @@ export class FileOperationsSecurityManager {
         this.metrics.blockedOperations++;
         this.addToAuditLog(audit);
         
-        return { ...policyValidation, audit };
+        const validationResult: SecurityValidationResult & { audit: FileOperationAudit } = {
+          allowed: policyValidation.allowed,
+          sanitizedPath: policyValidation.sanitizedPath,
+          threats: policyValidation.threats.map(threat => ({
+            type: 'policy-violation',
+            severity: 'HIGH' as any, // ThreatSeverity.HIGH
+            blocked: true,
+            location: threat
+          })),
+          validationTime: performance.now() - startTime,
+          audit
+        };
+        return validationResult;
       }
 
       // Security wrapper validation
