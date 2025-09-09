@@ -19,7 +19,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { 
     UnusedVariable, 
-    RiskLevel
+    RiskLevel,
+    ProcessingPhase
 } from './UnusedVariableClassifier';
 
 export interface PropertyAnalysisResult {

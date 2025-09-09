@@ -533,11 +533,15 @@ export class EnhancedChatWebViewProvider implements vscode.WebviewViewProvider {
         return { success: false, error: 'Channel ID required' };
       }
 
-      const agentProgress = this.stateManager.getState().agentProgressStates.get(channelId);
+      const agentStatus = this._getAgentStatus(channelId);
+      const agentProgress = this.getAgentProgress(channelId);
       
       return {
         success: true,
-        data: { agentProgress }
+        data: { 
+          status: agentStatus,
+          progress: agentProgress
+        }
       };
 
     } catch (error) {
@@ -1144,10 +1148,16 @@ export class EnhancedChatWebViewProvider implements vscode.WebviewViewProvider {
   /**
    * Handle server status requests
    */
-  private async handleRequestServerStatus(_message: MultiServerWebViewMessage): Promise<WebViewResponse> {
+  private async handleRequestServerStatus(message: MultiServerWebViewMessage): Promise<WebViewResponse> {
     try {
       const serverList = await this.getServerListForUI();
       const activeTaskServers = this.taskServerManager.getActiveTaskServers();
+      
+      // Calculate server progress if specific server requested
+      let serverProgress;
+      if (message.serverId) {
+        serverProgress = this._calculateServerProgress(message.serverId);
+      }
       
       return {
         success: true,
@@ -1155,12 +1165,13 @@ export class EnhancedChatWebViewProvider implements vscode.WebviewViewProvider {
           servers: serverList,
           activeTaskCount: activeTaskServers.length,
           totalServerCount: serverList.length,
-          mcpConnectionStatus: this.taskIntegration.getMCPConnectionStatus()
+          mcpConnectionStatus: this.taskIntegration.getMCPConnectionStatus(),
+          serverProgress: serverProgress
         }
       };
 
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 

@@ -503,10 +503,11 @@ export interface LegacyVesperaContext {
 /**
  * Migration helper type for converting legacy contexts
  */
-export type ContextMigration<T> = {
+export type ContextMigration<T = any> = {
   from: LegacyVesperaContext;
   to: VesperaForgeContext;
   migrator: (legacy: LegacyVesperaContext) => Promise<VesperaForgeContext>;
+  data?: T;
 };
 
 // =============================================================================

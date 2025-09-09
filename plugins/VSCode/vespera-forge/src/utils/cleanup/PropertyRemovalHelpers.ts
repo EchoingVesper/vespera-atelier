@@ -20,7 +20,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { 
     UnusedVariable, 
-    RiskLevel 
+    RiskLevel,
+    ProcessingPhase
 } from './UnusedVariableClassifier';
 import { PropertyAnalysisResult, ConstructorUsageDetails } from './UnusedPropertyAnalyzer';
 

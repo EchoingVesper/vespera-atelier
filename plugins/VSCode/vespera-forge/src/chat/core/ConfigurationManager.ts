@@ -1303,13 +1303,8 @@ export class ChatConfigurationManager {
     }
   }
   
-  /**
-   * Legacy migration method (deprecated - kept for backward compatibility)
-   */
-  private async __migrateLegacyCredential(_providerId: string, _fieldName: string, _legacyValue: string): Promise<void> {
-    console.warn('[ConfigurationManager] Using deprecated migrateLegacyCredential method. Please use migrateLegacyCredentialWithConsent instead.');
-    await this.migrateLegacyCredentialWithConsent(_providerId, _fieldName, _legacyValue);
-  }
+  // TODO: Legacy migration method removed during Phase 2 scaffolding cleanup
+  // If backward compatibility is needed, implement the deprecated method that delegates to migrateLegacyCredentialWithConsent
   
   /**
    * Validate all stored credentials and detect security issues

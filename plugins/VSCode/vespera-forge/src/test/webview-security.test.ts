@@ -95,6 +95,9 @@ describe('WebView Security Integration', () => {
         requestId: 'test-123'
       };
 
+      // Verify webview mock is properly initialized
+      expect(mockWebview.cspSource).toBeDefined();
+      
       mockSanitizer.sanitize.mockResolvedValue({
         original: cleanMessage.data.content,
         sanitized: cleanMessage.data.content,

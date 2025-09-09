@@ -233,7 +233,7 @@ export class TaskDashboardWebviewProvider implements vscode.WebviewViewProvider 
     }
     
     return `
-    <div class="dashboard-content">
+    <div class="dashboard-content" data-selected-task="${this._selectedTaskId || ''}">
         <!-- Summary Cards -->
         <div class="summary-grid">
             <div class="summary-card">

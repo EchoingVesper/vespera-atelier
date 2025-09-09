@@ -323,6 +323,10 @@ suite('Enhanced Credential Migration Security Tests', () => {
         }
       };
       
+      // Validate test setup
+      assert.ok(providerConfig[fieldName], 'Provider config should have credential field');
+      assert.strictEqual(mockTemplate.id, providerId, 'Mock template should match provider ID');
+      
       // Simulate consent denial initially
       mockConsentManager.simulateConsentDenial('vscode-user', 'credential_migration');
       
@@ -367,7 +371,7 @@ suite('Enhanced Credential Migration Security Tests', () => {
       // Grant consent for only some providers/purposes
       for (const provider of providers.slice(0, 2)) { // Only first two providers
         for (const purpose of purposes) {
-          mockConsentManager.consents.set(`vscode-user:${purpose}`, true);
+          mockConsentManager.consents.set(`vscode-user:${purpose}:${provider}`, true);
         }
       }
       
@@ -517,6 +521,9 @@ suite('Enhanced Credential Migration Security Tests', () => {
       
       // Mock configuration for some providers (not orphaned one)
       const _configuredProviders = providers.slice(0, 2).map(p => p.id);
+      
+      // Validate that we have configured providers for testing
+      assert.ok(_configuredProviders.length > 0, 'Should have configured providers for testing');
       
       // Get security status (this would be done through ConfigurationManager)
       const validation = await configManager.validateCredentialSecurity();
@@ -692,6 +699,9 @@ suite('Enhanced Credential Migration Security Tests', () => {
         mockSecrets = new MockSecretStorage();
         mockContext.secrets = mockSecrets;
       }
+      
+      // Verify that at least some recovery attempts succeeded
+      assert.ok(operationSucceeded, 'Error recovery should eventually allow operations to succeed');
     });
   });
 });
