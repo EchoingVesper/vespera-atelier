@@ -13,6 +13,7 @@ import { VesperaInputSanitizer } from '../core/security/sanitization/VesperaInpu
 import { VesperaSecurityAuditLogger } from '../core/security/audit/VesperaSecurityAuditLogger';
 import { VesperaLogger } from '../core/logging/VesperaLogger';
 import { VesperaErrorHandler } from '../core/error-handling/VesperaErrorHandler';
+import { VesperaTelemetryService } from '../core/telemetry/VesperaTelemetryService';
 import { generateSecureTemplate, sanitizeHtmlContent } from '../chat/ui/webview/HtmlGenerator';
 import { ChatEventRouter } from '../chat/events/ChatEventRouter';
 import { ChatConfigurationManager } from '../chat/core/ConfigurationManager';
@@ -29,8 +30,18 @@ export class SecureWebViewExample {
   private errorHandler: VesperaErrorHandler;
 
   constructor(private context: vscode.ExtensionContext) {
-    this.logger = new VesperaLogger('SecureWebViewExample', { level: 'debug' });
-    this.errorHandler = new VesperaErrorHandler(this.logger);
+    // Initialize logger with proper static method
+    this.logger = VesperaLogger.initialize(context, { 
+      level: 0, // DEBUG level
+      enableConsole: true,
+      enableVSCodeOutput: true
+    });
+    
+    // Initialize telemetry service required for error handler
+    const telemetryService = new VesperaTelemetryService(true);
+    
+    // Initialize error handler with proper static method
+    this.errorHandler = VesperaErrorHandler.initialize(context, this.logger, telemetryService);
   }
 
   /**
@@ -66,6 +77,7 @@ export class SecureWebViewExample {
     const sanitizationRules: SanitizationRule[] = [
       {
         id: 'webview-user-input',
+        name: 'WebView User Input Sanitization',
         scope: SanitizationScope.USER_INPUT,
         priority: 100,
         enabled: true,
@@ -108,6 +120,7 @@ export class SecureWebViewExample {
       },
       {
         id: 'webview-html-content',
+        name: 'WebView HTML Content Sanitization',
         scope: SanitizationScope.HTML_CONTENT,
         priority: 90,
         enabled: true,
