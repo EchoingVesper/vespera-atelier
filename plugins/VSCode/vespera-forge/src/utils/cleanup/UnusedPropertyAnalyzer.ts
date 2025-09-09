@@ -776,7 +776,7 @@ export class UnusedPropertyAnalyzer {
     private static detectPotentialFalsePositive(property: UnusedVariable, fileContent: string): boolean {
         // Special case: status-bar.ts context property
         if (property.file.includes('status-bar.ts') && property.name === 'context') {
-            return fileContent.includes('context') && fileContent.match(/line\s*58/i);
+            return fileContent.includes('context') && Boolean(fileContent.match(/line\s*58/i));
         }
 
         // Check for dynamic access patterns

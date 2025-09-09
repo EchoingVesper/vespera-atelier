@@ -467,7 +467,7 @@ export const ${variableName}StateManager = new ${variableName.charAt(0).toUpperC
                             category: 'incomplete_features' as any,
                             riskLevel: 'medium' as any
                         },
-                        strategy: candidate?.completionStrategy || 'configuration_binding',
+                        strategy: candidate?.completionStrategy || CompletionStrategy.BIND_TO_CONFIG,
                         implementation: '',
                         testSuggestions: [],
                         errors: [`Batch processing error: ${settledResult.reason}`]

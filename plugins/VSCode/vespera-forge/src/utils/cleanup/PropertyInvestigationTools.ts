@@ -950,7 +950,7 @@ export class PropertyInvestigationTools {
 
     private static findStrategicIncompleteFeature(_property: UnusedVariable): any {
         return this.STRATEGIC_INVESTIGATION_TARGETS.incompleteFeatures.find(
-            target => property.file.includes(target.file) && property.name === target.property
+            target => _property.file.includes(target.file) && _property.name === target.property
         );
     }
 

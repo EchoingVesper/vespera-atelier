@@ -438,7 +438,7 @@ export class ServiceIntegrationEnhancer {
             const analysisResult = analysisResults[i];
             const opportunity = integrationOpportunities[i];
 
-            if (opportunity) {
+            if (property && analysisResult && opportunity) {
                 const integrationResult = await this.enhanceServiceIntegration(property, analysisResult, opportunity);
                 results.push(integrationResult);
             }
@@ -606,9 +606,9 @@ export class ServiceIntegrationEnhancer {
         });
 
         // Pattern consistency check
-        const hasConsistentPatterns = plan.patternMatches.length > 0 && 
+        const hasConsistentPatterns = Boolean(plan.patternMatches.length > 0 && 
                                      plan.patternMatches[0] && 
-                                     plan.patternMatches[0].confidence !== PatternConfidence.LOW;
+                                     plan.patternMatches[0].confidence !== PatternConfidence.LOW);
         validations.push({
             validationType: IntegrationValidationType.PATTERN_CONSISTENCY_CHECK,
             passed: hasConsistentPatterns,
@@ -913,10 +913,14 @@ export class ServiceIntegrationEnhancer {
     private static sortChangesByDependency(changes: IntegrationChange[]): IntegrationChange[] {
         // Sort changes to apply in dependency order
         return changes.sort((a, b) => {
-            const order = {
+            const order: Record<IntegrationChangeType, number> = {
                 [IntegrationChangeType.ADD_SERVICE_USAGE]: 1,
                 [IntegrationChangeType.ADD_TRY_CATCH_BLOCK]: 2,
-                [IntegrationChangeType.ADD_ERROR_HANDLING]: 3
+                [IntegrationChangeType.ADD_ERROR_HANDLING]: 3,
+                [IntegrationChangeType.ADD_INPUT_SANITIZATION]: 4,
+                [IntegrationChangeType.ADD_SECURITY_AUDIT_LOGGING]: 5,
+                [IntegrationChangeType.ADD_NULL_SAFETY_CHECKS]: 6,
+                [IntegrationChangeType.UPDATE_METHOD_SIGNATURES]: 7
             };
             return (order[a.type] || 999) - (order[b.type] || 999);
         });
@@ -973,12 +977,12 @@ export class ServiceIntegrationEnhancer {
 
     private static extractClassName(pattern: string): string {
         const match = pattern.match(/From (\w+) pattern/);
-        return match ? match[1] : 'Unknown';
+        return match?.[1] || 'Unknown';
     }
 
     private static extractMethodName(pattern: string): string {
         const match = pattern.match(/(\w+)\(/);
-        return match ? match[1] : 'unknown';
+        return match?.[1] || 'unknown';
     }
 
     private static findMethodsInFile(lines: string[]): Array<{ name: string; startLine: number; endLine: number }> {

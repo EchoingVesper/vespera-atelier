@@ -208,7 +208,7 @@ export abstract class ChatProvider {
           
           for (const key of allowedKeys) {
             if (key in msg.metadata) {
-              safeMetadata[key] = msg.metadata[key];
+              safeMetadata[key] = (msg.metadata as any)[key];
             }
           }
           

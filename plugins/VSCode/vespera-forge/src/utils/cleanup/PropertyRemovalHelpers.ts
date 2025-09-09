@@ -293,14 +293,19 @@ export class PropertyRemovalHelpers {
             const batch = properties.slice(i, i + maxConcurrent);
             const batchAnalysis = analysisResults.slice(i, i + maxConcurrent);
             
-            const batchPromises = batch.map((property, index) => 
-                this.removeUnusedProperty(property, batchAnalysis[index], options)
-            );
+            const batchPromises = batch.map((property, index) => {
+                const analysis = batchAnalysis[index];
+                if (!analysis) {
+                    throw new Error(`Missing analysis result for property at index ${index}`);
+                }
+                return this.removeUnusedProperty(property, analysis, options);
+            });
 
             const batchResults = await Promise.all(batchPromises);
             result.results.push(...batchResults);
 
             // Update counters
+            let shouldStop = false;
             batchResults.forEach(batchResult => {
                 if (batchResult.success) {
                     result.successfulRemovals++;
@@ -310,8 +315,8 @@ export class PropertyRemovalHelpers {
                     
                     // Stop on error if configured
                     if (options.stopOnError) {
-                        result.overallExecutionTime = Date.now() - startTime;
-                        return result;
+                        shouldStop = true;
+                        return;
                     }
                 }
                 
@@ -319,6 +324,11 @@ export class PropertyRemovalHelpers {
                     result.rollbacksAvailable = true;
                 }
             });
+            
+            if (shouldStop) {
+                result.overallExecutionTime = Date.now() - startTime;
+                return result;
+            }
         }
 
         result.overallExecutionTime = Date.now() - startTime;

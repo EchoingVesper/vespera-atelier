@@ -319,7 +319,10 @@ export class UnusedVariableClassifier {
             byPhase: {
                 [ProcessingPhase.PHASE_1A]: byPhase[ProcessingPhase.PHASE_1A].length,
                 [ProcessingPhase.PHASE_1B]: byPhase[ProcessingPhase.PHASE_1B].length,
-                [ProcessingPhase.PHASE_1C]: byPhase[ProcessingPhase.PHASE_1C].length
+                [ProcessingPhase.PHASE_1C]: byPhase[ProcessingPhase.PHASE_1C].length,
+                [ProcessingPhase.PHASE_2A]: byPhase[ProcessingPhase.PHASE_2A].length,
+                [ProcessingPhase.PHASE_2B]: byPhase[ProcessingPhase.PHASE_2B].length,
+                [ProcessingPhase.PHASE_2C]: byPhase[ProcessingPhase.PHASE_2C].length
             },
             byRisk: {
                 [RiskLevel.LOW]: byRisk[RiskLevel.LOW].length,

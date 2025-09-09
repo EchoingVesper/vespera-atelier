@@ -13,10 +13,17 @@ import {
 } from '../../core/security';
 import { VesperaSeverity } from '../../core/error-handling/VesperaErrors';
 import { VesperaSecurityErrorCode } from '../../types/security';
-import { 
-  isSecurityServicesReady, 
-  getSecurityServicesOrFallback 
-} from '../../security/integration';
+// Import main security integration
+import { SecurityIntegrationManager } from '../../security-integration';
+
+// Helper functions for security services
+const isSecurityServicesReady = (services: any): boolean => {
+  return services && typeof services === 'object';
+};
+
+const getSecurityServicesOrFallback = (coreServices: any) => {
+  return coreServices || {};
+};
 import { 
   RateLimitContext,
   SanitizationScope,
@@ -80,7 +87,7 @@ export class SecureChatProviderClient {
     this.enableAuditLogging = options.enableAuditLogging !== false;
     
     // Initialize logger
-    this.logger = new VesperaLogger('SecureChatProviderClient', { provider: this.providerName });
+    this.logger = VesperaLogger.getInstance('SecureChatProviderClient', { provider: this.providerName });
     
     // Try to get security services if available using type-safe scaffolding
     try {
@@ -206,7 +213,7 @@ export class SecureChatProviderClient {
           throw new VesperaSanitizationError(
             'High-severity security threat detected in request data',
             highSeverityThreats[0]?.pattern.type || 'unknown',
-            JSON.stringify(request).length,
+            JSON.stringify(data).length,
             result.sanitized ? JSON.stringify(result.sanitized).length : 0,
             VesperaSeverity.HIGH,
             { threats: result.threats }
@@ -576,7 +583,12 @@ export class SecureChatProviderClient {
    * Get appropriate fetch implementation
    */
   private async getFetchImplementation(): Promise<typeof fetch> {
-    // In VS Code extension context, use node-fetch
+    // Use global fetch (available in Node.js 18+) or fall back to VS Code's implementation
+    if (typeof globalThis.fetch !== 'undefined') {
+      return globalThis.fetch;
+    }
+    
+    // Fallback: try node-fetch if available
     try {
       const nodeFetch = await import('node-fetch');
       return nodeFetch.default as any;

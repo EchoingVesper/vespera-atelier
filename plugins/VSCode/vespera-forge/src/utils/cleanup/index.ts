@@ -187,8 +187,6 @@ export {
     ServiceConnection,
     ConnectionType,
     IntegrationPoint,
-    IntegrationType,
-    EffortLevel,
     BenefitLevel,
     IntegrationOpportunity,
     InvestigationFindings,
@@ -408,10 +406,13 @@ export class UnusedVariableCleanupOrchestrator {
         const grouped = UnusedVariableClassifier.groupByPhase(variables);
 
         // Generate detailed analysis for each phase
-        const phaseAnalysis = {
+        const phaseAnalysis: Record<ProcessingPhase, PhaseAnalysis> = {
             [ProcessingPhase.PHASE_1A]: this.analyzePhase1A(grouped[ProcessingPhase.PHASE_1A]),
             [ProcessingPhase.PHASE_1B]: this.analyzePhase1B(grouped[ProcessingPhase.PHASE_1B]),
-            [ProcessingPhase.PHASE_1C]: this.analyzePhase1C(grouped[ProcessingPhase.PHASE_1C])
+            [ProcessingPhase.PHASE_1C]: this.analyzePhase1C(grouped[ProcessingPhase.PHASE_1C]),
+            [ProcessingPhase.PHASE_2A]: this.analyzePhase2A(grouped[ProcessingPhase.PHASE_2A]),
+            [ProcessingPhase.PHASE_2B]: this.analyzePhase2B(grouped[ProcessingPhase.PHASE_2B]),
+            [ProcessingPhase.PHASE_2C]: this.analyzePhase2C(grouped[ProcessingPhase.PHASE_2C])
         };
 
         return {
@@ -512,6 +513,42 @@ export class UnusedVariableCleanupOrchestrator {
             keyFiles: this.getTopFilesByErrorCount(variables, 5),
             patterns: this.identifyCommonPatterns(variables),
             securityComponents: architecturalComponents.length
+        };
+    }
+
+    private analyzePhase2A(variables: UnusedVariable[]): PhaseAnalysis {
+        return {
+            variableCount: variables.length,
+            primaryStrategy: 'Constructor refactoring and dependency optimization',
+            estimatedTime: variables.length * 300000, // 5 minutes per variable
+            riskLevel: 'LOW',
+            keyFiles: this.getTopFilesByErrorCount(variables, 5),
+            patterns: this.identifyCommonPatterns(variables),
+            constructorOptimizations: variables.length
+        };
+    }
+
+    private analyzePhase2B(variables: UnusedVariable[]): PhaseAnalysis {
+        return {
+            variableCount: variables.length,
+            primaryStrategy: 'Service integration enhancement',
+            estimatedTime: variables.length * 600000, // 10 minutes per variable
+            riskLevel: 'MEDIUM',
+            keyFiles: this.getTopFilesByErrorCount(variables, 5),
+            patterns: this.identifyCommonPatterns(variables),
+            serviceIntegrations: variables.length
+        };
+    }
+
+    private analyzePhase2C(variables: UnusedVariable[]): PhaseAnalysis {
+        return {
+            variableCount: variables.length,
+            primaryStrategy: 'System investigation and complex resolution',
+            estimatedTime: variables.length * 900000, // 15 minutes per variable
+            riskLevel: 'HIGH',
+            keyFiles: this.getTopFilesByErrorCount(variables, 5),
+            patterns: this.identifyCommonPatterns(variables),
+            investigationComplexity: variables.length
         };
     }
 
