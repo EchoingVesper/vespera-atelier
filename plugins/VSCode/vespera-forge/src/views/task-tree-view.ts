@@ -327,7 +327,7 @@ export class TaskTreeDataProvider implements vscode.TreeDataProvider<TaskTreeIte
       if (projectId !== undefined) {
         this.currentProjectId = projectId;
       } else {
-        delete (this as any).currentProjectId;
+        this.currentProjectId = undefined;
       }
       this.clearCache();
     }

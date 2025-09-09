@@ -18,7 +18,7 @@ import { VesperaTelemetryService } from '../telemetry/VesperaTelemetryService';
 import { DisposalManager, EnhancedDisposable } from '../disposal/DisposalManager';
 
 // Security services
-import { VesperaSecurityManager, SecurityEnhancedCoreServices } from './VesperaSecurityManager';
+import { VesperaSecurityManager } from './VesperaSecurityManager';
 import { VesperaRateLimiter } from './rate-limiting/VesperaRateLimiter';
 import { VesperaConsentManager } from './consent/VesperaConsentManager';
 import { VesperaInputSanitizer } from './sanitization/VesperaInputSanitizer';
@@ -65,12 +65,12 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
   public readonly telemetryService: VesperaTelemetryService;
   public readonly disposalManager: DisposalManager;
   
-  // Security services
-  public readonly securityManager: VesperaSecurityManager;
-  public readonly rateLimiter: VesperaRateLimiter;
-  public readonly consentManager: VesperaConsentManager;
-  public readonly inputSanitizer: VesperaInputSanitizer;
-  public readonly securityAuditLogger: VesperaSecurityAuditLogger;
+  // Security services - initialized in initialize() method
+  public securityManager!: VesperaSecurityManager;
+  public rateLimiter?: VesperaRateLimiter;
+  public consentManager?: VesperaConsentManager;
+  public inputSanitizer?: VesperaInputSanitizer;
+  public securityAuditLogger!: VesperaSecurityAuditLogger;
   
   private baseCoreServices: VesperaCoreServices;
   private baseCoreServicesInstance: any; // Actual class instance for methods like getStats/healthCheck
@@ -104,7 +104,7 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
   public static async initialize(
     context: vscode.ExtensionContext,
     config: SecurityEnhancedCoreServicesConfig
-  ): Promise<SecurityEnhancedCoreServices> {
+  ): Promise<SecurityEnhancedVesperaCoreServices> {
     if (SecurityEnhancedVesperaCoreServices.instance) {
       return SecurityEnhancedVesperaCoreServices.instance;
     }
@@ -171,14 +171,14 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
       }
 
       // Initialize security audit logger first (other services may need it)
-      (this as any).securityAuditLogger = new VesperaSecurityAuditLogger(
+      this.securityAuditLogger = new VesperaSecurityAuditLogger(
         this.logger,
         this.telemetryService,
         this.config.security.audit
       );
 
       // Initialize security manager
-      (this as any).securityManager = await VesperaSecurityManager.initialize(
+      this.securityManager = await VesperaSecurityManager.initialize(
         this.logger,
         this.errorHandler,
         this.contextManager,
@@ -187,7 +187,7 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
 
       // Initialize rate limiter if enabled
       if (this.config.security.rateLimiting?.enabled) {
-        (this as any).rateLimiter = await VesperaRateLimiter.initialize({
+        this.rateLimiter = await VesperaRateLimiter.initialize({
           contextManager: this.contextManager,
           logger: this.logger,
           errorHandler: this.errorHandler,
@@ -199,7 +199,7 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
 
       // Initialize consent manager if enabled
       if (this.config.security.consent?.enabled) {
-        (this as any).consentManager = await VesperaConsentManager.initialize({
+        this.consentManager = await VesperaConsentManager.initialize({
           storage: this.context.globalState,
           logger: this.logger,
           purposes: this.config.security.consent.purposes,
@@ -211,7 +211,7 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
 
       // Initialize input sanitizer if enabled
       if (this.config.security.sanitization?.enabled) {
-        (this as any).inputSanitizer = await VesperaInputSanitizer.initialize({
+        this.inputSanitizer = await VesperaInputSanitizer.initialize({
           logger: this.logger,
           errorHandler: this.errorHandler,
           rules: this.config.security.sanitization.rules,

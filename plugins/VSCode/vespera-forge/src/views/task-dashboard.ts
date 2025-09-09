@@ -28,7 +28,7 @@ export class TaskDashboardWebviewProvider implements vscode.WebviewViewProvider 
       if (info.status === BinderyConnectionStatus.Connected) {
         this.refresh();
       } else if (info.status === BinderyConnectionStatus.Disconnected) {
-        delete (this as any)._dashboardData;
+        this._dashboardData = undefined;
         this.updateWebview();
       }
     });
@@ -87,7 +87,7 @@ export class TaskDashboardWebviewProvider implements vscode.WebviewViewProvider 
     const binderyService = getBinderyService();
     
     if (!binderyService.isConnected()) {
-      delete (this as any)._dashboardData;
+      this._dashboardData = undefined;
       this.updateWebview();
       return;
     }
