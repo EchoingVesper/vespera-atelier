@@ -120,13 +120,25 @@ export class McpMessageValidator {
   private metrics: McpValidationMetrics;
   
   // Performance optimization caches
-  private _schemaCache = new Map<string, any>(); // TODO: Implement schema caching for validation performance
+  private _schemaCache = new Map<string, { 
+    compiledValidation: (message: McpMessage) => { valid: boolean; description?: string; location?: string }; 
+    timestamp: number;
+  }>();
+  private readonly SCHEMA_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
   private initializeSchemaCache(): void {
     // Initialize schema cache for performance optimization
-    if (this._schemaCache.size === 0) {
-      // Schema cache will be populated during validation operations
-    }
+    // Cache will be populated on-demand during validation operations
+    
+    // Cleanup expired cache entries periodically
+    setInterval(() => {
+      const now = Date.now();
+      for (const [key, entry] of this._schemaCache.entries()) {
+        if (now - entry.timestamp > this.SCHEMA_CACHE_TTL) {
+          this._schemaCache.delete(key);
+        }
+      }
+    }, this.SCHEMA_CACHE_TTL);
   }
   private patternCache = new Map<string, RegExp>();
   private validationCache = new Map<string, { result: McpValidationResult; timestamp: number }>();
@@ -595,20 +607,65 @@ export class McpMessageValidator {
    * Schema validation
    */
   private validateSchema(config: any, message: McpMessage): { valid: boolean; description?: string; location?: string } {
-    // Simplified schema validation - would use proper JSON schema validator in production
-    if (config.schema && config.schema.required) {
-      for (const field of config.schema.required) {
-        if (!message.hasOwnProperty(field)) {
-          return {
-            valid: false,
-            description: `Required field ${field} missing`,
-            location: 'schema'
-          };
-        }
-      }
+    if (!config.schema) {
+      return { valid: true };
     }
 
-    return { valid: true };
+    // Generate cache key from schema configuration
+    const schemaKey = JSON.stringify(config.schema);
+    const now = Date.now();
+    
+    // Check cache first
+    const cached = this._schemaCache.get(schemaKey);
+    if (cached && (now - cached.timestamp) < this.SCHEMA_CACHE_TTL) {
+      return cached.compiledValidation(message);
+    }
+    
+    // Compile validation function and cache it
+    const compiledValidation = this.compileSchemaValidation(config.schema);
+    this._schemaCache.set(schemaKey, {
+      compiledValidation,
+      timestamp: now
+    });
+    
+    return compiledValidation(message);
+  }
+
+  private compileSchemaValidation(schema: any): (message: McpMessage) => { valid: boolean; description?: string; location?: string } {
+    return (message: McpMessage) => {
+      // Required fields validation
+      if (schema.required && Array.isArray(schema.required)) {
+        for (const field of schema.required) {
+          if (!message.hasOwnProperty(field)) {
+            return {
+              valid: false,
+              description: `Required field ${field} missing`,
+              location: 'schema'
+            };
+          }
+        }
+      }
+      
+      // Type validation for known fields
+      if (schema.properties) {
+        for (const [field, fieldSchema] of Object.entries(schema.properties as any)) {
+          if (message.hasOwnProperty(field)) {
+            const fieldValue = (message as any)[field];
+            const expectedType = (fieldSchema as any).type;
+            
+            if (expectedType && typeof fieldValue !== expectedType) {
+              return {
+                valid: false,
+                description: `Field ${field} has type ${typeof fieldValue}, expected ${expectedType}`,
+                location: `schema.${field}`
+              };
+            }
+          }
+        }
+      }
+      
+      return { valid: true };
+    };
   }
 
   /**

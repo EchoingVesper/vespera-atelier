@@ -15,6 +15,7 @@ import {
   RequestProviderTemplateRequest,
   ValidateProviderConfigRequest
 } from '../../types/webview';
+import { ChatMessage } from '../../types/chat';
 import { getNonce, getChatWebViewContent } from './HtmlGenerator';
 import { WebViewSecurityManager } from './WebViewSecurityManager';
 import { VesperaInputSanitizer } from '../../../core/security/sanitization/VesperaInputSanitizer';
@@ -34,6 +35,8 @@ export class ChatWebViewProvider implements vscode.WebviewViewProvider {
   private _contextCollector?: SecureFileContextCollector;
   private _contextState: Map<string, SecureContextData> = new Map();
   private _coreServices?: SecurityEnhancedVesperaCoreServices;
+  private _messageHistory: ChatMessage[] = [];
+  private readonly _maxHistorySize = 1000;
   
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -411,18 +414,62 @@ export class ChatWebViewProvider implements vscode.WebviewViewProvider {
   }
   
   private async handleSwitchProvider(data: any): Promise<WebViewResponse> {
-    // TODO: Implement provider switching logic
-    console.log('[ChatWebView] Switching provider to:', data.providerId);
-    
-    this.eventRouter.emit({
-      type: 'chatProviderChanged',
-      data: {
-        from: data.currentProviderId,
-        to: data.providerId
+    try {
+      console.log('[ChatWebView] Switching provider to:', data.providerId);
+      
+      // Validate that the target provider exists and is enabled
+      const config = this.configManager.getConfiguration();
+      const targetProvider = config.providers[data.providerId];
+      
+      if (!targetProvider) {
+        return { 
+          success: false, 
+          error: `Provider '${data.providerId}' not found` 
+        };
       }
-    });
-    
-    return { success: true };
+      
+      if (!targetProvider.enabled) {
+        return { 
+          success: false, 
+          error: `Provider '${data.providerId}' is disabled` 
+        };
+      }
+      
+      // Update configuration to set new default provider
+      await this.configManager.updateConfiguration('user', {
+        providers: {
+          ...config.providers,
+          [data.currentProviderId]: {
+            ...config.providers[data.currentProviderId],
+            isDefault: false
+          },
+          [data.providerId]: {
+            ...config.providers[data.providerId],
+            isDefault: true
+          }
+        }
+      });
+      
+      // Emit provider change event
+      this.eventRouter.emit({
+        type: 'chatProviderChanged',
+        data: {
+          from: data.currentProviderId,
+          to: data.providerId
+        }
+      });
+      
+      // Update webview with new provider information
+      await this._updateWebViewState();
+      
+      return { success: true };
+    } catch (error) {
+      this.logger?.error('Failed to switch provider', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
   }
   
   private async handleConfigureProvider(data: ConfigureProviderRequest): Promise<WebViewResponse> {
@@ -534,10 +581,8 @@ export class ChatWebViewProvider implements vscode.WebviewViewProvider {
         };
       }
       
-      // TODO: Implement actual connection test with provider
-      // For now, simulate a connection test
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const testPassed = Math.random() > 0.2; // 80% success rate for demo
+      // Perform actual connection test with provider
+      const testPassed = await this.testProviderConnection(data.providerId, data.config);
       
       return {
         success: true,
@@ -661,27 +706,90 @@ export class ChatWebViewProvider implements vscode.WebviewViewProvider {
   }
   
   private async handleClearHistory(): Promise<WebViewResponse> {
-    // TODO: Implement history clearing logic
-    console.log('[ChatWebView] Clearing chat history');
-    
-    return { success: true };
+    try {
+      console.log('[ChatWebView] Clearing chat history');
+      
+      // Clear message history
+      this._messageHistory = [];
+      
+      // Persist cleared history to VS Code global state
+      await this.context.globalState.update(`chat_history_${this._sessionId}`, []);
+      
+      // Notify webview of cleared history
+      await this.postMessageToWebview('historyCleared', { sessionId: this._sessionId });
+      
+      this.logger?.info('Chat history cleared', { sessionId: this._sessionId });
+      
+      return { success: true };
+    } catch (error) {
+      this.logger?.error('Failed to clear chat history', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
   }
   
   private async handleExportHistory(): Promise<WebViewResponse> {
-    // TODO: Implement history export logic
-    console.log('[ChatWebView] Exporting chat history');
-    
-    return { 
-      success: true,
-      data: { 
-        exported: true,
-        format: 'json' 
+    try {
+      console.log('[ChatWebView] Exporting chat history');
+      
+      const exportData = {
+        sessionId: this._sessionId,
+        exportDate: new Date().toISOString(),
+        messageCount: this._messageHistory.length,
+        messages: this._messageHistory.map(msg => ({
+          role: msg.role,
+          content: msg.content,
+          timestamp: msg.timestamp,
+          provider: msg.metadata?.provider || 'unknown'
+        }))
+      };
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `chat-history-${timestamp}.json`;
+      
+      // Show save dialog
+      const saveUri = await vscode.window.showSaveDialog({
+        defaultUri: vscode.Uri.file(filename),
+        filters: {
+          'JSON files': ['json'],
+          'All files': ['*']
+        }
+      });
+      
+      if (!saveUri) {
+        return { success: false, error: 'Export cancelled by user' };
       }
-    };
+      
+      // Write file
+      const content = JSON.stringify(exportData, null, 2);
+      await vscode.workspace.fs.writeFile(saveUri, Buffer.from(content, 'utf8'));
+      
+      this.logger?.info('Chat history exported', { 
+        filename: saveUri.fsPath,
+        messageCount: this._messageHistory.length 
+      });
+      
+      return { 
+        success: true,
+        data: { 
+          exported: true,
+          filename: saveUri.fsPath,
+          messageCount: this._messageHistory.length
+        }
+      };
+    } catch (error) {
+      this.logger?.error('Failed to export chat history', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
   }
   
   private async handleUpdateSettings(data: any): Promise<WebViewResponse> {
-    // TODO: Implement settings update logic
     console.log('[ChatWebView] Updating settings:', data);
     
     // Update configuration through configuration manager
@@ -697,39 +805,85 @@ export class ChatWebViewProvider implements vscode.WebviewViewProvider {
   }
   
   private async handleRequestProviders(): Promise<WebViewResponse> {
-    // TODO: Get actual providers from provider manager
-    const mockProviders = [
-      {
-        id: 'openai',
-        name: 'OpenAI GPT-4',
-        status: 'connected',
-        enabled: true
-      },
-      {
-        id: 'anthropic',
-        name: 'Anthropic Claude',
-        status: 'disconnected',
-        enabled: true
-      }
-    ];
-    
-    return {
-      success: true,
-      data: { providers: mockProviders }
-    };
+    try {
+      const config = this.configManager.getConfiguration();
+      
+      const providers = Object.entries(config.providers).map(([id, providerConfig]) => ({
+        id,
+        name: providerConfig.config['name'] || id,
+        status: providerConfig.enabled ? 'available' : 'disabled',
+        enabled: providerConfig.enabled,
+        isDefault: providerConfig.isDefault || false,
+        providerType: providerConfig.config['provider_type'] || 'unknown',
+        capabilities: providerConfig.config['capabilities'] || {}
+      }));
+      
+      this.logger?.debug('Retrieved providers', { 
+        providerCount: providers.length,
+        enabledCount: providers.filter(p => p.enabled).length 
+      });
+      
+      return {
+        success: true,
+        data: { 
+          providers,
+          totalCount: providers.length,
+          enabledCount: providers.filter(p => p.enabled).length
+        }
+      };
+    } catch (error) {
+      this.logger?.error('Failed to get providers', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
   }
   
   private async handleRequestHistory(): Promise<WebViewResponse> {
-    // TODO: Get actual chat history
-    const mockHistory = {
-      messages: [],
-      totalCount: 0
-    };
-    
-    return {
-      success: true,
-      data: mockHistory
-    };
+    try {
+      // Load history from persistent storage if not already loaded
+      if (this._messageHistory.length === 0) {
+        const storedHistory = this.context.globalState.get<ChatMessage[]>(`chat_history_${this._sessionId}`);
+        if (storedHistory && Array.isArray(storedHistory)) {
+          // Limit history size to prevent memory issues
+          this._messageHistory = storedHistory.slice(-this._maxHistorySize);
+        }
+      }
+      
+      const history = {
+        messages: this._messageHistory.map(msg => ({
+          id: `${msg.timestamp}_${msg.role}`,
+          role: msg.role,
+          content: msg.content,
+          timestamp: msg.timestamp,
+          provider: msg.metadata?.provider || 'unknown'
+        })),
+        totalCount: this._messageHistory.length,
+        sessionId: this._sessionId
+      };
+      
+      this.logger?.debug('Retrieved chat history', { 
+        messageCount: history.totalCount,
+        sessionId: this._sessionId 
+      });
+      
+      return {
+        success: true,
+        data: history
+      };
+    } catch (error) {
+      this.logger?.error('Failed to get chat history', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        data: {
+          messages: [],
+          totalCount: 0,
+          sessionId: this._sessionId
+        }
+      };
+    }
   }
   
   /**
@@ -773,8 +927,9 @@ export class ChatWebViewProvider implements vscode.WebviewViewProvider {
    */
   private async handleToggleContextVisibility(data: any): Promise<WebViewResponse> {
     try {
-      // Store visibility preference
-      // TODO: Persist this setting
+      // Store visibility preference in VS Code settings
+      const contextVisibilityKey = `contextVisibility_${data.contextId}`;
+      await this.context.globalState.update(contextVisibilityKey, data.visible);
       
       this.logger?.debug('Context visibility toggled', {
         contextId: data.contextId,
@@ -903,6 +1058,92 @@ export class ChatWebViewProvider implements vscode.WebviewViewProvider {
     } catch (error) {
       this.logger?.error('Context sanitization for display failed', error);
       return contextData; // Fail-open for context display
+    }
+  }
+
+  /**
+   * Test connection to a provider
+   */
+  private async testProviderConnection(providerId: string, config: any): Promise<boolean> {
+    try {
+      // Get provider template for this provider
+      const template = await this.templateRegistry.getTemplate(providerId);
+      if (!template) {
+        this.logger?.warn(`No template found for provider: ${providerId}`);
+        return false;
+      }
+
+      // Dynamically import ProviderFactory to avoid circular dependencies
+      const { ProviderFactory } = await import('../../providers/ProviderFactory');
+      
+      // Create provider instance
+      const provider = ProviderFactory.createProvider(template, config, this.configManager);
+      
+      // Attempt to connect
+      await provider.connect();
+      
+      // Test with a simple ping message if supported
+      const testMessage: ChatMessage = {
+        id: `test_${Date.now()}`,
+        content: "ping",
+        role: "user" as const,
+        timestamp: new Date(),
+        threadId: `test_thread_${Date.now()}`,
+        sessionId: this._sessionId,
+        metadata: {
+          provider: providerId
+        }
+      };
+      
+      // Try sending a test message with timeout
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Connection test timeout')), 10000);
+      });
+      
+      const testPromise = provider.sendMessage(testMessage);
+      
+      await Promise.race([testPromise, timeoutPromise]);
+      
+      // Clean up
+      await provider.disconnect();
+      
+      return true;
+    } catch (error) {
+      this.logger?.error(`Provider connection test failed for ${providerId}`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Update webview state after configuration or provider changes
+   */
+  private async _updateWebViewState(): Promise<void> {
+    if (!this._view) return;
+    
+    try {
+      const config = this.configManager.getConfiguration();
+      
+      // Get current default provider
+      const defaultProvider = Object.entries(config.providers).find(([_, provider]) => provider.isDefault);
+      
+      await this.postMessageToWebview('stateUpdate', {
+        providers: Object.entries(config.providers).map(([id, provider]) => ({
+          id,
+          enabled: provider.enabled,
+          isDefault: provider.isDefault,
+          name: provider.config['name'] || id
+        })),
+        currentProvider: defaultProvider ? defaultProvider[0] : null,
+        configuration: config.ui
+      });
+      
+      this.logger?.debug('Webview state updated', {
+        providersCount: Object.keys(config.providers).length,
+        defaultProvider: defaultProvider ? defaultProvider[0] : null
+      });
+      
+    } catch (error) {
+      this.logger?.error('Failed to update webview state', error);
     }
   }
   

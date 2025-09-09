@@ -24,7 +24,7 @@ export class ChatTemplateRegistry {
   }
   
   async loadBuiltinTemplates(): Promise<void> {
-    // TODO: Implement builtin template loading
+    // Load builtin templates from extension templates directory
     const templatesPath = vscode.Uri.joinPath(this.extensionUri, 'templates', 'providers');
     
     try {
@@ -41,7 +41,7 @@ export class ChatTemplateRegistry {
   }
   
   async loadUserTemplates(): Promise<void> {
-    // TODO: Implement user template loading from workspace/settings
+    // Load user-defined templates from workspace .vscode folder
     // Check for user-defined templates in workspace .vscode folder
     if (vscode.workspace.workspaceFolders) {
       for (const folder of vscode.workspace.workspaceFolders) {
@@ -104,7 +104,7 @@ export class ChatTemplateRegistry {
   }
   
   private async processTemplateInheritance(template: any): Promise<ProviderTemplate> {
-    // TODO: Implement template inheritance processing
+    // Process template inheritance by merging with parent templates
     if (template.extends) {
       const parentTemplate = this.templates.get(template.extends);
       if (parentTemplate) {
@@ -115,7 +115,7 @@ export class ChatTemplateRegistry {
   }
   
   private mergeTemplates(parent: ProviderTemplate, child: any): ProviderTemplate {
-    // TODO: Implement deep merging logic for template inheritance
+    // Deep merge parent and child templates with child taking precedence
     return {
       ...parent,
       ...child,
@@ -134,7 +134,7 @@ export class ChatTemplateRegistry {
   private validateTemplate(template: any): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
     
-    // TODO: Implement comprehensive template validation
+    // Validate required template fields
     if (!template.template_id) {
       errors.push('template_id is required');
     }
@@ -158,7 +158,7 @@ export class ChatTemplateRegistry {
   }
   
   private setupTemplateWatcher(): void {
-    // TODO: Implement file system watcher for template changes
+    // Set up file system watcher to monitor template changes
     const templatePattern = new vscode.RelativePattern(this.extensionUri, 'templates/**/*.json5');
     this.templateWatcher = vscode.workspace.createFileSystemWatcher(templatePattern);
     
@@ -174,8 +174,25 @@ export class ChatTemplateRegistry {
     
     this.templateWatcher.onDidDelete((uri) => {
       console.log('Template deleted:', uri.fsPath);
-      // TODO: Remove template from registry
+      // Remove template from registry based on file path
+      const templateId = this.getTemplateIdFromPath(uri.fsPath);
+      if (templateId && this.templates.has(templateId)) {
+        this.templates.delete(templateId);
+        console.log(`Removed template: ${templateId}`);
+      }
     });
+  }
+
+  /**
+   * Extract template ID from file path
+   */
+  private getTemplateIdFromPath(filePath: string): string | null {
+    // Extract filename without extension
+    const filename = filePath.split('/').pop();
+    if (!filename) return null;
+    
+    const templateId = filename.replace(/\.json5?$/, '');
+    return templateId;
   }
   
   dispose(): void {

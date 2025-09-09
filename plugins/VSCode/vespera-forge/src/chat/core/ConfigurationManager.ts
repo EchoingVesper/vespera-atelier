@@ -171,7 +171,7 @@ export class ChatConfigurationManager {
   private getVSCodeConfiguration(): Partial<ChatConfiguration> {
     const config = vscode.workspace.getConfiguration('vesperaForge.chat');
     
-    // TODO: Implement comprehensive VS Code configuration loading
+    // Load all configuration sections from VS Code settings
     return {
       providers: config.get('providers', {}),
       ui: {
@@ -456,7 +456,7 @@ export class ChatConfigurationManager {
     
     // Emit configuration change event
     this.eventRouter.emit(new ConfigurationChangedEvent({
-      providerId: 'system', // TODO: Make this more specific
+      providerId: `configuration-manager-${scope}`,
       changes: updates
     }));
   }

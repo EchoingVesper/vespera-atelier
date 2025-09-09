@@ -376,15 +376,49 @@ export function getMemoryStats(): ReturnType<VesperaContextManager['getMemorySta
  */
 export async function performHealthCheck(): Promise<any> {
   if (!coreServices) {
-    return undefined;
+    return {
+      healthy: false,
+      error: 'Core services not initialized',
+      services: {},
+      stats: {}
+    };
   }
   
-  // TODO: Implement healthCheck on VesperaCoreServices
-  return {
-    healthy: true,
-    services: {},
-    stats: {}
-  };
+  try {
+    // Use the health check method from the VesperaCoreServices singleton
+    if (VesperaCoreServices.isInitialized()) {
+      // Get the actual VesperaCoreServices instance to call healthCheck
+      const instance = VesperaCoreServices as any;
+      if (instance.instance && typeof instance.instance.healthCheck === 'function') {
+        return await instance.instance.healthCheck();
+      }
+    }
+    
+    // Fallback to basic service verification if healthCheck method is not available
+    const { logger, errorHandler, contextManager, telemetryService, disposalManager } = coreServices;
+    return {
+      healthy: true,
+      services: {
+        logger: { healthy: !!logger },
+        errorHandler: { healthy: !!errorHandler },
+        contextManager: { healthy: !!contextManager },
+        telemetryService: { healthy: !!telemetryService },
+        disposalManager: { healthy: !!disposalManager }
+      },
+      stats: {
+        logger: logger?.getLogStats?.() || {},
+        memory: contextManager?.getMemoryStats?.() || {},
+        disposal: disposalManager?.getStats?.() || {}
+      }
+    };
+  } catch (error) {
+    return {
+      healthy: false,
+      error: String(error),
+      services: {},
+      stats: {}
+    };
+  }
 }
 
 /**
