@@ -747,7 +747,7 @@ export class QualityAssuranceTools {
         serviceLifecycleMaintained: boolean;
     }> {
         // Read the original file to analyze service integration patterns
-        const originalContent = fs.readFileSync(property.file, 'utf-8');
+        const originalContent = await fs.promises.readFile(property.file, 'utf-8');
         
         return {
             coreServicesPatternMatch: this.checkCoreServicesPattern(property, originalContent),
@@ -929,7 +929,7 @@ export class QualityAssuranceTools {
             // Look for test files that might reference this property
             const testFilePattern = property.file.replace(/\.ts$/, '.test.ts');
             if (fs.existsSync(testFilePattern)) {
-                const testContent = fs.readFileSync(testFilePattern, 'utf-8');
+                const testContent = await fs.promises.readFile(testFilePattern, 'utf-8');
                 if (testContent.includes(property.name)) {
                     return 0.8; // High impact if directly tested
                 }
@@ -1025,7 +1025,7 @@ export class QualityAssuranceTools {
 
         for (const filePath of filePaths) {
             if (fs.existsSync(filePath)) {
-                const content = fs.readFileSync(filePath, 'utf-8');
+                const content = await fs.promises.readFile(filePath, 'utf-8');
                 files[filePath] = content;
                 totalSize += content.length;
             }

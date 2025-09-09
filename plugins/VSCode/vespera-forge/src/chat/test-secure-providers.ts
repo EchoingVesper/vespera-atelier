@@ -261,7 +261,7 @@ async function testTODORemoval(): Promise<void> {
     for (const file of filesToCheck) {
       try {
         const fullPath = path.resolve(__dirname, file);
-        const content = fs.readFileSync(fullPath, 'utf-8');
+        const content = await fs.promises.readFile(fullPath, 'utf-8');
         const todoMatches = content.match(/TODO:/gi);
         
         if (todoMatches) {

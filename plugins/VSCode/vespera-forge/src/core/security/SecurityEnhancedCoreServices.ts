@@ -29,7 +29,7 @@ import {
   SecurityConfiguration,
   SecurityMetrics,
   VesperaSecurityEvent,
-  SecurityEventContext,
+  SecurityEventContext as _SecurityEventContext,
   VesperaSecurityErrorCode
 } from '../../types/security';
 import { VesperaSecurityError } from './VesperaSecurityErrors';
@@ -306,9 +306,9 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
     
     // Listen for security events and forward to audit logger
     this.disposalManager.add(this.wrapDisposable(
-      eventBus.onSecurityEvent(async (event: VesperaSecurityEvent, context: SecurityEventContext) => {
+      eventBus.onSecurityEvent(async (data) => {
         try {
-          await this.securityAuditLogger.logSecurityEvent(event, context);
+          await this.securityAuditLogger.logSecurityEvent(data.event, data.context);
         } catch (error) {
           this.logger.error('Failed to log security event to audit logger', error);
         }
@@ -317,22 +317,22 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
 
     // Listen for rate limit events
     this.disposalManager.add(this.wrapDisposable(
-      eventBus.onRateLimitExceeded((resourceId: string, context: any) => {
-        this.logger.warn('Rate limit exceeded', { resourceId, context });
+      eventBus.onRateLimitExceeded((data) => {
+        this.logger.warn('Rate limit exceeded', { resourceId: data.resourceId, context: data.context });
       })
     ));
 
     // Listen for consent changes
     this.disposalManager.add(this.wrapDisposable(
-      eventBus.onConsentChanged((userId: string, purposeIds: string[], granted: boolean) => {
-        this.logger.info('Consent changed', { userId, purposeIds: purposeIds.length, granted });
+      eventBus.onConsentChanged((data) => {
+        this.logger.info('Consent changed', { userId: data.userId, purposeIds: data.purposeIds.length, granted: data.granted });
       })
     ));
 
     // Listen for threat detection
     this.disposalManager.add(this.wrapDisposable(
-      eventBus.onThreatDetected((threatType: string, context: any) => {
-        this.logger.warn('Threat detected', { threatType, context });
+      eventBus.onThreatDetected((data) => {
+        this.logger.warn('Threat detected', { threatType: data.threatType, details: data.details });
       })
     ));
 

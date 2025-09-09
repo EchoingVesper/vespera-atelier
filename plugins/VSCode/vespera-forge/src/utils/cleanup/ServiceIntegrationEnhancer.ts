@@ -1015,8 +1015,10 @@ export class ServiceIntegrationEnhancer {
 
     private static async getFileContent(filePath: string): Promise<string> {
         try {
-            return fs.readFileSync(filePath, 'utf-8');
-        } catch {
+            const content = await fs.promises.readFile(filePath, 'utf-8');
+            return content;
+        } catch (error) {
+            console.warn(`Failed to read file ${filePath}:`, error);
             return '';
         }
     }

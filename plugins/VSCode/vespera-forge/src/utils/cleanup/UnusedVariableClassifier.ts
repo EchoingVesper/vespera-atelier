@@ -343,7 +343,7 @@ export class UnusedVariableClassifier {
             throw new Error(`Error log not found: ${errorLogPath}`);
         }
 
-        const content = fs.readFileSync(errorLogPath, 'utf-8');
+        const content = await fs.promises.readFile(errorLogPath, 'utf-8');
         const lines = content.split('\n');
         const errors: any[] = [];
 
@@ -370,8 +370,10 @@ export class UnusedVariableClassifier {
 
     private static async getFileContent(filePath: string): Promise<string> {
         try {
-            return fs.readFileSync(filePath, 'utf-8');
-        } catch {
+            const content = await fs.promises.readFile(filePath, 'utf-8');
+            return content;
+        } catch (error) {
+            console.warn(`Failed to read file ${filePath}:`, error);
             return '';
         }
     }

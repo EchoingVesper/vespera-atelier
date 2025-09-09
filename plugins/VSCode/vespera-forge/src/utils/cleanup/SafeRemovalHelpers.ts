@@ -63,7 +63,7 @@ export class SafeRemovalHelpers {
         };
 
         try {
-            const originalContent = fs.readFileSync(filePath, 'utf-8');
+            const originalContent = await fs.promises.readFile(filePath, 'utf-8');
             let modifiedContent = originalContent;
 
             // Create backup if requested
@@ -138,7 +138,7 @@ export class SafeRemovalHelpers {
         };
 
         try {
-            const originalContent = fs.readFileSync(filePath, 'utf-8');
+            const originalContent = await fs.promises.readFile(filePath, 'utf-8');
             let modifiedContent = originalContent;
 
             // Create backup if requested
@@ -209,7 +209,7 @@ export class SafeRemovalHelpers {
         };
 
         try {
-            const originalContent = fs.readFileSync(filePath, 'utf-8');
+            const originalContent = await fs.promises.readFile(filePath, 'utf-8');
             let modifiedContent = originalContent;
 
             if (options.createBackups) {

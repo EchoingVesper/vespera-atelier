@@ -35,16 +35,21 @@ export interface SecurityEnhancedCoreServices {
 /**
  * Event bus for security-related events
  */
-export class SecurityEventBus extends vscode.EventEmitter<{
-  'securityEvent': [VesperaSecurityEvent, SecurityEventContext];
-  'rateLimitExceeded': [string, any];
-  'consentChanged': [string, string[], boolean];
-  'threatDetected': [string, any];
-  'cspViolation': [string, any];
-}> implements vscode.Disposable {
+export class SecurityEventBus implements vscode.Disposable {
+  private readonly _onSecurityEvent = new vscode.EventEmitter<{ event: VesperaSecurityEvent; context: SecurityEventContext }>();
+  private readonly _onRateLimitExceeded = new vscode.EventEmitter<{ resourceId: string; context: any }>();
+  private readonly _onConsentChanged = new vscode.EventEmitter<{ userId: string; purposeIds: string[]; granted: boolean }>();
+  private readonly _onThreatDetected = new vscode.EventEmitter<{ threatType: string; details: any }>();
+  private readonly _onCspViolation = new vscode.EventEmitter<{ directive: string; violation: any }>();
+  
+  // Public event accessors
+  public readonly onSecurityEvent = this._onSecurityEvent.event;
+  public readonly onRateLimitExceeded = this._onRateLimitExceeded.event;
+  public readonly onConsentChanged = this._onConsentChanged.event;
+  public readonly onThreatDetected = this._onThreatDetected.event;
+  public readonly onCspViolation = this._onCspViolation.event;
   
   constructor(private logger: VesperaLogger) {
-    super();
     this.logger = logger.createChild('SecurityEventBus');
   }
 
@@ -53,40 +58,48 @@ export class SecurityEventBus extends vscode.EventEmitter<{
    */
   emitSecurityEvent(event: VesperaSecurityEvent, context: SecurityEventContext): void {
     this.logger.debug('Emitting security event', { event, context });
-    (this as any).fire('securityEvent', event, context);
+    this._onSecurityEvent.fire({ event, context });
   }
   
   /**
-   * Add listener for security events
+   * Emit a rate limit exceeded event
    */
-  onSecurityEvent(listener: (event: VesperaSecurityEvent, context: SecurityEventContext) => void): vscode.Disposable {
-    return (this as any).event('securityEvent', listener);
+  emitRateLimitExceeded(resourceId: string, context: any): void {
+    this.logger.debug('Emitting rate limit exceeded', { resourceId, context });
+    this._onRateLimitExceeded.fire({ resourceId, context });
   }
   
   /**
-   * Add listener for rate limit events
+   * Emit a consent changed event
    */
-  onRateLimitExceeded(listener: (resourceId: string, context: any) => void): vscode.Disposable {
-    return (this as any).event('rateLimitExceeded', listener);
+  emitConsentChanged(userId: string, purposeIds: string[], granted: boolean): void {
+    this.logger.debug('Emitting consent changed', { userId, purposeIds, granted });
+    this._onConsentChanged.fire({ userId, purposeIds, granted });
   }
   
   /**
-   * Add listener for consent changes
+   * Emit a threat detected event
    */
-  onConsentChanged(listener: (userId: string, purposeIds: string[], granted: boolean) => void): vscode.Disposable {
-    return (this as any).event('consentChanged', listener);
+  emitThreatDetected(threatType: string, details: any): void {
+    this.logger.debug('Emitting threat detected', { threatType, details });
+    this._onThreatDetected.fire({ threatType, details });
   }
   
   /**
-   * Add listener for threat detection
+   * Emit a CSP violation event
    */
-  onThreatDetected(listener: (threatType: string, context: any) => void): vscode.Disposable {
-    return (this as any).event('threatDetected', listener);
+  emitCspViolation(directive: string, violation: any): void {
+    this.logger.debug('Emitting CSP violation', { directive, violation });
+    this._onCspViolation.fire({ directive, violation });
   }
 
-  override dispose(): void {
+  dispose(): void {
     this.logger.debug('SecurityEventBus disposed');
-    super.dispose();
+    this._onSecurityEvent.dispose();
+    this._onRateLimitExceeded.dispose();
+    this._onConsentChanged.dispose();
+    this._onThreatDetected.dispose();
+    this._onCspViolation.dispose();
   }
 }
 
