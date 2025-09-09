@@ -182,7 +182,7 @@ export class SecureFileContextCollector {
         hasContext: true,
         contextId,
         timestamp,
-        sanitized: this.inputSanitizer !== undefined,
+        sanitized: this.coreServices?.inputSanitizer !== undefined,
         threatCount: 0 // Will be updated by sanitization
       };
 
@@ -206,7 +206,7 @@ export class SecureFileContextCollector {
       // Log security error
       if (this.coreServices?.securityAuditLogger) {
         await this.coreServices.securityAuditLogger.logSecurityEvent({
-          type: VesperaSecurityEvent.FILE_ACCESS_DENIED,
+          type: VesperaSecurityEvent.SECURITY_BREACH,
           severity: 'high',
           message: 'Context collection failed',
           metadata: {
@@ -312,10 +312,10 @@ export class SecureFileContextCollector {
             SanitizationScope.FILE_CONTENT
           );
           
-          if (sanitizationResult.sanitizedContent !== null) {
+          if (sanitizationResult.sanitized !== null) {
             sanitizedItems.push({
               ...item,
-              content: sanitizationResult.sanitizedContent
+              content: sanitizationResult.sanitized
             });
             totalThreatCount += sanitizationResult.threats.length;
           } else {
@@ -426,7 +426,7 @@ export class SecureFileContextCollector {
       // Use core services for audit logging
       if (this.coreServices?.securityAuditLogger) {
         await this.coreServices.securityAuditLogger.logSecurityEvent({
-          type: VesperaSecurityEvent.FILE_ACCESS_GRANTED,
+          type: VesperaSecurityEvent.API_ACCESS,
           severity: 'info',
           message: 'Secure context collected',
           metadata: {

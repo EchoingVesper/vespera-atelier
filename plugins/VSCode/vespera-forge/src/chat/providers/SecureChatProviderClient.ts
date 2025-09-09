@@ -205,7 +205,7 @@ export class SecureChatProviderClient {
         if (highSeverityThreats.length > 0) {
           throw new VesperaSanitizationError(
             'High-severity security threat detected in request data',
-            highSeverityThreats[0]?.type || 'unknown',
+            highSeverityThreats[0]?.pattern.type || 'unknown',
             JSON.stringify(request).length,
             result.sanitized ? JSON.stringify(result.sanitized).length : 0,
             VesperaSeverity.HIGH,

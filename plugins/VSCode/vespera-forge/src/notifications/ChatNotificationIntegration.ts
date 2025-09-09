@@ -840,7 +840,7 @@ export class ChatNotificationIntegration implements vscode.Disposable {
           details: {
             affectedComponent: event.affectedComponent,
             mitigationRequired: event.mitigationRequired,
-            additionalData: event.additionalData
+            additionalData: event.details
           }
         },
         {

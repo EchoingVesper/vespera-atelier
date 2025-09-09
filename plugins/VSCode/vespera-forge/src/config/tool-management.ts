@@ -406,7 +406,7 @@ export class SecureToolManager {
     const startTime = performance.now();
     
     // Log performance measurement for specific tool
-    this.logger?.debug(`Measuring performance for tool: ${toolName}`);
+    this.securityServices?.logger?.debug(`Measuring performance for tool: ${toolName}`);
     
     // Simulate tool operation to measure baseline
     try {

@@ -665,9 +665,9 @@ export class UnusedPropertyAnalyzer {
         
         // Common access patterns to look for
         const patternChecks = [
-            { pattern: `this.${property.name}.`, frequency: 0, context: AccessContext.PROPERTY_ACCESS },
+            { pattern: `this.${property.name}.`, frequency: 0, context: AccessContext.METHOD_BODY },
             { pattern: `${property.name}(`, frequency: 0, context: AccessContext.METHOD_BODY },
-            { pattern: `${property.name}.handleError`, frequency: 0, context: AccessContext.ERROR_HANDLER }
+            { pattern: `${property.name}.handleError`, frequency: 0, context: AccessContext.EVENT_HANDLER }
         ];
 
         // Count pattern occurrences

@@ -19,6 +19,7 @@ import {
   NotificationLevel,
   NotificationType
 } from '../../notifications/index';
+import { AgentType, OperationStatus } from '../../notifications/AgentProgressNotifier';
 
 // Import chat systems
 import { TaskServerManager } from '../servers/TaskServerManager';
@@ -298,23 +299,16 @@ export class MultiServerChatIntegration implements vscode.Disposable {
       });
 
       // Show notification for new agent channel
-      await this.notificationSystem.agentProgressNotifier.notifyAgentStarted({
-        agentId: data.agentConfig.agentRole,
-        agentName: data.agentConfig.agentName,
-        operation: {
-          operationId: `${taskId}_${data.agentConfig.agentRole}`,
-          operationName: `Agent: ${data.agentConfig.agentRole}`,
-          operationType: 'agent_execution',
+      await this.notificationSystem.agentProgressNotifier.startOperation(
+        `${taskId}_${data.agentConfig.agentRole}`,
+        `Agent: ${data.agentConfig.agentRole}`,
+        `${data.agentConfig.agentName} - Agent execution`,
+        AgentType.COORDINATION,
+        {
           expectedDuration: 300000, // 5 minutes
-          priority: 'medium'
-        },
-        config: {
-          showNotifications: true,
-          progressThresholds: [25, 50, 75],
-          completionNotification: true,
-          errorNotification: true
+          showStartNotification: true
         }
-      });
+      );
 
       this.logger.info('Agent channel added event handled', { 
         taskId, 
@@ -554,11 +548,12 @@ export class MultiServerChatIntegration implements vscode.Disposable {
    */
   private async updateAgentProgressNotification(agentUpdate: AgentStatusChangeData): Promise<void> {
     try {
-      await this.notificationSystem.agentProgressNotifier.notifyProgress({
+      await this.notificationSystem.agentProgressNotifier.updateProgress({
         operationId: `${agentUpdate.serverId}_${agentUpdate.agentId}`,
         progress: agentUpdate.progress,
-        status: agentUpdate.currentStatus,
-        currentPhase: agentUpdate.currentAction || 'Working',
+        status: agentUpdate.currentStatus === 'completed' ? OperationStatus.COMPLETED : 
+                agentUpdate.currentStatus === 'failed' ? OperationStatus.FAILED : OperationStatus.PROGRESS,
+        currentAction: agentUpdate.currentAction || 'Working',
         message: `Agent ${agentUpdate.agentRole}: ${agentUpdate.currentAction || agentUpdate.currentStatus}`
       });
 
@@ -600,14 +595,22 @@ export class MultiServerChatIntegration implements vscode.Disposable {
       });
 
       // Show notification for direct message
-      await this.notificationSystem.multiChatNotificationManager.notifyDirectMessage({
-        messageId: dmData.messageId,
-        senderId: dmData.senderId,
-        senderName: dmData.senderName,
-        content: dmData.content,
+      // Create a direct message chat event and handle it
+      const directMessageEvent = {
+        type: 'direct_message' as const,
+        serverId: 'direct_messages',
+        channelId: `dm_${dmData.senderId}_${dmData.receiverId}`,
+        userId: dmData.senderId,
         timestamp: dmData.timestamp,
-        encrypted: dmData.encrypted || false
-      });
+        data: {
+          messageId: dmData.messageId,
+          content: dmData.content,
+          senderName: dmData.senderName,
+          encrypted: dmData.encrypted || false
+        }
+      };
+      
+      await this.notificationSystem.multiChatNotificationManager.handleChatEvent(directMessageEvent);
 
       this.logger.info('Direct message sent', {
         messageId: dmData.messageId,

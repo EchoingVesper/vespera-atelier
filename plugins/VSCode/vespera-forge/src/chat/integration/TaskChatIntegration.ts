@@ -795,7 +795,7 @@ export class TaskChatIntegration {
     // Log task completion for now - future implementation would post to channel
     const emoji = taskData.status === 'completed' ? '✅' : '❌';
     this.logger?.info(`${emoji} Task "${taskData.title}" ${taskData.status}`, {
-      taskId: taskData.id,
+      taskId: taskData.taskId,
       status: taskData.status,
       title: taskData.title
     });

@@ -16,6 +16,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as cp from 'child_process';
 import * as crypto from 'crypto';
+import * as vscode from 'vscode';
 import { UnusedVariable, UnusedVariableType } from './UnusedVariableClassifier';
 import { PropertyAnalysisResult, PropertyUsagePattern } from './UnusedPropertyAnalyzer';
 
@@ -625,7 +626,7 @@ export class QualityAssuranceTools {
 
         for (const property of properties) {
             const analysis = analysisResults.find(r => r.property.name === property.name);
-            if (!analysis || analysis.usagePattern !== PropertyUsagePattern.SERVICE_INTEGRATION_GAP) {
+            if (!analysis || analysis.usageAnalysis.usagePattern !== PropertyUsagePattern.SERVICE_INTEGRATION_GAP) {
                 continue;
             }
 
