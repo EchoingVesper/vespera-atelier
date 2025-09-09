@@ -288,12 +288,22 @@ export class BatchProcessingEngine {
             }
 
         } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
             phaseResult.results.push({
-                variable: variables[0] || { name: 'unknown', type: 'unknown', file: '', line: 0, column: 0, usageCount: 0 }, // Placeholder with safe fallback
+                variable: variables[0] || { 
+                    name: 'unknown', 
+                    type: 'variable' as any, 
+                    file: '', 
+                    line: 0, 
+                    column: 0, 
+                    phase: ProcessingPhase.PHASE_1A,
+                    category: 'simple_variables' as any,
+                    riskLevel: RiskLevel.LOW
+                }, // Placeholder with safe fallback
                 success: false,
                 method: ProcessingMethod.SAFE_REMOVAL,
-                details: `Phase processing failed: ${error}`,
-                errors: [error.toString()],
+                details: `Phase processing failed: ${errorMessage}`,
+                errors: [errorMessage],
                 executionTime: Date.now() - startTime
             });
         }
@@ -324,10 +334,21 @@ export class BatchProcessingEngine {
             
             try {
                 // Update progress
-                this.updateProgress(ProcessingPhase.PHASE_2A, i, properties.length, property.name);
+                this.updateProgress(ProcessingPhase.PHASE_2A, i, properties.length, property?.name || 'unknown');
 
                 // Remove property using constructor refactoring
                 if (!property) continue;
+                if (!analysis) {
+                    results.push({
+                        variable: property,
+                        success: false,
+                        method: ProcessingMethod.PROPERTY_REFACTORING,
+                        details: `No analysis result available for property "${property.name}"`,
+                        errors: ['Analysis result is undefined'],
+                        executionTime: Date.now() - startTime
+                    });
+                    continue;
+                }
                 const removalResult = await PropertyRemovalHelpers.removeUnusedProperty(
                     property,
                     analysis,
@@ -345,18 +366,28 @@ export class BatchProcessingEngine {
                     method: ProcessingMethod.PROPERTY_REFACTORING,
                     details: removalResult.success 
                         ? `Successfully refactored constructor property "${property.name}"`
-                        : `Failed to refactor property "${property.name}": ${removalResult.errors.join(', ')}`,
+                        : `Failed to refactor property "${property?.name || 'unknown'}": ${removalResult.errors.join(', ')}`,
                     errors: removalResult.errors,
                     executionTime: Date.now() - startTime
                 });
 
             } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
                 results.push({
-                    variable: property || { name: 'unknown', type: 'unknown', file: '', line: 0, column: 0, usageCount: 0 },
+                    variable: property || { 
+                        name: 'unknown', 
+                        type: 'property' as any, 
+                        file: '', 
+                        line: 0, 
+                        column: 0, 
+                        phase: ProcessingPhase.PHASE_2A,
+                        category: 'constructor_properties' as any,
+                        riskLevel: RiskLevel.LOW
+                    },
                     success: false,
                     method: ProcessingMethod.PROPERTY_REFACTORING,
-                    details: `Property refactoring failed: ${error}`,
-                    errors: [error.toString()],
+                    details: `Property refactoring failed: ${errorMessage}`,
+                    errors: [errorMessage],
                     executionTime: Date.now() - startTime
                 });
             }
@@ -403,12 +434,13 @@ export class BatchProcessingEngine {
                 // Convert integration results to processing results
                 integrationResults.forEach((integrationResult, index) => {
                     const property = batch[index];
+                    if (!property) return;
                     results.push({
                         variable: property,
                         success: integrationResult.success,
                         method: ProcessingMethod.SERVICE_INTEGRATION,
                         details: integrationResult.success
-                            ? `Successfully enhanced ${integrationResult.integrationType} for "${property.name}"`
+                            ? `Successfully enhanced ${integrationResult.integrationType} for "${property?.name || 'unknown'}"`
                             : `Failed to enhance integration: ${integrationResult.errors.join(', ')}`,
                         errors: integrationResult.errors,
                         executionTime: integrationResult.executionTime
@@ -416,14 +448,15 @@ export class BatchProcessingEngine {
                 });
 
             } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
                 // Add error results for this batch
                 batch.forEach(property => {
                     results.push({
                         variable: property,
                         success: false,
                         method: ProcessingMethod.SERVICE_INTEGRATION,
-                        details: `Service integration batch failed: ${error}`,
-                        errors: [error.toString()],
+                        details: `Service integration batch failed: ${errorMessage}`,
+                        errors: [errorMessage],
                         executionTime: Date.now() - Date.now()
                     });
                 });
@@ -454,10 +487,24 @@ export class BatchProcessingEngine {
             const analysis = analysisResults[i];
             const startTime = Date.now();
 
+            if (!property) continue;
+
             // Update progress
             this.updateProgress(ProcessingPhase.PHASE_2C, i, properties.length, property.name);
 
             try {
+                if (!analysis) {
+                    results.push({
+                        variable: property,
+                        success: false,
+                        method: ProcessingMethod.INVESTIGATION,
+                        details: `No analysis result available for property "${property.name}"`,
+                        errors: ['Analysis result is undefined'],
+                        executionTime: Date.now() - startTime
+                    });
+                    continue;
+                }
+                
                 // Conduct comprehensive investigation
                 const investigationResult = await PropertyInvestigationTools.investigateProperty(property, analysis);
 
@@ -483,7 +530,8 @@ export class BatchProcessingEngine {
                                     `Failed to remove property: ${removalResult.errors.join(', ')}`;
                                 errors.push(...removalResult.errors);
                             } catch (removalError) {
-                                errors.push(`Removal failed: ${removalError}`);
+                                const errorMessage = removalError instanceof Error ? removalError.message : String(removalError);
+                                errors.push(`Removal failed: ${errorMessage}`);
                             }
                             break;
                         default:
@@ -506,12 +554,13 @@ export class BatchProcessingEngine {
                 });
 
             } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
                 results.push({
                     variable: property,
                     success: false,
                     method: ProcessingMethod.INVESTIGATION,
-                    details: `Investigation failed: ${error}`,
-                    errors: [error.toString()],
+                    details: `Investigation failed: ${errorMessage}`,
+                    errors: [errorMessage],
                     executionTime: Date.now() - startTime
                 });
             }
@@ -569,14 +618,15 @@ export class BatchProcessingEngine {
                 }
 
             } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
                 // Add error results for all variables in this file
                 fileVariables.forEach(variable => {
                     results.push({
                         variable,
                         success: false,
                         method: ProcessingMethod.SAFE_REMOVAL,
-                        details: `File processing failed: ${error}`,
-                        errors: [error.toString()],
+                        details: `File processing failed: ${errorMessage}`,
+                        errors: [errorMessage],
                         executionTime: Date.now() - startTime
                     });
                 });
@@ -605,7 +655,7 @@ export class BatchProcessingEngine {
             const batchStartTime = Date.now();
 
             // Update progress
-            this.updateProgress(ProcessingPhase.PHASE_1B, i, candidates.length, batch[0]?.variable.name);
+            this.updateProgress(ProcessingPhase.PHASE_1B, i, candidates.length, batch[0]?.variable?.name || 'unknown');
 
             try {
                 const integrationResults = await IntegrationScaffolding.batchImplementIntegrations(
@@ -628,14 +678,15 @@ export class BatchProcessingEngine {
                 });
 
             } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
                 // Add error results for this batch
                 batch.forEach(candidate => {
                     results.push({
                         variable: candidate.variable,
                         success: false,
                         method: ProcessingMethod.INTEGRATION,
-                        details: `Batch integration failed: ${error}`,
-                        errors: [error.toString()],
+                        details: `Batch integration failed: ${errorMessage}`,
+                        errors: [errorMessage],
                         executionTime: Date.now() - batchStartTime
                     });
                 });
@@ -662,10 +713,15 @@ export class BatchProcessingEngine {
             const component = components[i];
             const startTime = Date.now();
 
+            if (!component) continue;
+
             // Update progress
             this.updateProgress(ProcessingPhase.PHASE_1C, i, components.length, component.variable.name);
 
             try {
+                if (!component) {
+                    continue;
+                }
                 const architecturalResult = await ArchitecturalHelpers.implementArchitecturalComponent(component);
 
                 results.push({
@@ -673,19 +729,20 @@ export class BatchProcessingEngine {
                     success: architecturalResult.success,
                     method: ProcessingMethod.ARCHITECTURAL,
                     details: architecturalResult.success
-                        ? `Successfully implemented ${component.componentType}`
+                        ? `Successfully implemented ${component?.componentType || 'component'}`
                         : `Failed to implement: ${architecturalResult.errors.join(', ')}`,
                     errors: architecturalResult.errors,
                     executionTime: Date.now() - startTime
                 });
 
             } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
                 results.push({
                     variable: component.variable,
                     success: false,
                     method: ProcessingMethod.ARCHITECTURAL,
-                    details: `Architectural implementation failed: ${error}`,
-                    errors: [error.toString()],
+                    details: `Architectural implementation failed: ${errorMessage}`,
+                    errors: [errorMessage],
                     executionTime: Date.now() - startTime
                 });
             }
@@ -771,10 +828,12 @@ export class BatchProcessingEngine {
         const grouped: Record<string, UnusedVariable[]> = {};
         
         variables.forEach(variable => {
-            if (!grouped[variable.file]) {
-                grouped[variable.file] = [];
+            if (!variable?.file) return;
+            const file = variable.file;
+            if (!grouped[file]) {
+                grouped[file] = [];
             }
-            grouped[variable.file].push(variable);
+            grouped[file]!.push(variable);
         });
 
         return grouped;

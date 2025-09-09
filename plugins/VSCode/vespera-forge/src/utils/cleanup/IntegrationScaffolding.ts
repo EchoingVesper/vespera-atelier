@@ -454,10 +454,20 @@ export const ${variableName}StateManager = new ${variableName.charAt(0).toUpperC
                 if (settledResult.status === 'fulfilled') {
                     results.push(settledResult.value);
                 } else {
+                    const candidate = batch[index];
                     results.push({
                         success: false,
-                        variable: batch[index].variable,
-                        strategy: batch[index].completionStrategy,
+                        variable: candidate?.variable || { 
+                            name: 'unknown', 
+                            type: 'variable' as any, 
+                            file: '', 
+                            line: 0, 
+                            column: 0, 
+                            phase: 'phase_1b' as any,
+                            category: 'incomplete_features' as any,
+                            riskLevel: 'medium' as any
+                        },
+                        strategy: candidate?.completionStrategy || 'configuration_binding',
                         implementation: '',
                         testSuggestions: [],
                         errors: [`Batch processing error: ${settledResult.reason}`]

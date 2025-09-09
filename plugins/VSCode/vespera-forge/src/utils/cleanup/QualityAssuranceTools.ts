@@ -295,8 +295,8 @@ export class QualityAssuranceTools {
             result.errors.push({
                 type: ErrorType.RUNTIME_ERROR,
                 severity: 'critical',
-                message: `Validation process failed: ${error}`,
-                details: { error: error.toString() }
+                message: `Validation process failed: ${error instanceof Error ? error.message : String(error)}`,
+                details: { error: error instanceof Error ? error.toString() : String(error) }
             });
         }
 

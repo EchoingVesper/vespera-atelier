@@ -574,9 +574,9 @@ export class PropertyRemovalHelpers {
                     startLine: propertyDeclarationLine + 1,
                     endLine: propertyDeclarationLine + 1,
                     startColumn: 1,
-                    endColumn: lines[propertyDeclarationLine].length
+                    endColumn: lines[propertyDeclarationLine]?.length || 0
                 },
-                oldContent: lines[propertyDeclarationLine],
+                oldContent: lines[propertyDeclarationLine] || '',
                 newContent: '', // Remove the line
                 description: `Remove property declaration: ${property.name}`,
                 riskLevel: RiskLevel.LOW
@@ -605,13 +605,15 @@ export class PropertyRemovalHelpers {
         
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
-            if (line.includes('constructor(')) {
+            if (line && line.includes('constructor(')) {
                 constructorStart = i;
-                braceCount = (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
+                braceCount = (line?.match(/\{/g) || []).length - (line?.match(/\}/g) || []).length;
                 
                 // Find end of constructor
                 for (let j = i + 1; j < lines.length; j++) {
-                    braceCount += (lines[j].match(/\{/g) || []).length - (lines[j].match(/\}/g) || []).length;
+                    const currentLine = lines[j];
+                    if (!currentLine) continue;
+                    braceCount += (currentLine.match(/\{/g) || []).length - (currentLine.match(/\}/g) || []).length;
                     if (braceCount === 0) {
                         constructorEnd = j;
                         break;
@@ -625,10 +627,10 @@ export class PropertyRemovalHelpers {
             // Find property assignment in constructor
             for (let i = constructorStart; i <= constructorEnd; i++) {
                 const line = lines[i];
-                if (line.includes(`this.${property.name}`) && line.includes('=')) {
+                if (line && line.includes(`this.${property.name}`) && line.includes('=')) {
                     if (refactoringType === ConstructorRefactoringType.PARAMETER_TO_LOCAL_VARIABLE) {
                         // Convert property assignment to local variable
-                        const localVarLine = line.replace(`this.${property.name}`, 'const ' + property.name.replace('_', ''));
+                        const localVarLine = (line || '').replace(`this.${property.name}`, 'const ' + property.name.replace('_', ''));
                         changes.push({
                             type: PropertyChangeType.CONVERT_PARAMETER_TO_LOCAL,
                             location: {
@@ -636,7 +638,7 @@ export class PropertyRemovalHelpers {
                                 startLine: i + 1,
                                 endLine: i + 1,
                                 startColumn: 1,
-                                endColumn: line.length
+                                endColumn: line?.length || 0
                             },
                             oldContent: line,
                             newContent: localVarLine,
@@ -652,7 +654,7 @@ export class PropertyRemovalHelpers {
                                 startLine: i + 1,
                                 endLine: i + 1,
                                 startColumn: 1,
-                                endColumn: line.length
+                                endColumn: line?.length || 0
                             },
                             oldContent: line,
                             newContent: '', // Remove the line
