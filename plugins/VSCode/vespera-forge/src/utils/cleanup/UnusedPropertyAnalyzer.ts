@@ -601,6 +601,9 @@ export class UnusedPropertyAnalyzer {
         // Find constructor and analyze usage
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
+            if (!line) {
+                continue;
+            }
             
             if (line.includes('constructor')) {
                 constructorLine = i + 1;
@@ -634,12 +637,12 @@ export class UnusedPropertyAnalyzer {
         const usageContexts: string[] = [];
 
         lines.forEach(line => {
-            if (line.includes(`this.${property.name}`) || line.includes(`.${property.name}`)) {
+            if (line && (line.includes(`this.${property.name}`) || line.includes(`.${property.name}`))) {
                 accessCount++;
                 
                 // Extract method context
                 const methodMatch = line.match(/(\w+)\s*\(/);
-                if (methodMatch && methodMatch[1] !== 'constructor') {
+                if (methodMatch && methodMatch[1] && methodMatch[1] !== 'constructor') {
                     accessMethods.push(methodMatch[1]);
                 }
                 

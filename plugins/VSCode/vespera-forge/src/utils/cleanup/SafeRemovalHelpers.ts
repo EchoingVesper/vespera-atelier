@@ -45,31 +45,6 @@ export interface BatchRemovalOptions {
 }
 
 export class SafeRemovalHelpers {
-    private static readonly SAFE_REMOVAL_PATTERNS = {
-        imports: {
-            // Patterns for safe import removal
-            unusedTypeImports: [
-                /^import\s+type\s+{[^}]*\b\w+\b[^}]*}\s+from\s+['"][^'"]+['"];?\s*$/gm,
-                /^import\s+{[^}]*\b\w+\b[^}]*}\s+from\s+['"][^'"]+['"];?\s*$/gm
-            ],
-            
-            // Common safe imports that are always removable
-            alwaysSafeImports: [
-                'StreamEvent', 'SecurityConfiguration', 'ThreatType',
-                'VesperaSecurityErrorCode', 'SecurityEnhanced.*'
-            ]
-        },
-        
-        parameters: {
-            // Patterns for safe parameter removal
-            eventHandlers: /\(\s*([^,]+),\s*([^,)]+)\s*\)\s*=>/g,
-            destructuring: /{\s*([^,}]+),\s*([^}]+)\s*}/g,
-            callbacks: /\(\s*([^,)]+)\s*\)\s*=>\s*{/g,
-            
-            // Always safe to remove if prefixed with underscore
-            underscorePrefixed: /^_/
-        }
-    };
 
     /**
      * Removes all safe unused imports from a file
@@ -380,6 +355,9 @@ export class SafeRemovalHelpers {
 
         for (const [key, result] of Object.entries(results)) {
             const baseFile = key.split(':')[0];
+            if (!baseFile) {
+                continue;
+            }
             processedFiles.add(baseFile);
 
             stats.totalItemsRemoved += result.removedItems.length;
@@ -416,6 +394,15 @@ export class SafeRemovalHelpers {
         const targetLine = lines[unusedImport.line - 1];
         const changes: FileChange[] = [];
 
+        if (!targetLine) {
+            return {
+                success: false,
+                newContent: content,
+                changes: [],
+                error: 'Target line not found'
+            };
+        }
+
         // Check if entire import line can be removed
         const importMatch = targetLine.match(/^import\s+.*from\s+['"][^'"]+['"];?\s*$/);
         if (importMatch) {
@@ -440,6 +427,14 @@ export class SafeRemovalHelpers {
         const destructuredMatch = targetLine.match(/import\s+{([^}]+)}\s+from/);
         if (destructuredMatch) {
             const importList = destructuredMatch[1];
+            if (!importList) {
+                return {
+                    success: false,
+                    newContent: content,
+                    changes: [],
+                    error: 'Could not extract import list'
+                };
+            }
             const imports = importList.split(',').map(imp => imp.trim());
             const filteredImports = imports.filter(imp => imp !== unusedImport.name);
 
@@ -490,12 +485,30 @@ export class SafeRemovalHelpers {
         const targetLine = lines[unusedParam.line - 1];
         const changes: FileChange[] = [];
 
+        if (!targetLine) {
+            return {
+                success: false,
+                newContent: content,
+                changes: [],
+                error: 'Target line not found'
+            };
+        }
+
         // Handle different parameter patterns
         
         // Case 1: Unused parameter in arrow function (param) => {}
         const arrowFuncMatch = targetLine.match(/\(([^)]+)\)\s*=>/);
         if (arrowFuncMatch) {
-            const params = arrowFuncMatch[1].split(',').map(p => p.trim());
+            const paramString = arrowFuncMatch[1];
+            if (!paramString) {
+                return {
+                    success: false,
+                    newContent: content,
+                    changes: [],
+                    error: 'Could not extract parameters'
+                };
+            }
+            const params = paramString.split(',').map(p => p.trim());
             const filteredParams = params.filter(p => !p.includes(unusedParam.name));
             
             const newParamList = filteredParams.length > 0 ? filteredParams.join(', ') : '';
@@ -520,7 +533,16 @@ export class SafeRemovalHelpers {
         // Case 2: Destructuring parameter { param1, param2 }
         const destructuringMatch = targetLine.match(/{([^}]+)}/);
         if (destructuringMatch) {
-            const props = destructuringMatch[1].split(',').map(p => p.trim());
+            const propsString = destructuringMatch[1];
+            if (!propsString) {
+                return {
+                    success: false,
+                    newContent: content,
+                    changes: [],
+                    error: 'Could not extract destructuring properties'
+                };
+            }
+            const props = propsString.split(',').map(p => p.trim());
             const filteredProps = props.filter(p => !p.includes(unusedParam.name));
             
             if (filteredProps.length > 0) {
@@ -582,6 +604,15 @@ export class SafeRemovalHelpers {
         const targetLine = lines[unusedVar.line - 1];
         const changes: FileChange[] = [];
 
+        if (!targetLine) {
+            return {
+                success: false,
+                newContent: content,
+                changes: [],
+                error: 'Target line not found'
+            };
+        }
+
         // Simple variable declaration removal
         const varMatch = targetLine.match(/^\s*(const|let|var)\s+\w+\s*[=;]/);
         if (varMatch) {
@@ -641,7 +672,7 @@ export class SafeRemovalHelpers {
             if (!grouped[variable.file]) {
                 grouped[variable.file] = [];
             }
-            grouped[variable.file].push(variable);
+            grouped[variable.file]?.push(variable);
         });
 
         return grouped;

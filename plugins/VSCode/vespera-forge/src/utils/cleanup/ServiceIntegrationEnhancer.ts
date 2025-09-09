@@ -607,6 +607,7 @@ export class ServiceIntegrationEnhancer {
 
         // Pattern consistency check
         const hasConsistentPatterns = plan.patternMatches.length > 0 && 
+                                     plan.patternMatches[0] && 
                                      plan.patternMatches[0].confidence !== PatternConfidence.LOW;
         validations.push({
             validationType: IntegrationValidationType.PATTERN_CONSISTENCY_CHECK,
@@ -769,6 +770,9 @@ export class ServiceIntegrationEnhancer {
         
         if (methodLines.length > 0) {
             const targetMethod = methodLines[0]; // Use first method for now
+            if (!targetMethod) {
+                return null;
+            }
             
             return {
                 type: IntegrationChangeType.ADD_SERVICE_USAGE,
@@ -982,8 +986,11 @@ export class ServiceIntegrationEnhancer {
         
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
+            if (!line) {
+                continue;
+            }
             const methodMatch = line.match(/(async\s+)?(\w+)\s*\(/);
-            if (methodMatch && !line.includes('//') && !line.includes('constructor')) {
+            if (methodMatch && methodMatch[2] && !line.includes('//') && !line.includes('constructor')) {
                 methods.push({
                     name: methodMatch[2],
                     startLine: i + 1,
