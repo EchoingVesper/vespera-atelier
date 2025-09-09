@@ -448,8 +448,11 @@ export class ChatManager {
   }
   
   private async reloadProviders(config: any): Promise<void> {
-    // TODO: Reload providers when configuration changes
+    // Reload providers when configuration changes
     console.log('[ChatManager] Reloading providers due to configuration change', config);
+    // Clear existing providers and reload from new configuration
+    this.providers.clear();
+    await this.loadProviders();
   }
   
   private addMessageToHistory(message: ChatMessage): void {
@@ -477,7 +480,7 @@ export class ChatManager {
   }
   
   private exportAsMarkdown(): string {
-    // TODO: Implement markdown export
+    // Export chat history as formatted markdown
     const header = `# Chat History\n\nExported: ${new Date().toISOString()}\n\n`;
     const messages = this.messageHistory.map(msg => 
       `## ${msg.role.charAt(0).toUpperCase() + msg.role.slice(1)}\n\n${msg.content}\n`

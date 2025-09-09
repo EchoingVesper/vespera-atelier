@@ -9,6 +9,9 @@
  * - Seamless integration with VesperaCoreServices
  */
 
+import * as vscode from 'vscode';
+import type { SecurityEnhancedVesperaCoreServices } from './SecurityEnhancedCoreServices';
+
 // ============================================================================
 // Core Security Services
 // ============================================================================
@@ -169,7 +172,7 @@ export async function initializeDevelopmentSecurity(
   return SecurityEnhancedVesperaCoreServices.initialize(context, {
     ...baseConfig,
     security: createDevelopmentSecurityConfig()
-  });
+  }) as unknown as SecurityEnhancedVesperaCoreServices;
 }
 
 /**
@@ -185,7 +188,7 @@ export async function initializeProductionSecurity(
   return SecurityEnhancedVesperaCoreServices.initialize(context, {
     ...baseConfig,
     security: createProductionSecurityConfig()
-  });
+  }) as unknown as SecurityEnhancedVesperaCoreServices;
 }
 
 /**

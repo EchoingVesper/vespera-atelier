@@ -6,7 +6,7 @@
  */
 
 import * as vscode from 'vscode';
-import { VesperaLogger, LoggerConfiguration, LogLevel } from './logging/VesperaLogger';
+import { VesperaLogger, LoggerConfiguration } from './logging/VesperaLogger';
 import { VesperaErrorHandler } from './error-handling/VesperaErrorHandler';
 import { VesperaContextManager } from './memory-management/VesperaContextManager';
 import { VesperaTelemetryService } from './telemetry/VesperaTelemetryService';
@@ -50,7 +50,13 @@ export interface VesperaCoreStats {
  */
 export class VesperaCoreServices implements vscode.Disposable {
   private static instance: VesperaCoreServices;
-  private services!: VesperaCoreServices;
+  private services!: {
+    logger: VesperaLogger;
+    errorHandler: VesperaErrorHandler;
+    contextManager: VesperaContextManager;
+    telemetryService: VesperaTelemetryService;
+    disposalManager: DisposalManager;
+  };
   private initialized = false;
   private initializeTime = 0;
   private masterDisposalManager: DisposalManager;
@@ -77,7 +83,13 @@ export class VesperaCoreServices implements vscode.Disposable {
   public static async initialize(
     context: vscode.ExtensionContext,
     config: VesperaCoreServicesConfig = {}
-  ): Promise<VesperaCoreServices> {
+  ): Promise<{
+    logger: VesperaLogger;
+    errorHandler: VesperaErrorHandler;
+    contextManager: VesperaContextManager;
+    telemetryService: VesperaTelemetryService;
+    disposalManager: DisposalManager;
+  }> {
     if (VesperaCoreServices.instance) {
       return VesperaCoreServices.instance.services;
     }
@@ -92,7 +104,13 @@ export class VesperaCoreServices implements vscode.Disposable {
   /**
    * Get the initialized core services
    */
-  public static getInstance(): VesperaCoreServices {
+  public static getInstance(): {
+    logger: VesperaLogger;
+    errorHandler: VesperaErrorHandler;
+    contextManager: VesperaContextManager;
+    telemetryService: VesperaTelemetryService;
+    disposalManager: DisposalManager;
+  } {
     if (!VesperaCoreServices.instance?.initialized) {
       throw new Error('VesperaCoreServices not initialized. Call initialize() first.');
     }
@@ -145,12 +163,11 @@ export class VesperaCoreServices implements vscode.Disposable {
       // 5. Create service disposal manager
       const disposalManager = new DisposalManager(logger);
 
-      // 6. Register all services for cleanup
+      // 6. Register all services for cleanup (except disposal manager itself)
       this.masterDisposalManager.addAll([
         logger,
         errorHandler,
-        contextManager,
-        disposalManager
+        contextManager
       ]);
 
       // 7. Register master disposal manager with VS Code
@@ -279,42 +296,42 @@ export class VesperaCoreServices implements vscode.Disposable {
     // Check logger
     try {
       logger.debug('Health check: Logger test');
-      serviceChecks.logger = { healthy: true };
+      serviceChecks['logger'] = { healthy: true };
     } catch (error) {
-      serviceChecks.logger = { healthy: false, error: String(error) };
+      serviceChecks['logger'] = { healthy: false, error: String(error) };
     }
 
     // Check error handler
     try {
       // Test that error handler exists and has strategies
       const unknownStrategy = errorHandler.getStrategy(9000); // UNKNOWN_ERROR
-      serviceChecks.errorHandler = { healthy: !!unknownStrategy };
+      serviceChecks['errorHandler'] = { healthy: !!unknownStrategy };
     } catch (error) {
-      serviceChecks.errorHandler = { healthy: false, error: String(error) };
+      serviceChecks['errorHandler'] = { healthy: false, error: String(error) };
     }
 
     // Check context manager
     try {
       const memStats = contextManager.getMemoryStats();
-      serviceChecks.contextManager = { healthy: !!memStats };
+      serviceChecks['contextManager'] = { healthy: !!memStats };
     } catch (error) {
-      serviceChecks.contextManager = { healthy: false, error: String(error) };
+      serviceChecks['contextManager'] = { healthy: false, error: String(error) };
     }
 
     // Check telemetry service
     try {
       const isEnabled = telemetryService.isEnabled();
-      serviceChecks.telemetryService = { healthy: typeof isEnabled === 'boolean' };
+      serviceChecks['telemetryService'] = { healthy: typeof isEnabled === 'boolean' };
     } catch (error) {
-      serviceChecks.telemetryService = { healthy: false, error: String(error) };
+      serviceChecks['telemetryService'] = { healthy: false, error: String(error) };
     }
 
     // Check disposal manager
     try {
       const stats = disposalManager.getStats();
-      serviceChecks.disposalManager = { healthy: !!stats };
+      serviceChecks['disposalManager'] = { healthy: !!stats };
     } catch (error) {
-      serviceChecks.disposalManager = { healthy: false, error: String(error) };
+      serviceChecks['disposalManager'] = { healthy: false, error: String(error) };
     }
 
     const allHealthy = Object.values(serviceChecks).every(check => check.healthy);

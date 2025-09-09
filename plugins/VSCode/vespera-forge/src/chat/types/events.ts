@@ -1,11 +1,8 @@
 /**
  * Event type definitions for chat system integration with VesperaEvents
  */
-
-// Assuming VesperaEventData is defined in the main extension
-export interface VesperaEventData {
-  [key: string]: any;
-}
+import { ChatLayoutMode, ChatPosition } from './config';
+import { VesperaEventData } from '../../utils/events';
 
 export interface ChatEventData extends VesperaEventData {
   // Chat-specific events
@@ -18,6 +15,12 @@ export interface ChatEventData extends VesperaEventData {
   chatThreadCreated: { threadId: string; title?: string };
   chatThreadDeleted: { threadId: string };
   chatUILayoutChanged: { mode: ChatLayoutMode; position: ChatPosition };
+  
+  // Streaming events
+  chatStreamStarted: { providerId?: string };
+  chatStreamChunk: { chunk: any };
+  chatStreamComplete: { messageId: string };
+  chatStreamError: { error: string };
 }
 
 export type ChatEventType = keyof ChatEventData;
@@ -50,5 +53,3 @@ export class LayoutChangedEvent implements ChatEvent<'chatUILayoutChanged'> {
   constructor(public data: ChatEventData['chatUILayoutChanged']) {}
 }
 
-// Import types from config for layout definitions
-import { ChatLayoutMode, ChatPosition } from './config';

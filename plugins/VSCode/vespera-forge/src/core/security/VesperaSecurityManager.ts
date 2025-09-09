@@ -17,7 +17,8 @@ import {
   SecurityAuditLoggerInterface,
   SecurityMetrics,
   VesperaSecurityEvent,
-  SecurityEventContext
+  SecurityEventContext,
+  VesperaSecurityErrorCode
 } from '../../types/security';
 import { VesperaSecurityError } from './VesperaSecurityErrors';
 
@@ -34,16 +35,21 @@ export interface SecurityEnhancedCoreServices {
 /**
  * Event bus for security-related events
  */
-export class SecurityEventBus extends vscode.EventEmitter<{
-  'securityEvent': [VesperaSecurityEvent, SecurityEventContext];
-  'rateLimitExceeded': [string, any];
-  'consentChanged': [string, string[], boolean];
-  'threatDetected': [string, any];
-  'cspViolation': [string, any];
-}> implements vscode.Disposable {
+export class SecurityEventBus implements vscode.Disposable {
+  private readonly _onSecurityEvent = new vscode.EventEmitter<{ event: VesperaSecurityEvent; context: SecurityEventContext }>();
+  private readonly _onRateLimitExceeded = new vscode.EventEmitter<{ resourceId: string; context: any }>();
+  private readonly _onConsentChanged = new vscode.EventEmitter<{ userId: string; purposeIds: string[]; granted: boolean }>();
+  private readonly _onThreatDetected = new vscode.EventEmitter<{ threatType: string; details: any }>();
+  private readonly _onCspViolation = new vscode.EventEmitter<{ directive: string; violation: any }>();
+  
+  // Public event accessors
+  public readonly onSecurityEvent = this._onSecurityEvent.event;
+  public readonly onRateLimitExceeded = this._onRateLimitExceeded.event;
+  public readonly onConsentChanged = this._onConsentChanged.event;
+  public readonly onThreatDetected = this._onThreatDetected.event;
+  public readonly onCspViolation = this._onCspViolation.event;
   
   constructor(private logger: VesperaLogger) {
-    super();
     this.logger = logger.createChild('SecurityEventBus');
   }
 
@@ -52,33 +58,48 @@ export class SecurityEventBus extends vscode.EventEmitter<{
    */
   emitSecurityEvent(event: VesperaSecurityEvent, context: SecurityEventContext): void {
     this.logger.debug('Emitting security event', { event, context });
-    this.fire('securityEvent', event, context);
-    
-    // Emit specific event types for targeted listeners
-    switch (event) {
-      case VesperaSecurityEvent.RATE_LIMIT_EXCEEDED:
-        this.fire('rateLimitExceeded', context.resourceId || 'unknown', context);
-        break;
-      case VesperaSecurityEvent.CONSENT_GRANTED:
-      case VesperaSecurityEvent.CONSENT_WITHDRAWN:
-        this.fire('consentChanged', 
-          context.userId || 'unknown', 
-          context.metadata?.purposeIds || [], 
-          event === VesperaSecurityEvent.CONSENT_GRANTED
-        );
-        break;
-      case VesperaSecurityEvent.THREAT_DETECTED:
-        this.fire('threatDetected', context.threat?.type || 'unknown', context);
-        break;
-      case VesperaSecurityEvent.CSP_VIOLATION:
-        this.fire('cspViolation', context.metadata?.violationType || 'unknown', context);
-        break;
-    }
+    this._onSecurityEvent.fire({ event, context });
+  }
+  
+  /**
+   * Emit a rate limit exceeded event
+   */
+  emitRateLimitExceeded(resourceId: string, context: any): void {
+    this.logger.debug('Emitting rate limit exceeded', { resourceId, context });
+    this._onRateLimitExceeded.fire({ resourceId, context });
+  }
+  
+  /**
+   * Emit a consent changed event
+   */
+  emitConsentChanged(userId: string, purposeIds: string[], granted: boolean): void {
+    this.logger.debug('Emitting consent changed', { userId, purposeIds, granted });
+    this._onConsentChanged.fire({ userId, purposeIds, granted });
+  }
+  
+  /**
+   * Emit a threat detected event
+   */
+  emitThreatDetected(threatType: string, details: any): void {
+    this.logger.debug('Emitting threat detected', { threatType, details });
+    this._onThreatDetected.fire({ threatType, details });
+  }
+  
+  /**
+   * Emit a CSP violation event
+   */
+  emitCspViolation(directive: string, violation: any): void {
+    this.logger.debug('Emitting CSP violation', { directive, violation });
+    this._onCspViolation.fire({ directive, violation });
   }
 
   dispose(): void {
     this.logger.debug('SecurityEventBus disposed');
-    super.dispose();
+    this._onSecurityEvent.dispose();
+    this._onRateLimitExceeded.dispose();
+    this._onConsentChanged.dispose();
+    this._onThreatDetected.dispose();
+    this._onCspViolation.dispose();
   }
 }
 
@@ -90,11 +111,19 @@ export class VesperaSecurityManager implements vscode.Disposable {
   
   private eventBus: SecurityEventBus;
   private initialized = false;
+  private _isDisposed = false;
   private readonly securityServices: Map<string, vscode.Disposable> = new Map();
+  
+  /**
+   * Check if manager is disposed
+   */
+  public get isDisposed(): boolean {
+    return this._isDisposed;
+  }
 
   private constructor(
     private logger: VesperaLogger,
-    private errorHandler: VesperaErrorHandler,
+    _errorHandler: VesperaErrorHandler,
     private contextManager: VesperaContextManager,
     private config: SecurityConfiguration
   ) {
@@ -137,7 +166,7 @@ export class VesperaSecurityManager implements vscode.Disposable {
    */
   public static getInstance(): VesperaSecurityManager {
     if (!VesperaSecurityManager.instance) {
-      throw new VesperaSecurityError('SecurityManager not initialized');
+      throw new VesperaSecurityError('SecurityManager not initialized', VesperaSecurityErrorCode.UNAUTHORIZED_ACCESS);
     }
     return VesperaSecurityManager.instance;
   }
@@ -260,9 +289,9 @@ export class VesperaSecurityManager implements vscode.Disposable {
 
     // Check event bus
     try {
-      serviceChecks.eventBus = { healthy: !this.eventBus.disposed };
+      serviceChecks['eventBus'] = { healthy: !!this.eventBus };
     } catch (error) {
-      serviceChecks.eventBus = { 
+      serviceChecks['eventBus'] = { 
         healthy: false, 
         error: error instanceof Error ? error.message : String(error) 
       };
@@ -355,7 +384,7 @@ export class VesperaSecurityManager implements vscode.Disposable {
 
     } catch (error) {
       this.logger.error('Failed to initialize security services', error);
-      throw new VesperaSecurityError('Security services initialization failed', undefined, undefined, {
+      throw new VesperaSecurityError('Security services initialization failed', VesperaSecurityErrorCode.UNAUTHORIZED_ACCESS, undefined, {
         originalError: error
       });
     }
@@ -387,10 +416,12 @@ export class VesperaSecurityManager implements vscode.Disposable {
       this.eventBus.dispose();
 
       this.initialized = false;
+      this._isDisposed = true;
       this.logger.info('Security manager shutdown completed');
 
     } catch (error) {
       this.logger.error('Error during security manager shutdown', error);
+      this._isDisposed = true;
       throw error;
     }
   }

@@ -13,6 +13,7 @@ import { VesperaInputSanitizer } from '../core/security/sanitization/VesperaInpu
 import { VesperaSecurityAuditLogger } from '../core/security/audit/VesperaSecurityAuditLogger';
 import { VesperaLogger } from '../core/logging/VesperaLogger';
 import { VesperaErrorHandler } from '../core/error-handling/VesperaErrorHandler';
+import { VesperaTelemetryService } from '../core/telemetry/VesperaTelemetryService';
 import { generateSecureTemplate, sanitizeHtmlContent } from '../chat/ui/webview/HtmlGenerator';
 import { ChatEventRouter } from '../chat/events/ChatEventRouter';
 import { ChatConfigurationManager } from '../chat/core/ConfigurationManager';
@@ -29,8 +30,18 @@ export class SecureWebViewExample {
   private errorHandler: VesperaErrorHandler;
 
   constructor(private context: vscode.ExtensionContext) {
-    this.logger = new VesperaLogger('SecureWebViewExample', { level: 'debug' });
-    this.errorHandler = new VesperaErrorHandler(this.logger);
+    // Initialize logger with proper static method
+    this.logger = VesperaLogger.initialize(context, { 
+      level: 0, // DEBUG level
+      enableConsole: true,
+      enableVSCodeOutput: true
+    });
+    
+    // Initialize telemetry service required for error handler
+    const telemetryService = new VesperaTelemetryService(true);
+    
+    // Initialize error handler with proper static method
+    this.errorHandler = VesperaErrorHandler.initialize(context, this.logger, telemetryService);
   }
 
   /**
@@ -66,6 +77,7 @@ export class SecureWebViewExample {
     const sanitizationRules: SanitizationRule[] = [
       {
         id: 'webview-user-input',
+        name: 'WebView User Input Sanitization',
         scope: SanitizationScope.USER_INPUT,
         priority: 100,
         enabled: true,
@@ -98,9 +110,9 @@ export class SecureWebViewExample {
             config: {
               domPurify: {
                 allowedTags: ['p', 'br', 'strong', 'em', 'code', 'pre'],
-                allowedAttributes: [],
+                allowedAttributes: {} as Record<string, string[]>,
                 stripIgnoreTag: true,
-                stripIgnoreTagBody: true
+                stripIgnoreTagBody: ['script', 'style']
               }
             }
           }
@@ -108,6 +120,7 @@ export class SecureWebViewExample {
       },
       {
         id: 'webview-html-content',
+        name: 'WebView HTML Content Sanitization',
         scope: SanitizationScope.HTML_CONTENT,
         priority: 90,
         enabled: true,
@@ -126,9 +139,9 @@ export class SecureWebViewExample {
             config: {
               domPurify: {
                 allowedTags: ['div', 'span', 'p', 'br', 'strong', 'em', 'code', 'pre', 'ul', 'ol', 'li'],
-                allowedAttributes: ['class', 'id'],
+                allowedAttributes: { 'div': ['class', 'id'], 'span': ['class', 'id'], 'p': ['class'], 'code': ['class'] } as Record<string, string[]>,
                 stripIgnoreTag: false,
-                stripIgnoreTagBody: true
+                stripIgnoreTagBody: ['script', 'style', 'object', 'embed']
               }
             }
           }
@@ -223,12 +236,12 @@ export class SecureWebViewExample {
    */
   private async createSecureWebViewProvider(): Promise<void> {
     const eventRouter = new ChatEventRouter();
+    const templateRegistry = new ChatTemplateRegistry(this.context.extensionUri, eventRouter);
     const configManager = new ChatConfigurationManager(
       this.context, 
-      this.logger, 
-      this.errorHandler
+      templateRegistry, 
+      eventRouter
     );
-    const templateRegistry = new ChatTemplateRegistry(this.logger);
 
     // Create ChatWebViewProvider with security dependencies
     this.chatProvider = new ChatWebViewProvider(

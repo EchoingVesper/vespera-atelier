@@ -5,8 +5,6 @@
 
 import * as vscode from 'vscode';
 import { VesperaChatSystem } from '../chat';
-import { VesperaEvents } from '../utils/events';
-import { ClaudeCodeProvider } from '../chat/providers/ClaudeCodeProvider';
 import { CLAUDE_CODE_TEMPLATE, createDefaultConfig } from '../chat/templates/providers/index';
 import { ProviderConfig } from '../chat/types/provider';
 

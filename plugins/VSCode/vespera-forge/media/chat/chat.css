@@ -971,3 +971,824 @@ body {
     border-color: var(--chat-assistant-message);
   }
 }
+
+/* ================================
+ * Secure Context Display Styles
+ * ================================ */
+
+:root {
+  /* Context-specific colors */
+  --context-background: var(--vscode-editorWidget-background, #252526);
+  --context-border: var(--vscode-editorWidget-border, #454545);
+  --context-foreground: var(--vscode-editorWidget-foreground, #cccccc);
+  --context-header-background: var(--vscode-editorGroupHeader-tabsBackground, #2d2d30);
+  --context-accent: var(--vscode-focusBorder, #007acc);
+  --context-warning: var(--vscode-editorWarning-foreground, #ff8c00);
+  --context-error: var(--vscode-editorError-foreground, #f85149);
+  --context-success: var(--vscode-testing-iconPassed, #73c991);
+  
+  /* Security indicators */
+  --security-safe: #28a745;
+  --security-warning: #ffc107;
+  --security-danger: #dc3545;
+}
+
+/* Context display container */
+.context-display {
+  margin: var(--chat-gap) 0;
+  border: 1px solid var(--context-border);
+  border-radius: var(--chat-border-radius);
+  background: var(--context-background);
+  font-size: 0.95em;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  
+  /* Visual separation from chat content */
+  border-left: 3px solid var(--context-accent);
+}
+
+/* Context header */
+.context-header {
+  background: var(--context-header-background);
+  border-bottom: 1px solid var(--context-border);
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease;
+}
+
+.context-header:hover {
+  background: color-mix(in srgb, var(--context-header-background) 90%, var(--vscode-list-hoverBackground) 10%);
+}
+
+.context-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.context-toggle {
+  font-family: 'Codicon', monospace;
+  font-size: 14px;
+  color: var(--context-accent);
+  transition: transform 0.15s ease;
+  min-width: 16px;
+  text-align: center;
+}
+
+.context-toggle.expanded {
+  transform: rotate(0deg);
+}
+
+.context-toggle.collapsed {
+  transform: rotate(-90deg);
+}
+
+.context-label {
+  font-weight: 500;
+  color: var(--context-foreground);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.context-summary {
+  color: var(--vscode-descriptionForeground, #cccccc99);
+  flex: 1;
+  margin-left: 8px;
+  font-size: 0.9em;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.context-metadata {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85em;
+  color: var(--vscode-descriptionForeground, #cccccc99);
+}
+
+.context-count {
+  background: var(--vscode-badge-background, #4d4d4d);
+  color: var(--vscode-badge-foreground, #ffffff);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 0.8em;
+  font-weight: 500;
+}
+
+.context-threats {
+  color: var(--context-warning);
+  font-weight: 500;
+}
+
+.context-timestamp {
+  opacity: 0.7;
+}
+
+/* Context content */
+.context-content {
+  max-height: 400px;
+  overflow-y: auto;
+  transition: all 0.2s ease;
+}
+
+.context-content.visible {
+  opacity: 1;
+  max-height: 400px;
+  border-bottom: none;
+}
+
+.context-content.hidden {
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+}
+
+.context-empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--vscode-descriptionForeground, #cccccc99);
+  font-style: italic;
+}
+
+/* Context items */
+.context-item {
+  border-bottom: 1px solid var(--context-border);
+  background: var(--vscode-editor-background, #1e1e1e);
+}
+
+.context-item:last-child {
+  border-bottom: none;
+}
+
+.context-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--vscode-editorGroupHeader-tabsBackground, #2d2d30);
+  border-bottom: 1px solid var(--context-border);
+  font-size: 0.9em;
+}
+
+.context-item-path {
+  font-family: var(--vscode-editor-font-family, 'Menlo', 'Monaco', 'Courier New', monospace);
+  font-weight: 500;
+  color: var(--vscode-textLink-foreground, #4fc1ff);
+  cursor: pointer;
+}
+
+.context-item-path:hover {
+  text-decoration: underline;
+}
+
+.context-item-language {
+  background: var(--context-accent);
+  color: white;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 0.75em;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.context-item-lines {
+  color: var(--vscode-descriptionForeground, #cccccc99);
+  font-size: 0.8em;
+}
+
+.context-item-type {
+  background: var(--vscode-badge-background, #4d4d4d);
+  color: var(--vscode-badge-foreground, #ffffff);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 0.75em;
+  text-transform: capitalize;
+}
+
+.context-item-type[data-type="selection"] {
+  background: var(--security-safe);
+  color: white;
+}
+
+.context-item-type[data-type="cursor_area"] {
+  background: var(--context-accent);
+  color: white;
+}
+
+.context-item-preview {
+  padding: 0;
+  overflow: hidden;
+}
+
+.context-item-preview pre {
+  margin: 0;
+  padding: 12px;
+  background: var(--vscode-editor-background, #1e1e1e);
+  overflow-x: auto;
+  font-family: var(--vscode-editor-font-family, 'Menlo', 'Monaco', 'Courier New', monospace);
+  font-size: var(--vscode-editor-font-size, 12px);
+  line-height: 1.4;
+  border: none;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.context-item-preview code {
+  color: var(--vscode-editor-foreground, #d4d4d4);
+  background: none;
+  padding: 0;
+  font-size: inherit;
+  white-space: pre;
+  word-wrap: normal;
+}
+
+.context-item-expand {
+  margin: 8px 12px;
+  padding: 4px 8px;
+  background: var(--vscode-button-background, #0e639c);
+  color: var(--vscode-button-foreground, #ffffff);
+  border: none;
+  border-radius: 3px;
+  font-size: 0.8em;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.context-item-expand:hover {
+  background: var(--vscode-button-hoverBackground, #1177bb);
+}
+
+.context-item-expand:active {
+  background: var(--vscode-button-activeBackground, #0d5a9b);
+}
+
+/* Security indicators */
+.context-display[data-sanitized="true"] {
+  border-left-color: var(--security-safe);
+}
+
+.context-display[data-threats="true"] {
+  border-left-color: var(--security-warning);
+}
+
+.context-display[data-blocked="true"] {
+  border-left-color: var(--security-danger);
+  opacity: 0.7;
+}
+
+/* Responsive design */
+@media (max-width: 400px) {
+  .context-metadata {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .context-item-header {
+    flex-wrap: wrap;
+  }
+  
+  .context-content {
+    max-height: 300px;
+  }
+  
+  .context-item-preview pre {
+    max-height: 150px;
+    font-size: 11px;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .context-toggle,
+  .context-content,
+  .context-header,
+  .context-item-expand {
+    transition: none;
+  }
+}
+
+/* High contrast mode support for context */
+@media (prefers-contrast: high) {
+  .context-display {
+    border-width: 2px;
+    border-left-width: 4px;
+  }
+  
+  .context-header {
+    border-bottom-width: 2px;
+  }
+  
+  .context-item {
+    border-bottom-width: 2px;
+  }
+  
+  .context-item-header {
+    border-bottom-width: 2px;
+  }
+  
+  .context-item-expand {
+    border: 2px solid var(--vscode-button-background);
+  }
+}
+
+/* Focus states for keyboard navigation */
+.context-toggle:focus,
+.context-header:focus {
+  outline: 2px solid var(--vscode-focusBorder, #007acc);
+  outline-offset: 2px;
+}
+
+.context-item-expand:focus {
+  outline: 2px solid var(--vscode-focusBorder, #007acc);
+  outline-offset: 1px;
+}
+
+/* === Enhanced Context UI Styling === */
+
+/* Smooth animations and transitions */
+.context-display {
+  transition: all 0.3s ease;
+  will-change: opacity, transform;
+}
+
+.context-display:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border-left-width: 4px;
+}
+
+/* Enhanced toggle button with smooth rotation */
+.context-toggle {
+  position: relative;
+  border: none;
+  background: transparent;
+  padding: 4px;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.context-toggle:hover {
+  background: rgba(var(--vscode-button-background), 0.1);
+  transform: scale(1.1);
+}
+
+.context-toggle:active {
+  transform: scale(0.95);
+}
+
+.context-toggle__icon {
+  display: inline-block;
+  transition: transform 0.2s ease;
+  font-size: 12px;
+  width: 12px;
+  text-align: center;
+}
+
+.context-toggle.expanded .context-toggle__icon {
+  transform: rotate(0deg);
+}
+
+.context-toggle.collapsed .context-toggle__icon {
+  transform: rotate(-90deg);
+}
+
+/* Context actions toolbar */
+.context-actions {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.context-header:hover .context-actions {
+  opacity: 1;
+}
+
+.context-action {
+  border: none;
+  background: transparent;
+  color: var(--context-foreground);
+  padding: 4px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.context-action:hover {
+  background: var(--vscode-button-hoverBackground, rgba(255, 255, 255, 0.1));
+  transform: translateY(-1px);
+}
+
+.context-action:active {
+  transform: translateY(0);
+}
+
+/* Security indicator enhancements */
+.context-security-indicator {
+  margin-left: 6px;
+  font-size: 12px;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.context-display[data-sanitized="true"] .context-security-indicator {
+  opacity: 1;
+}
+
+.context-display[data-threats="true"] {
+  border-left-color: var(--context-warning);
+  animation: threatPulse 2s ease-in-out infinite;
+}
+
+.context-display[data-blocked="true"] {
+  border-left-color: var(--context-error);
+  opacity: 0.7;
+}
+
+/* Enhanced content transitions */
+.context-content {
+  overflow: hidden;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.2s ease;
+}
+
+.context-content.visible {
+  max-height: 1000px; /* Large enough for most content */
+  opacity: 1;
+}
+
+.context-content.hidden {
+  max-height: 0;
+  opacity: 0;
+}
+
+/* Enhanced context items */
+.context-item {
+  border-bottom: 1px solid var(--context-border);
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.context-item:hover {
+  background: color-mix(in srgb, var(--context-background) 95%, var(--vscode-list-hoverBackground) 5%);
+}
+
+.context-item:last-child {
+  border-bottom: none;
+}
+
+/* Enhanced item header with better layout */
+.context-item-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.context-item-header:hover {
+  border-bottom-color: var(--context-border);
+  background: rgba(var(--vscode-list-hoverBackground), 0.05);
+}
+
+.context-item-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0; /* Allow text truncation */
+}
+
+.context-item-icon {
+  margin-right: 8px;
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+}
+
+.file-type-icon {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.context-item-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.context-item-path {
+  display: block;
+  font-weight: 500;
+  color: var(--context-foreground);
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.context-item-path:hover {
+  color: var(--context-accent);
+  cursor: pointer;
+}
+
+.context-item-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.context-item-language,
+.context-item-lines,
+.context-item-type {
+  background: var(--context-accent);
+  color: white;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.context-item-language {
+  background: #007acc;
+}
+
+.context-item-lines {
+  background: #6c757d;
+}
+
+.context-item-type[data-type="selection"] {
+  background: #28a745;
+}
+
+.context-item-type[data-type="cursor_area"] {
+  background: #ffc107;
+  color: #000;
+}
+
+/* Enhanced action buttons */
+.context-item-actions {
+  display: flex;
+  gap: 2px;
+  margin-left: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.context-item-header:hover .context-item-actions {
+  opacity: 1;
+}
+
+.context-item-action {
+  border: none;
+  background: transparent;
+  color: var(--context-foreground);
+  padding: 4px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.context-item-action:hover {
+  background: var(--vscode-button-hoverBackground, rgba(255, 255, 255, 0.1));
+  transform: scale(1.1);
+}
+
+.context-item-action--navigate:hover {
+  color: var(--context-accent);
+}
+
+.context-item-action--expand:hover {
+  color: var(--context-success);
+}
+
+/* Enhanced preview section */
+.context-item-preview {
+  padding: 8px 12px;
+  background: var(--vscode-editor-background, #1e1e1e);
+  border-top: 1px solid var(--context-border);
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.2s ease,
+              padding 0.2s ease;
+}
+
+.context-item[data-expanded="true"] .context-item-preview {
+  max-height: 300px;
+  opacity: 1;
+}
+
+.context-item-content pre {
+  margin: 0;
+  padding: 8px;
+  background: var(--vscode-textCodeBlock-background, #0d1117);
+  border: 1px solid var(--context-border);
+  border-radius: 4px;
+  font-family: var(--vscode-editor-font-family, 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace);
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-x: auto;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.context-item-content code {
+  color: var(--vscode-editor-foreground, #cccccc);
+  background: transparent;
+  padding: 0;
+}
+
+.context-item-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+/* Enhanced empty state */
+.context-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--vscode-descriptionForeground);
+  background: var(--context-background);
+}
+
+.context-empty__icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+  opacity: 0.5;
+}
+
+.context-empty__message {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.context-empty__hint {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* Loading state */
+.context-loading {
+  padding: 16px;
+  text-align: center;
+  color: var(--vscode-descriptionForeground);
+}
+
+.context-loading__spinner {
+  font-size: 16px;
+  margin-bottom: 6px;
+  animation: spin 1s linear infinite;
+}
+
+.context-loading__message {
+  font-size: 12px;
+}
+
+/* Animations */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes threatPulse {
+  0%, 100% { 
+    border-left-color: var(--context-warning);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  50% { 
+    border-left-color: var(--context-error);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.2);
+  }
+}
+
+@keyframes slideInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.context-item {
+  animation: slideInUp 0.3s ease-out;
+}
+
+/* Responsive design enhancements */
+@media (max-width: 600px) {
+  .context-metadata {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .context-item-header {
+    flex-wrap: wrap;
+    padding: 6px 8px;
+  }
+  
+  .context-item-tags {
+    width: 100%;
+    margin-top: 4px;
+  }
+  
+  .context-actions {
+    position: static;
+    opacity: 1;
+    margin-top: 4px;
+  }
+  
+  .context-item-actions {
+    opacity: 1;
+    margin-left: 0;
+    margin-top: 4px;
+  }
+}
+
+/* Dark theme specific enhancements */
+@media (prefers-color-scheme: dark) {
+  .context-display {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+  
+  .context-display:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* High contrast mode improvements */
+@media (prefers-contrast: high) {
+  .context-display {
+    border-width: 2px;
+    box-shadow: none;
+  }
+  
+  .context-header {
+    border-bottom-width: 2px;
+  }
+  
+  .context-item {
+    border-bottom-width: 2px;
+  }
+  
+  .context-item-header {
+    border-bottom-width: 2px;
+  }
+  
+  .context-item-expand {
+    border: 1px solid currentColor;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .context-display,
+  .context-toggle,
+  .context-toggle__icon,
+  .context-content,
+  .context-item,
+  .context-item-header,
+  .context-action,
+  .context-item-action,
+  .context-item-preview,
+  .context-loading__spinner {
+    animation: none;
+    transition: none;
+  }
+  
+  .context-toggle:hover {
+    transform: none;
+  }
+  
+  .context-action:hover,
+  .context-item-action:hover {
+    transform: none;
+  }
+}

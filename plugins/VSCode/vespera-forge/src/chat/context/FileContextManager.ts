@@ -1,16 +1,31 @@
 /**
- * File Context Manager
- * Coordinates file context collection and formats it for LLM consumption
+ * Secure File Context Collector
+ * Coordinates file context collection with security enhancements and separates context from chat content
  */
 
 import * as vscode from 'vscode';
 import { FileContextCollector, FileContextItem, FileContextOptions } from './FileContextCollector';
+import { VesperaLogger } from '../../core/logging/VesperaLogger';
+import { SanitizationScope, VesperaSecurityEvent } from '../../types/security';
+import { SecurityEnhancedVesperaCoreServices } from '../../core/security/SecurityEnhancedCoreServices';
 
-export interface ContextualMessage {
-  originalContent: string;
-  contextualContent: string;
-  hasContext: boolean;
+export interface SecureContextData {
   contextItems: FileContextItem[];
+  contextSummary: string;
+  hasContext: boolean;
+  contextId: string;
+  timestamp: number;
+  sanitized: boolean;
+  threatCount: number;
+}
+
+export interface SecureContextMessage {
+  originalMessage: string;
+  contextData: SecureContextData | null;
+  messageId: string;
+  timestamp: number;
+  hasContext: boolean;
+  contextualContent: string;
   contextSummary: string;
 }
 
@@ -27,12 +42,20 @@ export interface FileContextConfig {
   };
 }
 
-export class FileContextManager {
+export class SecureFileContextCollector {
   private collector: FileContextCollector;
   private config: FileContextConfig;
   private disposables: vscode.Disposable[] = [];
+  private disposed = false;
+  
+  // Core services integration
+  private logger: VesperaLogger;
+  private coreServices?: SecurityEnhancedVesperaCoreServices;
 
-  constructor(config: Partial<FileContextConfig> = {}) {
+  constructor(
+    config: Partial<FileContextConfig> = {},
+    coreServices?: SecurityEnhancedVesperaCoreServices
+  ) {
     this.config = {
       enabled: true,
       autoCollect: true,
@@ -64,57 +87,147 @@ export class FileContextManager {
     };
 
     this.collector = new FileContextCollector(this.config.contextOptions);
+    this.coreServices = coreServices;
+    
+    // Initialize logger
+    if (coreServices?.logger) {
+      this.logger = coreServices.logger.createChild('SecureFileContextCollector');
+    } else {
+      this.logger = console as any;
+    }
+    
+    if (coreServices) {
+      this.logger.info('SecureFileContextCollector initialized with core services integration');
+    } else {
+      console.log('SecureFileContextCollector initialized without core services');
+    }
+    
     this.setupEventListeners();
   }
 
   /**
-   * Create a contextual message by augmenting user input with file context
+   * Create a contextual message from user input and file context
    */
-  async createContextualMessage(userMessage: string): Promise<ContextualMessage> {
+  async createContextualMessage(userMessage: string): Promise<SecureContextMessage> {
+    const contextMessage = await this.collectSecureContext(userMessage);
+    
+    // Ensure all required properties are set
+    const hasContext = contextMessage.contextData !== null && contextMessage.contextData.hasContext;
+    const contextSummary = contextMessage.contextData?.contextSummary || 'No context available';
+    
+    let contextualContent = userMessage;
+    if (hasContext && contextMessage.contextData) {
+      contextualContent = this._formatContextForLLM(contextMessage.contextData.contextItems);
+    }
+
+    return {
+      ...contextMessage,
+      hasContext,
+      contextualContent,
+      contextSummary
+    };
+  }
+
+  /**
+   * Collect secure context data separately from user message
+   */
+  async collectSecureContext(userMessage: string): Promise<SecureContextMessage> {
+    if (this.disposed) {
+      throw new Error('SecureFileContextCollector has been disposed');
+    }
+
     if (!this.config.enabled) {
       return {
-        originalContent: userMessage,
-        contextualContent: userMessage,
+        originalMessage: userMessage,
+        contextData: null,
+        messageId: this.generateMessageId(),
+        timestamp: Date.now(),
         hasContext: false,
-        contextItems: [],
-        contextSummary: 'Context collection disabled'
+        contextualContent: userMessage,
+        contextSummary: 'No context available'
       };
     }
 
+    const messageId = this.generateMessageId();
+    const timestamp = Date.now();
+    
     try {
-      console.log('[FileContextManager] Collecting context for message:', userMessage.substring(0, 100));
+      this.logger?.debug('Collecting secure context', { 
+        messageId,
+        messagePreview: userMessage.substring(0, 50) + '...' 
+      });
       
       const contextItems = await this.collector.collectContext();
       
       if (contextItems.length === 0) {
         return {
-          originalContent: userMessage,
-          contextualContent: userMessage,
+          originalMessage: userMessage,
+          contextData: null,
+          messageId,
+          timestamp,
           hasContext: false,
-          contextItems: [],
-          contextSummary: 'No relevant context found'
+          contextualContent: userMessage,
+          contextSummary: 'No context available'
         };
       }
 
-      const formattedContext = this.formatContextForLLM(contextItems);
-      const contextualContent = this.combineMessageWithContext(userMessage, formattedContext);
-      const contextSummary = this.createContextSummary(contextItems);
+      // Sanitize context items for security
+      const sanitizedContextItems = await this.sanitizeContextItems(contextItems);
+      const contextSummary = this.createContextSummary(sanitizedContextItems);
+      const contextId = this.generateContextId();
+
+      const contextData: SecureContextData = {
+        contextItems: sanitizedContextItems,
+        contextSummary,
+        hasContext: true,
+        contextId,
+        timestamp,
+        sanitized: this.coreServices?.inputSanitizer !== undefined,
+        threatCount: 0 // Will be updated by sanitization
+      };
+
+      // Log security event
+      await this.logContextCollectionEvent(contextData, messageId);
+
+      const contextualContent = this._formatContextForLLM(sanitizedContextItems);
 
       return {
-        originalContent: userMessage,
-        contextualContent,
+        originalMessage: userMessage,
+        contextData,
+        messageId,
+        timestamp,
         hasContext: true,
-        contextItems,
+        contextualContent,
         contextSummary
       };
     } catch (error) {
-      console.error('[FileContextManager] Error creating contextual message:', error);
+      this.logger?.error('Secure context collection failed', error, { messageId });
+      
+      // Log security error
+      if (this.coreServices?.securityAuditLogger) {
+        await this.coreServices.securityAuditLogger.logSecurityEvent(
+          VesperaSecurityEvent.SECURITY_BREACH,
+          {
+            timestamp,
+            metadata: {
+              action: 'context_collection_failed',
+              messageId,
+              error: error instanceof Error ? error.message : String(error),
+              severity: 'high',
+              message: 'Context collection failed'
+            }
+          }
+        );
+      }
+      
       return {
-        originalContent: userMessage,
-        contextualContent: userMessage,
+        originalMessage: userMessage,
+        contextData: null,
+        messageId,
+        timestamp,
         hasContext: false,
-        contextItems: [],
-        contextSummary: `Context collection failed: ${error}`
+        contextualContent: userMessage,
+        contextSummary: 'Context collection failed'
       };
     }
   }
@@ -122,7 +235,7 @@ export class FileContextManager {
   /**
    * Format context items for LLM consumption
    */
-  private formatContextForLLM(items: FileContextItem[]): string {
+  private _formatContextForLLM(items: FileContextItem[]): string {
     const formatted: string[] = [];
 
     for (const item of items) {
@@ -186,23 +299,51 @@ export class FileContextManager {
   }
 
   /**
-   * Combine user message with context
+   * Sanitize context items for security using core services
    */
-  private combineMessageWithContext(userMessage: string, formattedContext: string): string {
-    // Check if user message already contains context indicators
-    const hasExplicitContext = /(?:based on|looking at|in this file|current file|selected)/i.test(userMessage);
-    
-    let contextualMessage: string;
-    
-    if (hasExplicitContext || formattedContext.length < 1000) {
-      // Short context or explicit reference - put context first
-      contextualMessage = `Here's the current file context:\n\n${formattedContext}\n\n---\n\n${userMessage}`;
-    } else {
-      // Long context - put user message first, then context
-      contextualMessage = `${userMessage}\n\n---\n\nHere's the current file context for reference:\n\n${formattedContext}`;
+  private async sanitizeContextItems(contextItems: FileContextItem[]): Promise<FileContextItem[]> {
+    const sanitizedItems: FileContextItem[] = [];
+    let totalThreatCount = 0;
+
+    for (const item of contextItems) {
+      try {
+        // Use core services for sanitization if available
+        if (this.coreServices?.inputSanitizer) {
+          const sanitizationResult = await this.coreServices.inputSanitizer.sanitize(
+            item.content,
+            SanitizationScope.FILE_CONTENT
+          );
+          
+          if (sanitizationResult.sanitized !== null) {
+            sanitizedItems.push({
+              ...item,
+              content: sanitizationResult.sanitized
+            });
+            totalThreatCount += sanitizationResult.threats.length;
+          } else {
+            this.logger?.warn('Context item blocked by security policy', {
+              filepath: item.filepath,
+              threats: sanitizationResult.threats.length
+            });
+          }
+        } else {
+          // Fallback: include original item
+          sanitizedItems.push(item);
+        }
+      } catch (error) {
+        this.logger?.error('Context sanitization failed', error, { filepath: item.filepath });
+        // Include original item if sanitization fails (fail-open for context)
+        sanitizedItems.push(item);
+      }
     }
 
-    return contextualMessage;
+    this.logger?.debug('Context sanitization completed', {
+      originalCount: contextItems.length,
+      sanitizedCount: sanitizedItems.length,
+      totalThreats: totalThreatCount
+    });
+
+    return sanitizedItems;
   }
 
   /**
@@ -263,6 +404,53 @@ export class FileContextManager {
   }
 
   /**
+   * Generate unique message ID
+   */
+  private generateMessageId(): string {
+    return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Generate unique context ID
+   */
+  private generateContextId(): string {
+    return `ctx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Log context collection security event using core services
+   */
+  private async logContextCollectionEvent(
+    contextData: SecureContextData,
+    messageId: string
+  ): Promise<void> {
+    try {
+      // Use core services for audit logging
+      if (this.coreServices?.securityAuditLogger) {
+        await this.coreServices.securityAuditLogger.logSecurityEvent(
+          VesperaSecurityEvent.API_ACCESS,
+          {
+            timestamp: Date.now(),
+            metadata: {
+              action: 'secure_context_collected',
+              contextId: contextData.contextId,
+              messageId,
+              itemCount: contextData.contextItems.length,
+              sanitized: contextData.sanitized,
+              threatCount: contextData.threatCount,
+              filePaths: contextData.contextItems.map(item => item.filepath),
+              severity: 'info',
+              message: 'Secure context collected'
+            }
+          }
+        );
+      }
+    } catch (error) {
+      this.logger?.error('Failed to log context collection event', error);
+    }
+  }
+
+  /**
    * Setup event listeners for context auto-collection
    */
   private setupEventListeners(): void {
@@ -273,16 +461,14 @@ export class FileContextManager {
     // Listen for active editor changes
     this.disposables.push(
       vscode.window.onDidChangeActiveTextEditor(() => {
-        console.log('[FileContextManager] Active editor changed');
-        // Context will be collected on next message
+        this.logger?.debug('Active editor changed - context will be refreshed on next request');
       })
     );
 
     // Listen for selection changes  
     this.disposables.push(
       vscode.window.onDidChangeTextEditorSelection(() => {
-        console.log('[FileContextManager] Selection changed');
-        // Context will be collected on next message
+        this.logger?.debug('Selection changed - context will be refreshed on next request');
       })
     );
   }
@@ -319,7 +505,7 @@ export class FileContextManager {
    */
   setEnabled(enabled: boolean): void {
     this.config.enabled = enabled;
-    console.log(`[FileContextManager] Context collection ${enabled ? 'enabled' : 'disabled'}`);
+    this.logger?.info(`Context collection ${enabled ? 'enabled' : 'disabled'}`);
   }
 
   /**
@@ -330,11 +516,15 @@ export class FileContextManager {
   }
 
   /**
-   * Dispose of the manager
+   * Dispose of the collector
    */
   dispose(): void {
+    if (this.disposed) return;
+    
     this.disposables.forEach(d => d.dispose());
     this.disposables.length = 0;
-    console.log('[FileContextManager] Disposed');
+    this.disposed = true;
+    
+    this.logger?.info('SecureFileContextCollector disposed');
   }
 }

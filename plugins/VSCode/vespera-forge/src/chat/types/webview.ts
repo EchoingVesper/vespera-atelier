@@ -18,7 +18,15 @@ export type WebViewMessageType =
   | 'exportHistory'
   | 'updateSettings'
   | 'requestProviders'
-  | 'requestHistory';
+  | 'requestHistory'
+  | 'testProvider'
+  | 'addProvider'
+  | 'requestContextDetails'
+  | 'toggleContextVisibility'
+  | 'requestServerStatus'
+  | 'requestAgentProgress'
+  | 'requestTaskProgress'
+  | 'updateServerPreferences';
 
 export interface WebViewMessage {
   type: WebViewMessageType;

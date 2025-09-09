@@ -6,6 +6,7 @@
  */
 
 import * as vscode from 'vscode';
+import { EnhancedDisposable } from '../disposal/DisposalManager';
 import { VesperaError, VesperaErrorCode, VesperaSeverity } from './VesperaErrors';
 import { VesperaLogger } from '../logging/VesperaLogger';
 import { VesperaTelemetryService } from '../telemetry/VesperaTelemetryService';
@@ -28,11 +29,12 @@ export interface RetryMetadata {
 /**
  * Centralized error handling service with configurable strategies
  */
-export class VesperaErrorHandler implements vscode.Disposable {
+export class VesperaErrorHandler implements vscode.Disposable, EnhancedDisposable {
   private static instance: VesperaErrorHandler;
   private logger: VesperaLogger;
   private telemetryService: VesperaTelemetryService;
   private disposables: vscode.Disposable[] = [];
+  private _isDisposed = false;
   
   private strategies = new Map<VesperaErrorCode, ErrorHandlingStrategy>();
 
@@ -43,6 +45,12 @@ export class VesperaErrorHandler implements vscode.Disposable {
   ) {
     this.logger = logger;
     this.telemetryService = telemetryService;
+    
+    // Log initialization with context info
+    this.logger.info('VesperaErrorHandler initialized', { 
+      extensionId: context.extension.id 
+    });
+    
     this.initializeStrategies();
     this.setupGlobalErrorHandling();
   }
@@ -302,9 +310,6 @@ export class VesperaErrorHandler implements vscode.Disposable {
     );
   }
 
-  private getStrategy(code: VesperaErrorCode): ErrorHandlingStrategy {
-    return this.strategies.get(code) || this.strategies.get(VesperaErrorCode.UNKNOWN_ERROR)!;
-  }
 
   private async notifyUser(error: VesperaError): Promise<void> {
     const action = error.isRetryable ? 'Retry' : 'OK';
@@ -334,12 +339,12 @@ export class VesperaErrorHandler implements vscode.Disposable {
 
   private setupGlobalErrorHandling(): void {
     // Handle unhandled promise rejections
-    const unhandledRejectionHandler = (event: any) => {
+    const _unhandledRejectionHandler = (reason: any, _promise?: Promise<any>) => {
       this.handleError(new VesperaError(
-        `Unhandled promise rejection: ${event.reason}`,
+        `Unhandled promise rejection: ${reason}`,
         VesperaErrorCode.UNKNOWN_ERROR,
         VesperaSeverity.HIGH,
-        { context: { reason: event.reason } }
+        { context: { reason: String(reason) } }
       ));
     };
 
@@ -357,14 +362,8 @@ export class VesperaErrorHandler implements vscode.Disposable {
       ));
     });
 
-    process.on('unhandledRejection', (reason, promise) => {
-      this.handleError(new VesperaError(
-        `Unhandled promise rejection: ${reason}`,
-        VesperaErrorCode.UNKNOWN_ERROR,
-        VesperaSeverity.HIGH,
-        { context: { reason: String(reason) } }
-      ));
-    });
+    // Use the extracted handler function for better code organization
+    process.on('unhandledRejection', _unhandledRejectionHandler);
   }
 
   /**
@@ -381,8 +380,15 @@ export class VesperaErrorHandler implements vscode.Disposable {
     this.strategies.set(code, strategy);
   }
 
+  public get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
   public dispose(): void {
+    if (this._isDisposed) return;
+    
     this.disposables.forEach(d => d.dispose());
     this.disposables = [];
+    this._isDisposed = true;
   }
 }

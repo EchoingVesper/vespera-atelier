@@ -6,28 +6,22 @@
  * designed for VS Code WebView environments.
  */
 
-import * as vscode from 'vscode';
 import { VesperaInputSanitizer } from '../../../core/security/sanitization/VesperaInputSanitizer';
 import { VesperaSecurityAuditLogger } from '../../../core/security/audit/VesperaSecurityAuditLogger';
 import { VesperaLogger } from '../../../core/logging/VesperaLogger';
 import { VesperaErrorHandler } from '../../../core/error-handling/VesperaErrorHandler';
 import {
   WebViewMessage,
-  WebViewResponse,
-  WebViewMessageType,
-  SendMessageRequest,
-  ConfigureProviderRequest,
-  TestProviderConnectionRequest
+  WebViewMessageType
 } from '../../types/webview';
 import {
   SanitizationScope,
-  SanitizationResult,
   VesperaSecurityEvent,
   ThreatInfo,
   ThreatType,
   ThreatSeverity
 } from '../../../types/security';
-import { VesperaSanitizationError, VesperaThreatError } from '../../../core/security/VesperaSecurityErrors';
+import { VesperaSanitizationError as _VesperaSanitizationError, VesperaThreatError as _VesperaThreatError } from '../../../core/security/VesperaSecurityErrors';
 
 export interface WebViewSecurityConfiguration {
   strictMode: boolean;
@@ -577,6 +571,12 @@ export class WebViewSecurityManager {
     let blocked = false;
     let sanitized = false;
 
+    // Log sanitization attempt with context
+    this.logger?.debug('Sanitizing message', { 
+      originalLength: originalMessage.length, 
+      contextId: context.sessionId 
+    });
+
     // Sanitize based on message type
     switch (message.type) {
       case 'sendMessage':
@@ -769,6 +769,45 @@ export class WebViewSecurityManager {
       return regex.test(value);
     }
     return value === pattern;
+  }
+
+  /**
+   * Sanitize content for safe webview display
+   */
+  async sanitizeForDisplay(
+    content: string,
+    context?: Record<string, any>
+  ): Promise<string> {
+    if (this.disposed) {
+      throw new Error('WebViewSecurityManager has been disposed');
+    }
+
+    try {
+      const sanitizationResult = await this.sanitizer.sanitize(
+        content,
+        SanitizationScope.WEBVIEW_CONTENT,
+        context
+      );
+
+      if (sanitizationResult.blocked) {
+        this.logger.warn('Content blocked during display sanitization', {
+          threats: sanitizationResult.threats.length,
+          context
+        });
+        return '[Content blocked by security policy]';
+      }
+
+      if (sanitizationResult.sanitized !== null) {
+        return sanitizationResult.sanitized as string;
+      }
+
+      return content;
+
+    } catch (error) {
+      this.logger.error('Display sanitization failed', error, { context });
+      // Fail-open for display purposes - return original content
+      return content;
+    }
   }
 
   /**

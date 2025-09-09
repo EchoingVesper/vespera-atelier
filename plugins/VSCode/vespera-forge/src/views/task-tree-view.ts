@@ -171,12 +171,12 @@ export class TaskTreeDataProvider implements vscode.TreeDataProvider<TaskTreeIte
             this._rootTasks = rootTasks;
             this.updateCache(allTasks.data);
             
-            if (rootTasks.length === 0) {
+            if (this._rootTasks.length === 0) {
               // Return empty state message
               return [new TaskTreeItem('No tasks available. Use Ctrl+Shift+P → "Create Content" to add tasks.', true)];
             }
             
-            return rootTasks.map(task => this.createTaskTreeItem(task));
+            return this._rootTasks.map(task => this.createTaskTreeItem(task));
           }
         } catch (error) {
           console.error('[TaskTree] Error in enhanced root task loading:', error);
@@ -327,7 +327,7 @@ export class TaskTreeDataProvider implements vscode.TreeDataProvider<TaskTreeIte
       if (projectId !== undefined) {
         this.currentProjectId = projectId;
       } else {
-        delete (this as any).currentProjectId;
+        this.currentProjectId = undefined;
       }
       this.clearCache();
     }

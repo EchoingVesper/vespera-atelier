@@ -634,7 +634,6 @@ class ClaudeExecutor:
                 stderr=asyncio.subprocess.PIPE,
                 cwd=validated_working_dir,
                 # Add process limits (available on Unix-like systems)
-                preexec_fn=self._setup_process_limits
                 preexec_fn=self._setup_process_limits if hasattr(__import__('os'), 'setrlimit') else None
             )
             

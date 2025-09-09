@@ -15,10 +15,10 @@ import { VesperaLogger } from '../logging/VesperaLogger';
 import { VesperaErrorHandler } from '../error-handling/VesperaErrorHandler';
 import { VesperaContextManager } from '../memory-management/VesperaContextManager';
 import { VesperaTelemetryService } from '../telemetry/VesperaTelemetryService';
-import { DisposalManager } from '../disposal/DisposalManager';
+import { DisposalManager, EnhancedDisposable } from '../disposal/DisposalManager';
 
 // Security services
-import { VesperaSecurityManager, SecurityEnhancedCoreServices } from './VesperaSecurityManager';
+import { VesperaSecurityManager } from './VesperaSecurityManager';
 import { VesperaRateLimiter } from './rate-limiting/VesperaRateLimiter';
 import { VesperaConsentManager } from './consent/VesperaConsentManager';
 import { VesperaInputSanitizer } from './sanitization/VesperaInputSanitizer';
@@ -29,7 +29,8 @@ import {
   SecurityConfiguration,
   SecurityMetrics,
   VesperaSecurityEvent,
-  SecurityEventContext
+  SecurityEventContext as _SecurityEventContext,
+  VesperaSecurityErrorCode
 } from '../../types/security';
 import { VesperaSecurityError } from './VesperaSecurityErrors';
 
@@ -64,14 +65,15 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
   public readonly telemetryService: VesperaTelemetryService;
   public readonly disposalManager: DisposalManager;
   
-  // Security services
-  public readonly securityManager: VesperaSecurityManager;
-  public readonly rateLimiter: VesperaRateLimiter;
-  public readonly consentManager: VesperaConsentManager;
-  public readonly inputSanitizer: VesperaInputSanitizer;
-  public readonly securityAuditLogger: VesperaSecurityAuditLogger;
+  // Security services - initialized in initialize() method
+  public securityManager!: VesperaSecurityManager;
+  public rateLimiter?: VesperaRateLimiter;
+  public consentManager?: VesperaConsentManager;
+  public inputSanitizer?: VesperaInputSanitizer;
+  public securityAuditLogger!: VesperaSecurityAuditLogger;
   
   private baseCoreServices: VesperaCoreServices;
+  private baseCoreServicesInstance: any; // Actual class instance for methods like getStats/healthCheck
   private initialized = false;
   private initializeTime = 0;
 
@@ -80,8 +82,8 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
     private context: vscode.ExtensionContext,
     private config: SecurityEnhancedCoreServicesConfig
   ) {
-    // Store base services
-    this.baseCoreServices = baseServices;
+    // Store base services - we need to keep a reference to the class instance for proper disposal
+    this.baseCoreServices = baseServices as any; // Type assertion needed due to interface/class mismatch
     this.logger = baseServices.logger.createChild('SecurityEnhanced');
     this.errorHandler = baseServices.errorHandler;
     this.contextManager = baseServices.contextManager;
@@ -102,7 +104,7 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
   public static async initialize(
     context: vscode.ExtensionContext,
     config: SecurityEnhancedCoreServicesConfig
-  ): Promise<SecurityEnhancedCoreServices> {
+  ): Promise<SecurityEnhancedVesperaCoreServices> {
     if (SecurityEnhancedVesperaCoreServices.instance) {
       return SecurityEnhancedVesperaCoreServices.instance;
     }
@@ -112,10 +114,13 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
     
     // Create enhanced instance
     const enhancedServices = new SecurityEnhancedVesperaCoreServices(
-      baseServices,
+      baseServices as unknown as VesperaCoreServices,
       context,
       config
     );
+    
+    // Store reference to actual class instance for method access
+    enhancedServices.baseCoreServicesInstance = VesperaCoreServices['instance'];
     
     // Initialize security services
     await enhancedServices.initializeSecurityServices();
@@ -127,11 +132,11 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
   /**
    * Get the singleton instance
    */
-  public static getInstance(): SecurityEnhancedCoreServices {
+  public static getInstance(): SecurityEnhancedVesperaCoreServices {
     if (!SecurityEnhancedVesperaCoreServices.instance?.initialized) {
-      throw new VesperaSecurityError('SecurityEnhancedCoreServices not initialized');
+      throw new VesperaSecurityError('SecurityEnhancedCoreServices not initialized', VesperaSecurityErrorCode.UNAUTHORIZED_ACCESS);
     }
-    return SecurityEnhancedVesperaCoreServices.instance as SecurityEnhancedCoreServices;
+    return SecurityEnhancedVesperaCoreServices.instance;
   }
 
   /**
@@ -166,14 +171,14 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
       }
 
       // Initialize security audit logger first (other services may need it)
-      (this as any).securityAuditLogger = new VesperaSecurityAuditLogger(
+      this.securityAuditLogger = new VesperaSecurityAuditLogger(
         this.logger,
         this.telemetryService,
         this.config.security.audit
       );
 
       // Initialize security manager
-      (this as any).securityManager = await VesperaSecurityManager.initialize(
+      this.securityManager = await VesperaSecurityManager.initialize(
         this.logger,
         this.errorHandler,
         this.contextManager,
@@ -182,7 +187,7 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
 
       // Initialize rate limiter if enabled
       if (this.config.security.rateLimiting?.enabled) {
-        (this as any).rateLimiter = await VesperaRateLimiter.initialize({
+        this.rateLimiter = await VesperaRateLimiter.initialize({
           contextManager: this.contextManager,
           logger: this.logger,
           errorHandler: this.errorHandler,
@@ -194,7 +199,7 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
 
       // Initialize consent manager if enabled
       if (this.config.security.consent?.enabled) {
-        (this as any).consentManager = await VesperaConsentManager.initialize({
+        this.consentManager = await VesperaConsentManager.initialize({
           storage: this.context.globalState,
           logger: this.logger,
           purposes: this.config.security.consent.purposes,
@@ -206,7 +211,7 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
 
       // Initialize input sanitizer if enabled
       if (this.config.security.sanitization?.enabled) {
-        (this as any).inputSanitizer = await VesperaInputSanitizer.initialize({
+        this.inputSanitizer = await VesperaInputSanitizer.initialize({
           logger: this.logger,
           errorHandler: this.errorHandler,
           rules: this.config.security.sanitization.rules,
@@ -275,11 +280,22 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
 
       throw new VesperaSecurityError(
         `Security services initialization failed: ${errorMessage}`,
-        undefined,
+        VesperaSecurityErrorCode.UNAUTHORIZED_ACCESS,
         undefined,
         { originalError: error }
       );
     }
+  }
+
+  /**
+   * Wrap a vscode.Disposable to make it compatible with EnhancedDisposable
+   */
+  private wrapDisposable(disposable: vscode.Disposable): EnhancedDisposable {
+    return {
+      dispose: () => disposable.dispose(),
+      get isDisposed() { return false; }, // VS Code disposables don't track this
+      disposalPriority: 1
+    };
   }
 
   /**
@@ -289,28 +305,36 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
     const eventBus = this.securityManager.getEventBus();
     
     // Listen for security events and forward to audit logger
-    eventBus.onEvent('securityEvent', async (event: VesperaSecurityEvent, context: SecurityEventContext) => {
-      try {
-        await this.securityAuditLogger.logSecurityEvent(event, context);
-      } catch (error) {
-        this.logger.error('Failed to log security event to audit logger', error);
-      }
-    });
+    this.disposalManager.add(this.wrapDisposable(
+      eventBus.onSecurityEvent(async (data) => {
+        try {
+          await this.securityAuditLogger.logSecurityEvent(data.event, data.context);
+        } catch (error) {
+          this.logger.error('Failed to log security event to audit logger', error);
+        }
+      })
+    ));
 
     // Listen for rate limit events
-    eventBus.onEvent('rateLimitExceeded', (resourceId: string, context: any) => {
-      this.logger.warn('Rate limit exceeded', { resourceId, context });
-    });
+    this.disposalManager.add(this.wrapDisposable(
+      eventBus.onRateLimitExceeded((data) => {
+        this.logger.warn('Rate limit exceeded', { resourceId: data.resourceId, context: data.context });
+      })
+    ));
 
     // Listen for consent changes
-    eventBus.onEvent('consentChanged', (userId: string, purposeIds: string[], granted: boolean) => {
-      this.logger.info('Consent changed', { userId, purposeIds: purposeIds.length, granted });
-    });
+    this.disposalManager.add(this.wrapDisposable(
+      eventBus.onConsentChanged((data) => {
+        this.logger.info('Consent changed', { userId: data.userId, purposeIds: data.purposeIds.length, granted: data.granted });
+      })
+    ));
 
     // Listen for threat detection
-    eventBus.onEvent('threatDetected', (threatType: string, context: any) => {
-      this.logger.warn('Threat detected', { threatType, context });
-    });
+    this.disposalManager.add(this.wrapDisposable(
+      eventBus.onThreatDetected((data) => {
+        this.logger.warn('Threat detected', { threatType: data.threatType, details: data.details });
+      })
+    ));
 
     this.logger.debug('Security event handling configured');
   }
@@ -332,7 +356,7 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
    * Get comprehensive statistics including security metrics
    */
   public async getStats(): Promise<SecurityEnhancedCoreStats> {
-    const baseStats = this.baseCoreServices.getStats();
+    const baseStats = this.baseCoreServicesInstance.getStats();
     
     let securityStats = {
       enabled: this.config.security.enabled,
@@ -370,7 +394,7 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
       } catch (error) {
         this.logger.error('Failed to get security statistics', error);
         securityStats.healthStatus.healthy = false;
-        securityStats.healthStatus.services.error = {
+        securityStats.healthStatus.services['error'] = {
           healthy: false,
           error: error instanceof Error ? error.message : String(error)
         };
@@ -398,7 +422,7 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
     stats: SecurityEnhancedCoreStats;
   }> {
     // Get base health check
-    const baseHealth = await this.baseCoreServices.healthCheck();
+    const baseHealth = await this.baseCoreServicesInstance.healthCheck();
     
     // Get security health check
     let securityHealth = {
@@ -420,7 +444,7 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
         securityHealth.metrics = securityHealthCheck.metrics;
       } catch (error) {
         securityHealth.healthy = false;
-        securityHealth.services.error = {
+        securityHealth.services['error'] = {
           healthy: false,
           error: error instanceof Error ? error.message : String(error)
         };
@@ -476,7 +500,7 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
       }
 
       // Dispose base services
-      await this.baseCoreServices.dispose();
+      await this.baseCoreServicesInstance.dispose();
       
       this.initialized = false;
       this.logger.info('SecurityEnhancedCoreServices shutdown completed');

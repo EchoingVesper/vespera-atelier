@@ -5,7 +5,7 @@
  * and integration with VesperaContextManager for memory-safe resource management.
  */
 
-import * as vscode from 'vscode';
+// import * as vscode from 'vscode'; // Not currently used
 import { VesperaLogger } from '../../logging/VesperaLogger';
 import { VesperaErrorHandler } from '../../error-handling/VesperaErrorHandler';
 import { VesperaContextManager } from '../../memory-management/VesperaContextManager';
@@ -22,11 +22,10 @@ import {
   VesperaRateLimiterInterface,
   TokenBucketState,
   CircuitBreakerState,
-  VesperaSecurityEvent
+  VesperaSecurityErrorCode
 } from '../../../types/security';
 import { 
   VesperaRateLimitError, 
-  VesperaCircuitBreakerError, 
   VesperaSecurityError 
 } from '../VesperaSecurityErrors';
 
@@ -56,6 +55,13 @@ export class VesperaRateLimiter implements VesperaRateLimiterInterface {
   private circuitBreakers = new Map<string, CircuitBreaker>();
   private rules: RateLimitRule[] = [];
   private disposed = false;
+  
+  /**
+   * Check if service is disposed
+   */
+  public get isDisposed(): boolean {
+    return this.disposed;
+  }
   
   // Statistics tracking
   private stats = {
@@ -106,7 +112,7 @@ export class VesperaRateLimiter implements VesperaRateLimiterInterface {
    */
   public static getInstance(): VesperaRateLimiter {
     if (!VesperaRateLimiter.instance) {
-      throw new VesperaSecurityError('VesperaRateLimiter not initialized');
+      throw new VesperaSecurityError('VesperaRateLimiter not initialized', VesperaSecurityErrorCode.UNAUTHORIZED_ACCESS);
     }
     return VesperaRateLimiter.instance;
   }
@@ -116,7 +122,7 @@ export class VesperaRateLimiter implements VesperaRateLimiterInterface {
    */
   async checkRateLimit(context: RateLimitContext): Promise<RateLimitResult> {
     if (this.disposed) {
-      throw new VesperaSecurityError('Rate limiter has been disposed');
+      throw new VesperaSecurityError('Rate limiter has been disposed', VesperaSecurityErrorCode.UNAUTHORIZED_ACCESS);
     }
 
     this.stats.totalRequests++;
@@ -196,9 +202,9 @@ export class VesperaRateLimiter implements VesperaRateLimiterInterface {
       
       await this.errorHandler.handleError(new VesperaSecurityError(
         'Rate limit check failed',
+        VesperaSecurityErrorCode.RATE_LIMIT_EXCEEDED,
         undefined,
-        undefined,
-        { context, rule: rule.id, error: error.message }
+        { context, rule: rule.id, error: error instanceof Error ? error.message : String(error) }
       ));
 
       // Fail open - allow request but log the error
@@ -269,7 +275,12 @@ export class VesperaRateLimiter implements VesperaRateLimiterInterface {
       rejectionRate: number;
     } }>;
     circuitBreakerStats: Array<{ key: string; stats: any }>;
-    globalStats: typeof this.stats;
+    globalStats: {
+      totalRequests: number;
+      totalRejections: number;
+      circuitBreakerActivations: number;
+      lastReset: number;
+    };
   } {
     let totalBucketRequests = 0;
     let totalBucketRejections = 0;

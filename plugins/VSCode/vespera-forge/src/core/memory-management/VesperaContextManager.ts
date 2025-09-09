@@ -6,6 +6,7 @@
  */
 
 import * as vscode from 'vscode';
+import { EnhancedDisposable } from '../disposal/DisposalManager';
 import { VesperaLogger } from '../logging/VesperaLogger';
 import { VesperaMemoryError, VesperaErrorCode } from '../error-handling/VesperaErrors';
 import { VesperaErrorHandler } from '../error-handling/VesperaErrorHandler';
@@ -33,8 +34,9 @@ export interface ResourceMetadata {
 /**
  * Memory-safe context manager with WeakMap storage and resource tracking
  */
-export class VesperaContextManager implements vscode.Disposable {
+export class VesperaContextManager implements vscode.Disposable, EnhancedDisposable {
   private static instance: VesperaContextManager;
+  private _isDisposed = false;
   
   // WeakMap automatically handles garbage collection when extension context is disposed
   private readonly viewContexts = new WeakMap<vscode.ExtensionContext, ViewContextEntry>();
@@ -419,7 +421,13 @@ export class VesperaContextManager implements vscode.Disposable {
     return { cleaned, errors };
   }
 
+  public get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
   public dispose(): void {
+    if (this._isDisposed) return;
+
     if (this.memoryCheckInterval) {
       clearInterval(this.memoryCheckInterval);
       this.memoryCheckInterval = undefined;
@@ -446,5 +454,6 @@ export class VesperaContextManager implements vscode.Disposable {
 
     this.resourceRegistry.clear();
     this.resourceMetadata.clear();
+    this._isDisposed = true;
   }
 }

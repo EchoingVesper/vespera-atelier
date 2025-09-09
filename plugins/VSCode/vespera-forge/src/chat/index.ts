@@ -114,16 +114,14 @@ export class VesperaChatSystem {
     // Configure chat providers command
     this.disposables.push(
       vscode.commands.registerCommand('vesperaForge.configureChatProviders', async () => {
-        // TODO: Open configuration UI
-        await vscode.window.showInformationMessage('Chat provider configuration not yet implemented');
+        await this.showProviderConfigurationDialog();
       })
     );
 
     // Send message command (can be called from other parts of the extension)
     this.disposables.push(
       vscode.commands.registerCommand('vesperaForge.sendChatMessage', async (message: string) => {
-        // TODO: Send message to active chat
-        console.log('[VesperaChatSystem] Sending message via command:', message);
+        await this.sendMessage(message);
       })
     );
 
@@ -137,8 +135,8 @@ export class VesperaChatSystem {
         );
         
         if (confirmed === 'Clear') {
-          // TODO: Clear chat history
-          console.log('[VesperaChatSystem] Clearing chat history');
+          await this.clearHistory();
+          await vscode.window.showInformationMessage('Chat history cleared successfully');
         }
       })
     );
@@ -539,6 +537,91 @@ export class VesperaChatSystem {
       sessions: this.sessionManager.getStatistics(),
       history: this.historyManager.getStatistics()
     };
+  }
+
+  /**
+   * Show provider configuration dialog
+   */
+  private async showProviderConfigurationDialog(): Promise<void> {
+    try {
+      const availableProviders = [
+        { label: 'Anthropic Claude', value: 'anthropic' },
+        { label: 'OpenAI GPT', value: 'openai' },
+        { label: 'LM Studio (Local)', value: 'lmstudio' },
+        { label: 'Claude Code (Integrated)', value: 'claude-code' }
+      ];
+
+      const selectedProvider = await vscode.window.showQuickPick(availableProviders, {
+        placeHolder: 'Select a chat provider to configure'
+      });
+
+      if (selectedProvider) {
+        await this.configurationManager.showProviderConfiguration(selectedProvider.value);
+      }
+    } catch (error) {
+      console.error('[VesperaChatSystem] Error showing provider configuration:', error);
+      await vscode.window.showErrorMessage('Failed to open provider configuration');
+    }
+  }
+
+  /**
+   * Send a message through the command interface
+   */
+  private async sendMessage(message: string): Promise<void> {
+    if (!message?.trim()) {
+      const userMessage = await vscode.window.showInputBox({
+        prompt: 'Enter your message',
+        placeHolder: 'Type your message here...'
+      });
+      if (!userMessage?.trim()) return;
+      message = userMessage;
+    }
+
+    try {
+      console.log('[VesperaChatSystem] Sending message via command:', message);
+      
+      if (!this.activeProvider) {
+        await vscode.window.showWarningMessage('No chat provider is configured. Please configure a provider first.');
+        return;
+      }
+
+      // Create a message object
+      const chatMessage = {
+        id: `user_${Date.now()}`,
+        role: 'user' as const,
+        content: message.trim(),
+        timestamp: new Date(),
+        threadId: 'command',
+        metadata: { source: 'command' }
+      };
+
+      // Stream the response and show progress
+      await vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: 'Sending message...',
+        cancellable: false
+      }, async (progress) => {
+        let responseContent = '';
+        progress.report({ message: 'Processing...' });
+        
+        for await (const chunk of await this.streamMessage(chatMessage)) {
+          if (chunk.content && !chunk.done) {
+            responseContent += chunk.content;
+          }
+        }
+
+        if (responseContent) {
+          // Show response in info dialog for command-based messages
+          const truncated = responseContent.length > 200 
+            ? responseContent.substring(0, 200) + '...' 
+            : responseContent;
+          await vscode.window.showInformationMessage(`Response: ${truncated}`, 'View Full Chat');
+        }
+      });
+    } catch (error) {
+      console.error('[VesperaChatSystem] Error sending message:', error);
+      await vscode.window.showErrorMessage(`Failed to send message: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   /**

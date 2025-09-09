@@ -5,7 +5,6 @@
  * schema validation, threat detection, and CSP management.
  */
 
-import * as vscode from 'vscode';
 import { VesperaLogger } from '../../logging/VesperaLogger';
 import { VesperaErrorHandler } from '../../error-handling/VesperaErrorHandler';
 import {
@@ -25,7 +24,6 @@ import {
   ThreatDetectionConfig
 } from '../../../types/security';
 import { VesperaSanitizationError, VesperaThreatError } from '../VesperaSecurityErrors';
-import { VesperaSecurityErrorCode } from '../../../types/security';
 import { VesperaSeverity } from '../../error-handling/VesperaErrors';
 
 // Default configurations
@@ -101,6 +99,13 @@ export class VesperaInputSanitizer implements VesperaInputSanitizerInterface {
   private rules: Map<SanitizationScope, SanitizationRule[]> = new Map();
   private threatPatterns: ThreatPattern[] = [];
   private disposed = false;
+  
+  /**
+   * Check if service is disposed
+   */
+  public get isDisposed(): boolean {
+    return this.disposed;
+  }
   
   // Statistics tracking
   private stats = {
@@ -260,7 +265,8 @@ export class VesperaInputSanitizer implements VesperaInputSanitizerInterface {
         sanitized: blocked ? null : sanitized,
         threats,
         applied,
-        blocked
+        blocked,
+        modified: sanitized !== input
       };
 
       const processingTime = Date.now() - startTime;
@@ -569,7 +575,7 @@ export class VesperaInputSanitizer implements VesperaInputSanitizerInterface {
   private async applyProcessor(
     input: any,
     processor: SanitizationProcessor,
-    scope: SanitizationScope,
+    _scope: SanitizationScope,
     context?: Record<string, any>
   ): Promise<any> {
     switch (processor.type) {
@@ -603,7 +609,7 @@ export class VesperaInputSanitizer implements VesperaInputSanitizerInterface {
   /**
    * Apply DOMPurify sanitization (placeholder - would need actual DOMPurify integration)
    */
-  private applyDOMPurify(input: any, config?: ProcessorConfig['domPurify']): any {
+  private applyDOMPurify(input: any, _config?: ProcessorConfig['domPurify']): any {
     if (typeof input !== 'string') return input;
 
     // This is a placeholder implementation
@@ -691,7 +697,7 @@ export class VesperaInputSanitizer implements VesperaInputSanitizerInterface {
   private async applyCustomProcessor(
     input: any, 
     config?: ProcessorConfig['custom'], 
-    context?: Record<string, any>
+    _context?: Record<string, any>
   ): Promise<any> {
     if (!config) return input;
 

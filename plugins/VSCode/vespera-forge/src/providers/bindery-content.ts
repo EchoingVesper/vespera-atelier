@@ -303,6 +303,17 @@ class BinderyContentProvider implements ContentProvider {
     return this.bindery.getConnectionInfo();
   }
 
+  /**
+   * Get sync information including last sync time
+   */
+  public getSyncInfo() {
+    return {
+      lastSyncTime: this.lastSyncTime,
+      autoSyncEnabled: this.config.enableAutoSync,
+      syncInterval: this.config.syncInterval
+    };
+  }
+
   // Private Implementation
 
   private async createTaskContent(item: Omit<TaskItem, 'id' | 'createdAt' | 'updatedAt'>): Promise<ContentItem> {

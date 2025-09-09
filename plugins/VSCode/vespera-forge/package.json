@@ -263,6 +263,159 @@
           "type": "boolean",
           "default": true,
           "description": "Enable streaming responses"
+        },
+        "vesperaForge.security.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable enterprise-grade security features"
+        },
+        "vesperaForge.security.level": {
+          "type": "string",
+          "default": "standard",
+          "enum": [
+            "strict",
+            "standard",
+            "permissive"
+          ],
+          "description": "Security validation level"
+        },
+        "vesperaForge.security.auditLogging": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable comprehensive audit logging"
+        },
+        "vesperaForge.security.processIsolation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable process isolation for Bindery operations"
+        },
+        "vesperaForge.security.maxProcessMemoryMB": {
+          "type": "number",
+          "default": 256,
+          "description": "Maximum memory limit for processes (MB)"
+        },
+        "vesperaForge.toolManagement.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable secure tool override management"
+        },
+        "vesperaForge.toolManagement.allowedTools": {
+          "type": "array",
+          "default": [
+            "Read",
+            "Write",
+            "Edit",
+            "MultiEdit",
+            "Glob",
+            "Grep",
+            "mcp__vespera-scriptorium__mcp_read_file",
+            "mcp__vespera-scriptorium__mcp_write_file",
+            "mcp__vespera-scriptorium__mcp_list_files"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "List of allowed Claude Code tools"
+        },
+        "vesperaForge.toolManagement.blockedTools": {
+          "type": "array",
+          "default": [
+            "Bash",
+            "WebFetch"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "List of blocked Claude Code tools for security"
+        },
+        "vesperaForge.toolManagement.enableRollback": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic rollback on tool override failures"
+        },
+        "vesperaForge.toolManagement.maxOverrides": {
+          "type": "number",
+          "default": 50,
+          "description": "Maximum number of concurrent tool overrides"
+        },
+        "vesperaForge.fileOperations.enableRustFileOps": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable high-performance rust-file-ops for file operations"
+        },
+        "vesperaForge.fileOperations.securityValidation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable security validation for all file operations"
+        },
+        "vesperaForge.fileOperations.allowedDirectories": {
+          "type": "array",
+          "default": [
+            "${workspaceFolder}",
+            "/tmp/vespera-temp"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "List of allowed directories for file operations"
+        },
+        "vesperaForge.fileOperations.blockedDirectories": {
+          "type": "array",
+          "default": [
+            "/etc",
+            "/sys",
+            "/proc",
+            "/root"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "List of blocked directories for security"
+        },
+        "vesperaForge.fileOperations.maxFileSize": {
+          "type": "number",
+          "default": 52428800,
+          "description": "Maximum file size for operations (bytes, default 50MB)"
+        },
+        "vesperaForge.mcp.validation.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable MCP message validation"
+        },
+        "vesperaForge.mcp.validation.maxMessageSize": {
+          "type": "number",
+          "default": 52428800,
+          "description": "Maximum MCP message size (bytes, default 50MB)"
+        },
+        "vesperaForge.mcp.validation.maxObjectDepth": {
+          "type": "number",
+          "default": 100,
+          "description": "Maximum object nesting depth in MCP messages"
+        },
+        "vesperaForge.mcp.rateLimiting.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable MCP request rate limiting"
+        },
+        "vesperaForge.mcp.rateLimiting.maxRequestsPerMinute": {
+          "type": "number",
+          "default": 1000,
+          "description": "Maximum MCP requests per minute per client"
+        },
+        "vesperaForge.performance.targetSecurityOverhead": {
+          "type": "number",
+          "default": 2,
+          "description": "Target security overhead percentage (should be <2%)"
+        },
+        "vesperaForge.performance.enableMetrics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable performance metrics collection"
+        },
+        "vesperaForge.performance.highThroughputMode": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable high-throughput optimizations for batch operations"
         }
       }
     }
@@ -289,8 +442,10 @@
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^1.0.100",
+    "@types/node-fetch": "^2.6.13",
     "fast-xml-parser": "^4.5.0",
     "json5": "^2.2.3",
+    "node-fetch": "^3.3.2",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "uuid": "^9.0.1"

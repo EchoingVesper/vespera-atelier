@@ -8,8 +8,6 @@ import { getBinderyService } from '../services/bindery';
 import { VesperaEvents } from '../utils/events';
 import {
   TaskDashboard,
-  TaskSummary,
-  TaskStatus,
   TaskPriority,
   CodexId,
   BinderyConnectionStatus
@@ -30,7 +28,7 @@ export class TaskDashboardWebviewProvider implements vscode.WebviewViewProvider 
       if (info.status === BinderyConnectionStatus.Connected) {
         this.refresh();
       } else if (info.status === BinderyConnectionStatus.Disconnected) {
-        delete (this as any)._dashboardData;
+        this._dashboardData = undefined;
         this.updateWebview();
       }
     });
@@ -89,7 +87,7 @@ export class TaskDashboardWebviewProvider implements vscode.WebviewViewProvider 
     const binderyService = getBinderyService();
     
     if (!binderyService.isConnected()) {
-      delete (this as any)._dashboardData;
+      this._dashboardData = undefined;
       this.updateWebview();
       return;
     }
@@ -119,7 +117,7 @@ export class TaskDashboardWebviewProvider implements vscode.WebviewViewProvider 
     const isDark = colorTheme.kind === vscode.ColorThemeKind.Dark;
     
     const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'dashboard.css'));
-    const _scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'dashboard.js'));
+    const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'dashboard.js'));
 
     return `<!DOCTYPE html>
     <html lang="en">
@@ -157,6 +155,7 @@ export class TaskDashboardWebviewProvider implements vscode.WebviewViewProvider 
             ${this._dashboardData ? this.renderDashboard() : this.renderNoData()}
         </div>
 
+        <script src="${scriptUri}"></script>
         <script>
             const vscode = acquireVsCodeApi();
             
@@ -234,7 +233,7 @@ export class TaskDashboardWebviewProvider implements vscode.WebviewViewProvider 
     }
     
     return `
-    <div class="dashboard-content">
+    <div class="dashboard-content" data-selected-task="${this._selectedTaskId || ''}">
         <!-- Summary Cards -->
         <div class="summary-grid">
             <div class="summary-card">

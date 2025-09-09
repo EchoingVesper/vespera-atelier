@@ -9,7 +9,6 @@ import * as vscode from 'vscode';
 import type { 
   VesperaError, 
   VesperaErrorCode, 
-  VesperaSeverity, 
   VesperaErrorCategory 
 } from '@/core/error-handling/VesperaErrors';
 import type { LogLevel } from '@/core/logging/VesperaLogger';
@@ -393,9 +392,9 @@ export namespace TypeGuards {
    */
   export function isServiceInterface(obj: any): obj is ServiceInterface {
     return isDisposableResource(obj) &&
-      (typeof obj.start === 'function' || obj.start === undefined) &&
-      (typeof obj.stop === 'function' || obj.stop === undefined) &&
-      (typeof obj.isRunning === 'boolean' || obj.isRunning === undefined);
+      ('start' in obj ? typeof obj.start === 'function' : true) &&
+      ('stop' in obj ? typeof obj.stop === 'function' : true) &&
+      ('isRunning' in obj ? typeof obj.isRunning === 'boolean' : true);
   }
 
   /**
@@ -503,10 +502,11 @@ export interface LegacyVesperaContext {
 /**
  * Migration helper type for converting legacy contexts
  */
-export type ContextMigration<T> = {
+export type ContextMigration<T = any> = {
   from: LegacyVesperaContext;
   to: VesperaForgeContext;
   migrator: (legacy: LegacyVesperaContext) => Promise<VesperaForgeContext>;
+  data?: T;
 };
 
 // =============================================================================

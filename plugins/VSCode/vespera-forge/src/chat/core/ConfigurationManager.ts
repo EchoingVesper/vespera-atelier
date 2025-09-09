@@ -171,7 +171,7 @@ export class ChatConfigurationManager {
   private getVSCodeConfiguration(): Partial<ChatConfiguration> {
     const config = vscode.workspace.getConfiguration('vesperaForge.chat');
     
-    // TODO: Implement comprehensive VS Code configuration loading
+    // Load all configuration sections from VS Code settings
     return {
       providers: config.get('providers', {}),
       ui: {
@@ -456,7 +456,7 @@ export class ChatConfigurationManager {
     
     // Emit configuration change event
     this.eventRouter.emit(new ConfigurationChangedEvent({
-      providerId: 'system', // TODO: Make this more specific
+      providerId: `configuration-manager-${scope}`,
       changes: updates
     }));
   }
@@ -1303,14 +1303,8 @@ export class ChatConfigurationManager {
     }
   }
   
-  /**
-   * Legacy migration method (deprecated - kept for backward compatibility)
-   */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private async migrateLegacyCredential(providerId: string, fieldName: string, legacyValue: string): Promise<void> {
-    console.warn('[ConfigurationManager] Using deprecated migrateLegacyCredential method. Please use migrateLegacyCredentialWithConsent instead.');
-    await this.migrateLegacyCredentialWithConsent(providerId, fieldName, legacyValue);
-  }
+  // TODO: Legacy migration method removed during Phase 2 scaffolding cleanup
+  // If backward compatibility is needed, implement the deprecated method that delegates to migrateLegacyCredentialWithConsent
   
   /**
    * Validate all stored credentials and detect security issues
@@ -1454,6 +1448,74 @@ export class ChatConfigurationManager {
       lastValidation: Date.now(),
       recommendations: validation.recommendations
     };
+  }
+  
+  /**
+   * Show provider configuration dialog
+   */
+  async showProviderConfiguration(providerId: string): Promise<void> {
+    try {
+      const template = this.templateRegistry.getTemplate(providerId);
+      if (!template) {
+        await vscode.window.showErrorMessage(`Provider template not found: ${providerId}`);
+        return;
+      }
+
+      // Get current configuration
+      const currentConfig = this.config.providers[providerId]?.config || {};
+      
+      if (template.ui_schema?.config_fields) {
+        // Show configuration form for each field
+        const newConfig: Record<string, any> = {};
+        
+        for (const field of template.ui_schema.config_fields) {
+          let value: string | undefined;
+          
+          if (field.type === 'password') {
+            value = await vscode.window.showInputBox({
+              prompt: field.description || `Enter ${field.name}`,
+              placeHolder: field.placeholder || field.name,
+              password: true,
+              value: currentConfig[field.name] ? '••••••••' : undefined
+            });
+          } else {
+            value = await vscode.window.showInputBox({
+              prompt: field.description || `Enter ${field.name}`,
+              placeHolder: field.placeholder || field.name,
+              value: currentConfig[field.name] || field.default || ''
+            });
+          }
+          
+          if (value !== undefined && value !== '••••••••') {
+            newConfig[field.name] = value;
+          } else if (currentConfig[field.name] !== undefined) {
+            // Keep existing value if user didn't change it
+            newConfig[field.name] = currentConfig[field.name];
+          }
+        }
+        
+        // Configure the provider with new settings
+        if (Object.keys(newConfig).length > 0) {
+          await this.configureProvider(providerId, newConfig, 'user');
+          await vscode.window.showInformationMessage(`Provider ${providerId} configured successfully`);
+        }
+      } else {
+        // Simple configuration for providers without UI schema
+        const apiKey = await vscode.window.showInputBox({
+          prompt: 'Enter API Key',
+          password: true,
+          placeHolder: 'Your API key'
+        });
+        
+        if (apiKey) {
+          await this.configureProvider(providerId, { apiKey }, 'user');
+          await vscode.window.showInformationMessage(`Provider ${providerId} configured successfully`);
+        }
+      }
+    } catch (error) {
+      console.error(`[ConfigurationManager] Error configuring provider ${providerId}:`, error);
+      await vscode.window.showErrorMessage(`Failed to configure provider: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
   
   dispose(): void {
