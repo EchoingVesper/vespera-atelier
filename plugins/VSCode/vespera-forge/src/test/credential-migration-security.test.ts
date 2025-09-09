@@ -292,7 +292,7 @@ suite('Enhanced Credential Migration Security Tests', () => {
         
         // Should have taken some time due to retries with delays
         assert.ok(duration >= 1000, `Expected retry delays, but operation completed in ${duration}ms`);
-        assert.ok(error.message.includes('Failed to store credential'), 'Error message should indicate storage failure');
+        assert.ok(error instanceof Error && error.message.includes('Failed to store credential'), 'Error message should indicate storage failure');
       }
     });
   });
@@ -496,9 +496,9 @@ suite('Enhanced Credential Migration Security Tests', () => {
       const backupKeys = keys.filter(key => key.startsWith('backup_'));
       assert.ok(backupKeys.length > 0, 'Should have created backup metadata');
       
-      const retrievedBackup = mockGlobalState.get(backupKey);
-      assert.strictEqual(retrievedBackup.providerId, providerId, 'Backup should contain correct provider ID');
-      assert.ok(retrievedBackup.originalValue.includes('***'), 'Backup should not contain full credential');
+      const retrievedBackup = mockGlobalState.get(backupKey) as any;
+      assert.strictEqual(retrievedBackup?.providerId, providerId, 'Backup should contain correct provider ID');
+      assert.ok(retrievedBackup?.originalValue?.includes('***'), 'Backup should not contain full credential');
     });
 
     test('Security status report identifies all credential types', async () => {
@@ -555,13 +555,14 @@ suite('Enhanced Credential Migration Security Tests', () => {
       for (const activity of activities) {
         if (activity.action === 'rapid_credential_access') {
           // Rapid successive access attempts
-          for (let i = 0; i < activity.count; i++) {
+          const count = (activity as any).count || 1;
+          for (let i = 0; i < count; i++) {
             try {
               await CredentialManager.retrieveCredential(mockContext, `test-provider-${i}`);
             } catch (error) {
               // Expected to fail for non-existent credentials
             }
-            await new Promise(resolve => setTimeout(resolve, activity.delay));
+            await new Promise(resolve => setTimeout(resolve, (activity as any).delay || 50));
           }
         } else if (activity.action === 'invalid_credential_format') {
           try {
@@ -692,7 +693,7 @@ suite('Enhanced Credential Migration Security Tests', () => {
           operationSucceeded = true;
         } catch (error) {
           // Some failures are expected, but retry should make it eventually work
-          console.log(`Expected failure during recovery test: ${error.message}`);
+          console.log(`Expected failure during recovery test: ${error instanceof Error ? error.message : String(error)}`);
         }
         
         // Reset the mock to normal operation

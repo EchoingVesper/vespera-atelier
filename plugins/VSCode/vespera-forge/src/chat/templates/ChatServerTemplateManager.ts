@@ -1025,6 +1025,11 @@ export class ChatServerTemplateManager {
           const [key, ...valueParts] = trimmed.split(':');
           const value = valueParts.join(':').trim();
           
+          // Ensure key exists (it should since we checked for ':')
+          if (!key) {
+            continue;
+          }
+          
           if (value) {
             // Handle different value types
             let parsedValue: any = value;
@@ -1044,9 +1049,10 @@ export class ChatServerTemplateManager {
             currentObj[key.trim()] = parsedValue;
           } else {
             // Object (no value after colon)
-            currentObj[key.trim()] = {};
-            stack.push(currentObj[key.trim()]);
-            currentObj = currentObj[key.trim()];
+            const keyTrimmed = key.trim();
+            currentObj[keyTrimmed] = {};
+            stack.push(currentObj[keyTrimmed]);
+            currentObj = currentObj[keyTrimmed];
             currentIndent = indent;
           }
         } else if (trimmed.startsWith('- ')) {

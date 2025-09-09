@@ -664,8 +664,19 @@ export class MultiChatNotificationManager implements vscode.Disposable {
    * Process batched channel messages
    */
   private async processBatchedChannelMessages(events: ChatEvent[]): Promise<void> {
-    const channelId = events[0].channelId!;
-    const server = this.connectedServers.get(events[0].serverId);
+    if (events.length === 0) {
+      return;
+    }
+    
+    const firstEvent = events[0];
+    const channelId = firstEvent?.channelId;
+    const serverId = firstEvent?.serverId;
+    
+    if (!channelId || !serverId) {
+      return;
+    }
+    
+    const server = this.connectedServers.get(serverId);
     const channel = server?.channels.find(c => c.id === channelId);
     
     const messageCount = events.length;
@@ -681,7 +692,7 @@ export class MultiChatNotificationManager implements vscode.Disposable {
       level: NotificationLevel.INFO,
       data: {
         channelId,
-        serverId: events[0].serverId,
+        serverId,
         messageCount,
         uniqueAuthors,
         events: events.map(e => e.message?.id).filter(Boolean)

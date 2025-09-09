@@ -204,7 +204,7 @@ export class VesperaRateLimiter implements VesperaRateLimiterInterface {
         'Rate limit check failed',
         VesperaSecurityErrorCode.RATE_LIMIT_EXCEEDED,
         undefined,
-        { context, rule: rule.id, error: error.message }
+        { context, rule: rule.id, error: error instanceof Error ? error.message : String(error) }
       ));
 
       // Fail open - allow request but log the error

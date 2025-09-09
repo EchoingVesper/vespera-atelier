@@ -160,8 +160,8 @@ describe('WebView Security Integration', () => {
       expect(result.isValid).toBe(false);
       expect(result.blocked).toBe(true);
       expect(result.threats).toHaveLength(1);
-      expect(result.threats[0].type).toBe('xss');
-      expect(result.threats[0].severity).toBe('critical');
+      expect(result.threats[0]?.type).toBe('xss');
+      expect(result.threats[0]?.severity).toBe('critical');
     });
 
     it('should sanitize message with medium threats', async () => {
@@ -206,7 +206,7 @@ describe('WebView Security Integration', () => {
       expect(result.blocked).toBe(false);
       expect(result.sanitizedMessage?.data.content).toBe(sanitizedContent);
       expect(result.threats).toHaveLength(1);
-      expect(result.threats[0].severity).toBe('medium');
+      expect(result.threats[0]?.severity).toBe('medium');
     });
 
     it('should enforce rate limiting', async () => {

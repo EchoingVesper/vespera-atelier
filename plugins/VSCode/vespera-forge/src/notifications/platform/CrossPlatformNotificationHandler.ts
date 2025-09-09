@@ -590,7 +590,8 @@ export class CrossPlatformNotificationHandler implements vscode.Disposable {
     try {
       const version = os.release();
       const versionParts = version.split('.').map(Number);
-      return versionParts[0] >= 10; // Windows 10+
+      const majorVersion = versionParts[0];
+      return majorVersion !== undefined && majorVersion >= 10; // Windows 10+
     } catch (error) {
       return false;
     }

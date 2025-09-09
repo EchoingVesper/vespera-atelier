@@ -315,14 +315,19 @@ export class TaskChatIntegration {
       }
 
       // Update agent progress state
-      await this.stateManager.updateAgentProgress(
-        existingChannel?.channelId || mapping.channels[mapping.channels.length - 1].channelId,
-        {
-          status: 'active',
-          currentAction: 'Agent deployed and initializing',
-          progressPercentage: 0
-        }
-      );
+      const channelId = existingChannel?.channelId || 
+        (mapping.channels.length > 0 ? mapping.channels[mapping.channels.length - 1]?.channelId : undefined);
+      
+      if (channelId) {
+        await this.stateManager.updateAgentProgress(
+          channelId,
+          {
+            status: 'active',
+            currentAction: 'Agent deployed and initializing',
+            progressPercentage: 0
+          }
+        );
+      }
 
       // Post agent deployment message
       await this.postAgentDeploymentMessage(agentData, mapping.serverId);

@@ -1192,7 +1192,10 @@ export class EnhancedChatWebViewProvider implements vscode.WebviewViewProvider {
       return { success: true, data: { taskProgress } };
 
     } catch (error) {
-      return { success: false, error: error.message };
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error) 
+      };
     }
   }
 

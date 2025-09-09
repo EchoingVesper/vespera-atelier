@@ -749,7 +749,9 @@ export class NotificationConfigManager implements vscode.Disposable {
    * Parse time string to minutes since midnight
    */
   private parseTime(timeString: string): number {
-    const [hours, minutes] = timeString.split(':').map(Number);
+    const parts = timeString.split(':').map(Number);
+    const hours = parts[0] || 0;
+    const minutes = parts[1] || 0;
     return hours * 60 + minutes;
   }
 
