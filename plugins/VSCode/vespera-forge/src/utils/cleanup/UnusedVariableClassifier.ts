@@ -686,7 +686,7 @@ export class UnusedVariableClassifier {
         return isServiceProperty && isInServiceContext;
     }
 
-    private static isSystemContextProperty(propertyName: string, context: string, filePath: string): boolean {
+    private static isSystemContextProperty(propertyName: string, _context: string, filePath: string): boolean {
         const rules = this.CLASSIFICATION_RULES.systemContextProperties;
         
         // Check if property name matches system context patterns

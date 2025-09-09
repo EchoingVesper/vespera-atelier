@@ -548,7 +548,7 @@ export class ServiceIntegrationEnhancer {
 
     private static async createServiceIntegrationPlan(
         property: UnusedVariable,
-        analysisResult: PropertyAnalysisResult,
+        _analysisResult: PropertyAnalysisResult,
         integrationOpportunity: IntegrationOpportunity
     ): Promise<ServiceIntegrationPlan> {
         // Find strategic target data
@@ -684,7 +684,7 @@ export class ServiceIntegrationEnhancer {
         };
     }
 
-    private static createIntegrationStrategy(opportunity: IntegrationOpportunity, strategicTarget: any): IntegrationStrategy {
+    private static createIntegrationStrategy(opportunity: IntegrationOpportunity, _strategicTarget: any): IntegrationStrategy {
         const implementationSteps: ImplementationStep[] = [];
         
         switch (opportunity.type) {
@@ -741,7 +741,7 @@ export class ServiceIntegrationEnhancer {
 
     private static async generateIntegrationChanges(
         property: UnusedVariable,
-        strategy: IntegrationStrategy,
+        _strategy: IntegrationStrategy,
         patternMatches: PatternMatch[]
     ): Promise<IntegrationChange[]> {
         const changes: IntegrationChange[] = [];
@@ -837,7 +837,7 @@ export class ServiceIntegrationEnhancer {
         return Math.min(100, Math.max(0, score));
     }
 
-    private static generateAdaptationSteps(targetFile: string, pattern: any): string[] {
+    private static generateAdaptationSteps(_targetFile: string, _pattern: any): string[] {
         return [
             'Review pattern for compatibility with target class',
             'Adapt variable names to match target context',
@@ -846,7 +846,7 @@ export class ServiceIntegrationEnhancer {
         ];
     }
 
-    private static assessPerformanceImpact(plan: ServiceIntegrationPlan, changes: IntegrationChange[]): PerformanceImpact {
+    private static assessPerformanceImpact(plan: ServiceIntegrationPlan, _changes: IntegrationChange[]): PerformanceImpact {
         let estimatedOverhead = 0;
         let memoryImpact = 0;
         const additionalDependencies: string[] = [];
@@ -900,12 +900,12 @@ export class ServiceIntegrationEnhancer {
         return methods;
     }
 
-    private static getServiceUsagePatterns(serviceType: ServiceType, integrationType: IntegrationType): UsagePattern[] {
+    private static getServiceUsagePatterns(_serviceType: ServiceType, _integrationType: IntegrationType): UsagePattern[] {
         // Return usage patterns for the service type
         return [];
     }
 
-    private static checkMethodCompatibility(fileContent: string, targetService: TargetService): boolean {
+    private static checkMethodCompatibility(fileContent: string, _targetService: TargetService): boolean {
         // Basic compatibility check
         return fileContent.includes('async') || fileContent.includes('Promise');
     }

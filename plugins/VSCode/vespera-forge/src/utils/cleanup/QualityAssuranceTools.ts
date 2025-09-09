@@ -900,19 +900,19 @@ export class QualityAssuranceTools {
         return originalContent.includes('initialize') || originalContent.includes('dispose');
     }
 
-    private static hasReflectionUsage(property: UnusedVariable, content: string): boolean {
+    private static hasReflectionUsage(_property: UnusedVariable, content: string): boolean {
         return content.includes('Reflect.') || content.includes('Object.keys') || content.includes('Object.getOwnPropertyNames');
     }
 
-    private static hasSerializationUsage(property: UnusedVariable, content: string): boolean {
+    private static hasSerializationUsage(_property: UnusedVariable, content: string): boolean {
         return content.includes('JSON.stringify') || content.includes('serialize') || content.includes('toJSON');
     }
 
-    private static hasConfigurationPattern(property: UnusedVariable, content: string): boolean {
+    private static hasConfigurationPattern(_property: UnusedVariable, content: string): boolean {
         return content.includes('config') || content.includes('settings') || content.includes('options');
     }
 
-    private static hasInterfaceCompliance(property: UnusedVariable, content: string): boolean {
+    private static hasInterfaceCompliance(_property: UnusedVariable, content: string): boolean {
         return content.includes('implements') || content.includes('extends') || content.includes('interface');
     }
 
@@ -940,7 +940,7 @@ export class QualityAssuranceTools {
         }
     }
 
-    private static async traceDependencyChain(property: UnusedVariable, affectedFiles: string[]): Promise<number> {
+    private static async traceDependencyChain(_property: UnusedVariable, affectedFiles: string[]): Promise<number> {
         // Simple dependency chain analysis
         return affectedFiles.length;
     }
@@ -968,8 +968,8 @@ export class QualityAssuranceTools {
     }
 
     private static async identifyIntegrationOpportunities(
-        property: UnusedVariable,
-        analysis: PropertyAnalysisResult
+        _property: UnusedVariable,
+        _analysis: PropertyAnalysisResult
     ): Promise<{ patternName: string; implementationSuggestion: string; estimatedValue: 'low' | 'medium' | 'high' }[]> {
         return [
             {
@@ -1110,7 +1110,7 @@ export class QualityAssuranceTools {
     }
 
     private static async validateLinting(
-        modifiedFiles: { [filePath: string]: string },
+        _modifiedFiles: { [filePath: string]: string },
         result: ValidationResult
     ): Promise<void> {
         try {

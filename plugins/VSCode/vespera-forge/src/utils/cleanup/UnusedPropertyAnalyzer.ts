@@ -16,7 +16,8 @@
  */
 
 import * as fs from 'fs';
-import * as path from 'path';
+// TODO: path module will be needed for future file path operations
+// import * as path from 'path';
 import { 
     UnusedVariable, 
     RiskLevel,
@@ -454,7 +455,7 @@ export class UnusedPropertyAnalyzer {
 
     private static identifyIntegrationOpportunity(
         property: UnusedVariable, 
-        usageAnalysis: PropertyUsageAnalysis
+        _usageAnalysis: PropertyUsageAnalysis
     ): IntegrationOpportunity | null {
         // Only analyze properties in Phase 2B (service integration phase)
         if (property.phase !== ProcessingPhase.PHASE_2B) {
@@ -751,7 +752,7 @@ export class UnusedPropertyAnalyzer {
 
     // Strategic analysis helper methods
 
-    private static analyzeServiceIntegrationOpportunity(property: UnusedVariable, fileContent: string): IntegrationOpportunity | null {
+    private static analyzeServiceIntegrationOpportunity(property: UnusedVariable, _fileContent: string): IntegrationOpportunity | null {
         // Find matching strategic data
         const strategicMatch = this.STRATEGIC_PROPERTY_DATA.serviceIntegrationGaps.find(
             data => property.file.includes(data.file) && property.name === data.property
@@ -831,7 +832,7 @@ export class UnusedPropertyAnalyzer {
         return issues;
     }
 
-    private static async performCodeAnalysis(property: UnusedVariable): Promise<CodeAnalysisFindings> {
+    private static async performCodeAnalysis(_property: UnusedVariable): Promise<CodeAnalysisFindings> {
         // This would perform cross-file analysis in a real implementation
         return {
             similarPatternsInOtherFiles: [],
@@ -955,7 +956,7 @@ export class UnusedPropertyAnalyzer {
         }
     }
 
-    private static estimateIntegrationEffort(strategicData: any): EffortLevel {
+    private static estimateIntegrationEffort(_strategicData: any): EffortLevel {
         // Phase 2B is generally MEDIUM effort
         return EffortLevel.MEDIUM;
     }

@@ -151,7 +151,8 @@ export enum SafetyCheckType {
 }
 
 export class PropertyRemovalHelpers {
-    private static readonly _STRATEGIC_TARGETS = { // TODO: Implement strategic target-based removal logic
+    // TODO: Implement strategic target-based removal logic
+    /* private static readonly _STRATEGIC_TARGETS = { // Strategic targets for property removal
         // Phase 2A: VesperaConsentManager constructor-only properties
         vesperaConsentManagerTargets: [
             {
@@ -171,7 +172,7 @@ export class PropertyRemovalHelpers {
                 refactoringType: ConstructorRefactoringType.PARAMETER_TO_LOCAL_VARIABLE
             }
         ]
-    };
+    }; */
 
     /**
      * Safely removes a single unused property using constructor refactoring
@@ -333,6 +334,9 @@ export class PropertyRemovalHelpers {
     ): Promise<ConstructorRefactoringPlan> {
         const fileContent = await this.getFileContent(property.file);
         const constructorUsage = analysisResult.usageAnalysis.constructorUsage;
+        
+        // TODO: Integrate with strategic targets for priority handling
+        // Strategic targets will be used for optimization in future implementation
         
         // Determine refactoring type based on usage pattern
         const refactoringType = this.determineRefactoringType(constructorUsage);
