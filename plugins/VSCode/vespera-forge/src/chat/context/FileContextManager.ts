@@ -205,17 +205,19 @@ export class SecureFileContextCollector {
       
       // Log security error
       if (this.coreServices?.securityAuditLogger) {
-        await this.coreServices.securityAuditLogger.logSecurityEvent({
-          type: VesperaSecurityEvent.SECURITY_BREACH,
-          severity: 'high',
-          message: 'Context collection failed',
-          metadata: {
-            action: 'context_collection_failed',
-            messageId,
-            error: error instanceof Error ? error.message : String(error),
-            timestamp
+        await this.coreServices.securityAuditLogger.logSecurityEvent(
+          VesperaSecurityEvent.SECURITY_BREACH,
+          {
+            timestamp,
+            metadata: {
+              action: 'context_collection_failed',
+              messageId,
+              error: error instanceof Error ? error.message : String(error),
+              severity: 'high',
+              message: 'Context collection failed'
+            }
           }
-        });
+        );
       }
       
       return {
@@ -425,20 +427,23 @@ export class SecureFileContextCollector {
     try {
       // Use core services for audit logging
       if (this.coreServices?.securityAuditLogger) {
-        await this.coreServices.securityAuditLogger.logSecurityEvent({
-          type: VesperaSecurityEvent.API_ACCESS,
-          severity: 'info',
-          message: 'Secure context collected',
-          metadata: {
-            action: 'secure_context_collected',
-            contextId: contextData.contextId,
-            messageId,
-            itemCount: contextData.contextItems.length,
-            sanitized: contextData.sanitized,
-            threatCount: contextData.threatCount,
-            filePaths: contextData.contextItems.map(item => item.filepath)
+        await this.coreServices.securityAuditLogger.logSecurityEvent(
+          VesperaSecurityEvent.API_ACCESS,
+          {
+            timestamp: Date.now(),
+            metadata: {
+              action: 'secure_context_collected',
+              contextId: contextData.contextId,
+              messageId,
+              itemCount: contextData.contextItems.length,
+              sanitized: contextData.sanitized,
+              threatCount: contextData.threatCount,
+              filePaths: contextData.contextItems.map(item => item.filepath),
+              severity: 'info',
+              message: 'Secure context collected'
+            }
           }
-        });
+        );
       }
     } catch (error) {
       this.logger?.error('Failed to log context collection event', error);

@@ -14,6 +14,7 @@ import {
   NotificationLevel, 
   NotificationType 
 } from './SecureNotificationManager';
+import { VesperaSecurityEvent } from '../types/security';
 
 export enum OperationStatus {
   STARTED = 'started',
@@ -255,14 +256,17 @@ export class AgentProgressNotifier implements vscode.Disposable {
 
       // Security audit logging for agent operation tracking
       await this.coreServices.securityAuditLogger.logSecurityEvent(
-        'agent_operation_started',
-        'low',
+        VesperaSecurityEvent.API_ACCESS,
         {
-          operationId: id,
-          agentType,
-          operationName: name,
-          phase: options.phase,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          metadata: {
+            operationId: id,
+            agentType,
+            operationName: name,
+            phase: options.phase,
+            severity: 'low',
+            action: 'agent_operation_started'
+          }
         }
       );
 

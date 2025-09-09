@@ -17,6 +17,7 @@ import {
   NotificationRequest,
   NotificationLevel 
 } from '../SecureNotificationManager';
+import { VesperaSecurityEvent } from '../../types/security';
 
 export enum PlatformType {
   WINDOWS = 'win32',
@@ -158,13 +159,16 @@ export class CrossPlatformNotificationHandler implements vscode.Disposable {
 
       // Security audit logging for cross-platform notifications
       await this.coreServices.securityAuditLogger.logSecurityEvent(
-        'platform_notification_shown',
-        'low',
+        VesperaSecurityEvent.API_ACCESS,
         {
-          platform: this.platform,
-          notificationLevel: request.level,
-          hasActions: (request.actions?.length || 0) > 0,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          metadata: {
+            platform: this.platform,
+            notificationLevel: request.level,
+            hasActions: (request.actions?.length || 0) > 0,
+            severity: 'low',
+            action: 'platform_notification_shown'
+          }
         }
       );
 

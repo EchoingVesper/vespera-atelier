@@ -20,6 +20,7 @@ import {
   NotificationLevel, 
   NotificationType
 } from './SecureNotificationManager';
+import { VesperaSecurityEvent } from '../types/security';
 import { 
   AgentProgressNotifier,
   AgentType,
@@ -198,13 +199,16 @@ export class TaskServerNotificationIntegration implements vscode.Disposable {
 
       // Security audit logging for task server events
       await this.coreServices.securityAuditLogger.logSecurityEvent(
-        'task_server_event_handled',
-        'low',
+        VesperaSecurityEvent.API_ACCESS,
         {
-          eventType: event.type,
-          taskId: event.taskId,
-          serverId: event.serverId,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          metadata: {
+            eventType: event.type,
+            taskId: event.taskId,
+            serverId: event.serverId,
+            severity: 'low',
+            action: 'task_server_event_handled'
+          }
         }
       );
 

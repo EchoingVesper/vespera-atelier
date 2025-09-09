@@ -87,7 +87,7 @@ export class SecureChatProviderClient {
     this.enableAuditLogging = options.enableAuditLogging !== false;
     
     // Initialize logger
-    this.logger = VesperaLogger.getInstance('SecureChatProviderClient', { provider: this.providerName });
+    this.logger = VesperaLogger.getInstance();
     
     // Try to get security services if available using type-safe scaffolding
     try {
