@@ -191,7 +191,7 @@ impl ChunkingStrategy for SentenceBoundaryChunker {
         boundaries
     }
     
-    fn apply_overlap(&self, chunks: &mut Vec<DocumentChunk>, original: &str) {
+    fn apply_overlap(&self, chunks: &mut Vec<DocumentChunk>, _original: &str) {
         if chunks.len() <= 1 || self.config.overlap_size == 0 {
             return;
         }

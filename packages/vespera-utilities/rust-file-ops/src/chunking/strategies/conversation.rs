@@ -36,7 +36,7 @@ impl ConversationBreakChunker {
         // Try bracket format [YYYY-MM-DD HH:MM:SS]
         let bracket_re = Regex::new(r"\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]").ok()?;
         if let Some(caps) = bracket_re.captures(line) {
-            if let Some(timestamp_str) = caps.get(1) {
+            if let Some(_timestamp_str) = caps.get(1) {
                 // Parse the timestamp (would need proper parsing here)
                 // For now, return None to keep it simple
                 return None;

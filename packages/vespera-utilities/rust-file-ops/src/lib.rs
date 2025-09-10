@@ -303,7 +303,7 @@ mod python_bindings {
     use crate::chunking::discord::{chunk_discord_export, parse_discord_html};
     use std::collections::HashMap;
     use pyo3::prelude::*;
-    use pyo3::types::PyDict;
+    
     use super::*;
     
     /// Read file content as bytes

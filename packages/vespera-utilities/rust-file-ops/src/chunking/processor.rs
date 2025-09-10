@@ -2,7 +2,6 @@
 
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
-use crate::error::VesperaError;
 
 /// A single chunk of a document
 #[derive(Debug, Clone, Serialize, Deserialize)]
