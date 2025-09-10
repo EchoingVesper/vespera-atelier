@@ -5,6 +5,7 @@
 //! All types are designed for library use with proper visibility modifiers
 //! and derive appropriate traits for debugging, cloning, and comparison.
 
+use std::path::PathBuf;
 use std::time::Duration;
 
 /// Configuration for a single string replacement operation
@@ -393,7 +394,11 @@ pub struct EditConfig {
     
     /// Whether to track detailed performance metrics
     pub track_performance: bool,
+    
+    /// Base directory for path security validation
+    pub base_dir: Option<PathBuf>,
 }
+
 
 impl Default for EditConfig {
     fn default() -> Self {
@@ -404,6 +409,7 @@ impl Default for EditConfig {
             normalize_unicode: false,
             max_memory_usage: 256 * 1024 * 1024, // 256MB
             track_performance: true,
+            base_dir: None,
         }
     }
 }

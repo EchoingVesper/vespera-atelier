@@ -6,11 +6,12 @@ High-performance, Unicode-aware file editing library for Rust with exact string 
 
 - 🎯 **Precise String Replacement**: Exact string matching with no regex interpretation
 - 🌍 **Full Unicode Support**: UTF-8 safe with proper character boundary handling
-- ⚡ **High Performance**: Optimized for large files with memory-efficient algorithms
+- ⚡ **High Performance**: Optimized for large files with automatic strategy selection
 - 🔄 **Multi-Edit Operations**: Sequential batch edits with atomic transactions
 - 🛡️ **Safe File Operations**: Atomic writes with automatic rollback on failure
+- 🔒 **Security Validation**: Path traversal prevention and directory restriction
 - 📊 **Rich Feedback**: Detailed results with performance metrics
-- 🔧 **Flexible Configuration**: Extensive customization options
+- 🔧 **Flexible Configuration**: Extensive customization options including progress callbacks
 
 ## Installation
 
@@ -33,6 +34,31 @@ The library includes comprehensive unit tests implemented as inline tests within
 Run tests with:
 ```bash
 cargo test --lib
+```
+
+## Performance Optimization
+
+The library automatically selects the optimal I/O strategy based on file size:
+
+- **Small files (< 1MB)**: Buffered I/O for minimal overhead
+- **Medium files (1-16MB)**: Memory-mapped I/O for efficient access
+- **Large files (> 16MB)**: Streaming with 8MB chunks to control memory usage
+
+This automatic strategy selection ensures optimal performance across different file sizes without manual configuration.
+
+## Security Features
+
+The library includes built-in security validation to prevent common attacks:
+
+```rust
+use vespera_file_ops::{EditConfig, security::SecurityConfig};
+
+// Restrict operations to a specific directory
+let config = EditConfig::default()
+    .with_base_dir("/safe/directory");
+
+// Path traversal attacks are automatically blocked
+// Paths like "../etc/passwd" will be rejected
 ```
 
 ## Quick Start

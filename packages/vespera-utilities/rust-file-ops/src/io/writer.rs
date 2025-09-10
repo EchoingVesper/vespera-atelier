@@ -5,6 +5,7 @@
 
 use crate::error::{EditError, Result};
 use crate::io::strategy::FileStrategy;
+use crate::security::validate_path;
 use crate::types::EditConfig;
 use std::fs;
 use std::io::{Write, BufWriter};
@@ -29,19 +30,26 @@ impl FileWriter {
 
     /// Create a new file writer with custom configuration
     pub fn with_config(path: impl AsRef<Path>, config: EditConfig) -> FileOpResult<Self> {
-        let path = path.as_ref().to_path_buf();
+        let path = path.as_ref();
+        
+        // Validate path security
+        let validated_path = if let Some(ref base_dir) = config.base_dir {
+            validate_path(path, Some(base_dir))?
+        } else {
+            validate_path(path, None)?
+        };
         
         // Ensure parent directory exists
-        if let Some(parent) = path.parent() {
+        if let Some(parent) = validated_path.parent() {
             if !parent.exists() {
                 fs::create_dir_all(parent)
                     .map_err(|e| EditError::from_io_with_path(e, parent.display().to_string()))?;
             }
         }
         
-        let strategy = FileStrategy::optimal_for_write(&path)?;
+        let strategy = FileStrategy::optimal_for_write(&validated_path)?;
         
-        Ok(Self { strategy, path, config })
+        Ok(Self { strategy, path: validated_path, config })
     }
     
     /// Write bytes to file

@@ -26,6 +26,8 @@ pub mod error;
 pub mod types;
 pub mod edit;
 pub mod io;
+// pub mod search; // TODO: Fix grep API usage
+pub mod security;
 
 // Re-export core types for convenience
 pub use error::{EditError, Result};
@@ -381,6 +383,96 @@ mod python_bindings {
         let metadata = fs::metadata(path).map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
         Ok((metadata.len(), metadata.is_file(), metadata.is_dir()))
     }
+    
+    /// Edit a file using EditOperation API
+    #[pyfunction]
+    pub fn py_edit_file(
+        path: &str,
+        old_string: &str,
+        new_string: &str,
+        replace_all: bool,
+    ) -> PyResult<(String, usize, Vec<usize>)> {
+        use crate::edit::single::SingleEditor;
+        use crate::types::EditOperation;
+        
+        // Read file content
+        let content = fs::read_to_string(path)
+            .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
+        
+        // Create operation and editor
+        let operation = EditOperation::new(old_string, new_string, replace_all);
+        let editor = SingleEditor::new();
+        
+        // Apply edit
+        let result = editor.apply_edit(&content, &operation)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+        
+        // Write back if changed
+        if result.changed {
+            fs::write(path, &result.content)
+                .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
+        }
+        
+        Ok((result.content, result.replacements_made, result.replacement_positions))
+    }
+    
+    /// Apply multiple edits to a file
+    #[pyfunction]
+    pub fn py_multi_edit_file(
+        path: &str,
+        edits: Vec<(String, String, bool)>,
+    ) -> PyResult<(String, usize, usize)> {
+        use crate::edit::multi::MultiEditor;
+        use crate::types::EditOperation;
+        
+        // Read file content
+        let content = fs::read_to_string(path)
+            .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
+        
+        // Convert Python tuples to EditOperations
+        let operations: Vec<EditOperation> = edits.into_iter()
+            .map(|(old, new, all)| EditOperation::new(&old, &new, all))
+            .collect();
+        
+        // Create editor and apply edits
+        let editor = MultiEditor::new();
+        let result = editor.apply_edits(&content, &operations)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+        
+        // Write back if changed
+        if result.changed {
+            fs::write(path, &result.content)
+                .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
+        }
+        
+        Ok((
+            result.content,
+            result.total_replacements,
+            result.successful_operations,
+        ))
+    }
+    
+    /// Count how many replacements would be made without modifying the file
+    #[pyfunction]
+    pub fn py_count_replacements(
+        path: &str,
+        old_string: &str,
+        replace_all: bool,
+    ) -> PyResult<usize> {
+        use crate::edit::single::SingleEditor;
+        use crate::types::EditOperation;
+        
+        // Read file content
+        let content = fs::read_to_string(path)
+            .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
+        
+        // Create operation and count
+        let operation = EditOperation::new(old_string, "", replace_all);
+        let editor = SingleEditor::new();
+        
+        editor.count_replacements(&content, &operation)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))
+    }
 }
 
 /// Python module definition for MCP file operations
@@ -403,6 +495,11 @@ fn vespera_file_ops(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // Utility functions
     m.add_function(wrap_pyfunction!(glob_files, m)?)?;
     m.add_function(wrap_pyfunction!(get_file_info, m)?)?;
+    
+    // EditOperation-based functions
+    m.add_function(wrap_pyfunction!(py_edit_file, m)?)?;
+    m.add_function(wrap_pyfunction!(py_multi_edit_file, m)?)?;
+    m.add_function(wrap_pyfunction!(py_count_replacements, m)?)?;
     
     Ok(())
 }

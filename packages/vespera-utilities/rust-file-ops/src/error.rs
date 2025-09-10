@@ -43,6 +43,19 @@ pub enum EditError {
         file_path: Option<String>,
     },
     
+    /// Security violation detected
+    #[error("Security violation for path '{path}': {reason}")]
+    SecurityViolation {
+        path: String,
+        reason: String,
+    },
+    
+    /// Path is not a file
+    #[error("Path '{path}' is not a file")]
+    NotAFile {
+        path: String,
+    },
+    
     /// I/O operation failures with enhanced context
     #[error("I/O error on '{path}': {operation} - {source}")]
     IoError {
