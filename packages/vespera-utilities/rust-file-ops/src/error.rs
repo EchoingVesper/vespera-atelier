@@ -80,6 +80,13 @@ pub enum EditError {
     #[error("Empty search pattern is not allowed")]
     EmptyPattern,
     
+    /// Invalid input data
+    #[error("Invalid input: {message}")]
+    InvalidInput {
+        message: String,
+        context: Option<String>,
+    },
+    
     /// File system related errors with detailed context
     #[error("File not found: {path}")]
     FileNotFound { 
