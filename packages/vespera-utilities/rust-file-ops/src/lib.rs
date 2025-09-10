@@ -28,6 +28,7 @@ pub mod edit;
 pub mod io;
 // pub mod search; // TODO: Fix grep API usage
 pub mod security;
+pub mod chunking;
 
 // Re-export core types for convenience
 pub use error::{EditError, Result};
@@ -297,6 +298,12 @@ pub fn preview_multi_edit(
 
 #[cfg(feature = "python-bindings")]
 mod python_bindings {
+    use crate::chunking::{ChunkingConfig, ChunkStrategy, DocumentFormat};
+    use crate::chunking::strategies::chunk_document;
+    use crate::chunking::discord::{chunk_discord_export, parse_discord_html};
+    use std::collections::HashMap;
+    use pyo3::prelude::*;
+    
     use super::*;
     
     /// Read file content as bytes
@@ -473,6 +480,117 @@ mod python_bindings {
         editor.count_replacements(&content, &operation)
             .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))
     }
+    
+    /// Chunk text content using specified strategy
+    #[pyfunction]
+    #[pyo3(signature = (content, max_chunk_size=2000, overlap_size=200, strategy="sentence"))]
+    pub fn py_chunk_text(
+        content: &str,
+        max_chunk_size: usize,
+        overlap_size: usize,
+        strategy: &str,
+    ) -> PyResult<Vec<HashMap<String, PyObject>>> {
+        Python::with_gil(|py| {
+            let chunk_strategy = match strategy {
+                "fixed" => ChunkStrategy::FixedSize,
+                "sentence" => ChunkStrategy::SentenceBoundary,
+                "paragraph" => ChunkStrategy::ParagraphBoundary,
+                "conversation" => ChunkStrategy::ConversationBreak,
+                _ => ChunkStrategy::SentenceBoundary,
+            };
+            
+            let config = ChunkingConfig {
+                max_chunk_size,
+                overlap_size,
+                chunk_strategy,
+                preserve_metadata: true,
+                format: DocumentFormat::PlainText,
+            };
+            
+            let chunks = chunk_document(content, &config)
+                .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+            
+            let result: Vec<HashMap<String, PyObject>> = chunks.iter().map(|chunk| {
+                let mut map = HashMap::new();
+                map.insert("id".to_string(), chunk.id.to_object(py));
+                map.insert("content".to_string(), chunk.content.to_object(py));
+                map.insert("chunk_index".to_string(), chunk.metadata.chunk_index.to_object(py));
+                map.insert("total_chunks".to_string(), chunk.metadata.total_chunks.to_object(py));
+                map.insert("byte_range".to_string(), 
+                    (chunk.metadata.byte_range.0, chunk.metadata.byte_range.1).to_object(py));
+                map
+            }).collect();
+            
+            Ok(result)
+        })
+    }
+    
+    /// Chunk Discord HTML export file
+    #[pyfunction]
+    #[pyo3(signature = (html_content, preserve_conversations=true, max_tokens_per_chunk=2000))]
+    pub fn py_chunk_discord_html(
+        html_content: &str,
+        preserve_conversations: bool,
+        max_tokens_per_chunk: usize,
+    ) -> PyResult<Vec<HashMap<String, PyObject>>> {
+        Python::with_gil(|py| {
+            let chunks = chunk_discord_export(html_content, preserve_conversations, max_tokens_per_chunk)
+                .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+            
+            let result: Vec<HashMap<String, PyObject>> = chunks.iter().map(|chunk| {
+                let mut map = HashMap::new();
+                
+                // Convert messages to Python list
+                let messages: Vec<HashMap<String, PyObject>> = chunk.messages.iter().map(|msg| {
+                    let mut msg_map = HashMap::new();
+                    msg_map.insert("id".to_string(), msg.id.to_object(py));
+                    msg_map.insert("author".to_string(), msg.author.to_object(py));
+                    msg_map.insert("content".to_string(), msg.content.to_object(py));
+                    msg_map.insert("timestamp".to_string(), msg.timestamp_raw.to_object(py));
+                    msg_map
+                }).collect();
+                
+                map.insert("messages".to_string(), messages.to_object(py));
+                map.insert("participants".to_string(), chunk.participants.to_object(py));
+                map.insert("topics".to_string(), chunk.detected_topics.to_object(py));
+                
+                if let Some(ref context) = chunk.continuation_context {
+                    map.insert("continuation_context".to_string(), context.to_object(py));
+                }
+                
+                map
+            }).collect();
+            
+            Ok(result)
+        })
+    }
+    
+    /// Parse Discord HTML export to extract all messages
+    #[pyfunction]
+    pub fn py_parse_discord_html(path: &str) -> PyResult<HashMap<String, PyObject>> {
+        Python::with_gil(|py| {
+            let chat_log = parse_discord_html(path)
+                .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+            
+            let mut result = HashMap::new();
+            
+            // Convert messages
+            let messages: Vec<HashMap<String, PyObject>> = chat_log.messages.iter().map(|msg| {
+                let mut msg_map = HashMap::new();
+                msg_map.insert("id".to_string(), msg.id.to_object(py));
+                msg_map.insert("author".to_string(), msg.author.to_object(py));
+                msg_map.insert("content".to_string(), msg.content.to_object(py));
+                msg_map.insert("timestamp".to_string(), msg.timestamp_raw.to_object(py));
+                msg_map
+            }).collect();
+            
+            result.insert("messages".to_string(), messages.to_object(py));
+            result.insert("participants".to_string(), chat_log.participants.to_object(py));
+            result.insert("total_messages".to_string(), chat_log.total_messages.to_object(py));
+            
+            Ok(result)
+        })
+    }
 }
 
 /// Python module definition for MCP file operations
@@ -500,6 +618,11 @@ fn vespera_file_ops(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(py_edit_file, m)?)?;
     m.add_function(wrap_pyfunction!(py_multi_edit_file, m)?)?;
     m.add_function(wrap_pyfunction!(py_count_replacements, m)?)?;
+    
+    // Document chunking functions
+    m.add_function(wrap_pyfunction!(python_bindings::py_chunk_text, m)?)?;
+    m.add_function(wrap_pyfunction!(python_bindings::py_chunk_discord_html, m)?)?;
+    m.add_function(wrap_pyfunction!(python_bindings::py_parse_discord_html, m)?)?;
     
     Ok(())
 }

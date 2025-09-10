@@ -1,0 +1,711 @@
+{
+  "file": "mock_discord_export.html",
+  "total_chunks": 15,
+  "story_chunks": 13,
+  "story_elements": {
+    "characters": {
+      "Alice": 9,
+      "Bob": 7,
+      "Kira": 5,
+      "mentor": 1,
+      "Draft": 1,
+      "Thane": 1
+    },
+    "plot_timeline": [
+      "magic system based on emotional resonance",
+      "protagonist's childhood trauma",
+      "different schools based on core emotions",
+      "protagonist",
+      "background",
+      "world-building",
+      "parents were part of an underground resistance movement",
+      "witnessed their arrest at age 7",
+      "emotional suppression",
+      "magic potential",
+      "parents",
+      "city structure built in concentric rings",
+      "enforcement gets stricter as you go outward",
+      "illegal magic use in the outer ring",
+      "Kira witnesses illegal magic use",
+      "Kira is recruited by the user",
+      "latent abilities",
+      "protective magic",
+      "danger",
+      "opening",
+      "market in Ring Seven",
+      "detention centers",
+      "magic permits",
+      "concrete tumors",
+      "blue light",
+      "recruiter's test",
+      "recruiter using illusion magic to stage a confrontation",
+      "Kira's suppressed emotions and their potential for ALL types of magic",
+      "meeting Thane",
+      "discovering latent magic",
+      "introduction to resistance base",
+      "enforcement forces discover a safe house",
+      "dealing with having used illegal magic",
+      "commitment to the cause",
+      "suppression/expression dichotomy",
+      "inherited trauma",
+      "systemic oppression",
+      "cost of resistance",
+      "the power of allowing yourself to feel",
+      "emotional suppression",
+      "traumatizing the outer rings"
+    ],
+    "world_building": {
+      "general": [
+        "fantasy world",
+        "emotional suppression",
+        "setting",
+        "elements",
+        "outer districts where magic use is restricted",
+        "potential mentor knew parents",
+        "inner ring = ruling class with full magic access",
+        "middle rings = merchants and artisans with limited permits",
+        "outer rings = laborers with magic prohibition",
+        "abandoned spaces between rings",
+        "magic",
+        "JSON response",
+        "Ring Seven",
+        "outer ring",
+        "city",
+        "setting elements",
+        "magic system with different types and connections to emotions",
+        "resistance base between rings",
+        "illegal magic",
+        "setting elements",
+        "magic system",
+        "ruling class",
+        "outer rings"
+      ]
+    },
+    "themes": [
+      "notice",
+      "magic use",
+      "disappearing",
+      "family",
+      "danger",
+      "resistance",
+      "test beginning",
+      "motifs",
+      "recurring antagonist",
+      "resistance movement",
+      "fear triggers defensive magic",
+      "suppression",
+      "emotional suppression",
+      "trouble",
+      "emotion/magic type",
+      "learning to feel again",
+      "emotional expression",
+      "oppression",
+      "emotional closure",
+      "silence vs. action",
+      "writing craft",
+      "story development",
+      "abilities",
+      "themes",
+      "emotional shutdown as survival mechanism",
+      "trauma",
+      "happy memory with parents",
+      "power dynamics",
+      "unlocking magic potential",
+      "enforcement",
+      "protection"
+    ]
+  },
+  "chunks": [
+    {
+      "chunk_index": 0,
+      "analysis": {
+        "is_story_related": true,
+        "characters_mentioned": [
+          "Alice",
+          "Bob"
+        ],
+        "plot_points": [
+          "magic system based on emotional resonance",
+          "protagonist's childhood trauma",
+          "different schools based on core emotions"
+        ],
+        "world_building": [
+          "fantasy world",
+          "emotional suppression"
+        ],
+        "themes": [
+          "emotional expression",
+          "trauma",
+          "suppression"
+        ],
+        "summary": "The conversation revolves around developing a fantasy world with an emotional magic system, where stronger emotions equal stronger magic. The protagonist struggles with emotional suppression from childhood trauma, making them potentially powerful but unable to access it properly.",
+        "relevance_score": 8
+      },
+      "messages": [
+        {
+          "content": "Hey! I've been thinking about that fantasy world we discussed. What if the magic system is based on emotional resonance?",
+          "id": "1234567890123456789",
+          "timestamp": "Monday, January 15, 2024 10:23 AM",
+          "author": "Alice"
+        },
+        {
+          "author": "Bob",
+          "id": "1234567890123456790",
+          "content": "Ooh, I love that! So stronger emotions = stronger magic?",
+          "timestamp": "Monday, January 15, 2024 10:25 AM"
+        },
+        {
+          "timestamp": "Monday, January 15, 2024 10:25 AM",
+          "id": "1234567890123456791",
+          "author": "Bob",
+          "content": "We could have different schools based on core emotions"
+        },
+        {
+          "author": "Alice",
+          "content": "Exactly! And our protagonist struggles with emotional suppression from childhood trauma",
+          "timestamp": "Monday, January 15, 2024 10:27 AM",
+          "id": "1234567890123456792"
+        },
+        {
+          "author": "Alice",
+          "id": "1234567890123456793",
+          "content": "Makes them potentially powerful but unable to access it properly",
+          "timestamp": "Monday, January 15, 2024 10:27 AM"
+        }
+      ],
+      "message_count": 5
+    },
+    {
+      "chunk_index": 2,
+      "analysis": {
+        "is_story_related": true,
+        "characters_mentioned": [
+          "Kira"
+        ],
+        "plot_points": [
+          "protagonist",
+          "background",
+          "world-building"
+        ],
+        "world_building": [
+          "setting",
+          "elements"
+        ],
+        "themes": [
+          "motifs",
+          "themes"
+        ],
+        "summary": "The conversation revolves around developing a protagonist and world for a story.",
+        "relevance_score": 8
+      },
+      "messages": [
+        {
+          "content": "So for the protagonist - let's call them Kira for now:",
+          "timestamp": "Monday, January 15, 2024 11:02 AM",
+          "id": "1234567890123456796",
+          "author": "Alice"
+        }
+      ],
+      "message_count": 1
+    },
+    {
+      "chunk_index": 3,
+      "analysis": {
+        "is_story_related": true,
+        "characters_mentioned": [
+          "Alice"
+        ],
+        "plot_points": [
+          "parents were part of an underground resistance movement",
+          "witnessed their arrest at age 7"
+        ],
+        "world_building": [
+          "outer districts where magic use is restricted"
+        ],
+        "themes": [
+          "emotional shutdown as survival mechanism",
+          "resistance movement"
+        ],
+        "summary": "Alice, a young woman who grew up in the outer districts where magic use is restricted, witnessed her parents' arrest at age 7 and has since developed an emotional shutdown as a survival mechanism. She is part of an underground resistance movement.",
+        "relevance_score": 8
+      },
+      "messages": [
+        {
+          "content": "- Age 23, grew up in the outer districts where magic use is restricted",
+          "author": "Alice",
+          "timestamp": "Monday, January 15, 2024 11:02 AM",
+          "id": "1234567890123456797"
+        },
+        {
+          "author": "Alice",
+          "id": "1234567890123456798",
+          "content": "- Parents were part of an underground resistance movement",
+          "timestamp": "Monday, January 15, 2024 11:02 AM"
+        },
+        {
+          "id": "1234567890123456799",
+          "timestamp": "Monday, January 15, 2024 11:03 AM",
+          "author": "Alice",
+          "content": "- Witnessed their arrest at age 7, leading to emotional shutdown as survival mechanism"
+        }
+      ],
+      "message_count": 3
+    },
+    {
+      "chunk_index": 4,
+      "analysis": {
+        "is_story_related": true,
+        "characters_mentioned": [
+          "Bob",
+          "mentor"
+        ],
+        "plot_points": [
+          "emotional suppression",
+          "magic potential",
+          "parents"
+        ],
+        "world_building": [
+          "potential mentor knew parents"
+        ],
+        "themes": [
+          "suppression",
+          "family"
+        ],
+        "summary": "The conversation explores the emotional suppression of a character and their potential mentor knowing their parents, which could lead to a story about unlocking magic potential.",
+        "relevance_score": 8
+      },
+      "messages": [
+        {
+          "author": "Bob",
+          "timestamp": "Monday, January 15, 2024 11:05 AM",
+          "content": "Back! This is great. The emotional suppression explains why they can't access magic despite the potential",
+          "id": "1234567890123456800"
+        },
+        {
+          "author": "Bob",
+          "content": "What if their mentor is someone who knew their parents?",
+          "id": "1234567890123456801",
+          "timestamp": "Monday, January 15, 2024 11:06 AM"
+        }
+      ],
+      "message_count": 2
+    },
+    {
+      "chunk_index": 5,
+      "analysis": {
+        "is_story_related": true,
+        "characters_mentioned": [
+          "Bob",
+          "Alice",
+          "Kira"
+        ],
+        "plot_points": [
+          "city structure built in concentric rings",
+          "enforcement gets stricter as you go outward",
+          "illegal magic use in the outer ring",
+          "Kira witnesses illegal magic use",
+          "Kira is recruited by the user"
+        ],
+        "world_building": [
+          "inner ring = ruling class with full magic access",
+          "middle rings = merchants and artisans with limited permits",
+          "outer rings = laborers with magic prohibition",
+          "abandoned spaces between rings"
+        ],
+        "themes": [
+          "resistance",
+          "magic use",
+          "enforcement",
+          "silence vs. action"
+        ],
+        "summary": "A story set in a city with concentric rings, where the ruling class has full access to magic, while the outer ring is prohibited from using it. The protagonist witnesses illegal magic use and must decide whether to report it or stay silent, which leads them to be recruited by the user. Themes include resistance, magic use, enforcement, and silence vs. action.",
+        "relevance_score": 8
+      },
+      "messages": [
+        {
+          "id": "1234567890123456802",
+          "content": "Been thinking about the city structure. What if it's built in concentric rings?",
+          "author": "Bob",
+          "timestamp": "Tuesday, January 16, 2024 2:23 PM"
+        },
+        {
+          "content": "Inner ring = ruling class with full magic access",
+          "author": "Bob",
+          "id": "1234567890123456803",
+          "timestamp": "Tuesday, January 16, 2024 2:23 PM"
+        },
+        {
+          "content": "Middle rings = merchants and artisans with limited permits",
+          "timestamp": "Tuesday, January 16, 2024 2:24 PM",
+          "author": "Bob",
+          "id": "1234567890123456804"
+        },
+        {
+          "timestamp": "Tuesday, January 16, 2024 2:24 PM",
+          "id": "1234567890123456805",
+          "content": "Outer rings = laborers with magic prohibition",
+          "author": "Bob"
+        },
+        {
+          "author": "Alice",
+          "timestamp": "Tuesday, January 16, 2024 2:25 PM",
+          "id": "1234567890123456806",
+          "content": "Perfect! And enforcement gets stricter as you go outward"
+        }
+      ],
+      "message_count": 9
+    },
+    {
+      "chunk_index": 6,
+      "analysis": {
+        "is_story_related": true,
+        "characters_mentioned": [
+          "Alice",
+          "Kira"
+        ],
+        "plot_points": [
+          "latent abilities",
+          "protective magic",
+          "danger"
+        ],
+        "world_building": [
+          "magic"
+        ],
+        "themes": [
+          "abilities",
+          "protection",
+          "danger"
+        ],
+        "summary": "The conversation revolves around Kira's latent magical abilities and the possibility of a brief flare of protective magic when they think someone's in danger.",
+        "relevance_score": 8
+      },
+      "messages": [
+        {
+          "id": "1234567890123456811",
+          "content": "Yes! And the test reveals Kira's latent abilities - maybe a brief flare of protective magic when they think someone's in danger?",
+          "author": "Alice",
+          "timestamp": "Tuesday, January 16, 2024 2:33 PM"
+        }
+      ],
+      "message_count": 1
+    },
+    {
+      "chunk_index": 8,
+      "analysis": {
+        "is_story_related": true,
+        "characters_mentioned": [
+          "Alice",
+          "Draft"
+        ],
+        "plot_points": [
+          "opening"
+        ],
+        "world_building": [
+          "JSON response"
+        ],
+        "themes": [
+          "writing craft",
+          "story development"
+        ],
+        "summary": "Conversation about the draft of an opening for a story.",
+        "relevance_score": 8
+      },
+      "messages": [
+        {
+          "timestamp": "Tuesday, January 16, 2024 4:52 PM",
+          "id": "1234567890123456814",
+          "author": "Alice",
+          "content": "Draft of opening:"
+        }
+      ],
+      "message_count": 1
+    },
+    {
+      "chunk_index": 9,
+      "analysis": {
+        "is_story_related": true,
+        "characters_mentioned": [
+          "Kira"
+        ],
+        "plot_points": [
+          "market in Ring Seven",
+          "detention centers",
+          "magic permits"
+        ],
+        "world_building": [
+          "Ring Seven",
+          "outer ring",
+          "city"
+        ],
+        "themes": [
+          "trouble",
+          "disappearing",
+          "notice"
+        ],
+        "summary": "The conversation takes place in a dystopian city with different rings, where Kira navigates through a market in Ring Seven while trying to avoid trouble. They notice a flash of blue light that is wrong for this part of the city and discusses the implications of magic existing beyond Ring Five.",
+        "relevance_score": 8
+      },
+      "messages": [
+        {
+          "timestamp": "Tuesday, January 16, 2024 4:52 PM",
+          "content": "The market in Ring Seven smelled of rust and resignation. Kira kept their head down, weaving through the evening crowd with practiced invisibility. Twenty-three years in the outer ring had taught them that being noticed meant trouble, and trouble in Seven meant disappearing into the detention centers that squatted like concrete tumors between the rings.",
+          "id": "1234567890123456815",
+          "author": "Alice"
+        },
+        {
+          "timestamp": "Tuesday, January 16, 2024 4:53 PM",
+          "author": "Alice",
+          "id": "1234567890123456816",
+          "content": "A flash of blue light caught their peripheral vision - wrong, all wrong for this part of the city. Magic meant permits, and permits didn't exist past Ring Five."
+        }
+      ],
+      "message_count": 2
+    },
+    {
+      "chunk_index": 10,
+      "analysis": {
+        "is_story_related": true,
+        "characters_mentioned": [
+          "Bob"
+        ],
+        "plot_points": [
+          "concrete tumors",
+          "blue light",
+          "recruiter's test"
+        ],
+        "world_building": [
+          "setting elements"
+        ],
+        "themes": [
+          "test beginning"
+        ],
+        "summary": "A conversation about a story or fictional work, with discussions of characters, plot points, world-building elements, and writing craft. The conversation mentions a concrete tumor imagery and a blue light that could be a test beginning.",
+        "relevance_score": 8
+      },
+      "messages": [
+        {
+          "id": "1234567890123456817",
+          "content": "This is incredible! Love the \"concrete tumors\" imagery",
+          "timestamp": "Tuesday, January 16, 2024 5:15 PM",
+          "author": "Bob"
+        },
+        {
+          "content": "The blue light - is that our recruiter's test beginning?",
+          "id": "1234567890123456818",
+          "timestamp": "Tuesday, January 16, 2024 5:15 PM",
+          "author": "Bob"
+        }
+      ],
+      "message_count": 2
+    },
+    {
+      "chunk_index": 11,
+      "analysis": {
+        "is_story_related": true,
+        "characters_mentioned": [
+          "Alice",
+          "Bob"
+        ],
+        "plot_points": [
+          "recruiter using illusion magic to stage a confrontation",
+          "Kira's suppressed emotions and their potential for ALL types of magic"
+        ],
+        "world_building": [
+          "magic system with different types and connections to emotions"
+        ],
+        "themes": [
+          "emotional suppression",
+          "learning to feel again",
+          "unlocking magic potential"
+        ],
+        "summary": "The conversation revolves around a recruiter using illusion magic to test Kira's abilities, while also discussing the magic system and Kira's suppressed emotions. The characters analyze the connections between different emotions and their corresponding types of magic, with the goal of unlocking Kira's full potential.",
+        "relevance_score": 8
+      },
+      "messages": [
+        {
+          "id": "1234567890123456819",
+          "content": "Exactly! The recruiter (thinking their name is Thane) is using illusion magic to stage a confrontation",
+          "timestamp": "Wednesday, January 17, 2024 9:30 AM",
+          "author": "Alice"
+        },
+        {
+          "content": "They want to see if Kira will: a) run, b) report it, or c) try to help",
+          "author": "Alice",
+          "id": "1234567890123456820",
+          "timestamp": "Wednesday, January 17, 2024 9:30 AM"
+        },
+        {
+          "timestamp": "Wednesday, January 17, 2024 9:33 AM",
+          "author": "Bob",
+          "content": "Thane is perfect. Older, maybe 40s? Scarred from years of resistance work",
+          "id": "1234567890123456821"
+        },
+        {
+          "id": "1234567890123456822",
+          "author": "Bob",
+          "timestamp": "Wednesday, January 17, 2024 9:33 AM",
+          "content": "Has that tired-but-determined energy of someone who's lost too much to quit now"
+        },
+        {
+          "timestamp": "Wednesday, January 17, 2024 9:40 AM",
+          "id": "1234567890123456823",
+          "content": "Let's detail the emotion-magic connections:",
+          "author": "Alice"
+        }
+      ],
+      "message_count": 12
+    },
+    {
+      "chunk_index": 12,
+      "analysis": {
+        "is_story_related": true,
+        "characters_mentioned": [
+          "Alice",
+          "Bob",
+          "Thane",
+          "Kira"
+        ],
+        "plot_points": [
+          "meeting Thane",
+          "discovering latent magic",
+          "introduction to resistance base",
+          "enforcement forces discover a safe house",
+          "dealing with having used illegal magic",
+          "commitment to the cause"
+        ],
+        "world_building": [
+          "resistance base between rings",
+          "illegal magic"
+        ],
+        "themes": [
+          "emotion/magic type",
+          "recurring antagonist",
+          "happy memory with parents",
+          "fear triggers defensive magic"
+        ],
+        "summary": "The conversation revolves around the story's chapter breakdown and pacing, with a focus on character development and plot points. Bob suggests introducing a recurring antagonist to add tension to the story. The characters mentioned include Alice, Bob, Thane, and Kira, and world-building elements include the resistance base between rings and illegal magic.",
+        "relevance_score": 8
+      },
+      "messages": [
+        {
+          "author": "Alice",
+          "content": "Chapter breakdown for Act 1:",
+          "timestamp": "Wednesday, January 17, 2024 10:15 AM",
+          "id": "1234567890123456831"
+        },
+        {
+          "id": "1234567890123456832",
+          "content": "Ch1: The Test (meeting Thane, discovering latent magic)",
+          "author": "Alice",
+          "timestamp": "Wednesday, January 17, 2024 10:15 AM"
+        },
+        {
+          "timestamp": "Wednesday, January 17, 2024 10:15 AM",
+          "id": "1234567890123456833",
+          "author": "Alice",
+          "content": "Ch2: The Underneath (introduction to resistance base between rings)"
+        },
+        {
+          "author": "Alice",
+          "id": "1234567890123456834",
+          "timestamp": "Wednesday, January 17, 2024 10:16 AM",
+          "content": "Ch3: First Lesson (attempting to access joy magic, flashback to last happy memory with parents)"
+        },
+        {
+          "content": "Ch4: The Raid (enforcement forces discover a safe house, Kira's fear triggers defensive magic)",
+          "id": "1234567890123456835",
+          "timestamp": "Wednesday, January 17, 2024 10:16 AM",
+          "author": "Alice"
+        }
+      ],
+      "message_count": 8
+    },
+    {
+      "chunk_index": 13,
+      "analysis": {
+        "is_story_related": true,
+        "characters_mentioned": [
+          "Alice"
+        ],
+        "plot_points": [
+          "suppression/expression dichotomy",
+          "inherited trauma",
+          "systemic oppression",
+          "cost of resistance"
+        ],
+        "world_building": [
+          "setting elements"
+        ],
+        "themes": [
+          "trauma",
+          "oppression",
+          "resistance"
+        ],
+        "summary": "The conversation revolves around themes and motifs in a story, including inherited trauma, systemic oppression, and the cost of resistance. Alice mentions different aspects of these themes and their potential impact on the story.",
+        "relevance_score": 8
+      },
+      "messages": [
+        {
+          "timestamp": "Thursday, January 18, 2024 11:00 AM",
+          "content": "I've been thinking about themes. Obviously we have the suppression/expression dichotomy",
+          "author": "Alice",
+          "id": "1234567890123456839"
+        },
+        {
+          "author": "Alice",
+          "id": "1234567890123456840",
+          "timestamp": "Thursday, January 18, 2024 11:00 AM",
+          "content": "But also: inherited trauma, systemic oppression, the cost of resistance"
+        }
+      ],
+      "message_count": 2
+    },
+    {
+      "chunk_index": 14,
+      "analysis": {
+        "is_story_related": true,
+        "characters_mentioned": [
+          "Alice",
+          "Bob"
+        ],
+        "plot_points": [
+          "the power of allowing yourself to feel",
+          "emotional suppression",
+          "traumatizing the outer rings"
+        ],
+        "world_building": [
+          "magic system",
+          "ruling class",
+          "outer rings"
+        ],
+        "themes": [
+          "emotional closure",
+          "power dynamics"
+        ],
+        "summary": "The conversation revolves around the idea that emotional closure is a means for the ruling class to maintain power, and how the magic system mirrors this by requiring emotional openness. The outer rings are traumatized into emotional suppression, perpetuating the power dynamic.",
+        "relevance_score": 8
+      },
+      "messages": [
+        {
+          "author": "Alice",
+          "timestamp": "Thursday, January 18, 2024 11:01 AM",
+          "content": "And ultimately - the power of allowing yourself to feel, even when it hurts",
+          "id": "1234567890123456841"
+        },
+        {
+          "author": "Bob",
+          "timestamp": "Thursday, January 18, 2024 11:03 AM",
+          "content": "Yes! And the magic system perfectly mirrors this - you literally can't be powerful while emotionally closed off",
+          "id": "1234567890123456842"
+        },
+        {
+          "author": "Bob",
+          "content": "The ruling class stays in power partly by traumatizing the outer rings into emotional suppression",
+          "timestamp": "Thursday, January 18, 2024 11:04 AM",
+          "id": "1234567890123456843"
+        }
+      ],
+      "message_count": 3
+    }
+  ]
+}
