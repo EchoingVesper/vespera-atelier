@@ -21,6 +21,20 @@ Add to your `Cargo.toml`:
 vespera-file-ops = "0.1.0"
 ```
 
+## Testing
+
+The library includes comprehensive unit tests implemented as inline tests within the source modules:
+
+- `src/edit/single.rs`: 10 tests for single string replacement
+- `src/edit/multi.rs`: 10 tests for multi-edit operations
+- `src/edit/matcher.rs`: 7 tests for string matching
+- `src/types.rs`: 9 tests for type validation and builders
+
+Run tests with:
+```bash
+cargo test --lib
+```
+
 ## Quick Start
 
 ### Simple String Replacement
