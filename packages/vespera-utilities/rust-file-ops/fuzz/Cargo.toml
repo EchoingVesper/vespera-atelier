@@ -1,0 +1,43 @@
+[package]
+name = "vespera-file-ops-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1.0", features = ["derive"] }
+
+[dependencies.vespera-file-ops]
+path = ".."
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "edit_fuzzer"
+path = "fuzz_targets/edit_fuzzer.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "multi_edit_fuzzer"
+path = "fuzz_targets/multi_edit_fuzzer.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "unicode_fuzzer"
+path = "fuzz_targets/unicode_fuzzer.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "file_ops_fuzzer"
+path = "fuzz_targets/file_ops_fuzzer.rs"
+test = false
+doc = false

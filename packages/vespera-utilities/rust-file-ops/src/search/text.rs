@@ -3,15 +3,19 @@
 //! Provides fast text search across files with regex support,
 //! parallel processing, and memory-efficient streaming.
 
-use crate::error::{FileOpError, FileOpResult};
+use crate::error::{EditError, Result};
 use crate::io::reader::FileReader;
-use grep::regex::RegexMatcher;
+use grep::regex::RegexMatcherBuilder;
 use grep::searcher::{Searcher, SearcherBuilder};
 use grep::searcher::sinks::UTF8;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use walkdir::WalkDir;
 use aho_corasick::AhoCorasick;
+
+// Type aliases for compatibility
+type FileOpError = EditError;
+type FileOpResult<T> = Result<T>;
 
 /// Text search result
 #[derive(Debug, Clone)]

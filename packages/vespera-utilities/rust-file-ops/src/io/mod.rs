@@ -5,10 +5,10 @@
 
 pub mod reader;
 pub mod writer;
-pub mod watcher;
 pub mod strategy;
+// pub mod watcher; // Disabled due to compatibility issues with EditError
 
 pub use reader::FileReader;
 pub use writer::FileWriter;
-pub use watcher::FileWatcher;
 pub use strategy::FileStrategy;
+// pub use watcher::FileWatcher; // Disabled
