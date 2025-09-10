@@ -16,6 +16,9 @@ pub type FileOpResult<T> = Result<T>;
 /// Legacy type alias for backward compatibility
 pub type FileOpError = EditError;
 
+/// General error type alias for the library
+pub type VesperaError = EditError;
+
 /// Comprehensive error types for all failure scenarios in file editing operations
 #[derive(Error, Debug)]
 pub enum EditError {

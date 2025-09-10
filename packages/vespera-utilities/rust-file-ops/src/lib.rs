@@ -28,6 +28,7 @@ pub mod edit;
 pub mod io;
 // pub mod search; // TODO: Fix grep API usage
 pub mod security;
+pub mod chunking;
 
 // Re-export core types for convenience
 pub use error::{EditError, Result};
