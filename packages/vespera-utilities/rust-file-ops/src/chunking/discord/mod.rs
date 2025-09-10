@@ -165,15 +165,19 @@ fn parse_messages(document: &Html) -> Result<Vec<DiscordMessage>, VesperaError> 
     Ok(messages)
 }
 
-/// Parse Discord timestamp format: "Friday, September 10, 2021 2:48:25 PM"
+/// Parse Discord timestamp format: "Monday, September 23, 2024 5:39 AM"
 fn parse_discord_timestamp(timestamp_str: &str) -> Result<DateTime<Utc>, VesperaError> {
-    // Discord Chat Exporter format: "Friday, September 10, 2021 2:48:25 PM"
+    // Discord Chat Exporter format variations we've seen:
+    // "Monday, September 23, 2024 5:39 AM" (2024 format with day name, no seconds)
+    // "Friday, September 10, 2021 2:48:25 PM" (older format with seconds)
     let formats = [
-        "%A, %B %d, %Y %I:%M:%S %p",    // Full format with day name
-        "%B %d, %Y %I:%M:%S %p",        // Without day name
-        "%m/%d/%Y %I:%M:%S %p",         // US numeric format
-        "%Y-%m-%d %H:%M:%S",            // ISO-like format
-        "%Y-%m-%dT%H:%M:%S%.fZ",        // Full ISO format
+        "%A, %B %d, %Y %I:%M %p",        // Monday, September 23, 2024 5:39 AM (no seconds)
+        "%A, %B %d, %Y %I:%M:%S %p",     // Friday, September 10, 2021 2:48:25 PM (with seconds)
+        "%B %d, %Y %I:%M %p",            // September 23, 2024 5:39 AM (no day name, no seconds)
+        "%B %d, %Y %I:%M:%S %p",         // September 10, 2021 2:48:25 PM (no day name)
+        "%m/%d/%Y %I:%M:%S %p",          // US numeric format
+        "%Y-%m-%d %H:%M:%S",             // ISO-like format
+        "%Y-%m-%dT%H:%M:%S%.fZ",         // Full ISO format
     ];
     
     for format in &formats {
