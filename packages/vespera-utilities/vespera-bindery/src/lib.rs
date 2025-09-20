@@ -55,7 +55,7 @@
 //! ```
 
 use std::collections::HashMap;
-use std::sync::{Arc, Weak};
+use std::sync::Arc;
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
@@ -78,6 +78,9 @@ pub mod templates;
 pub mod migration;
 pub mod database;
 
+// RAG (Retrieval-Augmented Generation) module
+pub mod rag;
+
 // Conditional binding modules
 #[cfg(feature = "nodejs")]
 pub mod bindings;
@@ -93,9 +96,12 @@ pub use errors::{BinderyError, BinderyResult};
 // Core types
 pub mod types;
 pub use types::{
-    CodexMetadata, CodexContent, TemplateId, ProjectId, UserId,
+    CodexMetadata, CodexContent, ProjectId, UserId,
     VectorClock, OperationId, ContentHash
 };
+
+// Re-export template types
+pub use templates::TemplateId;
 
 // Re-export commonly used task management types
 pub use task_management::{
@@ -108,6 +114,9 @@ pub use role_management::{RoleManager, Role, ToolGroup};
 
 // Re-export hook system types
 pub use hook_system::{HookManager, HookAgent, TimedAgent};
+
+// Re-export RAG types
+pub use rag::{RAGService, RAGConfig, DocumentType, SearchResult, RAGStats};
 
 /// The main entry point for Vespera Bindery functionality.
 ///
@@ -208,15 +217,15 @@ impl CodexManager {
     /// Create a new Codex with the specified title and template
     pub async fn create_codex(&self, title: impl Into<String>, template_id: impl Into<TemplateId>) -> BinderyResult<CodexId> {
         let id = Uuid::new_v4();
-        let title = title.into();
+        let _title = title.into(); // TODO: Use title in Codex creation implementation
         let template_id = template_id.into();
         
         // Verify template exists
-        let template_registry_id = templates::TemplateId::new(&template_id);
-        self.inner.templates.get(&template_registry_id)
+        let template_registry_id = templates::TemplateId::new(template_id.to_string());
+        let _template = self.inner.templates.get(&template_registry_id)
             .ok_or_else(|| BinderyError::TemplateNotFound(template_registry_id))?;
         
-        let created_by = "system".to_string(); // TODO: Get from context
+        let created_by = self.inner.config.user_id.clone().unwrap_or_else(|| "system".to_string()); // TODO: Get user ID from authentication context
         let crdt = Arc::new(crdt::VesperaCRDT::new(id, created_by));
         
         {
@@ -293,9 +302,9 @@ impl CodexManager {
         {
             let codices = self.inner.codices.read().await;
             
-            for crdt in codices.values() {
+            for _crdt in codices.values() {
                 // Use a cutoff of 1 hour for garbage collection
-                let cutoff = chrono::Utc::now() - chrono::Duration::hours(1);
+                let _cutoff = chrono::Utc::now() - chrono::Duration::hours(1); // TODO: Implement CRDT GC operations
                 
                 // We need to get a mutable reference, but we can't due to the Arc
                 // In a real implementation, we'd need interior mutability

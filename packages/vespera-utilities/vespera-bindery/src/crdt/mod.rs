@@ -10,8 +10,8 @@ use uuid::Uuid;
 use chrono::{DateTime, Utc};
 
 use crate::{
-    BinderyResult, 
-    types::{CodexId, UserId, OperationId, VectorClock, TemplateId},
+    BinderyResult,
+    types::{CodexId, UserId, OperationId, VectorClock},
     types::Template,
 };
 
@@ -218,7 +218,7 @@ impl VesperaCRDT {
         title: &str, 
         template: &Template
     ) -> BinderyResult<Self> {
-        let created_by = "system".to_string(); // TODO: Get from context
+        let created_by = "system".to_string(); // TODO: Get user ID from authentication context
         let mut crdt = Self::new(codex_id, created_by.clone());
         
         // Initialize with template metadata
@@ -229,12 +229,12 @@ impl VesperaCRDT {
         })?;
         
         crdt.set_metadata("template_id".to_string(), TemplateValue::Text {
-            value: template.id.clone(),
+            value: template.id.to_string(),
             timestamp: Utc::now(),
             user_id: created_by,
         })?;
         
-        // TODO: Initialize template fields
+        // TODO: Initialize template fields from template definition
         
         Ok(crdt)
     }
@@ -328,7 +328,7 @@ impl VesperaCRDT {
     
     /// Set metadata value
     pub fn set_metadata(&mut self, key: String, value: TemplateValue) -> BinderyResult<()> {
-        let user_id = self.updated_by.clone(); // TODO: Get from context
+        let user_id = self.updated_by.clone(); // TODO: Get user ID from operation context
         let operation = self.create_operation(
             OperationType::MetadataSet { key, value },
             user_id,
@@ -343,7 +343,7 @@ impl VesperaCRDT {
     
     /// Insert text at position
     pub fn insert_text(&mut self, field_id: String, position: usize, content: String) -> BinderyResult<()> {
-        let user_id = self.updated_by.clone(); // TODO: Get from context
+        let user_id = self.updated_by.clone(); // TODO: Get user ID from operation context
         let operation = self.create_operation(
             OperationType::TextInsert { field_id, position, content },
             user_id,
@@ -353,7 +353,7 @@ impl VesperaCRDT {
     
     /// Delete text at position
     pub fn delete_text(&mut self, field_id: String, position: usize, length: usize) -> BinderyResult<()> {
-        let user_id = self.updated_by.clone(); // TODO: Get from context
+        let user_id = self.updated_by.clone(); // TODO: Get user ID from operation context
         let operation = self.create_operation(
             OperationType::TextDelete { field_id, position, length },
             user_id,
@@ -363,7 +363,7 @@ impl VesperaCRDT {
     
     /// Add reference to another Codex
     pub fn add_reference(&mut self, reference: CodexReference) -> BinderyResult<()> {
-        let user_id = self.updated_by.clone(); // TODO: Get from context
+        let user_id = self.updated_by.clone(); // TODO: Get user ID from operation context
         let operation = self.create_operation(
             OperationType::ReferenceAdd { reference },
             user_id,
@@ -456,6 +456,11 @@ impl VesperaCRDT {
                     max_ops, removed
                 );
             }
+        }
+
+        if let Some(auto_gc) = auto_gc_enabled {
+            // TODO: Implement auto GC configuration storage and activation
+            tracing::debug!("CRDT auto-GC configuration set to: {}", auto_gc);
         }
     }
     
@@ -558,13 +563,13 @@ impl VesperaCRDT {
         }
 
         // Check metadata layer
-        if stats.metadata_stats.total_entries > 500 {
+        if stats.metadata_stats.active_entries > 500 {
             recommendations.push("Metadata layer has many entries. Consider tombstone cleanup.".to_string());
             priority = priority.max(OptimizationPriority::Medium);
         }
 
         // Check reference layer
-        if stats.reference_stats.total_entries > 1000 {
+        if stats.reference_stats.total_elements > 1000 {
             recommendations.push("Reference layer has many entries. Consider cleanup.".to_string());
             priority = priority.max(OptimizationPriority::Medium);
         }
@@ -587,8 +592,8 @@ impl VesperaCRDT {
     fn estimate_memory_usage_mb(&self) -> f64 {
         // Rough estimates based on data structure sizes
         let operation_log_mb = (self.operation_log.len() * 200) as f64 / 1024.0 / 1024.0; // ~200 bytes per op
-        let metadata_mb = (self.metadata_layer.stats().total_entries * 100) as f64 / 1024.0 / 1024.0;
-        let references_mb = (self.reference_layer.stats().total_entries * 150) as f64 / 1024.0 / 1024.0;
+        let metadata_mb = (self.metadata_layer.stats().active_entries * 100) as f64 / 1024.0 / 1024.0;
+        let references_mb = (self.reference_layer.stats().total_elements * 150) as f64 / 1024.0 / 1024.0;
         let text_mb = (self.text_layer.field_count() * 1000) as f64 / 1024.0 / 1024.0; // ~1KB per field
         
         operation_log_mb + metadata_mb + references_mb + text_mb

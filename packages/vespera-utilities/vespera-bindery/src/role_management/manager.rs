@@ -354,7 +354,7 @@ impl RoleManager {
             "deployment" => Some(ToolGroup::Deployment),
             "monitoring" => Some(ToolGroup::Monitoring),
             "security" => Some(ToolGroup::Security),
-            "ai_llm" => Some(ToolGroup::AI_LLM),
+            "ai_llm" => Some(ToolGroup::AiLlm),
             "development" => Some(ToolGroup::Development),
             _ => None,
         }

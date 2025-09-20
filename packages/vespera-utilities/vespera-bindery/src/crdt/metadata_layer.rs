@@ -53,7 +53,7 @@ where
         let entry = LWWEntry {
             value: value.clone(),
             timestamp: Utc::now(),
-            user_id: "system".to_string(), // TODO: Get from context
+            user_id: "system".to_string(), // TODO: Get user ID from operation context
             operation_id: uuid::Uuid::new_v4(),
         };
         
@@ -103,7 +103,7 @@ where
         let tombstone = LWWEntry {
             value: (),
             timestamp: Utc::now(),
-            user_id: "system".to_string(), // TODO: Get from context
+            user_id: "system".to_string(), // TODO: Get user ID from operation context
             operation_id: uuid::Uuid::new_v4(),
         };
         
@@ -200,7 +200,7 @@ where
     /// Clear all entries
     pub fn clear(&mut self) {
         let now = Utc::now();
-        let user_id = "system".to_string(); // TODO: Get from context
+        let user_id = "system".to_string(); // TODO: Get user ID from operation context
         
         // Create tombstones for all existing entries
         for key in self.entries.keys() {

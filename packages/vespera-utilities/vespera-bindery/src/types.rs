@@ -4,12 +4,11 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
+use crate::TemplateId;
 
 /// Unique identifier for a Codex
 pub type CodexId = Uuid;
 
-/// Unique identifier for a template
-pub type TemplateId = String;
 
 /// Unique identifier for a project
 pub type ProjectId = String;

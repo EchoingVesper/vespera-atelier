@@ -8,14 +8,11 @@ pub mod agents;
 pub mod scheduler;
 
 pub use manager::HookManager;
-pub use agents::*;
-pub use scheduler::*;
+// Note: HookAgent and TimedAgent structs are defined below, so we don't import them from agents
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use chrono::{DateTime, Utc};
-use crate::CodexId;
-use crate::task_management::{TaskInput, TaskUpdateInput};
 
 /// Hook trigger types for different events
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]

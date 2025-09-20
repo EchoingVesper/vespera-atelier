@@ -16,7 +16,6 @@ use std::sync::Arc;
 use tokio::sync::{RwLock, Mutex};
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
-use serde_json::Value;
 use std::collections::HashMap;
 
 /// Task manager coordinating task lifecycle with roles and hooks
@@ -87,6 +86,7 @@ impl TaskManager {
             parent_id: None,
             assignee: None,
             due_date: None,
+            role: None,
             tags: vec!["task_tree".to_string()],
             labels: HashMap::new(),
             subtasks,
@@ -231,6 +231,8 @@ impl TaskManager {
             assignee: None,
             due_date: None,
             role: Some(role_name.clone()),
+            labels: None,
+            tags: None,
         };
         self.task_service.update_task(update).await?;
 
@@ -261,6 +263,10 @@ impl TaskManager {
 
     /// Start asynchronous task execution
     pub async fn start_task_execution(&self, task_id: &CodexId, timeout_minutes: Option<u64>) -> BinderyResult<String> {
+        // TODO: Implement timeout functionality using timeout_minutes parameter
+        if let Some(_timeout) = timeout_minutes {
+            tracing::debug!("Task execution timeout configured: {} minutes", _timeout);
+        }
         self.execute_task(task_id, false).await
     }
 
@@ -313,6 +319,8 @@ impl TaskManager {
             assignee: None,
             due_date: None,
             role: None,
+            labels: None,
+            tags: None,
         };
         self.task_service.update_task(update).await?;
 
@@ -325,14 +333,7 @@ impl TaskManager {
             error: None,
             started_at: Utc::now(),
             completed_at: Some(Utc::now()),
-            role_name: None,
-            metadata: artifacts.map(|a| {
-                let mut meta = HashMap::new();
-                meta.insert("artifacts".to_string(), serde_json::Value::Array(
-                    a.into_iter().map(serde_json::Value::String).collect()
-                ));
-                meta
-            }).unwrap_or_default(),
+            duration_ms: None,
         };
 
         self.task_service.record_execution(completion_result).await?;
@@ -358,6 +359,8 @@ impl TaskManager {
             assignee: None,
             due_date: None,
             role: Some(role_name),
+            labels: None,
+            tags: None,
         };
 
         self.task_service.update_task(update).await
@@ -414,8 +417,7 @@ impl TaskManager {
             error: result.as_ref().err().map(|e| format!("{}", e)),
             started_at: start_time,
             completed_at: Some(end_time),
-            role_name: Some(role_name.to_string()),
-            metadata: HashMap::new(),
+            duration_ms: Some((end_time - start_time).num_milliseconds() as u64),
         };
 
         // Record execution result
@@ -432,6 +434,8 @@ impl TaskManager {
             assignee: None,
             due_date: None,
             role: None,
+            labels: None,
+            tags: None,
         };
         task_service.update_task(update).await?;
 

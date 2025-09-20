@@ -4,7 +4,7 @@
 //! for integration with various clients like VS Code extensions, web applications, etc.
 
 use std::collections::HashMap;
-use std::io::{self, BufRead, BufReader, Write};
+use std::io::{self, BufRead, Write};
 use std::sync::Arc;
 use std::path::PathBuf;
 
@@ -22,9 +22,9 @@ use tokio::net::TcpListener;
 use tokio::sync::RwLock;
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 use uuid::Uuid;
-use vespera_bindery::database::{Database, TaskInput as DbTaskInput, TaskSummary, TaskDashboard};
+use vespera_bindery::database::{Database, TaskInput as DbTaskInput};
 
 // Input types for JSON-RPC
 #[derive(Debug, Clone, Serialize, Deserialize)]

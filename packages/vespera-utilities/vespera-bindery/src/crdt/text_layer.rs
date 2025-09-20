@@ -61,7 +61,7 @@ impl YTextCRDT {
                 y_doc: None,
             });
         
-        // Simple string insertion (TODO: Replace with Y-CRDT operations)
+        // Simple string insertion (TODO: Replace with yrs crate Y-CRDT operations for true collaboration)
         if position <= field.content.len() {
             field.content.insert_str(position, content);
             Ok(())
@@ -79,7 +79,7 @@ impl YTextCRDT {
                 format!("Field {} not found", field_id)
             ))?;
         
-        // Simple string deletion (TODO: Replace with Y-CRDT operations)
+        // Simple string deletion (TODO: Replace with yrs crate Y-CRDT operations for true collaboration)
         let end_position = position + length;
         if position <= field.content.len() && end_position <= field.content.len() {
             field.content.drain(position..end_position);
@@ -119,7 +119,7 @@ impl YTextCRDT {
     pub fn clear_field(&mut self, field_id: &str) -> BinderyResult<()> {
         if let Some(field) = self.text_fields.get_mut(field_id) {
             field.content.clear();
-            // TODO: Clear Y-CRDT document state
+            // TODO: Clear Y-CRDT document state when yrs integration is implemented
             Ok(())
         } else {
             Err(crate::BinderyError::InvalidOperation(
@@ -165,9 +165,9 @@ impl YTextCRDT {
     pub fn cleanup(&mut self) {
         // Clear all Y-CRDT document state (when integrated)
         for field in self.text_fields.values_mut() {
-            if let Some(ref mut y_doc) = field.y_doc {
-                // TODO: Implement proper Y-CRDT cleanup when integrated
-                // y_doc.destroy(); // or equivalent cleanup method
+            if let Some(ref mut _y_doc) = field.y_doc {
+                // TODO: Implement proper Y-CRDT cleanup when integrated with yrs crate (call document.destroy())
+                // _y_doc.destroy(); // or equivalent cleanup method
             }
             field.content.clear();
             field.content.shrink_to_fit();
@@ -191,7 +191,7 @@ impl Drop for YTextCRDT {
     }
 }
 
-// TODO: Future Y-CRDT integration
+// TODO: Future Y-CRDT integration with yrs crate
 // 
 // This module will eventually integrate with the `yrs` crate for true Y-CRDT functionality:
 //

@@ -19,7 +19,16 @@ impl RoleExecutor {
 
     /// Execute with role constraints (placeholder)
     pub async fn execute_with_role(&self, _role: &Role, _context: &str) -> BinderyResult<RoleExecutionResult> {
-        // Placeholder implementation
-        todo!("Role execution functionality is implemented in RoleManager")
+        // TODO: Implement role-based execution logic
+        // This is a placeholder implementation - actual functionality should be coordinated with RoleManager
+        Ok(RoleExecutionResult {
+            success: false,
+            output: Some("Role execution not yet implemented - placeholder result".to_string()),
+            error: Some("Role execution functionality is not implemented".to_string()),
+            duration: std::time::Duration::from_millis(1),
+            files_accessed: vec![],
+            tools_used: vec![],
+            exit_code: Some(1),
+        })
     }
 }

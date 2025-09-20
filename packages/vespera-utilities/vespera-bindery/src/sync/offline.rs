@@ -2,7 +2,7 @@
 
 use std::collections::VecDeque;
 use serde::{Deserialize, Serialize};
-use crate::{BinderyResult, crdt::CRDTOperation};
+use crate::crdt::CRDTOperation;
 
 /// Manager for offline operations and queuing
 #[derive(Debug)]

@@ -328,6 +328,11 @@ impl Template {
                                 ));
                             }
                         }
+                        #[cfg(not(feature = "regex"))]
+                        {
+                            // TODO: Add regex feature to enable pattern validation
+                            tracing::warn!("Pattern validation requires 'regex' feature: {}", pattern);
+                        }
                     }
                 },
                 TemplateValue::Number(n) => {
