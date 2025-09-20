@@ -1,26 +1,35 @@
-/// Role executor - Handles role-based task execution
+/// Role executor - Handles role-based task execution with audit logging
 ///
 /// This module provides role execution functionality that validates
 /// and executes tasks based on role capabilities. It implements the
 /// actual execution logic with capability restrictions, file access
-/// controls, and security constraints.
+/// controls, security constraints, and comprehensive audit logging.
 
 use super::{Role, RoleExecutionResult, ToolGroup};
 use crate::codex::Codex;
 use crate::errors::{BinderyError, BinderyResult};
-use std::collections::HashSet;
+use crate::observability::audit::{
+    AuditLogger, AuditEvent, UserContext, Operation, SecurityContext, OperationOutcome,
+    create_role_execution_event, create_auth_failure_event
+};
+use std::collections::{HashSet, HashMap};
 use std::time::Instant;
-use tracing::{info, debug};
+use std::sync::Arc;
+use tracing::{info, debug, warn, error};
 use tokio::fs;
+use chrono::Utc;
+use uuid::Uuid;
 
-/// Role executor for capability-restricted execution
+/// Role executor for capability-restricted execution with audit logging
 ///
 /// This executor implements the core logic for executing tasks within
 /// the constraints defined by roles. It provides security through
-/// capability validation, file access controls, and execution timeouts.
+/// capability validation, file access controls, execution timeouts,
+/// and comprehensive audit logging for all security-sensitive operations.
 #[derive(Debug)]
 pub struct RoleExecutor {
-    // Currently stateless - all state is passed through parameters
+    /// Audit logger for security events
+    audit_logger: Option<Arc<AuditLogger>>,
 }
 
 /// Execution runtime for tracking resource usage
@@ -31,42 +40,76 @@ pub struct ExecutionRuntime {
     tools_used: HashSet<String>,
     max_memory_bytes: Option<u64>,
     network_calls_made: u32,
+    /// User context for audit logging
+    user_context: UserContext,
+    /// Session identifier for audit trails
+    session_id: String,
 }
 
 impl RoleExecutor {
-    /// Create a new role executor
+    /// Create a new role executor without audit logging
     pub fn new() -> Self {
-        Self {}
+        Self {
+            audit_logger: None,
+        }
     }
 
-    /// Execute a task with role constraints
+    /// Create a new role executor with audit logging
+    pub fn with_audit_logger(audit_logger: Arc<AuditLogger>) -> Self {
+        Self {
+            audit_logger: Some(audit_logger),
+        }
+    }
+
+    /// Execute a task with role constraints and audit logging
     ///
     /// This is the main execution method that:
     /// 1. Validates role capabilities for the task
     /// 2. Sets up execution environment with restrictions
     /// 3. Executes the task with monitoring
     /// 4. Validates all file access against role permissions
-    /// 5. Returns detailed execution results
-    pub async fn execute_with_role(&self, role: &Role, task: &Codex) -> BinderyResult<RoleExecutionResult> {
+    /// 5. Logs all security-sensitive operations to audit trail
+    /// 6. Returns detailed execution results
+    pub async fn execute_with_role(
+        &self,
+        role: &Role,
+        task: &Codex,
+        user_context: UserContext,
+    ) -> BinderyResult<RoleExecutionResult> {
         let start_time = Instant::now();
+        let session_id = Uuid::new_v4().to_string();
+
         let mut runtime = ExecutionRuntime {
             start_time,
             files_accessed: HashSet::new(),
             tools_used: HashSet::new(),
             max_memory_bytes: role.execution_context.max_memory_usage.map(|mb| mb * 1024 * 1024),
             network_calls_made: 0,
+            user_context: user_context.clone(),
+            session_id: session_id.clone(),
         };
 
         info!("Starting role-based execution: task {} with role {}", task.id, role.name);
 
+        // Audit: Log execution attempt
+        self.audit_execution_attempt(role, task, &user_context, &session_id).await;
+
         // Validate role capabilities for this task
-        self.validate_task_capabilities(role, task, &mut runtime)?;
+        let capability_result = self.validate_task_capabilities(role, task, &mut runtime);
+        if let Err(ref e) = capability_result {
+            // Audit: Log capability validation failure
+            self.audit_capability_failure(role, task, &user_context, &session_id, e).await;
+            return capability_result;
+        }
 
         // Execute the task based on its type and content
-        let result = self.execute_task_logic(role, task, &mut runtime).await;
+        let execution_result = self.execute_task_logic(role, task, &mut runtime).await;
 
         let duration = start_time.elapsed();
-        let execution_result = self.create_execution_result(role, result, runtime, duration).await;
+        let execution_result = self.create_execution_result(role, execution_result, runtime, duration).await;
+
+        // Audit: Log execution completion
+        self.audit_execution_completion(role, task, &user_context, &session_id, &execution_result).await;
 
         info!(
             "Role-based execution completed: task {} with role {} (success: {})",
@@ -80,23 +123,38 @@ impl RoleExecutor {
     ///
     /// This method handles execution when task details are provided as a string context
     /// rather than a full Codex object. Useful for simple command execution.
-    pub async fn execute_with_context(&self, role: &Role, context: &str) -> BinderyResult<RoleExecutionResult> {
+    pub async fn execute_with_context(
+        &self,
+        role: &Role,
+        context: &str,
+        user_context: UserContext,
+    ) -> BinderyResult<RoleExecutionResult> {
         let start_time = Instant::now();
+        let session_id = Uuid::new_v4().to_string();
+
         let mut runtime = ExecutionRuntime {
             start_time,
             files_accessed: HashSet::new(),
             tools_used: HashSet::new(),
             max_memory_bytes: role.execution_context.max_memory_usage.map(|mb| mb * 1024 * 1024),
             network_calls_made: 0,
+            user_context: user_context.clone(),
+            session_id: session_id.clone(),
         };
 
         info!("Starting context-based execution with role {}", role.name);
 
+        // Audit: Log context execution attempt
+        self.audit_context_execution_attempt(role, context, &user_context, &session_id).await;
+
         // Parse and execute the context
-        let result = self.execute_context_logic(role, context, &mut runtime).await;
+        let execution_result = self.execute_context_logic(role, context, &mut runtime).await;
 
         let duration = start_time.elapsed();
-        let execution_result = self.create_execution_result(role, result, runtime, duration).await;
+        let execution_result = self.create_execution_result(role, execution_result, runtime, duration).await;
+
+        // Audit: Log context execution completion
+        self.audit_context_execution_completion(role, context, &user_context, &session_id, &execution_result).await;
 
         info!(
             "Context-based execution completed with role {} (success: {})",
@@ -106,39 +164,79 @@ impl RoleExecutor {
         Ok(execution_result)
     }
 
-    /// Validate file access permissions
-    pub async fn validate_file_access(&self, role: &Role, file_path: &str, write_access: bool) -> BinderyResult<()> {
-        if !role.can_access_file(file_path, write_access) {
+    /// Validate file access permissions with audit logging
+    pub async fn validate_file_access(
+        &self,
+        role: &Role,
+        file_path: &str,
+        write_access: bool,
+        user_context: &UserContext,
+        session_id: &str,
+    ) -> BinderyResult<()> {
+        let validation_result = if !role.can_access_file(file_path, write_access) {
             let access_type = if write_access { "write" } else { "read" };
-            return Err(BinderyError::PermissionDenied(
+            let error = BinderyError::PermissionDenied(
                 format!("Role '{}' does not have {} access to file: {}", role.name, access_type, file_path)
-            ));
-        }
-        Ok(())
+            );
+
+            // Audit: Log file access denial
+            self.audit_file_access_denial(role, file_path, write_access, user_context, session_id, &error).await;
+
+            Err(error)
+        } else {
+            // Audit: Log successful file access validation
+            self.audit_file_access_granted(role, file_path, write_access, user_context, session_id).await;
+            Ok(())
+        };
+
+        validation_result
     }
 
     /// Execute a command with capability and file restrictions
-    pub async fn execute_command(&self, role: &Role, command: &str, args: &[&str]) -> BinderyResult<RoleExecutionResult> {
+    pub async fn execute_command(
+        &self,
+        role: &Role,
+        command: &str,
+        args: &[&str],
+        user_context: UserContext,
+    ) -> BinderyResult<RoleExecutionResult> {
         let start_time = Instant::now();
+        let session_id = Uuid::new_v4().to_string();
+
         let mut runtime = ExecutionRuntime {
             start_time,
             files_accessed: HashSet::new(),
             tools_used: HashSet::new(),
             max_memory_bytes: role.execution_context.max_memory_usage.map(|mb| mb * 1024 * 1024),
             network_calls_made: 0,
+            user_context: user_context.clone(),
+            session_id: session_id.clone(),
         };
+
+        // Audit: Log command execution attempt
+        self.audit_command_execution_attempt(role, command, args, &user_context, &session_id).await;
 
         // Check if role allows process execution
         if !role.has_capability(&ToolGroup::ProcessExecution) {
-            return Err(BinderyError::PermissionDenied(
+            let error = BinderyError::PermissionDenied(
                 format!("Role '{}' does not have process execution capability", role.name)
-            ));
+            );
+
+            // Audit: Log capability denial
+            self.audit_capability_denial(role, "ProcessExecution", &user_context, &session_id, &error).await;
+
+            return Err(error);
         }
 
         if !role.execution_context.subprocess_allowed {
-            return Err(BinderyError::PermissionDenied(
+            let error = BinderyError::PermissionDenied(
                 format!("Role '{}' does not allow subprocess execution", role.name)
-            ));
+            );
+
+            // Audit: Log subprocess denial
+            self.audit_subprocess_denial(role, &user_context, &session_id, &error).await;
+
+            return Err(error);
         }
 
         runtime.tools_used.insert("process_execution".to_string());
@@ -157,6 +255,9 @@ impl RoleExecutor {
 
         let duration = start_time.elapsed();
         let execution_result = self.create_execution_result(role, result, runtime, duration).await;
+
+        // Audit: Log command execution completion
+        self.audit_command_execution_completion(role, command, args, &user_context, &session_id, &execution_result).await;
 
         Ok(execution_result)
     }
@@ -300,147 +401,141 @@ impl RoleExecutor {
             ));
         }
 
+        runtime.tools_used.insert("network_access".to_string());
+        runtime.network_calls_made += 1;
+
+        // Extract URL from task
         let url = task.content.template_fields.get("url")
             .and_then(|v| v.as_str())
             .ok_or_else(|| BinderyError::InvalidInput("Missing URL in network request task".to_string()))?;
 
-        runtime.tools_used.insert("network_access".to_string());
-        runtime.network_calls_made += 1;
-
-        // Simulate network request (in real implementation, would use reqwest or similar)
+        // Simulate network request
         tokio::time::sleep(std::time::Duration::from_millis(200)).await;
-        Ok(format!("Network request completed: {}", url))
+        Ok(format!("Network request to {} completed successfully", url))
     }
 
     /// Execute general tasks
     async fn execute_general_task(&self, role: &Role, task: &Codex, runtime: &mut ExecutionRuntime) -> Result<String, BinderyError> {
         runtime.tools_used.insert("general_execution".to_string());
 
-        // Simulate general task execution
+        // Basic validation and execution for general tasks
         tokio::time::sleep(std::time::Duration::from_millis(50)).await;
-
-        Ok(format!(
-            "General task '{}' executed successfully with role '{}'",
-            task.title, role.name
-        ))
+        Ok(format!("General task executed successfully with role '{}'", role.name))
     }
 
-    /// Read a file with role validation
+    /// Read a file with role validation and audit logging
     async fn read_file_with_validation(&self, role: &Role, file_path: &str, runtime: &mut ExecutionRuntime) -> Result<String, BinderyError> {
-        self.validate_file_access(role, file_path, false).await?;
+        // Validate file access
+        self.validate_file_access(role, file_path, false, &runtime.user_context, &runtime.session_id).await?;
 
         runtime.files_accessed.insert(file_path.to_string());
 
         match fs::read_to_string(file_path).await {
-            Ok(content) => Ok(format!("Read {} bytes from {}", content.len(), file_path)),
-            Err(e) => Err(BinderyError::IoError(format!("Failed to read {}: {}", file_path, e))),
+            Ok(content) => {
+                debug!("Successfully read file: {}", file_path);
+                Ok(content)
+            }
+            Err(e) => {
+                error!("Failed to read file {}: {}", file_path, e);
+                Err(BinderyError::IoError(format!("Failed to read file {}: {}", file_path, e)))
+            }
         }
     }
 
-    /// Write a file with role validation
+    /// Write a file with role validation and audit logging
     async fn write_file_with_validation(&self, role: &Role, file_path: &str, content: &str, runtime: &mut ExecutionRuntime) -> Result<String, BinderyError> {
-        self.validate_file_access(role, file_path, true).await?;
+        // Validate file access
+        self.validate_file_access(role, file_path, true, &runtime.user_context, &runtime.session_id).await?;
 
         runtime.files_accessed.insert(file_path.to_string());
 
         match fs::write(file_path, content).await {
-            Ok(()) => Ok(format!("Wrote {} bytes to {}", content.len(), file_path)),
-            Err(e) => Err(BinderyError::IoError(format!("Failed to write {}: {}", file_path, e))),
+            Ok(_) => {
+                debug!("Successfully wrote file: {}", file_path);
+                Ok(format!("File written successfully: {}", file_path))
+            }
+            Err(e) => {
+                error!("Failed to write file {}: {}", file_path, e);
+                Err(BinderyError::IoError(format!("Failed to write file {}: {}", file_path, e)))
+            }
         }
     }
 
-    /// Delete a file with role validation
+    /// Delete a file with role validation and audit logging
     async fn delete_file_with_validation(&self, role: &Role, file_path: &str, runtime: &mut ExecutionRuntime) -> Result<String, BinderyError> {
-        self.validate_file_access(role, file_path, true).await?;
+        // Validate file access (delete requires write access)
+        self.validate_file_access(role, file_path, true, &runtime.user_context, &runtime.session_id).await?;
 
         runtime.files_accessed.insert(file_path.to_string());
 
         match fs::remove_file(file_path).await {
-            Ok(()) => Ok(format!("Deleted file {}", file_path)),
-            Err(e) => Err(BinderyError::IoError(format!("Failed to delete {}: {}", file_path, e))),
+            Ok(_) => {
+                debug!("Successfully deleted file: {}", file_path);
+                Ok(format!("File deleted successfully: {}", file_path))
+            }
+            Err(e) => {
+                error!("Failed to delete file {}: {}", file_path, e);
+                Err(BinderyError::IoError(format!("Failed to delete file {}: {}", file_path, e)))
+            }
         }
     }
 
-    /// Run a command with monitoring
+    /// Run a command with process execution
     async fn run_command(&self, command: &str, args: &[&str], runtime: &mut ExecutionRuntime) -> Result<String, BinderyError> {
-        debug!("Executing command: {} {:?}", command, args);
+        use tokio::process::Command;
 
-        // Use tokio::process for async command execution
-        let output = tokio::process::Command::new(command)
+        let output = Command::new(command)
             .args(args)
             .output()
             .await
-            .map_err(|e| BinderyError::ExecutionError(format!("Failed to execute command: {}", e)))?;
+            .map_err(|e| BinderyError::ExecutionError(format!("Failed to execute command '{}': {}", command, e)))?;
 
         if output.status.success() {
             let stdout = String::from_utf8_lossy(&output.stdout);
-            Ok(format!("Command executed successfully: {}", stdout.trim()))
+            debug!("Command executed successfully: {} {:?}", command, args);
+            Ok(stdout.to_string())
         } else {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            Err(BinderyError::ExecutionError(format!("Command failed: {}", stderr.trim())))
+            error!("Command failed: {} {:?} - {}", command, args, stderr);
+            Err(BinderyError::ExecutionError(format!("Command failed: {}", stderr)))
         }
     }
 
     /// Extract required capabilities from task content
     fn extract_required_capabilities(&self, task: &Codex) -> BinderyResult<Vec<ToolGroup>> {
-        let mut capabilities = vec![ToolGroup::Development]; // Always require basic development
+        let mut capabilities = Vec::new();
 
-        // Analyze task content for capability requirements
-        if let Some(description) = task.content.template_fields.get("description") {
-            if let Some(desc_str) = description.as_str() {
-                let desc_lower = desc_str.to_lowercase();
-
-                if desc_lower.contains("file") || desc_lower.contains("read") || desc_lower.contains("write") {
-                    capabilities.push(ToolGroup::FileOperations);
-                }
-
-                if desc_lower.contains("network") || desc_lower.contains("http") || desc_lower.contains("api") {
-                    capabilities.push(ToolGroup::NetworkAccess);
-                    capabilities.push(ToolGroup::ApiCalls);
-                }
-
-                if desc_lower.contains("database") || desc_lower.contains("sql") {
-                    capabilities.push(ToolGroup::DatabaseAccess);
-                }
-
-                if desc_lower.contains("test") {
-                    capabilities.push(ToolGroup::Testing);
-                }
-
-                if desc_lower.contains("deploy") {
-                    capabilities.push(ToolGroup::Deployment);
-                }
-
-                if desc_lower.contains("command") || desc_lower.contains("execute") || desc_lower.contains("run") {
-                    capabilities.push(ToolGroup::ProcessExecution);
-                }
+        // Check task type and determine required capabilities
+        if let Some(task_type) = task.content.template_fields.get("task_type").and_then(|v| v.as_str()) {
+            match task_type {
+                "file_operation" => capabilities.push(ToolGroup::FileOperations),
+                "command_execution" => capabilities.push(ToolGroup::ProcessExecution),
+                "data_processing" => capabilities.push(ToolGroup::Development),
+                "network_request" => capabilities.push(ToolGroup::NetworkAccess),
+                _ => {} // General tasks don't require specific capabilities
             }
         }
 
-        // Check task type for specific capability requirements
-        if let Some(task_type) = task.content.template_fields.get("task_type") {
-            if let Some(type_str) = task_type.as_str() {
-                match type_str {
-                    "file_operation" => capabilities.push(ToolGroup::FileOperations),
-                    "command_execution" => capabilities.push(ToolGroup::ProcessExecution),
-                    "network_request" => {
-                        capabilities.push(ToolGroup::NetworkAccess);
-                        capabilities.push(ToolGroup::ApiCalls);
-                    },
-                    "database_query" => capabilities.push(ToolGroup::DatabaseAccess),
-                    _ => {}
+        // Check for specific capability requirements in task metadata
+        if let Some(required_caps) = task.content.template_fields.get("required_capabilities").and_then(|v| v.as_array()) {
+            for cap_value in required_caps {
+                if let Some(cap_str) = cap_value.as_str() {
+                    match cap_str {
+                        "file_operations" => capabilities.push(ToolGroup::FileOperations),
+                        "process_execution" => capabilities.push(ToolGroup::ProcessExecution),
+                        "network_access" => capabilities.push(ToolGroup::NetworkAccess),
+                        "development" => capabilities.push(ToolGroup::Development),
+                        "database_access" => capabilities.push(ToolGroup::DatabaseAccess),
+                        _ => debug!("Unknown capability requirement: {}", cap_str),
+                    }
                 }
             }
         }
-
-        // Remove duplicates
-        capabilities.sort();
-        capabilities.dedup();
 
         Ok(capabilities)
     }
 
-    /// Create execution result from runtime data
+    /// Create execution result with comprehensive metrics
     async fn create_execution_result(
         &self,
         role: &Role,
@@ -448,25 +543,443 @@ impl RoleExecutor {
         runtime: ExecutionRuntime,
         duration: std::time::Duration,
     ) -> RoleExecutionResult {
-        match result {
-            Ok(output) => RoleExecutionResult {
-                success: true,
-                output: Some(output),
-                error: None,
-                duration,
-                files_accessed: runtime.files_accessed.into_iter().collect(),
-                tools_used: runtime.tools_used.into_iter().collect(),
-                exit_code: Some(0),
-            },
-            Err(error) => RoleExecutionResult {
-                success: false,
-                output: None,
-                error: Some(error.to_string()),
-                duration,
-                files_accessed: runtime.files_accessed.into_iter().collect(),
-                tools_used: runtime.tools_used.into_iter().collect(),
-                exit_code: Some(1),
-            },
+        let (success, output, error_message) = match result {
+            Ok(output) => (true, output, None),
+            Err(e) => (false, String::new(), Some(e.to_string())),
+        };
+
+        RoleExecutionResult {
+            success,
+            output,
+            error_message,
+            execution_time: duration,
+            role_name: role.name.clone(),
+            capabilities_used: runtime.tools_used.into_iter().collect(),
+            files_accessed: runtime.files_accessed.into_iter().collect(),
+            memory_used_bytes: 0, // TODO: Implement actual memory tracking
+            network_calls_made: runtime.network_calls_made,
         }
+    }
+
+    // Audit logging methods
+
+    /// Audit execution attempt
+    async fn audit_execution_attempt(&self, role: &Role, task: &Codex, user_context: &UserContext, session_id: &str) {
+        if let Some(ref audit_logger) = self.audit_logger {
+            let outcome = OperationOutcome {
+                success: true, // Just attempting, not completed yet
+                result_code: None,
+                error_message: None,
+                duration_ms: 0,
+                records_affected: None,
+            };
+
+            let permissions = role.capabilities.iter().map(|c| format!("{:?}", c)).collect();
+            let event = create_role_execution_event(
+                user_context.clone(),
+                &role.name,
+                &task.id.to_string(),
+                outcome,
+                permissions,
+            );
+
+            if let Err(e) = audit_logger.log_event(event).await {
+                error!("Failed to log execution attempt audit event: {}", e);
+            }
+        }
+    }
+
+    /// Audit execution completion
+    async fn audit_execution_completion(&self, role: &Role, task: &Codex, user_context: &UserContext, session_id: &str, result: &RoleExecutionResult) {
+        if let Some(ref audit_logger) = self.audit_logger {
+            let outcome = OperationOutcome {
+                success: result.success,
+                result_code: Some(if result.success { 200 } else { 500 }),
+                error_message: result.error_message.clone(),
+                duration_ms: result.execution_time.as_millis() as i64,
+                records_affected: Some(1),
+            };
+
+            let permissions = result.capabilities_used.clone();
+            let event = create_role_execution_event(
+                user_context.clone(),
+                &role.name,
+                &task.id.to_string(),
+                outcome,
+                permissions,
+            );
+
+            if let Err(e) = audit_logger.log_event(event).await {
+                error!("Failed to log execution completion audit event: {}", e);
+            }
+        }
+    }
+
+    /// Audit capability validation failure
+    async fn audit_capability_failure(&self, role: &Role, task: &Codex, user_context: &UserContext, session_id: &str, error: &BinderyError) {
+        if let Some(ref audit_logger) = self.audit_logger {
+            let outcome = OperationOutcome {
+                success: false,
+                result_code: Some(403), // Forbidden
+                error_message: Some(error.to_string()),
+                duration_ms: 0,
+                records_affected: None,
+            };
+
+            let event = create_auth_failure_event(
+                user_context.clone(),
+                &user_context.user_id.as_deref().unwrap_or("unknown"),
+                "insufficient_capabilities",
+                outcome,
+            );
+
+            if let Err(e) = audit_logger.log_event(event).await {
+                error!("Failed to log capability failure audit event: {}", e);
+            }
+        }
+    }
+
+    /// Audit context execution attempt
+    async fn audit_context_execution_attempt(&self, role: &Role, context: &str, user_context: &UserContext, session_id: &str) {
+        if let Some(ref audit_logger) = self.audit_logger {
+            let mut details = HashMap::new();
+            details.insert("context".to_string(), serde_json::Value::String(context.to_string()));
+            details.insert("role_name".to_string(), serde_json::Value::String(role.name.clone()));
+
+            let event = AuditEvent {
+                id: Uuid::new_v4().to_string(),
+                timestamp: Utc::now(),
+                user_context: user_context.clone(),
+                operation: Operation {
+                    operation_type: "role_execution".to_string(),
+                    action: "execute_context".to_string(),
+                    resource: format!("context:{}", session_id),
+                    details,
+                },
+                security_context: SecurityContext {
+                    roles: vec![role.name.clone()],
+                    permissions: role.capabilities.iter().map(|c| format!("{:?}", c)).collect(),
+                    security_level: None,
+                    auth_method: None,
+                },
+                outcome: OperationOutcome {
+                    success: true,
+                    result_code: None,
+                    error_message: None,
+                    duration_ms: 0,
+                    records_affected: None,
+                },
+                previous_hash: None,
+                event_hash: String::new(),
+                metadata: HashMap::new(),
+            };
+
+            if let Err(e) = audit_logger.log_event(event).await {
+                error!("Failed to log context execution attempt audit event: {}", e);
+            }
+        }
+    }
+
+    /// Audit context execution completion
+    async fn audit_context_execution_completion(&self, role: &Role, context: &str, user_context: &UserContext, session_id: &str, result: &RoleExecutionResult) {
+        if let Some(ref audit_logger) = self.audit_logger {
+            let mut details = HashMap::new();
+            details.insert("context".to_string(), serde_json::Value::String(context.to_string()));
+            details.insert("role_name".to_string(), serde_json::Value::String(role.name.clone()));
+
+            let event = AuditEvent {
+                id: Uuid::new_v4().to_string(),
+                timestamp: Utc::now(),
+                user_context: user_context.clone(),
+                operation: Operation {
+                    operation_type: "role_execution".to_string(),
+                    action: "execute_context_complete".to_string(),
+                    resource: format!("context:{}", session_id),
+                    details,
+                },
+                security_context: SecurityContext {
+                    roles: vec![role.name.clone()],
+                    permissions: result.capabilities_used.clone(),
+                    security_level: None,
+                    auth_method: None,
+                },
+                outcome: OperationOutcome {
+                    success: result.success,
+                    result_code: Some(if result.success { 200 } else { 500 }),
+                    error_message: result.error_message.clone(),
+                    duration_ms: result.execution_time.as_millis() as i64,
+                    records_affected: Some(1),
+                },
+                previous_hash: None,
+                event_hash: String::new(),
+                metadata: HashMap::new(),
+            };
+
+            if let Err(e) = audit_logger.log_event(event).await {
+                error!("Failed to log context execution completion audit event: {}", e);
+            }
+        }
+    }
+
+    /// Audit file access denial
+    async fn audit_file_access_denial(&self, role: &Role, file_path: &str, write_access: bool, user_context: &UserContext, session_id: &str, error: &BinderyError) {
+        if let Some(ref audit_logger) = self.audit_logger {
+            let access_type = if write_access { "write" } else { "read" };
+            let mut details = HashMap::new();
+            details.insert("file_path".to_string(), serde_json::Value::String(file_path.to_string()));
+            details.insert("access_type".to_string(), serde_json::Value::String(access_type.to_string()));
+            details.insert("role_name".to_string(), serde_json::Value::String(role.name.clone()));
+
+            let event = AuditEvent {
+                id: Uuid::new_v4().to_string(),
+                timestamp: Utc::now(),
+                user_context: user_context.clone(),
+                operation: Operation {
+                    operation_type: "file_access".to_string(),
+                    action: "access_denied".to_string(),
+                    resource: format!("file:{}", file_path),
+                    details,
+                },
+                security_context: SecurityContext {
+                    roles: vec![role.name.clone()],
+                    permissions: role.capabilities.iter().map(|c| format!("{:?}", c)).collect(),
+                    security_level: Some("high".to_string()),
+                    auth_method: None,
+                },
+                outcome: OperationOutcome {
+                    success: false,
+                    result_code: Some(403),
+                    error_message: Some(error.to_string()),
+                    duration_ms: 0,
+                    records_affected: None,
+                },
+                previous_hash: None,
+                event_hash: String::new(),
+                metadata: HashMap::new(),
+            };
+
+            if let Err(e) = audit_logger.log_event(event).await {
+                error!("Failed to log file access denial audit event: {}", e);
+            }
+        }
+    }
+
+    /// Audit file access granted
+    async fn audit_file_access_granted(&self, role: &Role, file_path: &str, write_access: bool, user_context: &UserContext, session_id: &str) {
+        if let Some(ref audit_logger) = self.audit_logger {
+            let access_type = if write_access { "write" } else { "read" };
+            let mut details = HashMap::new();
+            details.insert("file_path".to_string(), serde_json::Value::String(file_path.to_string()));
+            details.insert("access_type".to_string(), serde_json::Value::String(access_type.to_string()));
+            details.insert("role_name".to_string(), serde_json::Value::String(role.name.clone()));
+
+            let event = AuditEvent {
+                id: Uuid::new_v4().to_string(),
+                timestamp: Utc::now(),
+                user_context: user_context.clone(),
+                operation: Operation {
+                    operation_type: "file_access".to_string(),
+                    action: "access_granted".to_string(),
+                    resource: format!("file:{}", file_path),
+                    details,
+                },
+                security_context: SecurityContext {
+                    roles: vec![role.name.clone()],
+                    permissions: role.capabilities.iter().map(|c| format!("{:?}", c)).collect(),
+                    security_level: Some("high".to_string()),
+                    auth_method: None,
+                },
+                outcome: OperationOutcome {
+                    success: true,
+                    result_code: Some(200),
+                    error_message: None,
+                    duration_ms: 0,
+                    records_affected: None,
+                },
+                previous_hash: None,
+                event_hash: String::new(),
+                metadata: HashMap::new(),
+            };
+
+            if let Err(e) = audit_logger.log_event(event).await {
+                error!("Failed to log file access granted audit event: {}", e);
+            }
+        }
+    }
+
+    /// Audit command execution attempt
+    async fn audit_command_execution_attempt(&self, role: &Role, command: &str, args: &[&str], user_context: &UserContext, session_id: &str) {
+        if let Some(ref audit_logger) = self.audit_logger {
+            let mut details = HashMap::new();
+            details.insert("command".to_string(), serde_json::Value::String(command.to_string()));
+            details.insert("args".to_string(), serde_json::Value::Array(
+                args.iter().map(|arg| serde_json::Value::String(arg.to_string())).collect()
+            ));
+            details.insert("role_name".to_string(), serde_json::Value::String(role.name.clone()));
+
+            let event = AuditEvent {
+                id: Uuid::new_v4().to_string(),
+                timestamp: Utc::now(),
+                user_context: user_context.clone(),
+                operation: Operation {
+                    operation_type: "command_execution".to_string(),
+                    action: "execute_command".to_string(),
+                    resource: format!("command:{}", command),
+                    details,
+                },
+                security_context: SecurityContext {
+                    roles: vec![role.name.clone()],
+                    permissions: role.capabilities.iter().map(|c| format!("{:?}", c)).collect(),
+                    security_level: Some("high".to_string()),
+                    auth_method: None,
+                },
+                outcome: OperationOutcome {
+                    success: true,
+                    result_code: None,
+                    error_message: None,
+                    duration_ms: 0,
+                    records_affected: None,
+                },
+                previous_hash: None,
+                event_hash: String::new(),
+                metadata: HashMap::new(),
+            };
+
+            if let Err(e) = audit_logger.log_event(event).await {
+                error!("Failed to log command execution attempt audit event: {}", e);
+            }
+        }
+    }
+
+    /// Audit command execution completion
+    async fn audit_command_execution_completion(&self, role: &Role, command: &str, args: &[&str], user_context: &UserContext, session_id: &str, result: &RoleExecutionResult) {
+        if let Some(ref audit_logger) = self.audit_logger {
+            let mut details = HashMap::new();
+            details.insert("command".to_string(), serde_json::Value::String(command.to_string()));
+            details.insert("args".to_string(), serde_json::Value::Array(
+                args.iter().map(|arg| serde_json::Value::String(arg.to_string())).collect()
+            ));
+            details.insert("role_name".to_string(), serde_json::Value::String(role.name.clone()));
+
+            let event = AuditEvent {
+                id: Uuid::new_v4().to_string(),
+                timestamp: Utc::now(),
+                user_context: user_context.clone(),
+                operation: Operation {
+                    operation_type: "command_execution".to_string(),
+                    action: "execute_command_complete".to_string(),
+                    resource: format!("command:{}", command),
+                    details,
+                },
+                security_context: SecurityContext {
+                    roles: vec![role.name.clone()],
+                    permissions: result.capabilities_used.clone(),
+                    security_level: Some("high".to_string()),
+                    auth_method: None,
+                },
+                outcome: OperationOutcome {
+                    success: result.success,
+                    result_code: Some(if result.success { 200 } else { 500 }),
+                    error_message: result.error_message.clone(),
+                    duration_ms: result.execution_time.as_millis() as i64,
+                    records_affected: Some(1),
+                },
+                previous_hash: None,
+                event_hash: String::new(),
+                metadata: HashMap::new(),
+            };
+
+            if let Err(e) = audit_logger.log_event(event).await {
+                error!("Failed to log command execution completion audit event: {}", e);
+            }
+        }
+    }
+
+    /// Audit capability denial
+    async fn audit_capability_denial(&self, role: &Role, capability: &str, user_context: &UserContext, session_id: &str, error: &BinderyError) {
+        if let Some(ref audit_logger) = self.audit_logger {
+            let mut details = HashMap::new();
+            details.insert("capability".to_string(), serde_json::Value::String(capability.to_string()));
+            details.insert("role_name".to_string(), serde_json::Value::String(role.name.clone()));
+
+            let event = AuditEvent {
+                id: Uuid::new_v4().to_string(),
+                timestamp: Utc::now(),
+                user_context: user_context.clone(),
+                operation: Operation {
+                    operation_type: "authorization".to_string(),
+                    action: "capability_denied".to_string(),
+                    resource: format!("capability:{}", capability),
+                    details,
+                },
+                security_context: SecurityContext {
+                    roles: vec![role.name.clone()],
+                    permissions: role.capabilities.iter().map(|c| format!("{:?}", c)).collect(),
+                    security_level: Some("high".to_string()),
+                    auth_method: None,
+                },
+                outcome: OperationOutcome {
+                    success: false,
+                    result_code: Some(403),
+                    error_message: Some(error.to_string()),
+                    duration_ms: 0,
+                    records_affected: None,
+                },
+                previous_hash: None,
+                event_hash: String::new(),
+                metadata: HashMap::new(),
+            };
+
+            if let Err(e) = audit_logger.log_event(event).await {
+                error!("Failed to log capability denial audit event: {}", e);
+            }
+        }
+    }
+
+    /// Audit subprocess denial
+    async fn audit_subprocess_denial(&self, role: &Role, user_context: &UserContext, session_id: &str, error: &BinderyError) {
+        if let Some(ref audit_logger) = self.audit_logger {
+            let mut details = HashMap::new();
+            details.insert("role_name".to_string(), serde_json::Value::String(role.name.clone()));
+            details.insert("subprocess_allowed".to_string(), serde_json::Value::Bool(role.execution_context.subprocess_allowed));
+
+            let event = AuditEvent {
+                id: Uuid::new_v4().to_string(),
+                timestamp: Utc::now(),
+                user_context: user_context.clone(),
+                operation: Operation {
+                    operation_type: "authorization".to_string(),
+                    action: "subprocess_denied".to_string(),
+                    resource: "subprocess_execution".to_string(),
+                    details,
+                },
+                security_context: SecurityContext {
+                    roles: vec![role.name.clone()],
+                    permissions: role.capabilities.iter().map(|c| format!("{:?}", c)).collect(),
+                    security_level: Some("high".to_string()),
+                    auth_method: None,
+                },
+                outcome: OperationOutcome {
+                    success: false,
+                    result_code: Some(403),
+                    error_message: Some(error.to_string()),
+                    duration_ms: 0,
+                    records_affected: None,
+                },
+                previous_hash: None,
+                event_hash: String::new(),
+                metadata: HashMap::new(),
+            };
+
+            if let Err(e) = audit_logger.log_event(event).await {
+                error!("Failed to log subprocess denial audit event: {}", e);
+            }
+        }
+    }
+}
+
+impl Default for RoleExecutor {
+    fn default() -> Self {
+        Self::new()
     }
 }

@@ -1,10 +1,110 @@
 //! Text layer CRDT implementation using Y-CRDT for collaborative text editing
+//!
+//! This module implements a text-focused CRDT that enables real-time collaborative
+//! editing of text content within template fields. The implementation is designed
+//! to integrate with the Y-CRDT (Yjs) algorithm for optimal text editing performance.
+//!
+//! # Y-CRDT Algorithm
+//!
+//! Y-CRDT is a sequence CRDT that uses a unique approach to handle text operations:
+//!
+//! ## Core Concepts
+//!
+//! - **Items**: Each character/chunk is represented as an item with a unique ID
+//! - **Position**: Items reference their left neighbor for ordering
+//! - **Deletion**: Items are marked as deleted rather than removed
+//! - **Integration**: New operations are integrated based on item relationships
+//!
+//! ## Mathematical Properties
+//!
+//! The Y-CRDT algorithm ensures:
+//! - **Convergence**: All replicas converge to the same state
+//! - **Intention Preservation**: User intentions are maintained despite conflicts
+//! - **Reversibility**: All operations can be undone
+//!
+//! ## Conflict Resolution
+//!
+//! Y-CRDT resolves conflicts through:
+//! 1. **Position-based Integration**: New items find their position based on context
+//! 2. **Causal Ordering**: Operations are ordered by their causal relationships
+//! 3. **Deterministic Rules**: Ties are broken using deterministic criteria
+//!
+//! # Performance Characteristics
+//!
+//! - **Insertion**: O(log n) where n is the number of items
+//! - **Deletion**: O(log n) for marking items as deleted
+//! - **Integration**: O(log n) for finding insertion position
+//! - **Memory**: O(n) where n includes deleted items (until GC)
+//!
+//! # Current Implementation Status
+//!
+//! The current implementation is a placeholder that maintains simple string state.
+//! Future integration with the `yrs` crate will provide full Y-CRDT semantics.
+//!
+//! # Usage Example
+//!
+//! ```rust
+//! use vespera_bindery::crdt::text_layer::YTextCRDT;
+//!
+//! let mut text_crdt = YTextCRDT::new();
+//!
+//! // Initialize a text field
+//! text_crdt.init_field("content", "Hello world");
+//!
+//! // Collaborative text operations
+//! text_crdt.insert("content", 5, ", collaborative").unwrap();
+//! text_crdt.delete("content", 0, 5).unwrap(); // Remove "Hello"
+//!
+//! // Result: ", collaborative world"
+//! assert_eq!(text_crdt.get_content("content").unwrap(), ", collaborative world");
+//! ```
 
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use crate::BinderyResult;
 
 /// Y-CRDT implementation for text editing within template fields
+///
+/// This structure manages collaborative text editing across multiple named fields.
+/// Each field maintains its own Y-CRDT document state for independent editing.
+///
+/// # Design Philosophy
+///
+/// The text layer is designed around the principle that text editing should feel
+/// natural and responsive while maintaining strong consistency guarantees across
+/// distributed collaborators.
+///
+/// # Field-Based Organization
+///
+/// Text content is organized into named fields, allowing:
+/// - Independent editing of different text sections
+/// - Granular conflict resolution per field
+/// - Efficient partial synchronization
+/// - Template-driven field management
+///
+/// # Integration with Y-CRDT
+///
+/// When integrated with the `yrs` crate, this will provide:
+/// - **Operational Transformation**: Automatic resolution of concurrent edits
+/// - **Undo/Redo**: Full operation history with reversibility
+/// - **Delta Synchronization**: Efficient network protocol for updates
+/// - **Awareness**: Real-time cursor and selection tracking
+///
+/// # Example
+///
+/// ```rust
+/// let mut text_layer = YTextCRDT::new();
+///
+/// // Multiple users editing different fields simultaneously
+/// text_layer.init_field("title", "Document Title");
+/// text_layer.init_field("content", "Document content...");
+///
+/// // User 1 edits title
+/// text_layer.insert("title", 8, " v2").unwrap();
+///
+/// // User 2 edits content
+/// text_layer.insert("content", 16, " with more details").unwrap();
+/// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct YTextCRDT {
     /// Text content by field ID
@@ -54,6 +154,56 @@ impl YTextCRDT {
     }
     
     /// Insert text at position in a field
+    ///
+    /// Inserts text content at the specified position within a named field.
+    /// This operation is designed to be commutative with other concurrent insertions.
+    ///
+    /// # Algorithm
+    ///
+    /// Current implementation uses simple string insertion. Future Y-CRDT integration
+    /// will use the following algorithm:
+    ///
+    /// 1. **Position Resolution**: Convert character position to item reference
+    /// 2. **Item Creation**: Create new item with unique ID and content
+    /// 3. **Integration**: Find correct position based on neighboring items
+    /// 4. **State Update**: Update document state and notify observers
+    ///
+    /// # Conflict Resolution
+    ///
+    /// When multiple users insert at the same position:
+    /// - Items are ordered by their creation timestamp and user ID
+    /// - Each insertion gets a unique position in the final document
+    /// - No text is lost, maintaining user intention
+    ///
+    /// # Performance
+    ///
+    /// - Current: O(n) for string insertion
+    /// - Future Y-CRDT: O(log n) for position resolution and insertion
+    ///
+    /// # Parameters
+    ///
+    /// - `field_id`: The name of the text field to modify
+    /// - `position`: Character position where to insert (0-based)
+    /// - `content`: Text content to insert
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` on success or an error if the position is invalid.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let mut text_crdt = YTextCRDT::new();
+    /// text_crdt.init_field("content", "Hello world");
+    ///
+    /// // Insert at the beginning
+    /// text_crdt.insert("content", 0, "Hi, ").unwrap();
+    /// // Result: "Hi, Hello world"
+    ///
+    /// // Insert in the middle
+    /// text_crdt.insert("content", 7, "beautiful ").unwrap();
+    /// // Result: "Hi, Hel beautiful lo world"
+    /// ```
     pub fn insert(&mut self, field_id: &str, position: usize, content: &str) -> BinderyResult<()> {
         let field = self.text_fields.entry(field_id.to_string())
             .or_insert_with(|| YText {
@@ -73,6 +223,56 @@ impl YTextCRDT {
     }
     
     /// Delete text at position in a field
+    ///
+    /// Deletes a range of text from the specified position within a named field.
+    /// This operation is designed to be commutative with other concurrent operations.
+    ///
+    /// # Algorithm
+    ///
+    /// Current implementation uses simple string deletion. Future Y-CRDT integration
+    /// will use the following algorithm:
+    ///
+    /// 1. **Range Resolution**: Convert character range to item references
+    /// 2. **Tombstone Creation**: Mark items as deleted rather than removing them
+    /// 3. **State Update**: Update visible content while preserving deleted items
+    /// 4. **Conflict Resolution**: Handle overlapping deletions gracefully
+    ///
+    /// # Conflict Resolution
+    ///
+    /// When deletions overlap or conflict with insertions:
+    /// - Deleted items are marked with tombstones, not removed
+    /// - Concurrent insertions in deleted ranges are preserved
+    /// - Operations are commutative regardless of arrival order
+    ///
+    /// # Performance
+    ///
+    /// - Current: O(n) for string deletion
+    /// - Future Y-CRDT: O(log n) for range resolution and marking
+    ///
+    /// # Parameters
+    ///
+    /// - `field_id`: The name of the text field to modify
+    /// - `position`: Starting character position for deletion (0-based)
+    /// - `length`: Number of characters to delete
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` on success or an error if the range is invalid.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let mut text_crdt = YTextCRDT::new();
+    /// text_crdt.init_field("content", "Hello, world!");
+    ///
+    /// // Delete "Hello, "
+    /// text_crdt.delete("content", 0, 7).unwrap();
+    /// // Result: "world!"
+    ///
+    /// // Delete "orld"
+    /// text_crdt.delete("content", 1, 4).unwrap();
+    /// // Result: "w!"
+    /// ```
     pub fn delete(&mut self, field_id: &str, position: usize, length: usize) -> BinderyResult<()> {
         let field = self.text_fields.get_mut(field_id)
             .ok_or_else(|| crate::BinderyError::InvalidOperation(

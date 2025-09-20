@@ -55,6 +55,8 @@ pub enum BinderyError {
     IoError(String),
     SerializationError(String),
     DeserializationError(String),
+    CompressionError(String),
+    DecompressionError(String),
 
     /// Database errors
     DatabaseError(String),
@@ -120,6 +122,8 @@ impl fmt::Display for BinderyError {
             BinderyError::IoError(msg) => write!(f, "I/O error: {}", msg),
             BinderyError::SerializationError(msg) => write!(f, "Serialization error: {}", msg),
             BinderyError::DeserializationError(msg) => write!(f, "Deserialization error: {}", msg),
+            BinderyError::CompressionError(msg) => write!(f, "Compression error: {}", msg),
+            BinderyError::DecompressionError(msg) => write!(f, "Decompression error: {}", msg),
 
             BinderyError::DatabaseError(msg) => write!(f, "Database error: {}", msg),
             BinderyError::DatabaseConnectionError(msg) => write!(f, "Database connection error: {}", msg),
@@ -244,7 +248,9 @@ impl BinderyError {
 
             BinderyError::IoError(_) |
             BinderyError::SerializationError(_) |
-            BinderyError::DeserializationError(_) => "io",
+            BinderyError::DeserializationError(_) |
+            BinderyError::CompressionError(_) |
+            BinderyError::DecompressionError(_) => "io",
 
             BinderyError::DatabaseError(_) |
             BinderyError::DatabaseConnectionError(_) |

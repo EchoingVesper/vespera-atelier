@@ -15,10 +15,13 @@ use rand_xorshift::XorShiftRng;
 use crate::{
     crdt::{
         VesperaCRDT, CRDTOperation, OperationType, TemplateValue, CodexReference,
-        ReferenceType, CRDTLayer, LWWMap, ORSet, ORTag, LWWEntry
+        ReferenceType, CRDTLayer, LWWMap, ORSet, ORTag, LWWEntry, MemoryStats, GCStats
     },
     types::{CodexId, UserId, VectorClock},
     tests::utils::{create_test_crdt, TestDataGenerator, assert_crdt_convergence},
+    GarbageCollectionConfig,
+    database::{TaskInput, TaskSummary, DatabasePoolConfig},
+    observability::{MetricsCollector, BinderyMetrics},
 };
 
 /// Generate arbitrary CodexId for property tests
@@ -839,6 +842,114 @@ mod invariant_tests {
             for crdt in &crdts {
                 let stats = crdt.memory_stats();
                 prop_assert!(stats.metadata_stats.active_entries >= operations_per_user * user_ids.len());
+            }
+        }
+    }
+}
+
+/// Property tests for garbage collection behavior
+mod gc_property_tests {
+    use super::*;
+    use tokio_test;
+
+    proptest! {
+        #[test]
+        fn test_gc_memory_invariants(
+            initial_operations in 100usize..=2000,
+            gc_keep_operations in 50usize..=500,
+            gc_keep_tombstones in 25usize..=250,
+        ) {
+            let user_id = "gc_test_user".to_string();
+            let codex_id = Uuid::new_v4();
+            let mut crdt = VesperaCRDT::new(codex_id, user_id.clone());
+
+            // Add initial operations
+            for i in 0..initial_operations {
+                let field_name = format!("gc_field_{}", i % 100);
+                let field_value = format!("gc_value_{}", i);
+                crdt.set_text_field(&field_name, &field_value);
+            }
+
+            let pre_gc_stats = crdt.memory_stats();
+            prop_assert!(pre_gc_stats.operation_count >= initial_operations);
+            prop_assert!(pre_gc_stats.total_size_bytes > 0);
+
+            // Perform garbage collection
+            let gc_stats = crdt.gc_all_with_limits(
+                Utc::now() - chrono::Duration::minutes(1),
+                gc_keep_operations,
+                gc_keep_tombstones,
+            );
+
+            let post_gc_stats = crdt.memory_stats();
+
+            // Verify GC invariants
+            prop_assert!(post_gc_stats.operation_count <= pre_gc_stats.operation_count);
+            prop_assert!(post_gc_stats.total_size_bytes <= pre_gc_stats.total_size_bytes);
+            prop_assert!(gc_stats.operations_removed <= initial_operations);
+            prop_assert!(gc_stats.memory_freed_bytes <= pre_gc_stats.total_size_bytes);
+
+            // Ensure CRDT is still functional after GC
+            crdt.set_text_field("post_gc_field", "post_gc_value");
+            let final_stats = crdt.memory_stats();
+            prop_assert!(final_stats.operation_count > 0);
+        }
+    }
+}
+
+/// Property tests for serialization behavior
+mod serialization_property_tests {
+    use super::*;
+
+    proptest! {
+        #[test]
+        fn test_crdt_serialization_roundtrip(
+            operation_count in 1usize..=500,
+            field_name_length in 1usize..=50,
+            field_value_length in 1usize..=200,
+        ) {
+            let user_id = "serialization_test_user".to_string();
+            let codex_id = Uuid::new_v4();
+            let mut original_crdt = VesperaCRDT::new(codex_id, user_id.clone());
+
+            // Add operations to the CRDT
+            for i in 0..operation_count {
+                let field_name = format!(
+                    "field_{}",
+                    "f".repeat(std::cmp::min(field_name_length, 30))
+                );
+                let field_value = format!(
+                    "value_{}_{}",
+                    i,
+                    "v".repeat(std::cmp::min(field_value_length, 100))
+                );
+
+                original_crdt.set_text_field(&field_name, &field_value);
+            }
+
+            // Test JSON serialization roundtrip
+            let json_serialized = serde_json::to_vec(&original_crdt.operation_log).unwrap();
+            let json_deserialized: Vec<CRDTOperation> =
+                serde_json::from_slice(&json_serialized).unwrap();
+
+            prop_assert_eq!(original_crdt.operation_log.len(), json_deserialized.len());
+
+            // Test MessagePack serialization roundtrip
+            let msgpack_serialized = rmp_serde::to_vec(&original_crdt.operation_log).unwrap();
+            let msgpack_deserialized: Vec<CRDTOperation> =
+                rmp_serde::from_slice(&msgpack_serialized).unwrap();
+
+            prop_assert_eq!(original_crdt.operation_log.len(), msgpack_deserialized.len());
+
+            // Verify size efficiency (MessagePack should be smaller than JSON)
+            prop_assert!(msgpack_serialized.len() <= json_serialized.len());
+
+            // Verify all formats produce valid operation logs
+            for operations in [&json_deserialized, &msgpack_deserialized] {
+                for operation in operations {
+                    prop_assert!(!operation.id.is_empty());
+                    prop_assert!(!operation.user_id.is_empty());
+                }
             }
         }
     }

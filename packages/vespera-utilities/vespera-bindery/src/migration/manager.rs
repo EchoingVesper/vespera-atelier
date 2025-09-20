@@ -1,18 +1,25 @@
-//! Database migration manager for Vespera Bindery
+//! Database migration manager for Vespera Bindery with audit logging
 //!
 //! Provides comprehensive database migration capabilities including:
 //! - Schema versioning and migration tracking
 //! - Forward and rollback migrations
 //! - Transaction-safe migration execution
 //! - Migration status and history reporting
+//! - Comprehensive audit logging for all migration operations
 
 use crate::errors::{BinderyError, BinderyResult};
+use crate::observability::audit::{
+    AuditLogger, UserContext, Operation, SecurityContext, OperationOutcome,
+    create_migration_event
+};
+use crate::observability::metrics::BinderyMetrics;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Sqlite, Row, Transaction};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use tracing::{info, warn, error, debug};
 use sha2::{Sha256, Digest};
 
@@ -29,7 +36,7 @@ pub struct MigrationInfo {
     pub execution_time_ms: Option<i64>,
 }
 
-/// Migration execution result
+/// Migration execution result with audit information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MigrationResult {
     pub version: i64,
@@ -37,6 +44,8 @@ pub struct MigrationResult {
     pub success: bool,
     pub execution_time_ms: i64,
     pub error_message: Option<String>,
+    /// Audit event ID for tracking
+    pub audit_event_id: Option<String>,
 }
 
 /// Historical migration record
@@ -56,13 +65,28 @@ pub struct MigrationStatus {
     pub pending_migrations: Vec<MigrationInfo>,
     pub applied_migrations: Vec<MigrationRecord>,
     pub total_migrations: usize,
+    pub pending_count: usize,
 }
 
-/// Database migration manager
+/// Migration performance metrics
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MigrationMetrics {
+    pub total_executed: u64,
+    pub total_failed: u64,
+    pub total_rolled_back: u64,
+    pub average_execution_time_ms: f64,
+    pub last_migration_time: Option<DateTime<Utc>>,
+    pub failure_rate_percent: f64,
+    pub rollback_frequency: f64, // rollbacks per day
+}
+
+/// Database migration manager with audit logging
 pub struct MigrationManager {
     pool: Pool<Sqlite>,
     migrations_dir: PathBuf,
     migrations: HashMap<i64, MigrationInfo>,
+    /// Audit logger for migration operations
+    audit_logger: Option<Arc<AuditLogger>>,
 }
 
 impl MigrationManager {
@@ -72,6 +96,29 @@ impl MigrationManager {
             pool,
             migrations_dir,
             migrations: HashMap::new(),
+            audit_logger: None,
+        };
+
+        // Initialize migration tracking table
+        manager.initialize_migration_table().await?;
+
+        // Load available migrations
+        manager.load_migrations().await?;
+
+        Ok(manager)
+    }
+
+    /// Create a new migration manager with audit logging
+    pub async fn new_with_audit(
+        pool: Pool<Sqlite>,
+        migrations_dir: PathBuf,
+        audit_logger: Arc<AuditLogger>
+    ) -> BinderyResult<Self> {
+        let mut manager = Self {
+            pool,
+            migrations_dir,
+            migrations: HashMap::new(),
+            audit_logger: Some(audit_logger),
         };
 
         // Initialize migration tracking table
@@ -85,7 +132,9 @@ impl MigrationManager {
 
     /// Initialize the migration tracking table
     async fn initialize_migration_table(&self) -> BinderyResult<()> {
-        sqlx::query(
+        let start_time = std::time::Instant::now();
+
+        let result = sqlx::query(
             r#"
             CREATE TABLE IF NOT EXISTS migrations (
                 version INTEGER PRIMARY KEY,
@@ -97,10 +146,21 @@ impl MigrationManager {
             "#,
         )
         .execute(&self.pool)
-        .await
-        .map_err(|e| BinderyError::DatabaseError(e.to_string()))?;
+        .await;
 
-        Ok(())
+        match result {
+            Ok(_) => {
+                let duration = start_time.elapsed();
+                BinderyMetrics::record_migration("initialize_table", 0, duration, true);
+                info!("Migration table initialized in {:?}", duration);
+                Ok(())
+            }
+            Err(e) => {
+                let duration = start_time.elapsed();
+                BinderyMetrics::record_migration("initialize_table", 0, duration, false);
+                Err(BinderyError::DatabaseError(e.to_string()))
+            }
+        }
     }
 
     /// Load migrations from the migrations directory
@@ -232,6 +292,7 @@ impl MigrationManager {
 
         Ok(MigrationStatus {
             current_version,
+            pending_count: pending_migrations.len(),
             pending_migrations,
             applied_migrations,
             total_migrations: self.migrations.len(),
@@ -259,8 +320,8 @@ impl MigrationManager {
         Ok(records)
     }
 
-    /// Execute all pending migrations
-    pub async fn migrate(&self) -> BinderyResult<Vec<MigrationResult>> {
+    /// Execute all pending migrations with audit logging
+    pub async fn migrate(&self, user_context: Option<UserContext>) -> BinderyResult<Vec<MigrationResult>> {
         let pending = self.get_pending_migrations().await?;
 
         if pending.is_empty() {
@@ -272,18 +333,21 @@ impl MigrationManager {
 
         let mut results = Vec::new();
         for migration in pending {
-            let result = self.execute_migration_up(&migration).await?;
+            let result = self.execute_migration_up(&migration, user_context.as_ref()).await?;
             results.push(result);
         }
 
         Ok(results)
     }
 
-    /// Execute a single migration up
-    async fn execute_migration_up(&self, migration: &MigrationInfo) -> BinderyResult<MigrationResult> {
+    /// Execute a single migration up with audit logging
+    async fn execute_migration_up(&self, migration: &MigrationInfo, user_context: Option<&UserContext>) -> BinderyResult<MigrationResult> {
         info!("Executing migration {} ({})", migration.version, migration.name);
 
         let start_time = std::time::Instant::now();
+
+        // Audit: Log migration attempt
+        let audit_event_id = self.audit_migration_attempt(migration, "migrate_up", user_context).await;
 
         let mut tx = self.pool.begin().await
             .map_err(|e| BinderyError::DatabaseError(e.to_string()))?;
@@ -297,7 +361,6 @@ impl MigrationManager {
                 .bind(migration.version)
                 .bind(&migration.name)
                 .bind(&migration.checksum)
-                .bind(start_time.elapsed().as_millis() as i64)
                 .execute(&mut *tx)
                 .await
                 .map_err(|e| BinderyError::DatabaseError(e.to_string()))?;
@@ -308,13 +371,27 @@ impl MigrationManager {
                 let execution_time = start_time.elapsed().as_millis() as i64;
                 info!("Migration {} completed successfully in {}ms", migration.version, execution_time);
 
-                Ok(MigrationResult {
+                // Record migration success metrics
+                BinderyMetrics::record_migration(
+                    "migrate_up",
+                    migration.version as u64,
+                    start_time.elapsed(),
+                    true,
+                );
+
+                let result = MigrationResult {
                     version: migration.version,
                     name: migration.name.clone(),
                     success: true,
                     execution_time_ms: execution_time,
                     error_message: None,
-                })
+                    audit_event_id: audit_event_id.clone(),
+                };
+
+                // Audit: Log migration success
+                self.audit_migration_completion(migration, "migrate_up", &result, user_context).await;
+
+                Ok(result)
             }
             Err(e) => {
                 tx.rollback().await
@@ -323,25 +400,42 @@ impl MigrationManager {
                 let execution_time = start_time.elapsed().as_millis() as i64;
                 error!("Migration {} failed: {}", migration.version, e);
 
-                Ok(MigrationResult {
+                // Record migration failure metrics
+                BinderyMetrics::record_migration(
+                    "migrate_up",
+                    migration.version as u64,
+                    start_time.elapsed(),
+                    false,
+                );
+
+                let result = MigrationResult {
                     version: migration.version,
                     name: migration.name.clone(),
                     success: false,
                     execution_time_ms: execution_time,
                     error_message: Some(e.to_string()),
-                })
+                    audit_event_id: audit_event_id.clone(),
+                };
+
+                // Audit: Log migration failure
+                self.audit_migration_completion(migration, "migrate_up", &result, user_context).await;
+
+                Ok(result)
             }
         }
     }
 
-    /// Execute a single migration down (rollback)
-    async fn execute_migration_down(&self, migration: &MigrationInfo) -> BinderyResult<MigrationResult> {
+    /// Execute a single migration down (rollback) with audit logging
+    async fn execute_migration_down(&self, migration: &MigrationInfo, user_context: Option<&UserContext>) -> BinderyResult<MigrationResult> {
         let down_sql = migration.down_sql.as_ref()
             .ok_or_else(|| BinderyError::InvalidInput(format!("Migration {} has no rollback SQL", migration.version)))?;
 
         info!("Rolling back migration {} ({})", migration.version, migration.name);
 
         let start_time = std::time::Instant::now();
+
+        // Audit: Log rollback attempt
+        let audit_event_id = self.audit_migration_attempt(migration, "rollback", user_context).await;
 
         let mut tx = self.pool.begin().await
             .map_err(|e| BinderyError::DatabaseError(e.to_string()))?;
@@ -361,13 +455,26 @@ impl MigrationManager {
                 let execution_time = start_time.elapsed().as_millis() as i64;
                 info!("Migration {} rolled back successfully in {}ms", migration.version, execution_time);
 
-                Ok(MigrationResult {
+                // Record rollback success metrics
+                BinderyMetrics::record_migration_rollback(
+                    migration.version as u64,
+                    0, // to_version not applicable for single rollback
+                    start_time.elapsed(),
+                );
+
+                let result = MigrationResult {
                     version: migration.version,
                     name: migration.name.clone(),
                     success: true,
                     execution_time_ms: execution_time,
                     error_message: None,
-                })
+                    audit_event_id: audit_event_id.clone(),
+                };
+
+                // Audit: Log rollback success
+                self.audit_migration_completion(migration, "rollback", &result, user_context).await;
+
+                Ok(result)
             }
             Err(e) => {
                 tx.rollback().await
@@ -376,13 +483,27 @@ impl MigrationManager {
                 let execution_time = start_time.elapsed().as_millis() as i64;
                 error!("Migration {} rollback failed: {}", migration.version, e);
 
-                Ok(MigrationResult {
+                // Record rollback failure metrics
+                BinderyMetrics::record_migration(
+                    "rollback",
+                    migration.version as u64,
+                    start_time.elapsed(),
+                    false,
+                );
+
+                let result = MigrationResult {
                     version: migration.version,
                     name: migration.name.clone(),
                     success: false,
                     execution_time_ms: execution_time,
                     error_message: Some(e.to_string()),
-                })
+                    audit_event_id: audit_event_id.clone(),
+                };
+
+                // Audit: Log rollback failure
+                self.audit_migration_completion(migration, "rollback", &result, user_context).await;
+
+                Ok(result)
             }
         }
     }
@@ -405,8 +526,8 @@ impl MigrationManager {
         Ok(())
     }
 
-    /// Rollback to a specific version
-    pub async fn rollback_to(&self, target_version: i64) -> BinderyResult<Vec<MigrationResult>> {
+    /// Rollback to a specific version with audit logging
+    pub async fn rollback_to(&self, target_version: i64, user_context: Option<UserContext>) -> BinderyResult<Vec<MigrationResult>> {
         let current_version = self.get_current_version().await?;
 
         if target_version >= current_version {
@@ -428,15 +549,15 @@ impl MigrationManager {
         migrations_to_rollback.sort_by(|a, b| b.version.cmp(&a.version)); // Reverse order
 
         for migration in migrations_to_rollback {
-            let result = self.execute_migration_down(migration).await?;
+            let result = self.execute_migration_down(migration, user_context.as_ref()).await?;
             results.push(result);
         }
 
         Ok(results)
     }
 
-    /// Rollback the last migration
-    pub async fn rollback_last(&self) -> BinderyResult<MigrationResult> {
+    /// Rollback the last migration with audit logging
+    pub async fn rollback_last(&self, user_context: Option<UserContext>) -> BinderyResult<MigrationResult> {
         let current_version = self.get_current_version().await?;
 
         if current_version == 0 {
@@ -446,11 +567,11 @@ impl MigrationManager {
         let migration = self.migrations.get(&current_version)
             .ok_or_else(|| BinderyError::InvalidInput(format!("Migration {} not found", current_version)))?;
 
-        self.execute_migration_down(migration).await
+        self.execute_migration_down(migration, user_context.as_ref()).await
     }
 
-    /// Redo the last migration (rollback then reapply)
-    pub async fn redo_last(&self) -> BinderyResult<Vec<MigrationResult>> {
+    /// Redo the last migration (rollback then reapply) with audit logging
+    pub async fn redo_last(&self, user_context: Option<UserContext>) -> BinderyResult<Vec<MigrationResult>> {
         let current_version = self.get_current_version().await?;
 
         if current_version == 0 {
@@ -465,7 +586,7 @@ impl MigrationManager {
         let mut results = Vec::new();
 
         // Rollback
-        let rollback_result = self.execute_migration_down(migration).await?;
+        let rollback_result = self.execute_migration_down(migration, user_context.as_ref()).await?;
         results.push(rollback_result);
 
         // Re-apply if rollback was successful - FIXED: Safe access to last element
@@ -474,19 +595,22 @@ impl MigrationManager {
             .success;
 
         if should_reapply {
-            let reapply_result = self.execute_migration_up(migration).await?;
+            let reapply_result = self.execute_migration_up(migration, user_context.as_ref()).await?;
             results.push(reapply_result);
         }
 
         Ok(results)
     }
 
-    /// Force mark a migration as executed (use with caution)
-    pub async fn mark_as_executed(&self, version: i64) -> BinderyResult<()> {
+    /// Force mark a migration as executed (use with caution) with audit logging
+    pub async fn mark_as_executed(&self, version: i64, user_context: Option<UserContext>) -> BinderyResult<()> {
         let migration = self.migrations.get(&version)
             .ok_or_else(|| BinderyError::InvalidInput(format!("Migration {} not found", version)))?;
 
         info!("Force marking migration {} as executed", version);
+
+        // Audit: Log force mark operation
+        self.audit_migration_force_mark(migration, user_context.as_ref()).await;
 
         sqlx::query(
             "INSERT OR REPLACE INTO migrations (version, name, checksum, executed_at, execution_time_ms) VALUES (?, ?, ?, CURRENT_TIMESTAMP, 0)"
@@ -501,10 +625,13 @@ impl MigrationManager {
         Ok(())
     }
 
-    /// Validate migration checksums
-    pub async fn validate_checksums(&self) -> BinderyResult<Vec<(i64, bool)>> {
+    /// Validate migration checksums with audit logging
+    pub async fn validate_checksums(&self, user_context: Option<UserContext>) -> BinderyResult<Vec<(i64, bool)>> {
         let applied = self.get_applied_migrations().await?;
         let mut results = Vec::new();
+
+        // Audit: Log checksum validation start
+        self.audit_checksum_validation_start(user_context.as_ref()).await;
 
         for record in applied {
             if let Some(migration) = self.migrations.get(&record.version) {
@@ -513,12 +640,17 @@ impl MigrationManager {
 
                 if !checksum_valid {
                     warn!("Migration {} has invalid checksum", record.version);
+                    // Audit: Log checksum mismatch
+                    self.audit_checksum_mismatch(&record, migration, user_context.as_ref()).await;
                 }
             } else {
                 warn!("Applied migration {} not found in migration files", record.version);
                 results.push((record.version, false));
             }
         }
+
+        // Audit: Log checksum validation completion
+        self.audit_checksum_validation_completion(&results, user_context.as_ref()).await;
 
         Ok(results)
     }
@@ -528,6 +660,40 @@ impl MigrationManager {
         self.migrations.get(&version)
     }
 
+    /// Get comprehensive migration metrics
+    pub async fn get_migration_metrics(&self) -> BinderyResult<MigrationMetrics> {
+        let applied_migrations = self.get_applied_migrations().await?;
+
+        let total_executed = applied_migrations.len() as u64;
+
+        // Calculate average execution time
+        let average_execution_time_ms = if !applied_migrations.is_empty() {
+            applied_migrations.iter()
+                .map(|m| m.execution_time_ms as f64)
+                .sum::<f64>() / applied_migrations.len() as f64
+        } else {
+            0.0
+        };
+
+        // Get last migration time
+        let last_migration_time = applied_migrations
+            .iter()
+            .max_by_key(|m| m.executed_at)
+            .map(|m| m.executed_at);
+
+        // For now, we'll calculate failure and rollback rates from historical data
+        // In a real implementation, these would be tracked separately
+        Ok(MigrationMetrics {
+            total_executed,
+            total_failed: 0, // Would need separate tracking
+            total_rolled_back: 0, // Would need separate tracking
+            average_execution_time_ms,
+            last_migration_time,
+            failure_rate_percent: 0.0, // Would need separate tracking
+            rollback_frequency: 0.0, // Would need separate tracking
+        })
+    }
+
     /// List all available migrations
     pub fn list_migrations(&self) -> Vec<&MigrationInfo> {
         let mut migrations: Vec<_> = self.migrations.values().collect();
@@ -535,9 +701,12 @@ impl MigrationManager {
         migrations
     }
 
-    /// Reset all migrations (dangerous operation)
-    pub async fn reset(&self) -> BinderyResult<()> {
+    /// Reset all migrations (dangerous operation) with audit logging
+    pub async fn reset(&self, user_context: Option<UserContext>) -> BinderyResult<()> {
         warn!("Resetting all migrations - this will drop all migration history!");
+
+        // Audit: Log reset operation
+        self.audit_migration_reset(user_context.as_ref()).await;
 
         sqlx::query("DELETE FROM migrations")
             .execute(&self.pool)
@@ -546,6 +715,246 @@ impl MigrationManager {
 
         info!("All migration history reset");
         Ok(())
+    }
+
+    // Audit logging methods
+
+    /// Audit migration attempt
+    async fn audit_migration_attempt(&self, migration: &MigrationInfo, action: &str, user_context: Option<&UserContext>) -> Option<String> {
+        if let Some(ref audit_logger) = self.audit_logger {
+            let user_ctx = user_context.cloned().unwrap_or_else(|| UserContext {
+                user_id: Some("system".to_string()),
+                session_id: None,
+                source_ip: None,
+                user_agent: Some("migration_manager".to_string()),
+            });
+
+            let outcome = OperationOutcome {
+                success: true, // Just attempting
+                result_code: None,
+                error_message: None,
+                duration_ms: 0,
+                records_affected: None,
+            };
+
+            let event = create_migration_event(
+                user_ctx,
+                migration.version,
+                &migration.name,
+                action,
+                outcome,
+            );
+
+            let event_id = event.id.clone();
+            if let Err(e) = audit_logger.log_event(event).await {
+                error!("Failed to log migration attempt audit event: {}", e);
+                return None;
+            }
+
+            Some(event_id)
+        } else {
+            None
+        }
+    }
+
+    /// Audit migration completion
+    async fn audit_migration_completion(&self, migration: &MigrationInfo, action: &str, result: &MigrationResult, user_context: Option<&UserContext>) {
+        if let Some(ref audit_logger) = self.audit_logger {
+            let user_ctx = user_context.cloned().unwrap_or_else(|| UserContext {
+                user_id: Some("system".to_string()),
+                session_id: None,
+                source_ip: None,
+                user_agent: Some("migration_manager".to_string()),
+            });
+
+            let outcome = OperationOutcome {
+                success: result.success,
+                result_code: Some(if result.success { 200 } else { 500 }),
+                error_message: result.error_message.clone(),
+                duration_ms: result.execution_time_ms,
+                records_affected: Some(1),
+            };
+
+            let event = create_migration_event(
+                user_ctx,
+                migration.version,
+                &migration.name,
+                &format!("{}_complete", action),
+                outcome,
+            );
+
+            if let Err(e) = audit_logger.log_event(event).await {
+                error!("Failed to log migration completion audit event: {}", e);
+            }
+        }
+    }
+
+    /// Audit migration force mark operation
+    async fn audit_migration_force_mark(&self, migration: &MigrationInfo, user_context: Option<&UserContext>) {
+        if let Some(ref audit_logger) = self.audit_logger {
+            let user_ctx = user_context.cloned().unwrap_or_else(|| UserContext {
+                user_id: Some("system".to_string()),
+                session_id: None,
+                source_ip: None,
+                user_agent: Some("migration_manager".to_string()),
+            });
+
+            let outcome = OperationOutcome {
+                success: true,
+                result_code: Some(200),
+                error_message: None,
+                duration_ms: 0,
+                records_affected: Some(1),
+            };
+
+            let event = create_migration_event(
+                user_ctx,
+                migration.version,
+                &migration.name,
+                "force_mark_executed",
+                outcome,
+            );
+
+            if let Err(e) = audit_logger.log_event(event).await {
+                error!("Failed to log migration force mark audit event: {}", e);
+            }
+        }
+    }
+
+    /// Audit checksum validation start
+    async fn audit_checksum_validation_start(&self, user_context: Option<&UserContext>) {
+        if let Some(ref audit_logger) = self.audit_logger {
+            let user_ctx = user_context.cloned().unwrap_or_else(|| UserContext {
+                user_id: Some("system".to_string()),
+                session_id: None,
+                source_ip: None,
+                user_agent: Some("migration_manager".to_string()),
+            });
+
+            let outcome = OperationOutcome {
+                success: true,
+                result_code: None,
+                error_message: None,
+                duration_ms: 0,
+                records_affected: None,
+            };
+
+            let event = create_migration_event(
+                user_ctx,
+                0,
+                "checksum_validation",
+                "validate_checksums_start",
+                outcome,
+            );
+
+            if let Err(e) = audit_logger.log_event(event).await {
+                error!("Failed to log checksum validation start audit event: {}", e);
+            }
+        }
+    }
+
+    /// Audit checksum validation completion
+    async fn audit_checksum_validation_completion(&self, results: &[(i64, bool)], user_context: Option<&UserContext>) {
+        if let Some(ref audit_logger) = self.audit_logger {
+            let user_ctx = user_context.cloned().unwrap_or_else(|| UserContext {
+                user_id: Some("system".to_string()),
+                session_id: None,
+                source_ip: None,
+                user_agent: Some("migration_manager".to_string()),
+            });
+
+            let invalid_count = results.iter().filter(|(_, valid)| !valid).count();
+            let outcome = OperationOutcome {
+                success: invalid_count == 0,
+                result_code: Some(if invalid_count == 0 { 200 } else { 422 }),
+                error_message: if invalid_count > 0 {
+                    Some(format!("{} migrations have invalid checksums", invalid_count))
+                } else {
+                    None
+                },
+                duration_ms: 0,
+                records_affected: Some(results.len() as i64),
+            };
+
+            let event = create_migration_event(
+                user_ctx,
+                0,
+                "checksum_validation",
+                "validate_checksums_complete",
+                outcome,
+            );
+
+            if let Err(e) = audit_logger.log_event(event).await {
+                error!("Failed to log checksum validation completion audit event: {}", e);
+            }
+        }
+    }
+
+    /// Audit checksum mismatch
+    async fn audit_checksum_mismatch(&self, record: &MigrationRecord, migration: &MigrationInfo, user_context: Option<&UserContext>) {
+        if let Some(ref audit_logger) = self.audit_logger {
+            let user_ctx = user_context.cloned().unwrap_or_else(|| UserContext {
+                user_id: Some("system".to_string()),
+                session_id: None,
+                source_ip: None,
+                user_agent: Some("migration_manager".to_string()),
+            });
+
+            let outcome = OperationOutcome {
+                success: false,
+                result_code: Some(422), // Unprocessable Entity
+                error_message: Some(format!(
+                    "Checksum mismatch: expected {}, got {}",
+                    migration.checksum, record.checksum
+                )),
+                duration_ms: 0,
+                records_affected: Some(1),
+            };
+
+            let event = create_migration_event(
+                user_ctx,
+                record.version,
+                &record.name,
+                "checksum_mismatch",
+                outcome,
+            );
+
+            if let Err(e) = audit_logger.log_event(event).await {
+                error!("Failed to log checksum mismatch audit event: {}", e);
+            }
+        }
+    }
+
+    /// Audit migration reset operation
+    async fn audit_migration_reset(&self, user_context: Option<&UserContext>) {
+        if let Some(ref audit_logger) = self.audit_logger {
+            let user_ctx = user_context.cloned().unwrap_or_else(|| UserContext {
+                user_id: Some("system".to_string()),
+                session_id: None,
+                source_ip: None,
+                user_agent: Some("migration_manager".to_string()),
+            });
+
+            let outcome = OperationOutcome {
+                success: true,
+                result_code: Some(200),
+                error_message: None,
+                duration_ms: 0,
+                records_affected: None,
+            };
+
+            let event = create_migration_event(
+                user_ctx,
+                0,
+                "migration_reset",
+                "reset_all_migrations",
+                outcome,
+            );
+
+            if let Err(e) = audit_logger.log_event(event).await {
+                error!("Failed to log migration reset audit event: {}", e);
+            }
+        }
     }
 }
 
@@ -608,7 +1017,14 @@ mod tests {
         let manager = MigrationManager::new(pool.clone(), migrations_dir).await.unwrap();
 
         // Test migration
-        let results = manager.migrate().await.unwrap();
+        let user_context = UserContext {
+            user_id: Some("test_user".to_string()),
+            session_id: Some("test_session".to_string()),
+            source_ip: Some("127.0.0.1".to_string()),
+            user_agent: Some("test_client".to_string()),
+        };
+
+        let results = manager.migrate(Some(user_context)).await.unwrap();
         assert_eq!(results.len(), 1);
         assert!(results[0].success);
 
@@ -638,11 +1054,18 @@ mod tests {
 
         let manager = MigrationManager::new(pool.clone(), migrations_dir).await.unwrap();
 
+        let user_context = UserContext {
+            user_id: Some("test_user".to_string()),
+            session_id: Some("test_session".to_string()),
+            source_ip: Some("127.0.0.1".to_string()),
+            user_agent: Some("test_client".to_string()),
+        };
+
         // Execute migration
-        manager.migrate().await.unwrap();
+        manager.migrate(Some(user_context.clone())).await.unwrap();
 
         // Rollback
-        let result = manager.rollback_last().await.unwrap();
+        let result = manager.rollback_last(Some(user_context)).await.unwrap();
         assert!(result.success);
 
         // Verify table was dropped

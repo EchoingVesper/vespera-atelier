@@ -555,6 +555,165 @@ pub struct ObservabilityConfig {
     pub opentelemetry: Option<OpenTelemetryConfig>,
     /// Metrics configuration
     pub metrics: Option<MetricsConfig>,
+    /// Alerting configuration
+    pub alerting: Option<AlertingConfig>,
+}
+
+/// Alerting configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AlertingConfig {
+    /// Whether alerting is enabled
+    pub enabled: bool,
+    /// Performance thresholds for different components
+    pub thresholds: AlertThresholds,
+    /// Notification settings
+    pub notifications: NotificationConfig,
+}
+
+/// Performance thresholds for alerting
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AlertThresholds {
+    /// Database thresholds
+    pub database: DatabaseThresholds,
+    /// CRDT thresholds
+    pub crdt: CrdtThresholds,
+    /// Task management thresholds
+    pub task_management: TaskThresholds,
+    /// Circuit breaker thresholds
+    pub circuit_breaker: CircuitBreakerThresholds,
+    /// Migration thresholds
+    pub migration: MigrationThresholds,
+}
+
+/// Database performance thresholds
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DatabaseThresholds {
+    /// Connection pool utilization warning threshold (percentage)
+    pub pool_utilization_warning: f64,
+    /// Connection pool utilization critical threshold (percentage)
+    pub pool_utilization_critical: f64,
+    /// Query duration warning threshold (seconds)
+    pub query_duration_warning: f64,
+    /// Query duration critical threshold (seconds)
+    pub query_duration_critical: f64,
+    /// Deadlock count threshold
+    pub deadlock_threshold: u64,
+    /// Query timeout rate threshold (percentage)
+    pub timeout_rate_threshold: f64,
+}
+
+/// CRDT system performance thresholds
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CrdtThresholds {
+    /// Memory usage warning threshold (bytes)
+    pub memory_usage_warning: u64,
+    /// Memory usage critical threshold (bytes)
+    pub memory_usage_critical: u64,
+    /// Operation duration warning threshold (seconds)
+    pub operation_duration_warning: f64,
+    /// GC duration warning threshold (seconds)
+    pub gc_duration_warning: f64,
+    /// Conflict rate threshold (conflicts per hour)
+    pub conflict_rate_threshold: f64,
+    /// Document size warning threshold (bytes)
+    pub document_size_warning: u64,
+}
+
+/// Task management performance thresholds
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TaskThresholds {
+    /// Task execution duration warning threshold (seconds)
+    pub execution_duration_warning: f64,
+    /// Task execution duration critical threshold (seconds)
+    pub execution_duration_critical: f64,
+    /// Task failure rate threshold (percentage)
+    pub failure_rate_threshold: f64,
+    /// Queue size warning threshold
+    pub queue_size_warning: u64,
+    /// Queue wait time warning threshold (seconds)
+    pub queue_wait_warning: f64,
+}
+
+/// Circuit breaker thresholds
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CircuitBreakerThresholds {
+    /// Failure rate threshold before warning (percentage)
+    pub failure_rate_warning: f64,
+    /// Time in open state before critical alert (seconds)
+    pub open_state_critical_duration: f64,
+    /// Request duration warning threshold (seconds)
+    pub request_duration_warning: f64,
+}
+
+/// Migration system thresholds
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MigrationThresholds {
+    /// Migration failure rate threshold (percentage)
+    pub failure_rate_threshold: f64,
+    /// Migration duration warning threshold (seconds)
+    pub duration_warning: f64,
+    /// Rollback frequency threshold (rollbacks per day)
+    pub rollback_frequency_threshold: u64,
+}
+
+/// Notification configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NotificationConfig {
+    /// Enable console notifications
+    pub console_enabled: bool,
+    /// Enable file logging of alerts
+    pub file_enabled: bool,
+    /// File path for alert logs
+    pub file_path: Option<PathBuf>,
+    /// Webhook configuration for external notifications
+    pub webhooks: Vec<WebhookConfig>,
+    /// Email configuration
+    pub email: Option<EmailConfig>,
+}
+
+/// Webhook notification configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WebhookConfig {
+    /// Webhook URL
+    pub url: String,
+    /// HTTP method (GET, POST, PUT)
+    pub method: String,
+    /// Headers to include with the request
+    pub headers: std::collections::HashMap<String, String>,
+    /// Timeout for webhook requests (seconds)
+    pub timeout_seconds: u64,
+    /// Retry configuration
+    pub retry_config: RetryConfig,
+}
+
+/// Email notification configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EmailConfig {
+    /// SMTP server hostname
+    pub smtp_host: String,
+    /// SMTP server port
+    pub smtp_port: u16,
+    /// Username for SMTP authentication
+    pub username: String,
+    /// Whether to use TLS
+    pub use_tls: bool,
+    /// Email addresses to send alerts to
+    pub recipients: Vec<String>,
+    /// From email address
+    pub from_address: String,
+}
+
+/// Retry configuration for notifications
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RetryConfig {
+    /// Maximum number of retry attempts
+    pub max_attempts: u32,
+    /// Initial delay between retries (seconds)
+    pub initial_delay_seconds: u64,
+    /// Backoff multiplier for exponential backoff
+    pub backoff_multiplier: f64,
+    /// Maximum delay between retries (seconds)
+    pub max_delay_seconds: u64,
 }
 
 impl ObservabilityConfig {
@@ -576,6 +735,13 @@ impl ObservabilityConfig {
         if let Some(ref metrics_config) = self.metrics {
             metrics_config.validate().map_err(|e| BinderyError::ConfigurationError(
                 format!("Metrics configuration error: {}", e)
+            ))?;
+        }
+
+        // Validate alerting configuration if provided
+        if let Some(ref alerting_config) = self.alerting {
+            alerting_config.validate().map_err(|e| BinderyError::ConfigurationError(
+                format!("Alerting configuration error: {}", e)
             ))?;
         }
 
@@ -632,6 +798,13 @@ impl ObservabilityConfig {
         self.metrics = Some(metrics_config);
         Ok(self)
     }
+
+    /// Enable alerting with validation
+    pub fn with_alerting(mut self, alerting_config: AlertingConfig) -> BinderyResult<Self> {
+        alerting_config.validate()?;
+        self.alerting = Some(alerting_config);
+        Ok(self)
+    }
 }
 
 impl Default for LoggingConfig {
@@ -654,7 +827,438 @@ impl Default for ObservabilityConfig {
             logging: LoggingConfig::default(),
             opentelemetry: None,
             metrics: None,
+            alerting: Some(AlertingConfig::default()),
         }
+    }
+}
+
+impl Default for AlertingConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            thresholds: AlertThresholds::default(),
+            notifications: NotificationConfig::default(),
+        }
+    }
+}
+
+impl Default for AlertThresholds {
+    fn default() -> Self {
+        Self {
+            database: DatabaseThresholds::default(),
+            crdt: CrdtThresholds::default(),
+            task_management: TaskThresholds::default(),
+            circuit_breaker: CircuitBreakerThresholds::default(),
+            migration: MigrationThresholds::default(),
+        }
+    }
+}
+
+impl Default for DatabaseThresholds {
+    fn default() -> Self {
+        Self {
+            pool_utilization_warning: 80.0,
+            pool_utilization_critical: 95.0,
+            query_duration_warning: 1.0,
+            query_duration_critical: 5.0,
+            deadlock_threshold: 5,
+            timeout_rate_threshold: 5.0,
+        }
+    }
+}
+
+impl Default for CrdtThresholds {
+    fn default() -> Self {
+        Self {
+            memory_usage_warning: 500_000_000, // 500MB
+            memory_usage_critical: 1_000_000_000, // 1GB
+            operation_duration_warning: 0.5,
+            gc_duration_warning: 2.0,
+            conflict_rate_threshold: 10.0,
+            document_size_warning: 10_000_000, // 10MB
+        }
+    }
+}
+
+impl Default for TaskThresholds {
+    fn default() -> Self {
+        Self {
+            execution_duration_warning: 30.0,
+            execution_duration_critical: 300.0, // 5 minutes
+            failure_rate_threshold: 10.0,
+            queue_size_warning: 100,
+            queue_wait_warning: 60.0,
+        }
+    }
+}
+
+impl Default for CircuitBreakerThresholds {
+    fn default() -> Self {
+        Self {
+            failure_rate_warning: 20.0,
+            open_state_critical_duration: 300.0, // 5 minutes
+            request_duration_warning: 10.0,
+        }
+    }
+}
+
+impl Default for MigrationThresholds {
+    fn default() -> Self {
+        Self {
+            failure_rate_threshold: 5.0,
+            duration_warning: 60.0,
+            rollback_frequency_threshold: 3,
+        }
+    }
+}
+
+impl Default for NotificationConfig {
+    fn default() -> Self {
+        Self {
+            console_enabled: true,
+            file_enabled: false,
+            file_path: None,
+            webhooks: Vec::new(),
+            email: None,
+        }
+    }
+}
+
+impl Default for RetryConfig {
+    fn default() -> Self {
+        Self {
+            max_attempts: 3,
+            initial_delay_seconds: 1,
+            backoff_multiplier: 2.0,
+            max_delay_seconds: 30,
+        }
+    }
+}
+
+// Validation implementations for alerting configuration
+impl AlertingConfig {
+    /// Validate the alerting configuration
+    pub fn validate(&self) -> BinderyResult<()> {
+        // Validate thresholds
+        self.thresholds.validate()?;
+
+        // Validate notifications
+        self.notifications.validate()?;
+
+        Ok(())
+    }
+}
+
+impl AlertThresholds {
+    /// Validate all threshold configurations
+    pub fn validate(&self) -> BinderyResult<()> {
+        self.database.validate()?;
+        self.crdt.validate()?;
+        self.task_management.validate()?;
+        self.circuit_breaker.validate()?;
+        self.migration.validate()?;
+        Ok(())
+    }
+}
+
+impl DatabaseThresholds {
+    /// Validate database thresholds
+    pub fn validate(&self) -> BinderyResult<()> {
+        if self.pool_utilization_warning >= self.pool_utilization_critical {
+            return Err(BinderyError::ConfigurationError(
+                "Database pool utilization warning threshold must be less than critical threshold".to_string()
+            ));
+        }
+
+        if self.pool_utilization_critical > 100.0 {
+            return Err(BinderyError::ConfigurationError(
+                "Database pool utilization critical threshold cannot exceed 100%".to_string()
+            ));
+        }
+
+        if self.query_duration_warning >= self.query_duration_critical {
+            return Err(BinderyError::ConfigurationError(
+                "Database query duration warning threshold must be less than critical threshold".to_string()
+            ));
+        }
+
+        if self.timeout_rate_threshold > 100.0 {
+            return Err(BinderyError::ConfigurationError(
+                "Database timeout rate threshold cannot exceed 100%".to_string()
+            ));
+        }
+
+        Ok(())
+    }
+}
+
+impl CrdtThresholds {
+    /// Validate CRDT thresholds
+    pub fn validate(&self) -> BinderyResult<()> {
+        if self.memory_usage_warning >= self.memory_usage_critical {
+            return Err(BinderyError::ConfigurationError(
+                "CRDT memory usage warning threshold must be less than critical threshold".to_string()
+            ));
+        }
+
+        if self.operation_duration_warning <= 0.0 {
+            return Err(BinderyError::ConfigurationError(
+                "CRDT operation duration warning threshold must be positive".to_string()
+            ));
+        }
+
+        if self.gc_duration_warning <= 0.0 {
+            return Err(BinderyError::ConfigurationError(
+                "CRDT GC duration warning threshold must be positive".to_string()
+            ));
+        }
+
+        Ok(())
+    }
+}
+
+impl TaskThresholds {
+    /// Validate task management thresholds
+    pub fn validate(&self) -> BinderyResult<()> {
+        if self.execution_duration_warning >= self.execution_duration_critical {
+            return Err(BinderyError::ConfigurationError(
+                "Task execution duration warning threshold must be less than critical threshold".to_string()
+            ));
+        }
+
+        if self.failure_rate_threshold > 100.0 {
+            return Err(BinderyError::ConfigurationError(
+                "Task failure rate threshold cannot exceed 100%".to_string()
+            ));
+        }
+
+        if self.queue_wait_warning <= 0.0 {
+            return Err(BinderyError::ConfigurationError(
+                "Task queue wait warning threshold must be positive".to_string()
+            ));
+        }
+
+        Ok(())
+    }
+}
+
+impl CircuitBreakerThresholds {
+    /// Validate circuit breaker thresholds
+    pub fn validate(&self) -> BinderyResult<()> {
+        if self.failure_rate_warning > 100.0 {
+            return Err(BinderyError::ConfigurationError(
+                "Circuit breaker failure rate warning threshold cannot exceed 100%".to_string()
+            ));
+        }
+
+        if self.open_state_critical_duration <= 0.0 {
+            return Err(BinderyError::ConfigurationError(
+                "Circuit breaker open state critical duration must be positive".to_string()
+            ));
+        }
+
+        if self.request_duration_warning <= 0.0 {
+            return Err(BinderyError::ConfigurationError(
+                "Circuit breaker request duration warning threshold must be positive".to_string()
+            ));
+        }
+
+        Ok(())
+    }
+}
+
+impl MigrationThresholds {
+    /// Validate migration thresholds
+    pub fn validate(&self) -> BinderyResult<()> {
+        if self.failure_rate_threshold > 100.0 {
+            return Err(BinderyError::ConfigurationError(
+                "Migration failure rate threshold cannot exceed 100%".to_string()
+            ));
+        }
+
+        if self.duration_warning <= 0.0 {
+            return Err(BinderyError::ConfigurationError(
+                "Migration duration warning threshold must be positive".to_string()
+            ));
+        }
+
+        Ok(())
+    }
+}
+
+impl NotificationConfig {
+    /// Validate notification configuration
+    pub fn validate(&self) -> BinderyResult<()> {
+        // Validate that at least one notification method is enabled
+        if !self.console_enabled && !self.file_enabled && self.webhooks.is_empty() && self.email.is_none() {
+            return Err(BinderyError::ConfigurationError(
+                "At least one notification method must be enabled".to_string()
+            ));
+        }
+
+        // Validate file path if file notifications are enabled
+        if self.file_enabled {
+            if self.file_path.is_none() {
+                return Err(BinderyError::ConfigurationError(
+                    "File path must be specified when file notifications are enabled".to_string()
+                ));
+            }
+
+            if let Some(ref path) = self.file_path {
+                if let Some(parent) = path.parent() {
+                    if !parent.exists() {
+                        return Err(BinderyError::ConfigurationError(
+                            format!("Alert log directory does not exist: {}", parent.display())
+                        ));
+                    }
+                }
+            }
+        }
+
+        // Validate webhooks
+        for webhook in &self.webhooks {
+            webhook.validate()?;
+        }
+
+        // Validate email configuration
+        if let Some(ref email_config) = self.email {
+            email_config.validate()?;
+        }
+
+        Ok(())
+    }
+}
+
+impl WebhookConfig {
+    /// Validate webhook configuration
+    pub fn validate(&self) -> BinderyResult<()> {
+        // Validate URL
+        if self.url.trim().is_empty() {
+            return Err(BinderyError::ConfigurationError(
+                "Webhook URL cannot be empty".to_string()
+            ));
+        }
+
+        if !self.url.starts_with("http://") && !self.url.starts_with("https://") {
+            return Err(BinderyError::ConfigurationError(
+                format!("Webhook URL must be a valid HTTP/HTTPS URL: {}", self.url)
+            ));
+        }
+
+        // Validate HTTP method
+        let valid_methods = ["GET", "POST", "PUT", "PATCH"];
+        let method_upper = self.method.to_uppercase();
+        if !valid_methods.contains(&method_upper.as_str()) {
+            return Err(BinderyError::ConfigurationError(
+                format!("Invalid HTTP method '{}'. Valid methods are: {}",
+                        self.method, valid_methods.join(", "))
+            ));
+        }
+
+        // Validate timeout
+        if self.timeout_seconds == 0 {
+            return Err(BinderyError::ConfigurationError(
+                "Webhook timeout must be greater than 0 seconds".to_string()
+            ));
+        }
+
+        if self.timeout_seconds > 300 {
+            return Err(BinderyError::ConfigurationError(
+                "Webhook timeout should not exceed 300 seconds (5 minutes)".to_string()
+            ));
+        }
+
+        // Validate retry configuration
+        self.retry_config.validate()?;
+
+        Ok(())
+    }
+}
+
+impl EmailConfig {
+    /// Validate email configuration
+    pub fn validate(&self) -> BinderyResult<()> {
+        // Validate SMTP host
+        if self.smtp_host.trim().is_empty() {
+            return Err(BinderyError::ConfigurationError(
+                "SMTP host cannot be empty".to_string()
+            ));
+        }
+
+        // Validate port
+        if self.smtp_port == 0 {
+            return Err(BinderyError::ConfigurationError(
+                "SMTP port cannot be 0".to_string()
+            ));
+        }
+
+        // Validate username
+        if self.username.trim().is_empty() {
+            return Err(BinderyError::ConfigurationError(
+                "SMTP username cannot be empty".to_string()
+            ));
+        }
+
+        // Validate recipients
+        if self.recipients.is_empty() {
+            return Err(BinderyError::ConfigurationError(
+                "At least one email recipient must be specified".to_string()
+            ));
+        }
+
+        for recipient in &self.recipients {
+            if !recipient.contains('@') {
+                return Err(BinderyError::ConfigurationError(
+                    format!("Invalid email address: {}", recipient)
+                ));
+            }
+        }
+
+        // Validate from address
+        if !self.from_address.contains('@') {
+            return Err(BinderyError::ConfigurationError(
+                format!("Invalid from email address: {}", self.from_address)
+            ));
+        }
+
+        Ok(())
+    }
+}
+
+impl RetryConfig {
+    /// Validate retry configuration
+    pub fn validate(&self) -> BinderyResult<()> {
+        if self.max_attempts == 0 {
+            return Err(BinderyError::ConfigurationError(
+                "Maximum retry attempts must be greater than 0".to_string()
+            ));
+        }
+
+        if self.max_attempts > 10 {
+            return Err(BinderyError::ConfigurationError(
+                "Maximum retry attempts should not exceed 10".to_string()
+            ));
+        }
+
+        if self.initial_delay_seconds == 0 {
+            return Err(BinderyError::ConfigurationError(
+                "Initial delay must be greater than 0 seconds".to_string()
+            ));
+        }
+
+        if self.backoff_multiplier <= 1.0 {
+            return Err(BinderyError::ConfigurationError(
+                "Backoff multiplier must be greater than 1.0".to_string()
+            ));
+        }
+
+        if self.max_delay_seconds < self.initial_delay_seconds {
+            return Err(BinderyError::ConfigurationError(
+                "Maximum delay must be greater than or equal to initial delay".to_string()
+            ));
+        }
+
+        Ok(())
     }
 }
 
@@ -784,6 +1388,11 @@ pub fn init_observability(config: &ObservabilityConfig) -> Result<()> {
         init_metrics(metrics_config)?;
     }
 
+    // Initialize alerting if configured
+    if let Some(alerting_config) = &config.alerting {
+        init_alerting(alerting_config)?;
+    }
+
     tracing::info!("Observability stack initialized");
     Ok(())
 }
@@ -871,6 +1480,49 @@ fn init_opentelemetry(_config: &OpenTelemetryConfig) -> Result<()> {
 #[cfg(not(feature = "metrics"))]
 fn init_metrics(_config: &MetricsConfig) -> Result<()> {
     tracing::warn!("Metrics support not compiled in");
+    Ok(())
+}
+
+/// Initialize alerting system
+pub fn init_alerting(config: &AlertingConfig) -> Result<()> {
+    if !config.enabled {
+        tracing::info!("Alerting system disabled");
+        return Ok(());
+    }
+
+    // Validate configuration
+    config.validate().map_err(|e| anyhow::anyhow!("Alerting configuration validation failed: {}", e))?;
+
+    // Initialize notification channels
+    if config.notifications.console_enabled {
+        tracing::info!("Console alerting enabled");
+    }
+
+    if config.notifications.file_enabled {
+        if let Some(ref file_path) = config.notifications.file_path {
+            // Ensure alert log directory exists
+            if let Some(parent) = file_path.parent() {
+                std::fs::create_dir_all(parent)
+                    .map_err(|e| anyhow::anyhow!(
+                        "Failed to create alert log directory '{}': {}",
+                        parent.display(),
+                        e
+                    ))?;
+            }
+            tracing::info!("File alerting enabled: {}", file_path.display());
+        }
+    }
+
+    if !config.notifications.webhooks.is_empty() {
+        tracing::info!("Webhook alerting enabled: {} webhooks configured",
+                      config.notifications.webhooks.len());
+    }
+
+    if config.notifications.email.is_some() {
+        tracing::info!("Email alerting enabled");
+    }
+
+    tracing::info!("Alerting system initialized with thresholds configured");
     Ok(())
 }
 
@@ -1045,5 +1697,78 @@ mod tests {
         // Enabled config with valid Prometheus should pass
         config.prometheus = Some(PrometheusConfig::default());
         assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_database_thresholds_validation() {
+        // Valid thresholds
+        let thresholds = DatabaseThresholds::default();
+        assert!(thresholds.validate().is_ok());
+
+        // Warning threshold greater than critical should fail
+        let mut thresholds = DatabaseThresholds::default();
+        thresholds.pool_utilization_warning = 95.0;
+        thresholds.pool_utilization_critical = 80.0;
+        assert!(thresholds.validate().is_err());
+
+        // Critical threshold over 100% should fail
+        let mut thresholds = DatabaseThresholds::default();
+        thresholds.pool_utilization_critical = 110.0;
+        assert!(thresholds.validate().is_err());
+    }
+
+    #[test]
+    fn test_webhook_config_validation() {
+        // Valid webhook config
+        let config = WebhookConfig {
+            url: "https://example.com/webhook".to_string(),
+            method: "POST".to_string(),
+            headers: std::collections::HashMap::new(),
+            timeout_seconds: 30,
+            retry_config: RetryConfig::default(),
+        };
+        assert!(config.validate().is_ok());
+
+        // Invalid URL should fail
+        let mut config = config.clone();
+        config.url = "invalid-url".to_string();
+        assert!(config.validate().is_err());
+
+        // Invalid HTTP method should fail
+        let mut config = config.clone();
+        config.method = "INVALID".to_string();
+        assert!(config.validate().is_err());
+
+        // Zero timeout should fail
+        let mut config = config.clone();
+        config.timeout_seconds = 0;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_notification_config_validation() {
+        // Config with console enabled should pass
+        let config = NotificationConfig::default();
+        assert!(config.validate().is_ok());
+
+        // Config with no notification methods should fail
+        let config = NotificationConfig {
+            console_enabled: false,
+            file_enabled: false,
+            file_path: None,
+            webhooks: Vec::new(),
+            email: None,
+        };
+        assert!(config.validate().is_err());
+
+        // File enabled without path should fail
+        let config = NotificationConfig {
+            console_enabled: false,
+            file_enabled: true,
+            file_path: None,
+            webhooks: Vec::new(),
+            email: None,
+        };
+        assert!(config.validate().is_err());
     }
 }

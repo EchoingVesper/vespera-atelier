@@ -89,8 +89,11 @@ impl McpIntegration {
         Ok(task_id.to_string())
     }
 
-    /// Batch migrate multiple Python tasks
-    pub async fn batch_migrate_python_tasks(&self, python_tasks: Vec<PythonTaskData>) -> BinderyResult<Vec<String>> {
+    /// Batch migrate multiple Python tasks with hierarchy computation
+    pub async fn batch_migrate_python_tasks(&self, mut python_tasks: Vec<PythonTaskData>) -> BinderyResult<Vec<String>> {
+        // First pass: compute child relationships from parent relationships
+        self.compute_child_relationships(&mut python_tasks)?;
+
         let mut migrated_ids = Vec::new();
         let mut errors = Vec::new();
 
@@ -109,6 +112,44 @@ impl McpIntegration {
         }
 
         Ok(migrated_ids)
+    }
+
+    /// Compute child relationships from parent relationships
+    fn compute_child_relationships(&self, tasks: &mut [PythonTaskData]) -> BinderyResult<()> {
+        // Build a mapping of parent_id -> child_ids
+        let mut parent_to_children: HashMap<String, Vec<String>> = HashMap::new();
+
+        // First pass: collect all parent-child relationships
+        for task in tasks.iter() {
+            if let Some(parent_id) = &task.parent_id {
+                parent_to_children
+                    .entry(parent_id.clone())
+                    .or_default()
+                    .push(task.id.clone());
+            }
+        }
+
+        // Second pass: update child_ids for each task
+        for task in tasks.iter_mut() {
+            if let Some(children) = parent_to_children.get(&task.id) {
+                // Merge existing child_ids with computed ones
+                let mut all_children = task.child_ids.clone();
+                for child_id in children {
+                    if !all_children.contains(child_id) {
+                        all_children.push(child_id.clone());
+                    }
+                }
+                task.child_ids = all_children;
+            }
+        }
+
+        tracing::info!(
+            "Computed child relationships for {} tasks, {} parent-child pairs",
+            tasks.len(),
+            parent_to_children.len()
+        );
+
+        Ok(())
     }
 
     /// Export current Rust tasks to Python format (for reverse migration if needed)
@@ -507,7 +548,14 @@ async def list_tasks_rust(
             assignee,
             assigned_role,
             parent_id,
-            child_ids: Vec::new(), // TODO: Extract child IDs from task hierarchy relationships
+            child_ids: task_json["content"]["child_ids"].as_array()
+                .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
+                .unwrap_or_else(|| {
+                    // If child_ids is not in content, check root level
+                    task_json["child_ids"].as_array()
+                        .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
+                        .unwrap_or_default()
+                }),
             tags,
             labels,
             created_at,

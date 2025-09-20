@@ -2,8 +2,8 @@
 //!
 //! A high-performance Rust library for collaborative Codex management with CRDT-based real-time editing.
 //!
-//! Vespera Bindery is the core content management system for the Vespera Atelier ecosystem. 
-//! It provides conflict-free replicated data types (CRDTs) for real-time collaborative editing 
+//! Vespera Bindery is the core content management system for the Vespera Atelier ecosystem.
+//! It provides conflict-free replicated data types (CRDTs) for real-time collaborative editing
 //! of structured documents called "Codices".
 //!
 //! ## Features
@@ -13,6 +13,7 @@
 //! - **Conflict-free**: Mathematical guarantees prevent merge conflicts
 //! - **Template-aware**: CRDT operations understand structured content
 //! - **Cross-platform**: Dual bindings for Node.js (NAPI-RS) and Python (PyO3)
+//! - **Security Audit Logging**: Comprehensive audit trail for security-sensitive operations
 //!
 //! ## Architecture
 //!
@@ -22,7 +23,7 @@
 //! ```rust,ignore
 //! pub struct VesperaCRDT {
 //!     text_layer: YTextCRDT,           // Text editing within template fields
-//!     tree_layer: VesperaTreeCRDT,     // Hierarchical Codex relationships  
+//!     tree_layer: VesperaTreeCRDT,     // Hierarchical Codex relationships
 //!     metadata_layer: LWWMap,          // Template metadata (last-writer-wins)
 //!     reference_layer: ORSet,          // Cross-Codex references
 //!     operation_log: Vec<CRDTOperation>, // Git-like operation history
@@ -48,10 +49,27 @@
 //!
 //! let mut crdt = VesperaCRDT::new();
 //! let session = CollaborationSession::connect("ws://localhost:8080").await?;
-//! 
+//!
 //! // Edit operations are automatically synchronized
 //! crdt.edit_text("title", "New Component Name");
 //! session.broadcast_operation(crdt.last_operation()).await?;
+//! ```
+//!
+//! ### Security Audit Logging
+//!
+//! ```rust,ignore
+//! use vespera_bindery::observability::{AuditLogger, AuditConfig, UserContext};
+//!
+//! // Initialize audit logging
+//! let audit_config = AuditConfig::default();
+//! let audit_logger = AuditLogger::new(audit_config).await?;
+//!
+//! // Create role executor with audit logging
+//! let executor = RoleExecutor::with_audit_logger(Arc::new(audit_logger));
+//!
+//! // All security-sensitive operations are automatically audited
+//! let user_context = UserContext { /* ... */ };
+//! let result = executor.execute_with_role(&role, &task, user_context).await?;
 //! ```
 
 use std::collections::HashMap;
@@ -93,7 +111,7 @@ pub mod tests;
 pub mod errors;
 pub use errors::{BinderyError, BinderyResult};
 
-// Observability module
+// Observability module with audit logging
 pub mod observability;
 
 // Core types
@@ -124,6 +142,26 @@ pub use rag::{RAGService, RAGConfig, DocumentType, SearchResult, RAGStats};
 // Re-export database types
 pub use database::{Database, DatabasePoolConfig, PoolMetrics};
 
+// Re-export observability and audit logging types
+pub use observability::{
+    // Core observability
+    MetricsCollector, BinderyMetrics, PerformanceTimer,
+    init_logging, init_observability, init_audit_logging,
+
+    // Audit logging
+    AuditLogger, AuditEvent, AuditConfig, AuditQueryFilter, AuditStats,
+    UserContext, Operation, SecurityContext, OperationOutcome,
+    create_role_execution_event, create_migration_event, create_config_change_event,
+    create_auth_failure_event,
+
+    // Audit configuration helpers
+    default_audit_config, production_audit_config, validate_audit_config,
+    log_security_event,
+};
+
+// Re-export migration types with audit support
+pub use migration::{MigrationManager, MigrationInfo, MigrationResult, MigrationStatus};
+
 /// The main entry point for Vespera Bindery functionality.
 ///
 /// `CodexManager` provides high-level operations for managing Codices,
@@ -153,8 +191,14 @@ pub struct BinderyConfig {
     /// Database path for task and role persistence
     pub database_path: Option<std::path::PathBuf>,
 
+    /// Audit database path for security logging
+    pub audit_db_path: Option<std::path::PathBuf>,
+
     /// Database connection pool configuration
     pub database_pool: database::DatabasePoolConfig,
+
+    /// Audit logging configuration
+    pub audit_config: Option<observability::AuditConfig>,
 
     /// Enable real-time collaboration features
     pub collaboration_enabled: bool,
@@ -176,6 +220,9 @@ pub struct BinderyConfig {
 
     /// Project ID for this instance
     pub project_id: Option<ProjectId>,
+
+    /// Enable security audit logging
+    pub audit_logging_enabled: bool,
 }
 
 impl Default for BinderyConfig {
@@ -183,7 +230,9 @@ impl Default for BinderyConfig {
         Self {
             storage_path: None,
             database_path: None,
+            audit_db_path: None,
             database_pool: database::DatabasePoolConfig::default(),
+            audit_config: None,
             collaboration_enabled: false,
             max_operations_in_memory: 1000,
             auto_gc_enabled: true,
@@ -191,6 +240,7 @@ impl Default for BinderyConfig {
             compression_enabled: true,
             user_id: None,
             project_id: None,
+            audit_logging_enabled: false,
         }
     }
 }
@@ -250,8 +300,22 @@ impl BinderyConfig {
             }
         }
 
+        // Validate audit database path if provided
+        if let Some(ref path) = self.audit_db_path {
+            if !path.is_absolute() {
+                return Err(BinderyError::ConfigurationError(
+                    "audit_db_path must be an absolute path".to_string()
+                ));
+            }
+        }
+
         // Validate database pool configuration
         self.database_pool.validate()?;
+
+        // Validate audit configuration if provided
+        if let Some(ref audit_config) = self.audit_config {
+            observability::validate_audit_config(audit_config)?;
+        }
 
         // If collaboration is enabled, certain fields should be set
         if self.collaboration_enabled {
@@ -307,6 +371,27 @@ impl BinderyConfig {
         Ok(self)
     }
 
+    /// Validate and set audit database path
+    pub fn with_audit_db_path(mut self, path: impl Into<std::path::PathBuf>) -> BinderyResult<Self> {
+        let path = path.into();
+        if !path.is_absolute() {
+            return Err(BinderyError::ConfigurationError(
+                "audit_db_path must be an absolute path".to_string()
+            ));
+        }
+        self.audit_db_path = Some(path.clone());
+
+        // Also set the audit config if not already set
+        if self.audit_config.is_none() {
+            self.audit_config = Some(observability::AuditConfig {
+                audit_db_path: path,
+                ..observability::default_audit_config()
+            });
+        }
+
+        Ok(self)
+    }
+
     /// Enable collaboration with required fields
     pub fn with_collaboration(
         mut self,
@@ -317,6 +402,14 @@ impl BinderyConfig {
         self.user_id = Some(user_id.into());
         self.project_id = Some(project_id.into());
         self
+    }
+
+    /// Enable audit logging with configuration
+    pub fn with_audit_logging(mut self, audit_config: observability::AuditConfig) -> BinderyResult<Self> {
+        observability::validate_audit_config(&audit_config)?;
+        self.audit_config = Some(audit_config);
+        self.audit_logging_enabled = true;
+        Ok(self)
     }
 
     /// Set memory limits with validation
@@ -348,7 +441,9 @@ impl BinderyConfig {
 pub struct BinderyConfigBuilder {
     storage_path: Option<std::path::PathBuf>,
     database_path: Option<std::path::PathBuf>,
+    audit_db_path: Option<std::path::PathBuf>,
     database_pool: Option<database::DatabasePoolConfig>,
+    audit_config: Option<observability::AuditConfig>,
     collaboration_enabled: bool,
     max_operations_in_memory: Option<usize>,
     auto_gc_enabled: Option<bool>,
@@ -356,6 +451,7 @@ pub struct BinderyConfigBuilder {
     compression_enabled: Option<bool>,
     user_id: Option<UserId>,
     project_id: Option<ProjectId>,
+    audit_logging_enabled: bool,
 }
 
 impl BinderyConfigBuilder {
@@ -385,9 +481,27 @@ impl BinderyConfigBuilder {
         Ok(self)
     }
 
+    pub fn audit_db_path(mut self, path: impl Into<std::path::PathBuf>) -> BinderyResult<Self> {
+        let path = path.into();
+        if !path.is_absolute() {
+            return Err(BinderyError::ConfigurationError(
+                "audit_db_path must be an absolute path".to_string()
+            ));
+        }
+        self.audit_db_path = Some(path);
+        Ok(self)
+    }
+
     pub fn database_pool(mut self, config: database::DatabasePoolConfig) -> BinderyResult<Self> {
         config.validate()?;
         self.database_pool = Some(config);
+        Ok(self)
+    }
+
+    pub fn audit_config(mut self, config: observability::AuditConfig) -> BinderyResult<Self> {
+        observability::validate_audit_config(&config)?;
+        self.audit_config = Some(config);
+        self.audit_logging_enabled = true;
         Ok(self)
     }
 
@@ -443,11 +557,18 @@ impl BinderyConfigBuilder {
         self
     }
 
+    pub fn audit_logging_enabled(mut self, enabled: bool) -> Self {
+        self.audit_logging_enabled = enabled;
+        self
+    }
+
     pub fn build(self) -> BinderyResult<BinderyConfig> {
         let config = BinderyConfig {
             storage_path: self.storage_path,
             database_path: self.database_path,
+            audit_db_path: self.audit_db_path,
             database_pool: self.database_pool.unwrap_or_default(),
+            audit_config: self.audit_config,
             collaboration_enabled: self.collaboration_enabled,
             max_operations_in_memory: self.max_operations_in_memory.unwrap_or(1000),
             auto_gc_enabled: self.auto_gc_enabled.unwrap_or(true),
@@ -455,6 +576,7 @@ impl BinderyConfigBuilder {
             compression_enabled: self.compression_enabled.unwrap_or(true),
             user_id: self.user_id,
             project_id: self.project_id,
+            audit_logging_enabled: self.audit_logging_enabled,
         };
 
         config.validate()?;
@@ -467,13 +589,13 @@ impl CodexManager {
     pub fn new() -> Result<Self> {
         Self::with_config(BinderyConfig::default())
     }
-    
+
     /// Create a new CodexManager with custom configuration
     pub fn with_config(config: BinderyConfig) -> Result<Self> {
         // Validate configuration before proceeding
         config.validate().map_err(|e| anyhow::anyhow!("Configuration validation failed: {}", e))?;
         let templates = Arc::new(templates::TemplateRegistry::new());
-        
+
         let sync_manager = if config.collaboration_enabled {
             Some(Arc::new(sync::SyncManager::new(config.clone())?))
         } else {
@@ -527,18 +649,18 @@ impl CodexManager {
 
         Ok(manager)
     }
-    
+
     /// Create a new Codex with the specified title and template
     pub async fn create_codex(&self, title: impl Into<String>, template_id: impl Into<TemplateId>) -> BinderyResult<CodexId> {
         let id = Uuid::new_v4();
         let title = title.into();
         let template_id = template_id.into();
-        
+
         // Verify template exists
         let template_registry_id = templates::TemplateId::new(template_id.to_string());
         let _template = self.inner.templates.get(&template_registry_id)
             .ok_or_else(|| BinderyError::TemplateNotFound(template_registry_id))?;
-        
+
         let created_by = self.inner.config.user_id.clone().unwrap_or_else(|| "system".to_string());
         let mut crdt = crdt::VesperaCRDT::new(id, created_by);
 
@@ -548,53 +670,53 @@ impl CodexManager {
         crdt.set_title(&title);
 
         let crdt = Arc::new(crdt);
-        
+
         {
             let mut codices = self.inner.codices.write().await;
             codices.insert(id, crdt.clone());
         }
-        
+
         // If collaboration is enabled, register with sync manager
         if let Some(sync_manager) = &self.inner.sync_manager {
             sync_manager.register_codex(id, crdt).await?;
         }
-        
+
         Ok(id)
     }
-    
+
     /// Get an existing Codex by ID
     pub async fn get_codex(&self, id: &CodexId) -> Option<Arc<crdt::VesperaCRDT>> {
         let codices = self.inner.codices.read().await;
         codices.get(id).cloned()
     }
-    
+
     /// List all Codex IDs
     pub async fn list_codices(&self) -> Vec<CodexId> {
         let codices = self.inner.codices.read().await;
         codices.keys().copied().collect()
     }
-    
+
     /// Delete a Codex
     pub async fn delete_codex(&self, id: &CodexId) -> Result<bool> {
         let mut codices = self.inner.codices.write().await;
         let removed = codices.remove(id).is_some();
-        
+
         // If collaboration is enabled, unregister from sync manager
         if let Some(sync_manager) = &self.inner.sync_manager {
             sync_manager.unregister_codex(id).await?;
         }
-        
+
         Ok(removed)
     }
-    
+
     /// Enable collaboration for this CodexManager
     pub async fn enable_collaboration(&mut self) -> Result<()> {
         if self.inner.sync_manager.is_some() {
             return Ok(()); // Already enabled
         }
-        
+
         let sync_manager = Arc::new(sync::SyncManager::new(self.inner.config.clone())?);
-        
+
         // Register all existing codices with the sync manager
         {
             let codices = self.inner.codices.read().await;
@@ -602,7 +724,7 @@ impl CodexManager {
                 sync_manager.register_codex(*id, crdt.clone()).await?;
             }
         }
-        
+
         // This is a bit tricky due to Arc, but we need to update the config and sync_manager
         // In a real implementation, we might need a different approach
         // For now, we'll return an error suggesting recreation
@@ -610,7 +732,7 @@ impl CodexManager {
             "Collaboration must be enabled during creation. Please recreate CodexManager with collaboration_enabled: true".to_string()
         ).into())
     }
-    
+
     /// Get the current configuration
     pub fn config(&self) -> &BinderyConfig {
         &self.inner.config
@@ -627,56 +749,118 @@ impl CodexManager {
             self.inner.hook_manager.clone(),
         ))
     }
-    
+
     /// Perform garbage collection on all managed Codices
     pub async fn gc_all_codices(&self) -> Result<CodexManagerGCStats> {
+        self.gc_all_codices_with_config(GarbageCollectionConfig::default()).await
+    }
+
+    /// Perform garbage collection on all managed Codices with custom configuration
+    pub async fn gc_all_codices_with_config(&self, config: GarbageCollectionConfig) -> Result<CodexManagerGCStats> {
         let mut total_stats = CodexManagerGCStats::default();
-        
+        let cutoff = chrono::Utc::now() - chrono::Duration::hours(config.cutoff_hours);
+
         {
             let codices = self.inner.codices.read().await;
-            
-            for _crdt in codices.values() {
-                // Use a cutoff of 1 hour for garbage collection
-                let _cutoff = chrono::Utc::now() - chrono::Duration::hours(1); // TODO: Implement CRDT GC operations
-                
-                // We need to get a mutable reference, but we can't due to the Arc
-                // In a real implementation, we'd need interior mutability
-                // For now, we'll track this as a design issue to fix
+            let mut processed_codices = Vec::new();
+
+            // First pass: collect IDs and check memory usage
+            for (id, crdt) in codices.iter() {
                 total_stats.codices_processed += 1;
-                
-                // Note: CRDT GC requires interior mutability pattern (Arc<RwLock<>> or RefCell)
-                // This architectural limitation is tracked for future refactoring
-                // For now, we document the processed codices without actual GC
-                total_stats.operations_skipped += 1;
+                let memory_stats = crdt.memory_stats();
+                total_stats.total_memory_before += memory_stats.total_size_bytes;
+
+                if memory_stats.total_size_bytes > config.memory_threshold_bytes {
+                    processed_codices.push(*id);
+                }
             }
         }
-        
+
+        // Second pass: perform actual GC with write locks
+        for codex_id in processed_codices {
+            if let Some(crdt) = {
+                let codices = self.inner.codices.read().await;
+                codices.get(&codex_id).cloned()
+            } {
+                // Perform GC operations on the individual CRDT
+                let mut crdt_clone = (*crdt).clone();
+                let gc_stats = crdt_clone.gc_all_with_limits(
+                    cutoff,
+                    config.max_operations_per_codex,
+                    config.max_tree_tombstones_per_codex
+                );
+
+                // Update the CRDT in the map if GC made significant changes
+                if gc_stats.operations_removed > 0 || gc_stats.tree_tombstones_removed > 0 {
+                    let mut codices = self.inner.codices.write().await;
+                    codices.insert(codex_id, Arc::new(crdt_clone));
+
+                    total_stats.operations_removed += gc_stats.operations_removed;
+                    total_stats.tree_tombstones_removed += gc_stats.tree_tombstones_removed;
+                    total_stats.memory_freed_bytes += gc_stats.memory_freed_bytes;
+                }
+            }
+        }
+
+        // Calculate final memory usage
+        {
+            let codices = self.inner.codices.read().await;
+            for crdt in codices.values() {
+                let memory_stats = crdt.memory_stats();
+                total_stats.total_memory_after += memory_stats.total_size_bytes;
+            }
+        }
+
         Ok(total_stats)
     }
-    
+
     /// Get memory usage statistics for all Codices
     pub async fn memory_stats(&self) -> HashMap<CodexId, crdt::MemoryStats> {
         let codices = self.inner.codices.read().await;
-        
+
         codices.iter()
             .map(|(id, crdt)| (*id, crdt.memory_stats()))
             .collect()
     }
-    
+
     /// Clean up all resources and shut down the manager
     pub async fn shutdown(&mut self) -> Result<()> {
         // Stop sync manager first
         if let Some(sync_manager) = &self.inner.sync_manager {
             sync_manager.stop().await?;
         }
-        
+
         // Clear all Codices (this will trigger Drop implementations)
         {
             let mut codices = self.inner.codices.write().await;
             codices.clear();
         }
-        
+
         Ok(())
+    }
+}
+
+/// Configuration for garbage collection operations
+#[derive(Debug, Clone)]
+pub struct GarbageCollectionConfig {
+    /// How many hours old operations must be to be eligible for GC
+    pub cutoff_hours: i64,
+    /// Memory threshold in bytes - only GC codices above this size
+    pub memory_threshold_bytes: usize,
+    /// Maximum operations to keep per codex after GC
+    pub max_operations_per_codex: usize,
+    /// Maximum tree tombstones to keep per codex after GC
+    pub max_tree_tombstones_per_codex: usize,
+}
+
+impl Default for GarbageCollectionConfig {
+    fn default() -> Self {
+        Self {
+            cutoff_hours: 1,
+            memory_threshold_bytes: 1024 * 1024, // 1MB
+            max_operations_per_codex: 500,
+            max_tree_tombstones_per_codex: 100,
+        }
     }
 }
 
@@ -684,11 +868,11 @@ impl CodexManager {
 #[derive(Debug, Default)]
 pub struct CodexManagerGCStats {
     pub codices_processed: usize,
-    pub total_operations_removed: usize,
-    pub total_tombstones_removed: usize,
-    pub total_fields_cleaned: usize,
-    /// Number of codices that were skipped due to architectural limitations
-    pub operations_skipped: usize,
+    pub operations_removed: usize,
+    pub tree_tombstones_removed: usize,
+    pub memory_freed_bytes: usize,
+    pub total_memory_before: usize,
+    pub total_memory_after: usize,
 }
 
 // Version information
@@ -708,21 +892,21 @@ pub fn version_info() -> HashMap<String, String> {
 
 fn get_enabled_features() -> String {
     let mut features = Vec::new();
-    
+
     #[cfg(feature = "nodejs")]
     features.push("nodejs");
-    
+
     #[cfg(feature = "python")]
     features.push("python");
-    
+
     #[cfg(feature = "yjs-compat")]
     features.push("yjs-compat");
-    
+
     #[cfg(feature = "p2p-sync")]
     features.push("p2p-sync");
-    
+
     #[cfg(feature = "relay-sync")]
     features.push("relay-sync");
-    
+
     features.join(",")
 }

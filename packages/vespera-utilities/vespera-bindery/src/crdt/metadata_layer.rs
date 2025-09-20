@@ -1,4 +1,86 @@
 //! Metadata layer CRDT using Last-Writer-Wins (LWW) semantics
+//!
+//! This module implements a Last-Writer-Wins Map (LWW-Map) for managing metadata
+//! that requires simple conflict resolution. The LWW-Map is ideal for key-value
+//! data where the most recent update should take precedence.
+//!
+//! # LWW-Map Algorithm
+//!
+//! The Last-Writer-Wins Map resolves conflicts using timestamps and unique IDs:
+//!
+//! ## Core Concepts
+//!
+//! - **Timestamps**: Each operation has a timestamp indicating when it was created
+//! - **Operation IDs**: Unique identifiers for tie-breaking when timestamps are equal
+//! - **Tombstones**: Deleted entries are marked with tombstones rather than removed
+//! - **Monotonic Logic**: Later timestamps always win, ensuring convergence
+//!
+//! ## Mathematical Properties
+//!
+//! The LWW-Map satisfies CRDT requirements:
+//!
+//! ### Commutativity
+//! For operations A and B: `merge(apply(A), apply(B)) = merge(apply(B), apply(A))`
+//!
+//! ### Associativity
+//! For operations A, B, C: `merge(merge(A, B), C) = merge(A, merge(B, C))`
+//!
+//! ### Idempotency
+//! For any operation A: `merge(A, A) = A`
+//!
+//! ### Monotonicity
+//! Once a key reaches a certain timestamp, it can only be updated by operations
+//! with strictly later timestamps.
+//!
+//! ## Conflict Resolution Algorithm
+//!
+//! When two operations conflict on the same key:
+//!
+//! 1. **Timestamp Comparison**: Operation with later timestamp wins
+//! 2. **Tie Breaking**: If timestamps are equal, operation with larger UUID wins
+//! 3. **Deletion Semantics**: Deletions are treated as special writes with empty values
+//!
+//! # Performance Characteristics
+//!
+//! - **Set Operation**: O(1) average case, O(log n) worst case
+//! - **Get Operation**: O(1) average case
+//! - **Delete Operation**: O(1) average case
+//! - **Merge Operation**: O(n + m) where n, m are the sizes of maps being merged
+//! - **Space Complexity**: O(n + t) where n is active entries, t is tombstones
+//!
+//! # Usage Example
+//!
+//! ```rust
+//! use vespera_bindery::crdt::metadata_layer::{LWWMap, LWWEntry};
+//! use chrono::Utc;
+//! use uuid::Uuid;
+//!
+//! let mut map = LWWMap::new();
+//!
+//! // Set some metadata
+//! map.set("title".to_string(), "My Document".to_string());
+//! map.set("author".to_string(), "Alice".to_string());
+//!
+//! // Concurrent update from another replica
+//! map.set_with_metadata(
+//!     "title".to_string(),
+//!     "Updated Title".to_string(),
+//!     Utc::now(),
+//!     "bob".to_string(),
+//!     Uuid::new_v4()
+//! );
+//!
+//! // The most recent update wins
+//! assert_eq!(map.get(&"title".to_string()), Some(&"Updated Title".to_string()));
+//! ```
+//!
+//! # Tombstone Management
+//!
+//! Deleted entries are not immediately removed but marked with tombstones.
+//! This ensures that:
+//! - Delete operations can be replicated correctly
+//! - Concurrent updates to deleted keys are handled properly
+//! - Garbage collection can clean up old tombstones safely
 
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
@@ -6,6 +88,57 @@ use chrono::{DateTime, Utc};
 use crate::types::UserId;
 
 /// Last-Writer-Wins Map for metadata that needs simple conflict resolution
+///
+/// The LWWMap provides a distributed key-value store with automatic conflict
+/// resolution based on timestamps. It's designed for metadata that changes
+/// infrequently and where the most recent update should always win.
+///
+/// # Design Principles
+///
+/// - **Simplicity**: Conflicts are resolved using a simple "last writer wins" rule
+/// - **Determinism**: Given the same operations, all replicas converge to the same state
+/// - **Performance**: O(1) operations for most common use cases
+/// - **Consistency**: Strong eventual consistency with immediate local consistency
+///
+/// # Conflict Resolution Strategy
+///
+/// The LWW-Map uses a two-tier conflict resolution:
+/// 1. **Primary**: Timestamp comparison (later timestamp wins)
+/// 2. **Secondary**: Operation ID comparison for tie-breaking
+///
+/// This ensures that even with clock skew or simultaneous operations,
+/// all replicas will converge to the same deterministic state.
+///
+/// # Memory Management
+///
+/// The implementation includes automatic memory management:
+/// - Active entries are stored in a primary hash map
+/// - Deleted entries are stored as tombstones for conflict resolution
+/// - Garbage collection can remove old tombstones safely
+/// - Memory usage grows linearly with unique keys (including deleted ones)
+///
+/// # Type Parameters
+///
+/// - `K`: Key type (must be hashable and serializable)
+/// - `V`: Value type (must be cloneable and serializable)
+///
+/// # Example
+///
+/// ```rust
+/// use vespera_bindery::crdt::metadata_layer::LWWMap;
+///
+/// // Create a map for document metadata
+/// let mut metadata = LWWMap::<String, String>::new();
+///
+/// // Set document properties
+/// metadata.set("title".to_string(), "Draft Document".to_string());
+/// metadata.set("status".to_string(), "draft".to_string());
+///
+/// // Later update (wins due to later timestamp)
+/// metadata.set("status".to_string(), "published".to_string());
+///
+/// assert_eq!(metadata.get(&"status".to_string()), Some(&"published".to_string()));
+/// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LWWMap<K, V> 
 where
@@ -49,6 +182,37 @@ where
     }
     
     /// Set a value in the map
+    ///
+    /// Creates a new entry with the current timestamp and a unique operation ID.
+    /// The operation will succeed immediately but may be overridden by concurrent
+    /// operations with later timestamps during merge operations.
+    ///
+    /// # Algorithm
+    ///
+    /// 1. Create new LWWEntry with current timestamp
+    /// 2. Generate unique operation ID for tie-breaking
+    /// 3. Insert into entries map (overwrites any existing entry)
+    /// 4. Remove any existing tombstone for this key
+    ///
+    /// # Parameters
+    ///
+    /// - `key`: The key to associate with the value
+    /// - `value`: The value to store
+    ///
+    /// # Returns
+    ///
+    /// Returns the created LWWEntry containing the value and metadata.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let mut map = LWWMap::new();
+    /// let entry = map.set("config".to_string(), "value1".to_string());
+    ///
+    /// // The entry contains timestamp and operation ID
+    /// assert_eq!(entry.value, "value1");
+    /// assert!(entry.timestamp <= chrono::Utc::now());
+    /// ```
     pub fn set(&mut self, key: K, value: V) -> LWWEntry<V> {
         let entry = LWWEntry {
             value: value.clone(),
@@ -75,9 +239,60 @@ where
     }
     
     /// Set a value with explicit timestamp and user (for synchronization)
+    ///
+    /// This method is used during merge operations to apply remote changes.
+    /// It only updates the local state if the provided operation is newer
+    /// than any existing operation for the same key.
+    ///
+    /// # Algorithm
+    ///
+    /// 1. **Conflict Check**: Compare with existing entry (if any)
+    /// 2. **Timestamp Comparison**: New timestamp must be strictly greater
+    /// 3. **Tie Breaking**: If timestamps equal, compare operation IDs
+    /// 4. **Tombstone Check**: Ensure operation is newer than any deletion
+    /// 5. **State Update**: Apply operation only if it should win
+    ///
+    /// # Conflict Resolution Rules
+    ///
+    /// - Later timestamp always wins
+    /// - Equal timestamps: larger operation ID wins
+    /// - Must be newer than any existing tombstone for the key
+    ///
+    /// # Parameters
+    ///
+    /// - `key`: The key to update
+    /// - `value`: The new value
+    /// - `timestamp`: When the operation was created
+    /// - `user_id`: Who created the operation
+    /// - `operation_id`: Unique identifier for tie-breaking
+    ///
+    /// # Returns
+    ///
+    /// Returns `true` if the operation was applied, `false` if it was rejected
+    /// due to being older than the current state.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use chrono::Utc;
+    /// use uuid::Uuid;
+    ///
+    /// let mut map = LWWMap::new();
+    ///
+    /// // Apply a remote operation
+    /// let applied = map.set_with_metadata(
+    ///     "key".to_string(),
+    ///     "remote_value".to_string(),
+    ///     Utc::now(),
+    ///     "remote_user".to_string(),
+    ///     Uuid::new_v4()
+    /// );
+    ///
+    /// assert!(applied); // First operation always succeeds
+    /// ```
     pub fn set_with_metadata(
-        &mut self, 
-        key: K, 
+        &mut self,
+        key: K,
         value: V,
         timestamp: DateTime<Utc>,
         user_id: UserId,
@@ -230,6 +445,55 @@ where
     }
     
     /// Merge with another LWW map
+    ///
+    /// Merges all operations from another LWW-Map into this one. This is the
+    /// core synchronization operation that ensures eventual consistency.
+    ///
+    /// # Algorithm
+    ///
+    /// The merge process applies all operations from the other map:
+    /// 1. **Entry Merge**: For each entry in other map, apply using `set_with_metadata`
+    /// 2. **Tombstone Merge**: For each tombstone in other map, apply using `delete_with_metadata`
+    /// 3. **Conflict Resolution**: Each operation is subject to LWW conflict resolution
+    /// 4. **Update Counting**: Track how many operations were actually applied
+    ///
+    /// # Mathematical Properties
+    ///
+    /// The merge operation satisfies:
+    /// - **Commutativity**: `A.merge(B)` produces the same final state as `B.merge(A)`
+    /// - **Associativity**: Merging multiple maps produces consistent results regardless of order
+    /// - **Idempotency**: Merging the same map multiple times has no additional effect
+    ///
+    /// # Performance
+    ///
+    /// - Time Complexity: O(n + m) where n, m are the sizes of the maps
+    /// - Space Complexity: O(k) where k is the number of unique keys across both maps
+    ///
+    /// # Parameters
+    ///
+    /// - `other`: The LWW-Map to merge from
+    ///
+    /// # Returns
+    ///
+    /// Returns the number of operations that were successfully applied
+    /// (i.e., operations that were newer than existing local state).
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let mut map_a = LWWMap::new();
+    /// let mut map_b = LWWMap::new();
+    ///
+    /// map_a.set("key1".to_string(), "value_a".to_string());
+    /// map_b.set("key2".to_string(), "value_b".to_string());
+    ///
+    /// let updates = map_a.merge(&map_b);
+    /// assert_eq!(updates, 1); // One new operation applied
+    ///
+    /// // Both maps now have both keys
+    /// assert!(map_a.contains_key(&"key1".to_string()));
+    /// assert!(map_a.contains_key(&"key2".to_string()));
+    /// ```
     pub fn merge(&mut self, other: &LWWMap<K, V>) -> usize {
         let mut updates = 0;
         

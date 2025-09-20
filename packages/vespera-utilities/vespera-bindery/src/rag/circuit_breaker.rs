@@ -9,8 +9,9 @@ use std::collections::HashMap;
 use anyhow::Result;
 use serde::{Serialize, Deserialize};
 use tokio::time::sleep;
-use tracing::{info, warn, error, debug};
+use tracing::{info, warn, error, debug, instrument};
 use crate::{BinderyError, BinderyResult};
+use crate::observability::metrics::BinderyMetrics;
 
 /// Circuit breaker state
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -21,6 +22,26 @@ pub enum CircuitState {
     Open,
     /// Circuit is half-open - testing if service has recovered
     HalfOpen,
+}
+
+impl CircuitState {
+    /// Convert state to numeric value for metrics
+    pub fn to_metric_value(&self) -> f64 {
+        match self {
+            CircuitState::Closed => 0.0,
+            CircuitState::Open => 1.0,
+            CircuitState::HalfOpen => 0.5,
+        }
+    }
+
+    /// Get state name for logging
+    pub fn name(&self) -> &'static str {
+        match self {
+            CircuitState::Closed => "closed",
+            CircuitState::Open => "open",
+            CircuitState::HalfOpen => "half_open",
+        }
+
 }
 
 /// Circuit breaker configuration
@@ -333,14 +354,25 @@ impl CircuitBreaker {
     }
 
     /// Execute a function with circuit breaker protection
+    #[instrument(skip(self, operation), fields(service = %self.service_name))]
     pub async fn execute<F, T, E>(&self, operation: F) -> Result<T>
     where
         F: Fn() -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<T, E>> + Send>> + Send + Sync,
         E: std::error::Error + Send + Sync + 'static,
         T: Send,
     {
+        let start_time = Instant::now();
+
         // Check if circuit is open
         if self.should_reject_request().await? {
+            // Record metrics for rejected request
+            BinderyMetrics::record_circuit_breaker_request(
+                &self.service_name,
+                false,
+                Duration::ZERO,
+                self.get_failure_rate().await,
+            );
+
             return Err(anyhow::anyhow!(
                 "Circuit breaker is OPEN for service: {}",
                 self.service_name
@@ -368,9 +400,20 @@ impl CircuitBreaker {
                 operation()
             ).await;
 
+            let operation_duration = start_time.elapsed();
+
             match result {
                 Ok(Ok(value)) => {
                     self.record_success().await?;
+
+                    // Record successful request metrics
+                    BinderyMetrics::record_circuit_breaker_request(
+                        &self.service_name,
+                        true,
+                        operation_duration,
+                        self.get_failure_rate().await,
+                    );
+
                     return Ok(value);
                 }
                 Ok(Err(e)) => {
@@ -405,7 +448,17 @@ impl CircuitBreaker {
 
         // All retries failed
         let error = last_error.unwrap_or_else(|| anyhow::anyhow!("Unknown error"));
+        let total_duration = start_time.elapsed();
+
         self.record_failure().await?;
+
+        // Record failed request metrics
+        BinderyMetrics::record_circuit_breaker_request(
+            &self.service_name,
+            false,
+            total_duration,
+            self.get_failure_rate().await,
+        );
 
         Err(error.context(format!(
             "All {} retry attempts failed for service: {}",
@@ -426,10 +479,19 @@ impl CircuitBreaker {
                 // Check if recovery timeout has passed
                 if let Some(last_failure) = metrics.last_failure_time {
                     if last_failure.elapsed() >= self.config.recovery_timeout {
-                        info!("Transitioning circuit breaker to HALF_OPEN for service: {}", self.service_name);
+                        let old_state = metrics.state.clone();
                         metrics.state = CircuitState::HalfOpen;
-                        metrics.success_count = 0;
                         metrics.state_transitions += 1;
+
+                        // Record state transition
+                        BinderyMetrics::record_circuit_breaker_state_change(
+                            &self.service_name,
+                            old_state.name(),
+                            metrics.state.name(),
+                            metrics.state.to_metric_value(),
+                        );
+                        info!("Transitioning circuit breaker to HALF_OPEN for service: {}", self.service_name);
+                        metrics.success_count = 0;
                         return Ok(false);
                     }
                 }
@@ -513,6 +575,84 @@ impl CircuitBreaker {
         );
 
         Ok(())
+    }
+
+    /// Get current failure rate as percentage
+    async fn get_failure_rate(&self) -> f64 {
+        let metrics = match self.metrics.lock() {
+            Ok(m) => m,
+            Err(_) => return 0.0,
+        };
+
+        if metrics.total_requests == 0 {
+            0.0
+        } else {
+            (metrics.failed_requests as f64 / metrics.total_requests as f64) * 100.0
+        }
+    }
+
+    /// Get current state
+    pub async fn get_state(&self) -> CircuitState {
+        match self.metrics.lock() {
+            Ok(metrics) => metrics.state.clone(),
+            Err(_) => CircuitState::Closed, // Default to closed on error
+        }
+    }
+
+    /// Get comprehensive metrics
+    pub async fn get_metrics(&self) -> CircuitBreakerMetrics {
+        match self.metrics.lock() {
+            Ok(metrics) => metrics.clone(),
+            Err(_) => CircuitBreakerMetrics::default(),
+        }
+    }
+
+    /// Get total request count
+    async fn get_total_requests(&self) -> u64 {
+        match self.metrics.lock() {
+            Ok(metrics) => metrics.total_requests,
+            Err(_) => 0,
+        }
+    }
+
+    /// Increment total request counter
+    async fn increment_total_requests(&self) {
+        if let Ok(mut metrics) = self.metrics.lock() {
+            metrics.total_requests += 1;
+        }
+    }
+
+    /// Reset metrics
+    pub async fn reset(&self) -> Result<()> {
+        let mut metrics = self.metrics.lock().map_err(|_| {
+            anyhow::anyhow!("Failed to acquire metrics lock")
+        })?;
+
+        let old_state = metrics.state.clone();
+        *metrics = CircuitBreakerMetrics::default();
+
+        // Record state transition if state changed
+        if old_state != CircuitState::Closed {
+            BinderyMetrics::record_circuit_breaker_state_change(
+                &self.service_name,
+                old_state.name(),
+                "closed",
+                0.0,
+            );
+        }
+
+        info!("Reset circuit breaker for service: {}", self.service_name);
+        Ok(())
+    }
+
+    /// Get service name
+    pub fn service_name(&self) -> &str {
+        &self.service_name
+    }
+
+    /// Get configuration
+    pub fn config(&self) -> &CircuitBreakerConfig {
+        &self.config
     }
 
     /// Increment total request counter

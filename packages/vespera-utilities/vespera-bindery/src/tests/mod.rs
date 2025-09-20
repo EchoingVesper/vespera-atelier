@@ -14,6 +14,10 @@ pub mod sync_tests;
 pub mod hook_system_tests;
 pub mod rag_tests;
 pub mod integration_tests;
+pub mod audit_tests;
+pub mod performance_tests;
+pub mod chaos_tests;
+pub mod end_to_end_performance_tests;
 pub mod utils;
 
 // Re-export test functions for easier access
