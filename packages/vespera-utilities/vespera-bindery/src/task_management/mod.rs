@@ -11,7 +11,7 @@ pub mod models;
 
 pub use manager::TaskManager;
 pub use service::TaskService;
-pub use executor::TaskExecutor;
+pub use executor::{TaskExecutor, ExecutionContext};
 // Re-export specific models to avoid unused import warnings
 pub use models::{
     TaskStatus, TaskPriority, TaskRelation, TaskInput, TaskUpdateInput,

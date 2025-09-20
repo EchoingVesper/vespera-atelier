@@ -1,6 +1,10 @@
 -- Initial schema for Vespera Bindery database
--- Tasks table with hierarchical support
+-- Creates the foundational tables for task management with hierarchical support
+-- Version: 1
+-- Created: 2024-09-20 12:00:00 UTC
 
+-- +migrate up
+-- Tasks table with hierarchical support
 CREATE TABLE IF NOT EXISTS tasks (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
@@ -24,3 +28,12 @@ CREATE INDEX IF NOT EXISTS idx_tasks_priority ON tasks(priority);
 CREATE INDEX IF NOT EXISTS idx_tasks_parent ON tasks(parent_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_created ON tasks(created_at);
 CREATE INDEX IF NOT EXISTS idx_tasks_updated ON tasks(updated_at);
+
+-- +migrate down
+-- Drop indexes first, then table
+DROP INDEX IF EXISTS idx_tasks_updated;
+DROP INDEX IF EXISTS idx_tasks_created;
+DROP INDEX IF EXISTS idx_tasks_parent;
+DROP INDEX IF EXISTS idx_tasks_priority;
+DROP INDEX IF EXISTS idx_tasks_status;
+DROP TABLE IF EXISTS tasks;

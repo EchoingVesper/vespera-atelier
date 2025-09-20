@@ -2,6 +2,7 @@
 
 use std::fmt;
 use serde::{Deserialize, Serialize};
+use tracing::{error, warn};
 
 /// Result type for Bindery operations
 pub type BinderyResult<T> = Result<T, BinderyError>;
@@ -54,6 +55,8 @@ pub enum BinderyError {
     IoError(String),
     SerializationError(String),
     DeserializationError(String),
+    CompressionError(String),
+    DecompressionError(String),
 
     /// Database errors
     DatabaseError(String),
@@ -119,6 +122,8 @@ impl fmt::Display for BinderyError {
             BinderyError::IoError(msg) => write!(f, "I/O error: {}", msg),
             BinderyError::SerializationError(msg) => write!(f, "Serialization error: {}", msg),
             BinderyError::DeserializationError(msg) => write!(f, "Deserialization error: {}", msg),
+            BinderyError::CompressionError(msg) => write!(f, "Compression error: {}", msg),
+            BinderyError::DecompressionError(msg) => write!(f, "Decompression error: {}", msg),
 
             BinderyError::DatabaseError(msg) => write!(f, "Database error: {}", msg),
             BinderyError::DatabaseConnectionError(msg) => write!(f, "Database connection error: {}", msg),
@@ -146,6 +151,158 @@ impl fmt::Display for BinderyError {
 }
 
 impl std::error::Error for BinderyError {}
+
+impl BinderyError {
+    /// Log the error with appropriate level based on error type
+    pub fn log_error(&self, component: &str, operation: &str) {
+        match self {
+            // High severity errors - these are serious issues
+            BinderyError::DatabaseConnectionError(_) |
+            BinderyError::DatabaseTransactionError(_) |
+            BinderyError::InternalError(_) |
+            BinderyError::CrdtStateError(_) => {
+                error!(
+                    error = %self,
+                    component = component,
+                    operation = operation,
+                    severity = "high",
+                    "Critical error occurred"
+                );
+            }
+
+            // Medium severity errors - operational issues
+            BinderyError::DatabaseError(_) |
+            BinderyError::ExecutionError(_) |
+            BinderyError::SyncError(_) |
+            BinderyError::NetworkError(_) |
+            BinderyError::RagError(_) |
+            BinderyError::TemplateLoadError(_) => {
+                error!(
+                    error = %self,
+                    component = component,
+                    operation = operation,
+                    severity = "medium",
+                    "Operational error occurred"
+                );
+            }
+
+            // Low severity errors - user input or expected failures
+            BinderyError::NotFound(_) |
+            BinderyError::InvalidInput(_) |
+            BinderyError::PermissionDenied(_) |
+            BinderyError::TemplateNotFound(_) |
+            BinderyError::NotImplemented(_) => {
+                warn!(
+                    error = %self,
+                    component = component,
+                    operation = operation,
+                    severity = "low",
+                    "Expected error occurred"
+                );
+            }
+
+            // Everything else gets medium severity
+            _ => {
+                error!(
+                    error = %self,
+                    component = component,
+                    operation = operation,
+                    severity = "medium",
+                    "Error occurred"
+                );
+            }
+        }
+    }
+
+    /// Get the error category for metrics collection
+    pub fn error_category(&self) -> &'static str {
+        match self {
+            BinderyError::NotFound(_) => "not_found",
+            BinderyError::InvalidInput(_) => "invalid_input",
+            BinderyError::PermissionDenied(_) => "permission_denied",
+            BinderyError::ConfigurationError(_) => "configuration",
+
+            BinderyError::TemplateNotFound(_) |
+            BinderyError::TemplateParseError(_) |
+            BinderyError::TemplateValidationError(_) |
+            BinderyError::TemplateLoadError(_) |
+            BinderyError::TemplateRegistrationError(_) => "template",
+
+            BinderyError::CrdtOperationError(_) |
+            BinderyError::CrdtConflictError(_) |
+            BinderyError::CrdtStateError(_) |
+            BinderyError::CrdtError(_) |
+            BinderyError::InvalidOperation(_) => "crdt",
+
+            BinderyError::ExecutionError(_) |
+            BinderyError::ExecutionTimeout(_) |
+            BinderyError::RoleValidationError(_) => "execution",
+
+            BinderyError::HookError(_) |
+            BinderyError::HookConditionError(_) |
+            BinderyError::HookActionError(_) => "hook",
+
+            BinderyError::SyncError(_) |
+            BinderyError::NetworkError(_) |
+            BinderyError::ProtocolError(_) => "sync",
+
+            BinderyError::IoError(_) |
+            BinderyError::SerializationError(_) |
+            BinderyError::DeserializationError(_) |
+            BinderyError::CompressionError(_) |
+            BinderyError::DecompressionError(_) => "io",
+
+            BinderyError::DatabaseError(_) |
+            BinderyError::DatabaseConnectionError(_) |
+            BinderyError::DatabaseQueryError(_) |
+            BinderyError::DatabaseTransactionError(_) |
+            BinderyError::DatabaseMigrationError(_) => "database",
+
+            BinderyError::RagError(_) |
+            BinderyError::RagIndexError(_) |
+            BinderyError::RagSearchError(_) |
+            BinderyError::RagEmbeddingError(_) |
+            BinderyError::RagChunkingError(_) |
+            BinderyError::RagDocumentError(_) |
+            BinderyError::RagProjectError(_) |
+            BinderyError::RagAnalysisError(_) => "rag",
+
+            BinderyError::CodeAnalysisError(_) |
+            BinderyError::CodeParsingError(_) |
+            BinderyError::UnsupportedLanguage(_) => "code_analysis",
+
+            BinderyError::InternalError(_) => "internal",
+            BinderyError::NotImplemented(_) => "not_implemented",
+        }
+    }
+
+    /// Check if this error should be retried
+    pub fn is_retryable(&self) -> bool {
+        match self {
+            // Network and temporary database issues can be retried
+            BinderyError::NetworkError(_) |
+            BinderyError::DatabaseConnectionError(_) |
+            BinderyError::ExecutionTimeout(_) => true,
+
+            // Most other errors should not be retried
+            _ => false,
+        }
+    }
+
+    /// Get recommended retry delay in milliseconds
+    pub fn retry_delay_ms(&self) -> Option<u64> {
+        if self.is_retryable() {
+            match self {
+                BinderyError::NetworkError(_) => Some(1000), // 1 second
+                BinderyError::DatabaseConnectionError(_) => Some(5000), // 5 seconds
+                BinderyError::ExecutionTimeout(_) => Some(2000), // 2 seconds
+                _ => Some(1000),
+            }
+        } else {
+            None
+        }
+    }
+}
 
 // Conversions from common error types
 
@@ -256,5 +413,23 @@ where
 
     fn template_error(self, context: &str) -> BinderyResult<T> {
         self.map_err(|e| BinderyError::TemplateLoadError(format!("{}: {}", context, e)))
+    }
+
+    fn log_error(self, component: &str, operation: &str) -> BinderyResult<T> {
+        self.map_err(|e| {
+            e.log_error(component, operation);
+            e
+        })
+    }
+
+    fn log_and_metric(self, component: &str, operation: &str) -> BinderyResult<T> {
+        self.map_err(|e| {
+            e.log_error(component, operation);
+
+            // TODO: Record error metrics
+            // BinderyMetrics::record_error(component, e.error_category());
+
+            e
+        })
     }
 }

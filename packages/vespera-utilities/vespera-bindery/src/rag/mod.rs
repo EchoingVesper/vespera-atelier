@@ -17,12 +17,18 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
+use std::time::Duration;
 
 pub mod service;
 pub mod embeddings;
 pub mod chunker;
 pub mod code_analyzer;
 pub mod project_manager;
+pub mod circuit_breaker;
+pub mod fallback_service;
+pub mod health_monitor;
+pub mod logging;
+// pub mod resilient_embeddings; // Temporarily disabled due to compilation issues
 
 #[cfg(any(feature = "embeddings-local", feature = "embeddings-onnx", feature = "embeddings-api"))]
 pub mod embeddings_impl;
@@ -32,6 +38,11 @@ pub use embeddings::{EmbeddingService, EmbeddingModel};
 pub use chunker::{DocumentChunker, ChunkStrategy};
 pub use code_analyzer::{CodeAnalyzer, CodeAnalysis};
 pub use project_manager::{ProjectManager, ProjectConfig};
+pub use circuit_breaker::{CircuitBreaker, CircuitBreakerConfig, CircuitBreakerRegistry, CircuitState};
+pub use fallback_service::{FallbackEmbeddingService, FallbackConfig, FallbackStrategy};
+pub use health_monitor::{HealthMonitor, HealthCheckConfig, SystemHealthStatus, SystemHealthReport};
+pub use logging::{MetricsCollector, MetricsReport, CircuitBreakerEvent, HealthEvent};
+// pub use resilient_embeddings::{ResilientEmbeddingService, ResilientHealthStatus, ResilientMetrics};
 
 /// Configuration for the RAG system
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,6 +64,18 @@ pub struct RAGConfig {
 
     /// Custom .vespera folder location (if not in project root)
     pub vespera_folder_override: Option<PathBuf>,
+
+    /// Circuit breaker configuration for external API calls
+    pub circuit_breaker_config: circuit_breaker::CircuitBreakerConfig,
+
+    /// Enable circuit breaker protection
+    pub enable_circuit_breaker: bool,
+
+    /// Fallback configuration
+    pub fallback_config: fallback_service::FallbackConfig,
+
+    /// Fallback strategy
+    pub fallback_strategy: fallback_service::FallbackStrategy,
 }
 
 impl Default for RAGConfig {
@@ -64,6 +87,19 @@ impl Default for RAGConfig {
             enable_code_analysis: true,
             auto_detect_projects: true,
             vespera_folder_override: None,
+            circuit_breaker_config: circuit_breaker::CircuitBreakerConfig {
+                failure_threshold: 5,
+                recovery_timeout: Duration::from_secs(30),
+                request_timeout: Duration::from_secs(30),
+                max_retries: 3,
+                initial_backoff: Duration::from_millis(100),
+                max_backoff: Duration::from_secs(10),
+                backoff_multiplier: 2.0,
+                success_threshold: 3,
+            },
+            enable_circuit_breaker: true,
+            fallback_config: fallback_service::FallbackConfig::default(),
+            fallback_strategy: fallback_service::FallbackStrategy::default(),
         }
     }
 }

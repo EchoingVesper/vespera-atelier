@@ -32,6 +32,8 @@ serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1.0"
 json5 = "0.4"
 serde_yaml = "0.9"
+rmp-serde = "1.1"
+bincode = "1.3"
 
 # Node.js bindings (NAPI-RS)
 napi = { version = "2.15", features = ["napi8", "tokio_rt"], optional = true }
@@ -62,7 +64,14 @@ zstd = "0.13"
 
 # Logging and tracing
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "registry", "fmt"] }
+tracing-opentelemetry = { version = "0.25", optional = true }
+opentelemetry = { version = "0.25", optional = true }
+opentelemetry-jaeger = { version = "0.22", optional = true }
+opentelemetry_sdk = { version = "0.25", features = ["rt-tokio"], optional = true }
+tracing-appender = "0.2"
+metrics = "0.23"
+metrics-exporter-prometheus = { version = "0.15", optional = true }
 
 # JSON-RPC server functionality
 axum = "0.7"
@@ -78,6 +87,9 @@ config = "0.14"
 
 # Additional dependencies for task management, role system, and hooks
 regex = "1.10"
+
+# CLI parsing
+clap = { version = "4.4", features = ["derive"] }
 
 # Database persistence
 sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite", "uuid", "chrono"] }
@@ -100,10 +112,15 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-feature
 # Environment variables for API keys
 dotenvy = { version = "0.15", optional = true }
 
+# Random number generation
+rand = "0.8"
+
 [dev-dependencies]
 tokio-test = "0.4"
-criterion = "0.5"
+criterion = { version = "0.5", features = ["html_reports"] }
 proptest = "1.4"
+rand_core = "0.6"
+rand_xorshift = "0.3"
 
 [build-dependencies]
 napi-build = { version = "2.1", optional = true }
@@ -140,6 +157,11 @@ embeddings-onnx = ["ort", "tokenizers", "hf-hub"]
 embeddings-api = ["reqwest", "dotenvy"]
 embeddings-all = ["embeddings-local", "embeddings-onnx", "embeddings-api"]
 
+# Observability features
+observability = ["tracing-opentelemetry", "opentelemetry", "opentelemetry_sdk"]
+observability-jaeger = ["observability", "opentelemetry-jaeger"]
+metrics = ["metrics-exporter-prometheus"]
+
 [profile.release]
 opt-level = 3
 lto = true
@@ -151,11 +173,41 @@ strip = true
 opt-level = 0
 debug = true
 
-# Benchmarks will be added later
-# [[bench]]
-# name = "crdt_operations"
-# harness = false
-# required-features = ["benchmarks"]
+# Benchmark configurations
+[[bench]]
+name = "crdt_operations"
+harness = false
+required-features = ["benchmarks"]
+
+[[bench]]
+name = "database_operations"
+harness = false
+required-features = ["benchmarks"]
+
+[[bench]]
+name = "rag_operations"
+harness = false
+required-features = ["benchmarks", "embeddings-all"]
+
+[[bench]]
+name = "task_management"
+harness = false
+required-features = ["benchmarks", "task-management", "role-management"]
+
+[[bench]]
+name = "end_to_end"
+harness = false
+required-features = ["benchmarks"]
+
+[[bench]]
+name = "serialization"
+harness = false
+required-features = ["benchmarks"]
+
+[[bench]]
+name = "memory_usage"
+harness = false
+required-features = ["benchmarks"]
 
 [package.metadata.docs.rs]
 all-features = true

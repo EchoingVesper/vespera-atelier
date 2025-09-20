@@ -17,6 +17,8 @@ pub struct EmbeddingConfig {
     pub api_key: Option<String>,
     pub api_base_url: Option<String>,
     pub max_batch_size: usize,
+    pub request_timeout: Option<std::time::Duration>,
+    pub max_retries: Option<u32>,
 }
 
 #[derive(Debug, Clone)]
@@ -37,6 +39,8 @@ impl Default for EmbeddingConfig {
             api_key: None,
             api_base_url: None,
             max_batch_size: 32,
+            request_timeout: Some(std::time::Duration::from_secs(30)),
+            max_retries: Some(3),
         }
     }
 }
@@ -352,8 +356,13 @@ pub mod api {
                 })
                 .ok_or_else(|| anyhow::anyhow!("API key not found"))?;
 
+            // Configure client with timeout
+            let client = Client::builder()
+                .timeout(config.request_timeout.unwrap_or(std::time::Duration::from_secs(30)))
+                .build()?;
+
             Ok(Self {
-                client: Client::new(),
+                client,
                 config,
                 api_key,
             })
