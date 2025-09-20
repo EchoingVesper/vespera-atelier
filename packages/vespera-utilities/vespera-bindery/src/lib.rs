@@ -93,6 +93,9 @@ pub mod tests;
 pub mod errors;
 pub use errors::{BinderyError, BinderyResult};
 
+// Observability module
+pub mod observability;
+
 // Core types
 pub mod types;
 pub use types::{
@@ -105,18 +108,21 @@ pub use templates::TemplateId;
 
 // Re-export commonly used task management types
 pub use task_management::{
-    TaskManager, TaskService, TaskStatus, TaskPriority, TaskInput, 
-    TaskUpdateInput, TaskSummary, TaskDashboard
+    TaskManager, TaskService, TaskExecutor, TaskStatus, TaskPriority, TaskInput,
+    TaskUpdateInput, TaskSummary, TaskDashboard, TaskExecutionResult, ExecutionContext
 };
 
-// Re-export role management types  
-pub use role_management::{RoleManager, Role, ToolGroup};
+// Re-export role management types
+pub use role_management::{RoleManager, RoleExecutor, Role, ToolGroup, RoleExecutionResult};
 
 // Re-export hook system types
 pub use hook_system::{HookManager, HookAgent, TimedAgent};
 
 // Re-export RAG types
 pub use rag::{RAGService, RAGConfig, DocumentType, SearchResult, RAGStats};
+
+// Re-export database types
+pub use database::{Database, DatabasePoolConfig, PoolMetrics};
 
 /// The main entry point for Vespera Bindery functionality.
 ///
@@ -143,25 +149,31 @@ struct CodexManagerInner {
 pub struct BinderyConfig {
     /// Base directory for storing Codex files
     pub storage_path: Option<std::path::PathBuf>,
-    
+
+    /// Database path for task and role persistence
+    pub database_path: Option<std::path::PathBuf>,
+
+    /// Database connection pool configuration
+    pub database_pool: database::DatabasePoolConfig,
+
     /// Enable real-time collaboration features
     pub collaboration_enabled: bool,
-    
+
     /// Maximum number of operations to keep in memory per Codex
     pub max_operations_in_memory: usize,
-    
+
     /// Enable automatic garbage collection of old CRDT operations
     pub auto_gc_enabled: bool,
-    
+
     /// Interval for automatic garbage collection (in seconds)
     pub gc_interval_seconds: u64,
-    
+
     /// Enable compression for stored operations
     pub compression_enabled: bool,
-    
+
     /// User ID for this instance (for collaboration)
     pub user_id: Option<UserId>,
-    
+
     /// Project ID for this instance
     pub project_id: Option<ProjectId>,
 }
@@ -170,6 +182,8 @@ impl Default for BinderyConfig {
     fn default() -> Self {
         Self {
             storage_path: None,
+            database_path: None,
+            database_pool: database::DatabasePoolConfig::default(),
             collaboration_enabled: false,
             max_operations_in_memory: 1000,
             auto_gc_enabled: true,

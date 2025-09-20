@@ -16,6 +16,7 @@ use axum::{
     routing::post,
     Router,
 };
+use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tokio::net::TcpListener;
@@ -25,6 +26,11 @@ use tower_http::cors::CorsLayer;
 use tracing::{info, warn};
 use uuid::Uuid;
 use vespera_bindery::database::{Database, TaskInput as DbTaskInput};
+use vespera_bindery::migration::{MigrationCommand, MigrationCommandExecutor};
+use vespera_bindery::observability::{
+    config::{ObservabilityConfig, LoggingConfig, FileLoggingConfig, LogRotation},
+    init_observability,
+};
 
 // Input types for JSON-RPC
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -138,34 +144,205 @@ impl AppState {
     }
 }
 
+/// CLI arguments for the Bindery server
+#[derive(Parser)]
+#[command(name = "bindery-server")]
+#[command(version = env!("CARGO_PKG_VERSION"))]
+#[command(about = "Vespera Bindery CRDT-based collaborative content management server")]
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Commands>,
+
+    /// Enable JSON-RPC stdio mode for VS Code extension
+    #[arg(long)]
+    json_rpc: bool,
+
+    /// HTTP server port (default: 8080)
+    #[arg(long, default_value = "8080")]
+    port: u16,
+
+    /// Database file path
+    #[arg(long)]
+    database: Option<PathBuf>,
+
+    /// Workspace root directory
+    #[arg(long)]
+    workspace: Option<PathBuf>,
+
+    /// Log level (trace, debug, info, warn, error)
+    #[arg(long, default_value = "info")]
+    log_level: String,
+
+    /// Enable file logging
+    #[arg(long)]
+    log_to_file: bool,
+
+    /// Log file directory
+    #[arg(long)]
+    log_dir: Option<PathBuf>,
+
+    /// Enable JSON formatted logs
+    #[arg(long)]
+    json_logs: bool,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Database migration commands
+    #[command(subcommand)]
+    Migrate(MigrationCommand),
+
+    /// Start the server (default if no command specified)
+    Serve {
+        /// Enable JSON-RPC stdio mode
+        #[arg(long)]
+        json_rpc: bool,
+
+        /// HTTP server port (default: 8080)
+        #[arg(long, default_value = "8080")]
+        port: u16,
+
+        /// Log level (trace, debug, info, warn, error)
+        #[arg(long, default_value = "info")]
+        log_level: String,
+
+        /// Enable file logging
+        #[arg(long)]
+        log_to_file: bool,
+    },
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize tracing - for stdio mode, we'll configure it to write to stderr
-    let args: Vec<String> = std::env::args().collect();
-    let json_rpc_mode = args.iter().any(|arg| arg == "--json-rpc");
-    
+    let cli = Cli::parse();
+
+    // Initialize comprehensive observability
+    let json_rpc_mode = cli.json_rpc || matches!(cli.command, Some(Commands::Serve { json_rpc: true, .. }));
+
+    // Extract logging configuration from CLI args or serve command
+    let (log_level, log_to_file, log_dir, json_logs) = match &cli.command {
+        Some(Commands::Serve { log_level, log_to_file, .. }) => {
+            (log_level.clone(), *log_to_file, cli.log_dir.clone(), cli.json_logs)
+        }
+        _ => (cli.log_level.clone(), cli.log_to_file, cli.log_dir.clone(), cli.json_logs)
+    };
+
+    // Build observability configuration
+    let mut logging_config = LoggingConfig {
+        level: log_level,
+        console: true,
+        file: None,
+        json_format: json_logs || json_rpc_mode,
+        with_source_location: true,
+        with_thread_names: true,
+        with_span_events: true,
+    };
+
+    // Configure file logging if requested
+    if log_to_file {
+        let log_directory = log_dir.unwrap_or_else(|| {
+            let workspace = cli.workspace.clone().unwrap_or_else(|| {
+                std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
+            });
+            workspace.join(".vespera").join("logs")
+        });
+
+        logging_config.file = Some(FileLoggingConfig {
+            directory: log_directory,
+            filename: "bindery-server.log".to_string(),
+            rotation: LogRotation::Daily,
+            max_files: Some(10),
+        });
+    }
+
+    // For JSON-RPC stdio mode, redirect logs to stderr to avoid interfering with JSON-RPC
     if json_rpc_mode {
-        // For JSON-RPC stdio mode, redirect all logs to stderr
-        tracing_subscriber::fmt()
-            .with_env_filter("vespera_bindery=debug,bindery_server=debug")
-            .with_writer(std::io::stderr)
-            .init();
+        logging_config.console = true; // Will use stderr writer
+    }
+
+    let observability_config = ObservabilityConfig {
+        logging: logging_config,
+        opentelemetry: None, // TODO: Add OpenTelemetry configuration from CLI args
+        metrics: None,       // TODO: Add metrics configuration from CLI args
+    };
+
+    // Initialize observability system
+    init_observability(&observability_config)
+        .context("Failed to initialize observability system")?;
+
+    if json_rpc_mode {
         eprintln!("Starting Vespera Bindery Server v{}", vespera_bindery::VERSION);
     } else {
-        // For HTTP mode, use normal stdout logging
-        tracing_subscriber::fmt()
-            .with_env_filter("vespera_bindery=debug,bindery_server=debug")
-            .init();
-        info!("Starting Vespera Bindery Server v{}", vespera_bindery::VERSION);
+        info!(
+            version = vespera_bindery::VERSION,
+            log_level = %observability_config.logging.level,
+            file_logging = observability_config.logging.file.is_some(),
+            json_format = observability_config.logging.json_format,
+            "Vespera Bindery Server starting"
+        );
     }
-    
-    if json_rpc_mode {
-        // JSON-RPC mode via stdin/stdout (for VS Code extension)
-        run_json_rpc_stdio().await
+
+    match cli.command {
+        Some(Commands::Migrate(migration_cmd)) => {
+            run_migration_command(migration_cmd, cli.workspace, cli.database).await
+        }
+        Some(Commands::Serve { json_rpc, port, .. }) => {
+            if json_rpc {
+                run_json_rpc_stdio().await
+            } else {
+                run_http_server_with_port(port).await
+            }
+        }
+        None => {
+            // Default behavior - check for legacy --json-rpc flag
+            if cli.json_rpc {
+                run_json_rpc_stdio().await
+            } else {
+                run_http_server_with_port(cli.port).await
+            }
+        }
+    }
+}
+
+/// Run a migration command
+async fn run_migration_command(
+    migration_cmd: MigrationCommand,
+    workspace: Option<PathBuf>,
+    database_path: Option<PathBuf>
+) -> Result<()> {
+    let workspace_root = workspace.unwrap_or_else(|| {
+        std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
+    });
+
+    let db_path = if let Some(path) = database_path {
+        path
     } else {
-        // HTTP server mode (for web clients)
-        run_http_server().await
+        workspace_root.join(".vespera").join("tasks.db")
+    };
+
+    info!("Running migration command with database: {:?}", db_path);
+
+    // Create parent directory if it doesn't exist
+    if let Some(parent) = db_path.parent() {
+        tokio::fs::create_dir_all(parent).await?;
     }
+
+    // Connect to database
+    let database_url = format!("sqlite:{}?mode=rwc", db_path.display());
+    let pool = sqlx::SqlitePool::connect(&database_url).await?;
+
+    // Determine migrations directory
+    let migrations_dir = workspace_root.join("migrations");
+
+    // Create migration command executor
+    let executor = MigrationCommandExecutor::new(pool, migrations_dir).await
+        .context("Failed to create migration command executor")?;
+
+    // Execute the migration command
+    executor.execute(migration_cmd).await
+        .context("Migration command failed")?;
+
+    Ok(())
 }
 
 /// Run JSON-RPC server using stdin/stdout for VS Code extension
@@ -196,13 +373,13 @@ async fn run_json_rpc_stdio() -> Result<()> {
     Ok(())
 }
 
-/// Run HTTP server for web clients
-async fn run_http_server() -> Result<()> {
-    info!("Running in HTTP server mode");
-    
+/// Run HTTP server for web clients with specified port
+async fn run_http_server_with_port(port: u16) -> Result<()> {
+    info!("Running in HTTP server mode on port {}", port);
+
     let workspace_root = std::env::current_dir().context("Failed to get current directory")?;
     let state = Arc::new(AppState::new(workspace_root).await?);
-    
+
     let app = Router::new()
         .route("/rpc", post(handle_http_json_rpc))
         .layer(
@@ -210,17 +387,18 @@ async fn run_http_server() -> Result<()> {
                 .layer(CorsLayer::permissive())
         )
         .with_state(state);
-    
-    let listener = TcpListener::bind("127.0.0.1:8080")
+
+    let bind_addr = format!("127.0.0.1:{}", port);
+    let listener = TcpListener::bind(&bind_addr)
         .await
         .context("Failed to bind to address")?;
-    
-    info!("Server listening on http://127.0.0.1:8080");
-    
+
+    info!("Server listening on http://{}", bind_addr);
+
     axum::serve(listener, app)
         .await
         .context("Server error")?;
-    
+
     Ok(())
 }
 

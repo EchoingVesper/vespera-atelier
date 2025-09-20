@@ -5,9 +5,11 @@
 
 pub mod memory_leak_tests;
 pub mod crdt_tests;
+pub mod property_tests;
 pub mod codex_tests;
 pub mod task_management_tests;
 pub mod role_management_tests;
+pub mod executor_tests;
 pub mod sync_tests;
 pub mod hook_system_tests;
 pub mod rag_tests;

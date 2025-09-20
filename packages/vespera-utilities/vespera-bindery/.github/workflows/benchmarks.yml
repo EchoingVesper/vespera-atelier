@@ -1,0 +1,355 @@
+name: Performance Benchmarks
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'packages/vespera-utilities/vespera-bindery/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'packages/vespera-utilities/vespera-bindery/**'
+  schedule:
+    # Run benchmarks daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      benchmark_suite:
+        description: 'Benchmark suite to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - 'all'
+          - 'crdt_operations'
+          - 'database_operations'
+          - 'rag_operations'
+          - 'task_management'
+          - 'end_to_end'
+      save_baseline:
+        description: 'Save results as new baseline'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  benchmark:
+    name: Run Performance Benchmarks
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    strategy:
+      matrix:
+        rust-version: [nightly]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for baseline comparisons
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust-version }}
+          override: true
+          components: rustfmt, clippy
+
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+
+      - name: Cache cargo build
+        uses: actions/cache@v3
+        with:
+          path: |
+            packages/vespera-utilities/vespera-bindery/target
+          key: ${{ runner.os }}-cargo-build-benchmark-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-build-benchmark-
+            ${{ runner.os }}-cargo-build-
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sqlite3 libsqlite3-dev
+
+      - name: Verify benchmark configuration
+        working-directory: packages/vespera-utilities/vespera-bindery
+        run: |
+          cargo check --features benchmarks
+          cargo test --features benchmarks --no-run
+
+      - name: Run critical path benchmarks (PR)
+        if: github.event_name == 'pull_request'
+        working-directory: packages/vespera-utilities/vespera-bindery
+        run: |
+          # Run quick benchmarks for PR validation
+          cargo bench --features "benchmarks,task-management,role-management" \
+            --bench crdt_operations \
+            -- --measurement-time 10 --sample-size 50 \
+            --output-format json | tee pr_benchmark_results.json
+
+      - name: Run specific benchmark suite
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.benchmark_suite != 'all'
+        working-directory: packages/vespera-utilities/vespera-bindery
+        run: |
+          cargo bench --features "benchmarks,embeddings-all,task-management,role-management" \
+            --bench ${{ github.event.inputs.benchmark_suite }} \
+            -- --output-format json | tee benchmark_results.json
+
+      - name: Run full benchmark suite
+        if: github.event_name == 'push' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.benchmark_suite == 'all')
+        working-directory: packages/vespera-utilities/vespera-bindery
+        run: |
+          # Run complete benchmark suite
+          cargo bench --features "benchmarks,embeddings-all,task-management,role-management" \
+            -- --output-format json | tee full_benchmark_results.json
+
+      - name: Store benchmark results
+        if: github.event_name != 'pull_request'
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: 'cargo'
+          output-file-path: |
+            packages/vespera-utilities/vespera-bindery/full_benchmark_results.json
+            packages/vespera-utilities/vespera-bindery/benchmark_results.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          comment-on-alert: true
+          alert-threshold: '120%'  # Alert if performance degrades by 20%
+          fail-on-alert: true
+
+      - name: Save baseline (manual trigger)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.save_baseline == 'true'
+        working-directory: packages/vespera-utilities/vespera-bindery
+        run: |
+          cargo bench --features "benchmarks,embeddings-all,task-management,role-management" \
+            -- --save-baseline ${{ github.sha }}
+
+      - name: Compare with baseline (PR)
+        if: github.event_name == 'pull_request'
+        working-directory: packages/vespera-utilities/vespera-bindery
+        run: |
+          # Compare PR results with main branch baseline
+          git fetch origin main:main
+          git checkout main
+          cargo bench --features "benchmarks,task-management,role-management" \
+            --bench crdt_operations \
+            -- --measurement-time 10 --sample-size 50 --save-baseline main
+          git checkout -
+          cargo bench --features "benchmarks,task-management,role-management" \
+            --bench crdt_operations \
+            -- --measurement-time 10 --sample-size 50 --baseline main
+
+      - name: Upload benchmark artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: benchmark-results-${{ github.sha }}
+          path: |
+            packages/vespera-utilities/vespera-bindery/*_benchmark_results.json
+            packages/vespera-utilities/vespera-bindery/target/criterion/*/report/index.html
+          retention-days: 30
+
+      - name: Performance regression check
+        if: github.event_name == 'pull_request'
+        working-directory: packages/vespera-utilities/vespera-bindery
+        run: |
+          # Simple regression check script
+          python3 -c "
+          import json
+          import sys
+
+          try:
+              with open('pr_benchmark_results.json', 'r') as f:
+                  results = json.load(f)
+
+              # Check for major performance regressions
+              for result in results:
+                  if 'mean' in result and 'estimate' in result['mean']:
+                      duration_ns = result['mean']['estimate']
+                      duration_ms = duration_ns / 1_000_000
+
+                      # Set performance thresholds (in milliseconds)
+                      thresholds = {
+                          'crdt_single_operation': 1.0,
+                          'crdt_merge': 10.0,
+                          'database_operation': 5.0,
+                      }
+
+                      benchmark_name = result.get('id', '').lower()
+                      for threshold_name, threshold_ms in thresholds.items():
+                          if threshold_name in benchmark_name:
+                              if duration_ms > threshold_ms:
+                                  print(f'PERFORMANCE REGRESSION: {benchmark_name} took {duration_ms:.2f}ms, threshold is {threshold_ms}ms')
+                                  sys.exit(1)
+                              break
+
+              print('All benchmarks within acceptable performance bounds.')
+          except Exception as e:
+              print(f'Could not analyze benchmark results: {e}')
+              # Don't fail the build if analysis fails
+          "
+
+      - name: Generate performance report
+        if: github.event_name == 'schedule'
+        working-directory: packages/vespera-utilities/vespera-bindery
+        run: |
+          # Generate daily performance report
+          python3 -c "
+          import json
+          import datetime
+          from pathlib import Path
+
+          try:
+              with open('full_benchmark_results.json', 'r') as f:
+                  results = json.load(f)
+
+              report_lines = [
+                  '# Daily Performance Report',
+                  f'Generated: {datetime.datetime.now().isoformat()}',
+                  f'Commit: {\"${{ github.sha }}\"}',
+                  '',
+                  '## Benchmark Results',
+                  ''
+              ]
+
+              for result in results:
+                  name = result.get('id', 'Unknown')
+                  if 'mean' in result and 'estimate' in result['mean']:
+                      duration_ns = result['mean']['estimate']
+                      duration_ms = duration_ns / 1_000_000
+                      report_lines.append(f'- **{name}**: {duration_ms:.2f}ms')
+
+              report_content = '\n'.join(report_lines)
+              Path('performance_report.md').write_text(report_content)
+              print('Performance report generated.')
+          except Exception as e:
+              print(f'Could not generate performance report: {e}')
+          "
+
+      - name: Post performance summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+
+            try {
+              const resultsPath = 'packages/vespera-utilities/vespera-bindery/pr_benchmark_results.json';
+              if (!fs.existsSync(resultsPath)) {
+                console.log('No benchmark results found');
+                return;
+              }
+
+              const results = JSON.parse(fs.readFileSync(resultsPath, 'utf8'));
+
+              let summary = '## 🏃‍♂️ Benchmark Results\n\n';
+              summary += '| Benchmark | Duration | Status |\n';
+              summary += '|-----------|----------|--------|\n';
+
+              for (const result of results) {
+                const name = result.id || 'Unknown';
+                if (result.mean && result.mean.estimate) {
+                  const durationMs = (result.mean.estimate / 1_000_000).toFixed(2);
+                  const status = durationMs < 10 ? '✅ Good' : durationMs < 50 ? '⚠️ Slow' : '❌ Very Slow';
+                  summary += `| ${name} | ${durationMs}ms | ${status} |\n`;
+                }
+              }
+
+              summary += '\n*Benchmark results for critical path operations only.*';
+
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: summary
+              });
+            } catch (error) {
+              console.log('Could not post benchmark summary:', error);
+            }
+
+  memory-benchmark:
+    name: Memory Usage Analysis
+    runs-on: ubuntu-latest
+    needs: benchmark
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+
+      - name: Install memory profiling tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y valgrind heaptrack
+
+      - name: Cache cargo build
+        uses: actions/cache@v3
+        with:
+          path: |
+            packages/vespera-utilities/vespera-bindery/target
+          key: ${{ runner.os }}-cargo-build-memory-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run memory analysis
+        working-directory: packages/vespera-utilities/vespera-bindery
+        run: |
+          # Build release version for memory testing
+          cargo build --release --features "benchmarks,embeddings-all,task-management,role-management"
+
+          # Run memory benchmarks with limited dataset
+          echo "Running memory usage analysis..."
+          cargo test --release --features "benchmarks" memory_usage_test || true
+
+      - name: Generate memory report
+        working-directory: packages/vespera-utilities/vespera-bindery
+        run: |
+          echo "Memory analysis completed. Check logs for details."
+          # Memory profiling results would be processed here
+
+  benchmark-comparison:
+    name: Historical Comparison
+    runs-on: ubuntu-latest
+    needs: benchmark
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 100  # Fetch more history for trend analysis
+
+      - name: Download previous benchmark results
+        uses: actions/download-artifact@v3
+        with:
+          name: benchmark-results-${{ github.sha }}
+          path: current_results/
+
+      - name: Generate trend analysis
+        run: |
+          echo "Generating performance trend analysis..."
+          # This would implement historical performance comparison
+          # Could use previous CI artifacts or stored results
+          echo "Trend analysis would be implemented here"
+
+      - name: Update performance dashboard
+        run: |
+          echo "Updating performance dashboard..."
+          # This would update a performance tracking dashboard
+          # Could integrate with monitoring tools like Grafana

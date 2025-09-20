@@ -1,7 +1,18 @@
-/// Migration utilities for transitioning from Python Scriptorium to Rust Bindery
-/// 
-/// This module provides tools to migrate existing task data and integrate
-/// with the Python MCP server during the transition period.
+/// Database migration system for Vespera Bindery
+///
+/// This module provides comprehensive database migration capabilities including:
+/// - Schema versioning and migration tracking
+/// - Forward and rollback migrations
+/// - Transaction-safe migration execution
+/// - Migration status and history reporting
+/// - Legacy migration utilities for transitioning from Python Scriptorium
+
+pub mod manager;
+pub mod commands;
+
+// Re-export commonly used types
+pub use manager::{MigrationManager, MigrationInfo, MigrationRecord, MigrationStatus, MigrationResult};
+pub use commands::{MigrationCommand, MigrationCommandExecutor};
 
 use crate::task_management::{TaskManager, TaskInput, TaskPriority};
 use crate::role_management::RoleManager;

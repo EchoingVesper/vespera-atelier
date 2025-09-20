@@ -51,8 +51,20 @@ where
             user_id: "system".to_string(), // TODO: Get user ID from operation context
             timestamp: Utc::now(),
         };
-        
+
         self.elements.entry(element).or_insert_with(HashSet::new).insert(tag.clone());
+        tag
+    }
+
+    /// Add an element using borrowed reference to avoid clones in hot paths
+    pub fn add_borrowed(&mut self, element: &T) -> ORTag {
+        let tag = ORTag {
+            operation_id: Uuid::new_v4(),
+            user_id: "system".to_string(), // TODO: Get user ID from operation context
+            timestamp: Utc::now(),
+        };
+
+        self.elements.entry(element.clone()).or_insert_with(HashSet::new).insert(tag.clone());
         tag
     }
     
@@ -280,9 +292,14 @@ where
     
     /// Clean up all resources and shrink collections
     pub fn cleanup(&mut self) {
-        self.elements.clear();
+        // Clear elements and nested HashSets
+        for (_, mut tags) in self.elements.drain() {
+            tags.clear();
+            tags.shrink_to_fit();
+        }
         self.elements.shrink_to_fit();
-        
+
+        // Clear removed tags
         self.removed_tags.clear();
         self.removed_tags.shrink_to_fit();
     }

@@ -146,34 +146,46 @@ impl YTextCRDT {
     /// Garbage collect unused fields and clean up resources
     pub fn gc_fields(&mut self) -> usize {
         let initial_count = self.text_fields.len();
-        
-        // Remove empty fields
-        self.text_fields.retain(|_, field| !field.content.is_empty());
-        
-        // Shrink remaining fields' capacity
+
+        // Remove empty fields and fields exceeding size threshold
+        const MAX_FIELD_SIZE: usize = 1024 * 1024; // 1MB threshold
+        self.text_fields.retain(|_, field| {
+            !field.content.is_empty() && field.content.len() <= MAX_FIELD_SIZE
+        });
+
+        // Shrink remaining fields' capacity more aggressively
         for field in self.text_fields.values_mut() {
-            field.content.shrink_to_fit();
+            // Only keep 25% extra capacity instead of current capacity
+            let ideal_capacity = field.content.len() + (field.content.len() / 4);
+            if field.content.capacity() > ideal_capacity * 2 {
+                let content = std::mem::take(&mut field.content);
+                field.content = String::with_capacity(ideal_capacity);
+                field.content.push_str(&content);
+            } else {
+                field.content.shrink_to_fit();
+            }
         }
-        
+
         // Shrink the map itself
         self.text_fields.shrink_to_fit();
-        
+
         initial_count - self.text_fields.len()
     }
     
     /// Clean up all resources
     pub fn cleanup(&mut self) {
-        // Clear all Y-CRDT document state (when integrated)
-        for field in self.text_fields.values_mut() {
+        // Clear all Y-CRDT document state and force memory deallocation
+        for (_, mut field) in self.text_fields.drain() {
             if let Some(ref mut _y_doc) = field.y_doc {
                 // TODO: Implement proper Y-CRDT cleanup when integrated with yrs crate (call document.destroy())
                 // _y_doc.destroy(); // or equivalent cleanup method
             }
+            // Force string deallocation
             field.content.clear();
             field.content.shrink_to_fit();
+            drop(field); // Explicit drop for large fields
         }
-        
-        self.text_fields.clear();
+
         self.text_fields.shrink_to_fit();
     }
 }

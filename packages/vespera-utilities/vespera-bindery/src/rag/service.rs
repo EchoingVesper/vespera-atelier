@@ -12,6 +12,7 @@ use chrono::Utc;
 use tokio::sync::RwLock;
 use std::sync::Arc;
 use sha2::{Sha256, Digest};
+use tracing::{info, warn, error, debug, trace, instrument};
 
 use super::{
     RAGConfig, DocumentMetadata, DocumentType, DocumentChunk, SearchResult,
@@ -36,9 +37,14 @@ pub struct RAGService {
 
 impl RAGService {
     /// Create a new RAG service for a project
+    #[instrument(skip(config), fields(project_path = %project_path.display()))]
     pub async fn new(project_path: &Path, config: RAGConfig) -> Result<Self> {
+        info!(project_path = %project_path.display(), "Initializing RAG service");
+
         let canonical_path = project_path.canonicalize()
             .with_context(|| format!("Failed to canonicalize project path: {:?}", project_path))?;
+
+        debug!(canonical_path = %canonical_path.display(), "Project path canonicalized");
 
         // Initialize project manager
         let project_manager = Arc::new(ProjectManager::new());
@@ -48,7 +54,10 @@ impl RAGService {
             .initialize_project(&canonical_path, None)
             .await?;
 
+        debug!(project_id = %project.id, "Project initialized");
+
         let vespera_path = if let Some(override_path) = &config.vespera_folder_override {
+            debug!(override_path = %override_path.display(), "Using overridden vespera path");
             override_path.clone()
         } else {
             project.vespera_path.clone()
@@ -56,6 +65,8 @@ impl RAGService {
 
         // Create RAG subdirectories
         let rag_path = vespera_path.join("rag");
+        debug!(rag_path = %rag_path.display(), "Creating RAG directory structure");
+
         fs::create_dir_all(&rag_path)?;
         fs::create_dir_all(rag_path.join("documents"))?;
         fs::create_dir_all(rag_path.join("embeddings"))?;
@@ -120,6 +131,13 @@ impl RAGService {
     }
 
     /// Index a document into the RAG system
+    #[instrument(skip(self, content), fields(
+        title = %title,
+        document_type = ?document_type,
+        source_path = ?source_path,
+        content_len = content.len(),
+        tag_count = tags.len()
+    ))]
     pub async fn index_document(
         &self,
         title: String,
@@ -132,12 +150,23 @@ impl RAGService {
         let content_hash = Self::calculate_content_hash(&content);
         let now = Utc::now();
 
+        info!(
+            document_id = %document_id,
+            title = %title,
+            content_hash = %content_hash,
+            "Starting document indexing"
+        );
+
         // Check if document with same hash already exists
         {
             let documents = self.documents.read().await;
             for (_, doc) in documents.iter() {
                 if doc.content_hash == content_hash {
-                    // Document already indexed, return existing ID
+                    info!(
+                        existing_document_id = %doc.id,
+                        title = %doc.title,
+                        "Document already indexed, returning existing ID"
+                    );
                     return Ok(doc.id);
                 }
             }
@@ -335,17 +364,31 @@ impl RAGService {
     }
 
     /// Search for documents using semantic similarity
+    #[instrument(skip(self), fields(
+        query = %query,
+        limit = limit,
+        filter_types = ?filter_types
+    ))]
     pub async fn search(
         &self,
         query: &str,
         limit: usize,
         filter_types: Option<Vec<DocumentType>>,
     ) -> Result<Vec<SearchResult>> {
+        debug!(query = %query, limit = limit, "Starting semantic search");
+
+        let start_time = std::time::Instant::now();
         let embedding_service = self.embedding_service.read().await;
         let raw_results = embedding_service.search(query, limit * 2).await?; // Get more to filter
 
+        debug!(
+            raw_result_count = raw_results.len(),
+            "Retrieved raw search results from embedding service"
+        );
+
         let documents = self.documents.read().await;
         let mut results = Vec::new();
+        let mut filtered_count = 0;
 
         for (chunk_id, score, chunk_content) in raw_results {
             // Extract document ID from chunk ID
@@ -355,9 +398,18 @@ impl RAGService {
                     // Apply type filter
                     if let Some(ref types) = filter_types {
                         if !types.contains(&metadata.document_type) {
+                            filtered_count += 1;
                             continue;
                         }
                     }
+
+                    trace!(
+                        document_id = %doc_id,
+                        chunk_id = %chunk_id,
+                        score = score,
+                        title = %metadata.title,
+                        "Including search result"
+                    );
 
                     results.push(SearchResult {
                         document_id: doc_id,
@@ -374,6 +426,18 @@ impl RAGService {
                 }
             }
         }
+
+        let duration = start_time.elapsed();
+        info!(
+            query = %query,
+            result_count = results.len(),
+            filtered_count = filtered_count,
+            search_duration_ms = duration.as_millis(),
+            "Search completed"
+        );
+
+        // TODO: Record search metrics
+        // BinderyMetrics::record_rag_search("semantic", results.len(), duration, true);
 
         Ok(results)
     }

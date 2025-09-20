@@ -5,6 +5,7 @@
 //! for specific use cases.
 
 use std::collections::HashMap;
+use std::sync::{Arc, Weak};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
@@ -14,6 +15,7 @@ use crate::{
     types::{CodexId, UserId, OperationId, VectorClock},
     types::Template,
 };
+use tracing::{info, warn, error, debug, instrument};
 
 // Sub-modules for different CRDT layers
 pub mod text_layer;
@@ -26,6 +28,181 @@ pub use text_layer::YTextCRDT;
 pub use tree_layer::VesperaTreeCRDT;
 pub use metadata_layer::{LWWMap, LWWMapStats};
 pub use reference_layer::{ORSet, ORSetStats};
+
+/// Memory pool for reusing operation allocations
+#[derive(Debug, Clone)]
+pub struct OperationPool {
+    pool: Vec<CRDTOperation>,
+    max_size: usize,
+}
+
+impl OperationPool {
+    pub fn new(max_size: usize) -> Self {
+        Self {
+            pool: Vec::with_capacity(max_size),
+            max_size,
+        }
+    }
+
+    pub fn get(&mut self) -> Option<CRDTOperation> {
+        self.pool.pop()
+    }
+
+    pub fn return_operation(&mut self, mut operation: CRDTOperation) {
+        if self.pool.len() < self.max_size {
+            // Reset operation for reuse
+            operation.parents.clear();
+            operation.parents.shrink_to_fit();
+            self.pool.push(operation);
+        }
+    }
+
+    pub fn clear(&mut self) {
+        self.pool.clear();
+        self.pool.shrink_to_fit();
+    }
+}
+
+/// Memory management configuration
+#[derive(Debug, Clone)]
+pub struct MemoryConfig {
+    pub max_operation_pool_size: usize,
+    pub auto_gc_threshold: usize,
+    pub max_vector_clock_entries: usize,
+    pub aggressive_cleanup: bool,
+}
+
+impl Default for MemoryConfig {
+    fn default() -> Self {
+        Self {
+            max_operation_pool_size: 100,
+            auto_gc_threshold: 1000,
+            max_vector_clock_entries: 50,
+            aggressive_cleanup: false,
+        }
+    }
+}
+
+/// Weak reference registry to prevent circular references
+#[derive(Debug, Default)]
+pub struct WeakReferenceRegistry {
+    references: HashMap<CodexId, Vec<Weak<VesperaCRDT>>>,
+}
+
+impl WeakReferenceRegistry {
+    pub fn new() -> Self {
+        Self {
+            references: HashMap::new(),
+        }
+    }
+
+    pub fn register(&mut self, codex_id: CodexId, weak_ref: Weak<VesperaCRDT>) {
+        self.references.entry(codex_id).or_default().push(weak_ref);
+    }
+
+    pub fn cleanup_dead_references(&mut self) -> usize {
+        let mut removed = 0;
+        for refs in self.references.values_mut() {
+            let initial_len = refs.len();
+            refs.retain(|weak_ref| weak_ref.upgrade().is_some());
+            removed += initial_len - refs.len();
+        }
+
+        // Remove empty entries
+        self.references.retain(|_, refs| !refs.is_empty());
+        removed
+    }
+
+    pub fn get_active_references(&self, codex_id: &CodexId) -> Vec<Arc<VesperaCRDT>> {
+        self.references
+            .get(codex_id)
+            .map(|refs| {
+                refs.iter()
+                    .filter_map(|weak_ref| weak_ref.upgrade())
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
+    /// Detect potential memory leaks from strong reference cycles
+    pub fn detect_potential_leaks(&mut self) -> MemoryLeakReport {
+        let dead_refs_removed = self.cleanup_dead_references();
+        let total_registrations = self.references.values().map(|refs| refs.len()).sum::<usize>();
+        let active_references = self.references.len();
+
+        // Check for suspiciously high reference counts
+        let mut suspicious_codices = Vec::new();
+        for (codex_id, refs) in &self.references {
+            if refs.len() > 10 { // Threshold for suspicious reference count
+                suspicious_codices.push((codex_id.clone(), refs.len()));
+            }
+        }
+
+        MemoryLeakReport {
+            dead_references_cleaned: dead_refs_removed,
+            total_weak_references: total_registrations,
+            active_codices: active_references,
+            suspicious_reference_counts: suspicious_codices,
+            recommendations: self.generate_leak_recommendations(total_registrations, active_references),
+        }
+    }
+
+    fn generate_leak_recommendations(
+        &self,
+        total_refs: usize,
+        active_codices: usize
+    ) -> Vec<String> {
+        let mut recommendations = Vec::new();
+
+        if total_refs > 1000 {
+            recommendations.push("High number of weak references detected. Consider more aggressive cleanup.".to_string());
+        }
+
+        if active_codices > 100 {
+            recommendations.push("Many active CRDT instances. Consider implementing reference limits.".to_string());
+        }
+
+        let avg_refs_per_codex = if active_codices > 0 {
+            total_refs as f64 / active_codices as f64
+        } else {
+            0.0
+        };
+
+        if avg_refs_per_codex > 5.0 {
+            recommendations.push(format!(
+                "Average {:.1} references per CRDT. High interconnectedness may cause performance issues.",
+                avg_refs_per_codex
+            ));
+        }
+
+        if recommendations.is_empty() {
+            recommendations.push("Reference management looks healthy.".to_string());
+        }
+
+        recommendations
+    }
+
+    /// Perform comprehensive cleanup with configurable aggressiveness
+    pub fn comprehensive_cleanup(&mut self, aggressive: bool) -> usize {
+        let mut removed = self.cleanup_dead_references();
+
+        if aggressive {
+            // In aggressive mode, remove entries with only one weak reference
+            // as they might be self-references or near-orphaned objects
+            let before_aggressive = self.references.len();
+            self.references.retain(|_, refs| refs.len() > 1);
+            removed += before_aggressive - self.references.len();
+        }
+
+        // Shrink the registry to save memory
+        self.references.shrink_to_fit();
+        for refs in self.references.values_mut() {
+            refs.shrink_to_fit();
+        }
+
+        removed
+    }
+}
 
 /// The main CRDT structure that orchestrates all CRDT layers
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -50,6 +227,18 @@ pub struct VesperaCRDT {
     
     /// Current vector clock
     pub vector_clock: VectorClock,
+
+    /// Memory pool for operation reuse (not serialized)
+    #[serde(skip)]
+    operation_pool: Option<OperationPool>,
+
+    /// Memory management configuration
+    #[serde(skip)]
+    memory_config: MemoryConfig,
+
+    /// Weak reference to self for circular reference prevention
+    #[serde(skip)]
+    weak_self_ref: Option<Weak<VesperaCRDT>>,
     
     /// Creation metadata
     pub created_at: DateTime<Utc>,
@@ -196,7 +385,10 @@ impl VesperaCRDT {
         let now = Utc::now();
         let mut vector_clock = VectorClock::new();
         vector_clock.insert(created_by.clone(), 0);
-        
+
+        let memory_config = MemoryConfig::default();
+        let operation_pool = Some(OperationPool::new(memory_config.max_operation_pool_size));
+
         Self {
             codex_id,
             text_layer: YTextCRDT::new(),
@@ -205,6 +397,39 @@ impl VesperaCRDT {
             reference_layer: ORSet::new(),
             operation_log: Vec::new(),
             vector_clock,
+            operation_pool,
+            memory_config,
+            weak_self_ref: None,
+            created_at: now,
+            created_by: created_by.clone(),
+            updated_at: now,
+            updated_by: created_by,
+        }
+    }
+
+    /// Create a new CRDT with custom memory configuration
+    pub fn new_with_memory_config(
+        codex_id: CodexId,
+        created_by: UserId,
+        memory_config: MemoryConfig
+    ) -> Self {
+        let now = Utc::now();
+        let mut vector_clock = VectorClock::new();
+        vector_clock.insert(created_by.clone(), 0);
+
+        let operation_pool = Some(OperationPool::new(memory_config.max_operation_pool_size));
+
+        Self {
+            codex_id,
+            text_layer: YTextCRDT::new(),
+            tree_layer: VesperaTreeCRDT::new(),
+            metadata_layer: LWWMap::new(),
+            reference_layer: ORSet::new(),
+            operation_log: Vec::new(),
+            vector_clock,
+            operation_pool,
+            memory_config,
+            weak_self_ref: None,
             created_at: now,
             created_by: created_by.clone(),
             updated_at: now,
@@ -240,48 +465,130 @@ impl VesperaCRDT {
     }
     
     /// Apply an operation to this CRDT
+    #[instrument(skip(self, operation), fields(
+        codex_id = %self.codex_id,
+        operation_type = ?operation.operation,
+        user_id = %operation.user_id,
+        operation_id = %operation.id
+    ))]
     pub fn apply_operation(&mut self, operation: CRDTOperation) -> BinderyResult<()> {
+        debug!(
+            codex_id = %self.codex_id,
+            operation_id = %operation.id,
+            operation_type = ?operation.operation,
+            user_id = %operation.user_id,
+            "Applying CRDT operation"
+        );
+
+        let start_time = std::time::Instant::now();
+
         // Update vector clock
         let user_clock = self.vector_clock.entry(operation.user_id.clone()).or_insert(0);
         *user_clock = (*user_clock).max(
             operation.vector_clock.get(&operation.user_id).copied().unwrap_or(0)
         );
-        
+
         // Apply operation to appropriate layer
-        match &operation.operation {
+        let result = match &operation.operation {
             OperationType::TextInsert { field_id, position, content } => {
-                self.text_layer.insert(field_id, *position, content)?;
+                debug!(field_id = %field_id, position = position, content_len = content.len(), "Applying text insert");
+                self.text_layer.insert(field_id, *position, content)
             }
             OperationType::TextDelete { field_id, position, length } => {
-                self.text_layer.delete(field_id, *position, *length)?;
+                debug!(field_id = %field_id, position = position, length = length, "Applying text delete");
+                self.text_layer.delete(field_id, *position, *length)
             }
             OperationType::MetadataSet { key, value } => {
-                self.metadata_layer.set(key.clone(), value.clone());
+                debug!(key = %key, value_type = ?std::mem::discriminant(value), "Applying metadata set");
+                // Use borrowed references to avoid clones in hot paths
+                self.metadata_layer.set_borrowed(key, value);
+                Ok(())
             }
             OperationType::ReferenceAdd { reference } => {
-                self.reference_layer.add(reference.clone());
+                debug!(
+                    from_codex = %reference.from_codex_id,
+                    to_codex = %reference.to_codex_id,
+                    reference_type = ?reference.reference_type,
+                    "Adding reference"
+                );
+                self.reference_layer.add_borrowed(reference);
+                Ok(())
             }
             OperationType::ReferenceRemove { reference } => {
+                debug!(
+                    from_codex = %reference.from_codex_id,
+                    to_codex = %reference.to_codex_id,
+                    reference_type = ?reference.reference_type,
+                    "Removing reference"
+                );
                 self.reference_layer.remove(reference);
+                Ok(())
             }
             _ => {
-                // TODO: Implement other operation types
-                return Err(crate::BinderyError::NotImplemented(
+                warn!(operation_type = ?operation.operation, "Operation type not yet implemented");
+                Err(crate::BinderyError::NotImplemented(
                     format!("Operation type not yet implemented: {:?}", operation.operation)
-                ));
+                ))
+            }
+        };
+
+        // Check the result and log accordingly
+        match &result {
+            Ok(_) => {
+                let duration = start_time.elapsed();
+                info!(
+                    codex_id = %self.codex_id,
+                    operation_id = %operation.id,
+                    operation_type = ?operation.operation,
+                    duration_ms = duration.as_millis(),
+                    "CRDT operation applied successfully"
+                );
+
+                // Record metrics
+                // TODO: BinderyMetrics::record_crdt_operation(
+                //     &format!("{:?}", operation.operation),
+                //     "codex",
+                //     duration,
+                //     true
+                // );
+            }
+            Err(ref err) => {
+                let duration = start_time.elapsed();
+                error!(
+                    codex_id = %self.codex_id,
+                    operation_id = %operation.id,
+                    operation_type = ?operation.operation,
+                    error = %err,
+                    duration_ms = duration.as_millis(),
+                    "CRDT operation failed"
+                );
+
+                // Record metrics for failure
+                // TODO: BinderyMetrics::record_crdt_operation(
+                //     &format!("{:?}", operation.operation),
+                //     "codex",
+                //     duration,
+                //     false
+                // );
             }
         }
-        
-        // Add to operation log with bounded growth
-        self.operation_log.push(operation.clone());
-        
+
+        result?;
+
+        // Store timestamp and user_id before moving operation
+        let timestamp = operation.timestamp;
+        let user_id = operation.user_id.clone();
+
+        // Add to operation log with bounded growth - move instead of clone
+        self.operation_log.push(operation);
+
         // Prevent unbounded growth by garbage collecting old operations
         self.gc_operation_log_if_needed();
-        
-        // Update timestamps
-        self.updated_at = operation.timestamp;
-        self.updated_by = operation.user_id;
-        
+
+        // Update timestamps using stored values
+        self.updated_at = timestamp;
+        self.updated_by = user_id;
+
         Ok(())
     }
     
@@ -391,23 +698,62 @@ impl VesperaCRDT {
     }
     
     /// Merge with another CRDT state
+    #[instrument(skip(self, other), fields(
+        self_codex_id = %self.codex_id,
+        other_codex_id = %other.codex_id,
+        self_operations = self.operation_log.len(),
+        other_operations = other.operation_log.len()
+    ))]
     pub fn merge(&mut self, other: &VesperaCRDT) -> BinderyResult<Vec<OperationId>> {
         if self.codex_id != other.codex_id {
+            error!(
+                self_codex_id = %self.codex_id,
+                other_codex_id = %other.codex_id,
+                "Cannot merge CRDTs with different Codex IDs"
+            );
             return Err(crate::BinderyError::CrdtError(
                 "Cannot merge CRDTs with different Codex IDs".to_string()
             ));
         }
-        
-        let mut applied_operations = Vec::new();
-        
+
+        info!(
+            codex_id = %self.codex_id,
+            self_operations = self.operation_log.len(),
+            other_operations = other.operation_log.len(),
+            "Starting CRDT merge"
+        );
+
+        let start_time = std::time::Instant::now();
+        let mut applied_operations = Vec::with_capacity(other.operation_log.len());
+
+        // Build a set of existing operation IDs for faster lookup
+        let existing_ops: std::collections::HashSet<_> =
+            self.operation_log.iter().map(|op| op.id).collect();
+
         // Apply operations from other that we haven't seen
         for operation in &other.operation_log {
-            if !self.operation_log.iter().any(|op| op.id == operation.id) {
-                self.apply_operation(operation.clone())?;
+            if !existing_ops.contains(&operation.id) {
+                debug!(
+                    operation_id = %operation.id,
+                    operation_type = ?operation.operation,
+                    "Applying operation from merge source"
+                );
                 applied_operations.push(operation.id);
+                self.apply_operation(operation.clone())?;
             }
         }
-        
+
+        let duration = start_time.elapsed();
+        info!(
+            codex_id = %self.codex_id,
+            applied_operations = applied_operations.len(),
+            duration_ms = duration.as_millis(),
+            "CRDT merge completed successfully"
+        );
+
+        // TODO: Record merge metrics
+        // BinderyMetrics::record_crdt_sync("merge", applied_operations.len(), duration, true);
+
         Ok(applied_operations)
     }
     
@@ -426,17 +772,102 @@ impl VesperaCRDT {
     
     /// Garbage collect operation log if it exceeds the threshold
     fn gc_operation_log_if_needed(&mut self) {
-        const DEFAULT_MAX_OPERATIONS: usize = 1000;
-        const COMPACT_MAX_OPERATIONS: usize = 500;
-        
-        if self.operation_log.len() > DEFAULT_MAX_OPERATIONS {
+        let max_operations = self.memory_config.auto_gc_threshold;
+        let compact_to = max_operations / 2;
+
+        if self.operation_log.len() > max_operations {
             // More aggressive compaction to prevent memory leaks
-            let removed_count = self.gc_operation_log(COMPACT_MAX_OPERATIONS);
+            let removed_count = self.gc_operation_log(compact_to);
             tracing::debug!(
                 "CRDT operation log compacted: removed {} operations, {} remaining",
                 removed_count,
                 self.operation_log.len()
             );
+
+            // Also perform vector clock cleanup if enabled
+            if self.memory_config.aggressive_cleanup {
+                self.gc_vector_clock();
+            }
+        }
+    }
+
+    /// Garbage collect vector clock to prevent unbounded growth
+    pub fn gc_vector_clock(&mut self) -> usize {
+        let initial_size = self.vector_clock.len();
+        if initial_size <= self.memory_config.max_vector_clock_entries {
+            return 0;
+        }
+
+        // Keep only the most recent vector clock entries
+        let mut entries: Vec<_> = self.vector_clock.iter().collect();
+        entries.sort_by_key(|(_, &clock)| std::cmp::Reverse(clock));
+
+        let mut new_vector_clock = VectorClock::new();
+        for (user_id, &clock) in entries.into_iter().take(self.memory_config.max_vector_clock_entries) {
+            new_vector_clock.insert(user_id.clone(), clock);
+        }
+
+        self.vector_clock = new_vector_clock;
+        initial_size - self.vector_clock.len()
+    }
+
+    /// Configure memory management settings
+    pub fn configure_memory(&mut self, config: MemoryConfig) {
+        self.memory_config = config.clone();
+
+        // Recreate operation pool with new size if needed
+        if let Some(ref mut pool) = self.operation_pool {
+            if pool.max_size != config.max_operation_pool_size {
+                *pool = OperationPool::new(config.max_operation_pool_size);
+            }
+        }
+
+        // Apply immediate cleanup if aggressive mode is enabled
+        if config.aggressive_cleanup {
+            self.gc_operation_log(config.auto_gc_threshold / 2);
+            self.gc_vector_clock();
+        }
+    }
+
+    /// Get memory configuration
+    pub fn memory_config(&self) -> &MemoryConfig {
+        &self.memory_config
+    }
+
+    /// Return an operation to the pool for reuse
+    pub fn return_operation_to_pool(&mut self, operation: CRDTOperation) {
+        if let Some(ref mut pool) = self.operation_pool {
+            pool.return_operation(operation);
+        }
+    }
+
+    /// Get an operation from the pool or create a new one
+    fn get_or_create_operation(&mut self) -> CRDTOperation {
+        if let Some(ref mut pool) = self.operation_pool {
+            if let Some(mut operation) = pool.get() {
+                // Reset the operation for reuse
+                operation.id = Uuid::new_v4();
+                operation.parents.clear();
+                return operation;
+            }
+        }
+
+        // Create new operation if pool is empty or not available
+        CRDTOperation {
+            id: Uuid::new_v4(),
+            operation: OperationType::MetadataSet {
+                key: String::new(),
+                value: TemplateValue::Text {
+                    value: String::new(),
+                    timestamp: Utc::now(),
+                    user_id: String::new(),
+                },
+            },
+            user_id: String::new(),
+            timestamp: Utc::now(),
+            vector_clock: VectorClock::new(),
+            parents: Vec::new(),
+            layer: CRDTLayer::Metadata,
         }
     }
 
@@ -602,20 +1033,81 @@ impl VesperaCRDT {
     /// Clean up resources when CRDT is no longer needed
     pub fn cleanup(&mut self) {
         tracing::debug!("Cleaning up CRDT {} resources", self.codex_id);
-        
-        self.operation_log.clear();
+
+        // Return operations to pool before clearing
+        if let Some(ref mut pool) = self.operation_pool {
+            for operation in self.operation_log.drain(..) {
+                pool.return_operation(operation);
+            }
+        } else {
+            self.operation_log.clear();
+        }
         self.operation_log.shrink_to_fit();
-        
+
+        // Cleanup all layers with explicit memory management
         self.metadata_layer.clear();
         self.reference_layer.clear();
         self.tree_layer.cleanup();
         self.text_layer.cleanup();
-        
+
         // Clear vector clock
         self.vector_clock.clear();
         self.vector_clock.shrink_to_fit();
-        
+
+        // Clear operation pool
+        if let Some(ref mut pool) = self.operation_pool {
+            pool.clear();
+        }
+
         tracing::debug!("CRDT {} cleanup completed", self.codex_id);
+    }
+
+    /// Get comprehensive memory usage information
+    pub fn detailed_memory_stats(&self) -> DetailedMemoryStats {
+        let base_stats = self.memory_stats();
+        let operation_pool_size = self.operation_pool.as_ref().map(|p| p.pool.len()).unwrap_or(0);
+        let vector_clock_size = self.vector_clock.len();
+
+        DetailedMemoryStats {
+            base_stats,
+            operation_pool_size,
+            vector_clock_size,
+            estimated_operation_log_mb: (self.operation_log.len() * 200) as f64 / 1024.0 / 1024.0,
+            estimated_vector_clock_mb: (vector_clock_size * 50) as f64 / 1024.0 / 1024.0,
+            memory_config: self.memory_config.clone(),
+        }
+    }
+
+    /// Perform aggressive memory optimization
+    pub fn optimize_memory(&mut self) -> MemoryOptimizationResult {
+        let initial_stats = self.detailed_memory_stats();
+
+        // Aggressive GC
+        let operations_removed = self.gc_operation_log(self.memory_config.auto_gc_threshold / 4);
+        let vector_clock_entries_removed = self.gc_vector_clock();
+
+        // Comprehensive layer cleanup
+        let metadata_tombstones_removed = self.metadata_layer.gc_tombstones(Utc::now() - chrono::Duration::hours(24));
+        let reference_tags_removed = self.reference_layer.gc_removed_tags(Utc::now() - chrono::Duration::hours(24));
+        let text_fields_cleaned = self.text_layer.gc_fields();
+
+        // Shrink all collections
+        self.metadata_layer.shrink_to_fit();
+        self.reference_layer.shrink_to_fit();
+        self.operation_log.shrink_to_fit();
+        self.vector_clock.shrink_to_fit();
+
+        let final_stats = self.detailed_memory_stats();
+
+        MemoryOptimizationResult {
+            initial_stats,
+            final_stats,
+            operations_removed,
+            vector_clock_entries_removed,
+            metadata_tombstones_removed,
+            reference_tags_removed,
+            text_fields_cleaned,
+        }
     }
 }
 
@@ -635,6 +1127,61 @@ pub struct MemoryStats {
     pub metadata_stats: LWWMapStats,
     pub reference_stats: ORSetStats,
     pub text_field_count: usize,
+}
+
+/// Detailed memory usage statistics with additional metrics
+#[derive(Debug, Clone)]
+pub struct DetailedMemoryStats {
+    pub base_stats: MemoryStats,
+    pub operation_pool_size: usize,
+    pub vector_clock_size: usize,
+    pub estimated_operation_log_mb: f64,
+    pub estimated_vector_clock_mb: f64,
+    pub memory_config: MemoryConfig,
+}
+
+/// Result of memory optimization operation
+#[derive(Debug, Clone)]
+pub struct MemoryOptimizationResult {
+    pub initial_stats: DetailedMemoryStats,
+    pub final_stats: DetailedMemoryStats,
+    pub operations_removed: usize,
+    pub vector_clock_entries_removed: usize,
+    pub metadata_tombstones_removed: usize,
+    pub reference_tags_removed: usize,
+    pub text_fields_cleaned: usize,
+}
+
+impl MemoryOptimizationResult {
+    /// Calculate memory savings in MB
+    pub fn memory_saved_mb(&self) -> f64 {
+        let initial_mb = self.initial_stats.estimated_operation_log_mb
+            + self.initial_stats.estimated_vector_clock_mb
+            + self.initial_stats.base_stats.metadata_stats.active_entries as f64 * 0.0001
+            + self.initial_stats.base_stats.reference_stats.total_elements as f64 * 0.00015;
+
+        let final_mb = self.final_stats.estimated_operation_log_mb
+            + self.final_stats.estimated_vector_clock_mb
+            + self.final_stats.base_stats.metadata_stats.active_entries as f64 * 0.0001
+            + self.final_stats.base_stats.reference_stats.total_elements as f64 * 0.00015;
+
+        initial_mb - final_mb
+    }
+
+    /// Get optimization efficiency percentage
+    pub fn optimization_efficiency(&self) -> f64 {
+        let total_removed = self.operations_removed
+            + self.vector_clock_entries_removed
+            + self.metadata_tombstones_removed
+            + self.reference_tags_removed
+            + self.text_fields_cleaned;
+
+        if total_removed == 0 {
+            0.0
+        } else {
+            (self.memory_saved_mb() / total_removed as f64) * 100.0
+        }
+    }
 }
 
 /// Memory optimization report with recommendations
@@ -661,21 +1208,55 @@ impl OptimizationPriority {
     }
 }
 
+/// Report on potential memory leaks from circular references
+#[derive(Debug, Clone)]
+pub struct MemoryLeakReport {
+    pub dead_references_cleaned: usize,
+    pub total_weak_references: usize,
+    pub active_codices: usize,
+    pub suspicious_reference_counts: Vec<(CodexId, usize)>,
+    pub recommendations: Vec<String>,
+}
+
+impl MemoryLeakReport {
+    /// Check if there are potential memory leaks
+    pub fn has_potential_leaks(&self) -> bool {
+        !self.suspicious_reference_counts.is_empty() ||
+        self.total_weak_references > 1000 ||
+        self.active_codices > 100
+    }
+
+    /// Get severity level of potential leaks
+    pub fn leak_severity(&self) -> LeakSeverity {
+        if self.suspicious_reference_counts.len() > 10 {
+            LeakSeverity::Critical
+        } else if self.suspicious_reference_counts.len() > 5 || self.total_weak_references > 2000 {
+            LeakSeverity::High
+        } else if !self.suspicious_reference_counts.is_empty() || self.total_weak_references > 1000 {
+            LeakSeverity::Medium
+        } else {
+            LeakSeverity::Low
+        }
+    }
+}
+
+/// Severity level for memory leak detection
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum LeakSeverity {
+    Low,
+    Medium,
+    High,
+    Critical,
+}
+
 /// Implement Drop to ensure proper cleanup of CRDT resources
 impl Drop for VesperaCRDT {
     fn drop(&mut self) {
-        // Clear all data structures to free memory
-        self.operation_log.clear();
-        self.operation_log.shrink_to_fit();
-        
-        // Cleanup all layers
-        self.metadata_layer.clear();
-        self.reference_layer.clear();
-        self.tree_layer.cleanup();
-        self.text_layer.cleanup();
-        
-        // Clear vector clock
-        self.vector_clock.clear();
+        // Use the comprehensive cleanup method
+        self.cleanup();
+
+        // Ensure all memory is properly deallocated
+        tracing::trace!("CRDT {} dropped and memory deallocated", self.codex_id);
     }
 }
 

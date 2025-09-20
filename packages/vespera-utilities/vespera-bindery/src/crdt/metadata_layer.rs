@@ -56,8 +56,21 @@ where
             user_id: "system".to_string(), // TODO: Get user ID from operation context
             operation_id: uuid::Uuid::new_v4(),
         };
-        
+
         self.entries.insert(key, entry.clone());
+        entry
+    }
+
+    /// Set a value using borrowed references to avoid clones in hot paths
+    pub fn set_borrowed(&mut self, key: &K, value: &V) -> LWWEntry<V> {
+        let entry = LWWEntry {
+            value: value.clone(),
+            timestamp: Utc::now(),
+            user_id: "system".to_string(), // TODO: Get user ID from operation context
+            operation_id: uuid::Uuid::new_v4(),
+        };
+
+        self.entries.insert(key.clone(), entry.clone());
         entry
     }
     
@@ -273,9 +286,14 @@ where
     
     /// Clean up all resources and shrink collections
     pub fn cleanup(&mut self) {
-        self.entries.clear();
+        // Clear entries and force memory deallocation
+        for (_, mut entry) in self.entries.drain() {
+            // Explicitly drop large values if needed
+            drop(entry);
+        }
         self.entries.shrink_to_fit();
-        
+
+        // Clear tombstones
         self.tombstones.clear();
         self.tombstones.shrink_to_fit();
     }
