@@ -436,8 +436,13 @@ impl RAGService {
             "Search completed"
         );
 
-        // TODO: Record search metrics
-        // BinderyMetrics::record_rag_search("semantic", results.len(), duration, true);
+        // Record search metrics for monitoring and performance tracking
+        crate::observability::BinderyMetrics::record_rag_search(
+            "semantic",
+            results.len(),
+            duration,
+            true // Search completed successfully
+        );
 
         Ok(results)
     }

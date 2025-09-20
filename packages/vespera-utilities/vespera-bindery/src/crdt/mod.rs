@@ -647,7 +647,26 @@ impl VesperaCRDT {
     pub fn get_metadata(&self, key: &str) -> Option<&TemplateValue> {
         self.metadata_layer.get(&key.to_string())
     }
-    
+
+    /// Set the title of this Codex
+    pub fn set_title(&mut self, title: &str) -> BinderyResult<()> {
+        let value = TemplateValue::Text {
+            value: title.to_string(),
+            timestamp: Utc::now(),
+            user_id: self.updated_by.clone(),
+        };
+        self.set_metadata("title".to_string(), value)
+    }
+
+    /// Get the title of this Codex
+    pub fn get_title(&self) -> Option<String> {
+        if let Some(TemplateValue::Text { value, .. }) = self.get_metadata("title") {
+            Some(value.clone())
+        } else {
+            None
+        }
+    }
+
     /// Insert text at position
     pub fn insert_text(&mut self, field_id: String, position: usize, content: String) -> BinderyResult<()> {
         let user_id = self.updated_by.clone(); // TODO: Get user ID from operation context

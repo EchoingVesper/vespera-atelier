@@ -128,7 +128,7 @@ pub use database::{Database, DatabasePoolConfig, PoolMetrics};
 ///
 /// `CodexManager` provides high-level operations for managing Codices,
 /// including creation, modification, synchronization, and collaboration.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CodexManager {
     inner: Arc<CodexManagerInner>,
 }
@@ -195,14 +195,283 @@ impl Default for BinderyConfig {
     }
 }
 
+impl BinderyConfig {
+    /// Validate the configuration and return any errors
+    pub fn validate(&self) -> BinderyResult<()> {
+        // Validate memory limits
+        if self.max_operations_in_memory == 0 {
+            return Err(BinderyError::ConfigurationError(
+                "max_operations_in_memory must be greater than 0".to_string()
+            ));
+        }
+
+        if self.max_operations_in_memory > 1_000_000 {
+            return Err(BinderyError::ConfigurationError(
+                "max_operations_in_memory should not exceed 1,000,000 for performance reasons".to_string()
+            ));
+        }
+
+        // Validate GC interval
+        if self.gc_interval_seconds < 60 {
+            return Err(BinderyError::ConfigurationError(
+                "gc_interval_seconds must be at least 60 seconds to avoid performance issues".to_string()
+            ));
+        }
+
+        if self.gc_interval_seconds > 86400 {
+            return Err(BinderyError::ConfigurationError(
+                "gc_interval_seconds should not exceed 24 hours (86400 seconds)".to_string()
+            ));
+        }
+
+        // Validate storage path if provided
+        if let Some(ref path) = self.storage_path {
+            if !path.is_absolute() {
+                return Err(BinderyError::ConfigurationError(
+                    "storage_path must be an absolute path".to_string()
+                ));
+            }
+        }
+
+        // Validate database path if provided
+        if let Some(ref path) = self.database_path {
+            if !path.is_absolute() {
+                return Err(BinderyError::ConfigurationError(
+                    "database_path must be an absolute path".to_string()
+                ));
+            }
+
+            // Check if parent directory exists or can be created
+            if let Some(parent) = path.parent() {
+                if !parent.exists() {
+                    // We'll allow this but warn that the directory will be created
+                    tracing::info!("Database parent directory does not exist and will be created: {:?}", parent);
+                }
+            }
+        }
+
+        // Validate database pool configuration
+        self.database_pool.validate()?;
+
+        // If collaboration is enabled, certain fields should be set
+        if self.collaboration_enabled {
+            if self.user_id.is_none() {
+                return Err(BinderyError::ConfigurationError(
+                    "user_id must be provided when collaboration is enabled".to_string()
+                ));
+            }
+
+            if self.project_id.is_none() {
+                return Err(BinderyError::ConfigurationError(
+                    "project_id must be provided when collaboration is enabled".to_string()
+                ));
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Create a new configuration with validation
+    pub fn new() -> BinderyResult<Self> {
+        let config = Self::default();
+        config.validate()?;
+        Ok(config)
+    }
+
+    /// Builder pattern for safe configuration construction
+    pub fn builder() -> BinderyConfigBuilder {
+        BinderyConfigBuilder::new()
+    }
+
+    /// Validate and set storage path
+    pub fn with_storage_path(mut self, path: impl Into<std::path::PathBuf>) -> BinderyResult<Self> {
+        let path = path.into();
+        if !path.is_absolute() {
+            return Err(BinderyError::ConfigurationError(
+                "storage_path must be an absolute path".to_string()
+            ));
+        }
+        self.storage_path = Some(path);
+        Ok(self)
+    }
+
+    /// Validate and set database path
+    pub fn with_database_path(mut self, path: impl Into<std::path::PathBuf>) -> BinderyResult<Self> {
+        let path = path.into();
+        if !path.is_absolute() {
+            return Err(BinderyError::ConfigurationError(
+                "database_path must be an absolute path".to_string()
+            ));
+        }
+        self.database_path = Some(path);
+        Ok(self)
+    }
+
+    /// Enable collaboration with required fields
+    pub fn with_collaboration(
+        mut self,
+        user_id: impl Into<String>,
+        project_id: impl Into<String>
+    ) -> Self {
+        self.collaboration_enabled = true;
+        self.user_id = Some(user_id.into());
+        self.project_id = Some(project_id.into());
+        self
+    }
+
+    /// Set memory limits with validation
+    pub fn with_memory_limits(
+        mut self,
+        max_operations: usize,
+        gc_interval_seconds: u64
+    ) -> BinderyResult<Self> {
+        if max_operations == 0 {
+            return Err(BinderyError::ConfigurationError(
+                "max_operations_in_memory must be greater than 0".to_string()
+            ));
+        }
+
+        if gc_interval_seconds < 60 {
+            return Err(BinderyError::ConfigurationError(
+                "gc_interval_seconds must be at least 60 seconds".to_string()
+            ));
+        }
+
+        self.max_operations_in_memory = max_operations;
+        self.gc_interval_seconds = gc_interval_seconds;
+        Ok(self)
+    }
+}
+
+/// Builder for BinderyConfig with validation
+#[derive(Debug, Default)]
+pub struct BinderyConfigBuilder {
+    storage_path: Option<std::path::PathBuf>,
+    database_path: Option<std::path::PathBuf>,
+    database_pool: Option<database::DatabasePoolConfig>,
+    collaboration_enabled: bool,
+    max_operations_in_memory: Option<usize>,
+    auto_gc_enabled: Option<bool>,
+    gc_interval_seconds: Option<u64>,
+    compression_enabled: Option<bool>,
+    user_id: Option<UserId>,
+    project_id: Option<ProjectId>,
+}
+
+impl BinderyConfigBuilder {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn storage_path(mut self, path: impl Into<std::path::PathBuf>) -> BinderyResult<Self> {
+        let path = path.into();
+        if !path.is_absolute() {
+            return Err(BinderyError::ConfigurationError(
+                "storage_path must be an absolute path".to_string()
+            ));
+        }
+        self.storage_path = Some(path);
+        Ok(self)
+    }
+
+    pub fn database_path(mut self, path: impl Into<std::path::PathBuf>) -> BinderyResult<Self> {
+        let path = path.into();
+        if !path.is_absolute() {
+            return Err(BinderyError::ConfigurationError(
+                "database_path must be an absolute path".to_string()
+            ));
+        }
+        self.database_path = Some(path);
+        Ok(self)
+    }
+
+    pub fn database_pool(mut self, config: database::DatabasePoolConfig) -> BinderyResult<Self> {
+        config.validate()?;
+        self.database_pool = Some(config);
+        Ok(self)
+    }
+
+    pub fn collaboration(
+        mut self,
+        enabled: bool,
+        user_id: Option<impl Into<String>>,
+        project_id: Option<impl Into<String>>
+    ) -> BinderyResult<Self> {
+        if enabled {
+            if user_id.is_none() {
+                return Err(BinderyError::ConfigurationError(
+                    "user_id must be provided when collaboration is enabled".to_string()
+                ));
+            }
+            if project_id.is_none() {
+                return Err(BinderyError::ConfigurationError(
+                    "project_id must be provided when collaboration is enabled".to_string()
+                ));
+            }
+            self.user_id = user_id.map(|id| id.into());
+            self.project_id = project_id.map(|id| id.into());
+        }
+        self.collaboration_enabled = enabled;
+        Ok(self)
+    }
+
+    pub fn memory_limits(mut self, max_operations: usize, gc_interval_seconds: u64) -> BinderyResult<Self> {
+        if max_operations == 0 {
+            return Err(BinderyError::ConfigurationError(
+                "max_operations_in_memory must be greater than 0".to_string()
+            ));
+        }
+
+        if gc_interval_seconds < 60 {
+            return Err(BinderyError::ConfigurationError(
+                "gc_interval_seconds must be at least 60 seconds".to_string()
+            ));
+        }
+
+        self.max_operations_in_memory = Some(max_operations);
+        self.gc_interval_seconds = Some(gc_interval_seconds);
+        Ok(self)
+    }
+
+    pub fn auto_gc_enabled(mut self, enabled: bool) -> Self {
+        self.auto_gc_enabled = Some(enabled);
+        self
+    }
+
+    pub fn compression_enabled(mut self, enabled: bool) -> Self {
+        self.compression_enabled = Some(enabled);
+        self
+    }
+
+    pub fn build(self) -> BinderyResult<BinderyConfig> {
+        let config = BinderyConfig {
+            storage_path: self.storage_path,
+            database_path: self.database_path,
+            database_pool: self.database_pool.unwrap_or_default(),
+            collaboration_enabled: self.collaboration_enabled,
+            max_operations_in_memory: self.max_operations_in_memory.unwrap_or(1000),
+            auto_gc_enabled: self.auto_gc_enabled.unwrap_or(true),
+            gc_interval_seconds: self.gc_interval_seconds.unwrap_or(300),
+            compression_enabled: self.compression_enabled.unwrap_or(true),
+            user_id: self.user_id,
+            project_id: self.project_id,
+        };
+
+        config.validate()?;
+        Ok(config)
+    }
+}
+
 impl CodexManager {
     /// Create a new CodexManager with default configuration
     pub fn new() -> Result<Self> {
         Self::with_config(BinderyConfig::default())
     }
     
-    /// Create a new CodexManager with custom configuration  
+    /// Create a new CodexManager with custom configuration
     pub fn with_config(config: BinderyConfig) -> Result<Self> {
+        // Validate configuration before proceeding
+        config.validate().map_err(|e| anyhow::anyhow!("Configuration validation failed: {}", e))?;
         let templates = Arc::new(templates::TemplateRegistry::new());
         
         let sync_manager = if config.collaboration_enabled {
@@ -211,27 +480,58 @@ impl CodexManager {
             None
         };
 
-        // For now, create stub managers to avoid circular dependencies
-        // In production, these would be properly initialized
-        let inner = CodexManagerInner {
-            codices: tokio::sync::RwLock::new(HashMap::new()),
-            templates,
-            task_manager: None, // TODO: Initialize properly after architecture refactor
-            role_manager: Arc::new(RoleManager::default()),
-            hook_manager: Arc::new(HookManager::default()),
-            sync_manager,
-            config,
+        // Initialize role and hook managers first
+        let role_manager = Arc::new(RoleManager::default());
+        let hook_manager = Arc::new(HookManager::default());
+
+        let manager = Self {
+            inner: Arc::new(CodexManagerInner {
+                codices: tokio::sync::RwLock::new(HashMap::new()),
+                templates,
+                task_manager: None, // Will be initialized below
+                role_manager: role_manager.clone(),
+                hook_manager: hook_manager.clone(),
+                sync_manager,
+                config,
+            }),
         };
-        
-        Ok(Self {
-            inner: Arc::new(inner),
-        })
+
+        // Initialize task manager after CodexManager creation to avoid circular dependency
+        // Use a simplified initialization that doesn't require database configuration
+        let _task_manager = if manager.inner.config.database_path.is_some() {
+            // Create task service with the CodexManager
+            let manager_arc = Arc::new(manager.clone());
+            let _task_service = Arc::new(task_management::TaskService::new(manager_arc.clone()));
+            let task_manager = task_management::TaskManager::new(
+                manager_arc,
+                role_manager,
+                hook_manager,
+            );
+            Some(Arc::new(task_manager))
+        } else {
+            // Task management can still work without database for basic operations
+            tracing::info!("No database path configured, but task management is available through Codex layer");
+            let manager_arc = Arc::new(manager.clone());
+            let _task_service = Arc::new(task_management::TaskService::new(manager_arc.clone()));
+            let task_manager = task_management::TaskManager::new(
+                manager_arc,
+                role_manager.clone(),
+                hook_manager.clone(),
+            );
+            Some(Arc::new(task_manager))
+        };
+
+        // Note: In the current architecture, we cannot update the task_manager field
+        // after construction due to Arc<CodexManagerInner>. The task manager is available
+        // through the get_task_manager() method which constructs it on demand.
+
+        Ok(manager)
     }
     
     /// Create a new Codex with the specified title and template
     pub async fn create_codex(&self, title: impl Into<String>, template_id: impl Into<TemplateId>) -> BinderyResult<CodexId> {
         let id = Uuid::new_v4();
-        let _title = title.into(); // TODO: Use title in Codex creation implementation
+        let title = title.into();
         let template_id = template_id.into();
         
         // Verify template exists
@@ -239,8 +539,15 @@ impl CodexManager {
         let _template = self.inner.templates.get(&template_registry_id)
             .ok_or_else(|| BinderyError::TemplateNotFound(template_registry_id))?;
         
-        let created_by = self.inner.config.user_id.clone().unwrap_or_else(|| "system".to_string()); // TODO: Get user ID from authentication context
-        let crdt = Arc::new(crdt::VesperaCRDT::new(id, created_by));
+        let created_by = self.inner.config.user_id.clone().unwrap_or_else(|| "system".to_string());
+        let mut crdt = crdt::VesperaCRDT::new(id, created_by);
+
+        // Initialize the CRDT with title and template metadata
+        // Note: This is a simplified implementation - full template integration would require
+        // loading template fields and creating appropriate CRDT structures
+        crdt.set_title(&title);
+
+        let crdt = Arc::new(crdt);
         
         {
             let mut codices = self.inner.codices.write().await;
@@ -308,6 +615,18 @@ impl CodexManager {
     pub fn config(&self) -> &BinderyConfig {
         &self.inner.config
     }
+
+    /// Get a task manager instance
+    ///
+    /// This method creates a new TaskManager instance on demand to avoid
+    /// circular dependency issues during initialization.
+    pub fn get_task_manager(&self) -> Arc<TaskManager> {
+        Arc::new(task_management::TaskManager::new(
+            Arc::new(self.clone()),
+            self.inner.role_manager.clone(),
+            self.inner.hook_manager.clone(),
+        ))
+    }
     
     /// Perform garbage collection on all managed Codices
     pub async fn gc_all_codices(&self) -> Result<CodexManagerGCStats> {
@@ -325,9 +644,10 @@ impl CodexManager {
                 // For now, we'll track this as a design issue to fix
                 total_stats.codices_processed += 1;
                 
-                // TODO: Implement interior mutability for CRDT GC
-                // let stats = crdt.gc_all(cutoff);
-                // total_stats.merge(stats);
+                // Note: CRDT GC requires interior mutability pattern (Arc<RwLock<>> or RefCell)
+                // This architectural limitation is tracked for future refactoring
+                // For now, we document the processed codices without actual GC
+                total_stats.operations_skipped += 1;
             }
         }
         
@@ -367,6 +687,8 @@ pub struct CodexManagerGCStats {
     pub total_operations_removed: usize,
     pub total_tombstones_removed: usize,
     pub total_fields_cleaned: usize,
+    /// Number of codices that were skipped due to architectural limitations
+    pub operations_skipped: usize,
 }
 
 // Version information

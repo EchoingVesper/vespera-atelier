@@ -89,6 +89,242 @@ impl Default for DatabasePoolConfig {
     }
 }
 
+impl DatabasePoolConfig {
+    /// Validate the database pool configuration
+    pub fn validate(&self) -> Result<(), crate::BinderyError> {
+        // Validate connection counts
+        if self.max_connections == 0 {
+            return Err(crate::BinderyError::ConfigurationError(
+                "max_connections must be greater than 0".to_string()
+            ));
+        }
+
+        if self.min_connections > self.max_connections {
+            return Err(crate::BinderyError::ConfigurationError(
+                format!(
+                    "min_connections ({}) cannot be greater than max_connections ({})",
+                    self.min_connections, self.max_connections
+                )
+            ));
+        }
+
+        // Validate timeouts
+        if self.acquire_timeout.as_secs() == 0 {
+            return Err(crate::BinderyError::ConfigurationError(
+                "acquire_timeout must be greater than 0 seconds".to_string()
+            ));
+        }
+
+        if self.acquire_timeout > Duration::from_secs(300) {
+            return Err(crate::BinderyError::ConfigurationError(
+                "acquire_timeout should not exceed 5 minutes (300 seconds) for responsiveness".to_string()
+            ));
+        }
+
+        if self.idle_timeout.as_secs() < 60 {
+            return Err(crate::BinderyError::ConfigurationError(
+                "idle_timeout should be at least 60 seconds to avoid connection churn".to_string()
+            ));
+        }
+
+        if self.max_connection_lifetime.as_secs() < 300 {
+            return Err(crate::BinderyError::ConfigurationError(
+                "max_connection_lifetime should be at least 5 minutes (300 seconds)".to_string()
+            ));
+        }
+
+        // Validate reasonable upper bounds
+        if self.max_connections > 1000 {
+            return Err(crate::BinderyError::ConfigurationError(
+                "max_connections should not exceed 1000 for performance reasons".to_string()
+            ));
+        }
+
+        Ok(())
+    }
+
+    /// Create a new configuration with validation
+    pub fn new() -> Result<Self, crate::BinderyError> {
+        let config = Self::default();
+        config.validate()?;
+        Ok(config)
+    }
+
+    /// Builder pattern for safe configuration construction
+    pub fn builder() -> DatabasePoolConfigBuilder {
+        DatabasePoolConfigBuilder::new()
+    }
+
+    /// Set connection limits with validation
+    pub fn with_connections(mut self, min: u32, max: u32) -> Result<Self, crate::BinderyError> {
+        if max == 0 {
+            return Err(crate::BinderyError::ConfigurationError(
+                "max_connections must be greater than 0".to_string()
+            ));
+        }
+
+        if min > max {
+            return Err(crate::BinderyError::ConfigurationError(
+                format!(
+                    "min_connections ({}) cannot be greater than max_connections ({})",
+                    min, max
+                )
+            ));
+        }
+
+        self.min_connections = min;
+        self.max_connections = max;
+        Ok(self)
+    }
+
+    /// Set timeouts with validation
+    pub fn with_timeouts(
+        mut self,
+        acquire_timeout: Duration,
+        idle_timeout: Duration,
+        max_lifetime: Duration
+    ) -> Result<Self, crate::BinderyError> {
+        if acquire_timeout.as_secs() == 0 {
+            return Err(crate::BinderyError::ConfigurationError(
+                "acquire_timeout must be greater than 0 seconds".to_string()
+            ));
+        }
+
+        if idle_timeout.as_secs() < 60 {
+            return Err(crate::BinderyError::ConfigurationError(
+                "idle_timeout should be at least 60 seconds".to_string()
+            ));
+        }
+
+        if max_lifetime.as_secs() < 300 {
+            return Err(crate::BinderyError::ConfigurationError(
+                "max_connection_lifetime should be at least 5 minutes".to_string()
+            ));
+        }
+
+        self.acquire_timeout = acquire_timeout;
+        self.idle_timeout = idle_timeout;
+        self.max_connection_lifetime = max_lifetime;
+        Ok(self)
+    }
+
+    /// Enable or disable connection testing
+    pub fn with_connection_testing(mut self, enabled: bool) -> Self {
+        self.test_before_acquire = enabled;
+        self
+    }
+}
+
+/// Builder for DatabasePoolConfig with validation
+#[derive(Debug, Default)]
+pub struct DatabasePoolConfigBuilder {
+    max_connections: Option<u32>,
+    min_connections: Option<u32>,
+    max_connection_lifetime: Option<Duration>,
+    acquire_timeout: Option<Duration>,
+    idle_timeout: Option<Duration>,
+    test_before_acquire: Option<bool>,
+}
+
+impl DatabasePoolConfigBuilder {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn max_connections(mut self, max: u32) -> Result<Self, crate::BinderyError> {
+        if max == 0 {
+            return Err(crate::BinderyError::ConfigurationError(
+                "max_connections must be greater than 0".to_string()
+            ));
+        }
+
+        if max > 1000 {
+            return Err(crate::BinderyError::ConfigurationError(
+                "max_connections should not exceed 1000 for performance reasons".to_string()
+            ));
+        }
+
+        self.max_connections = Some(max);
+        Ok(self)
+    }
+
+    pub fn min_connections(mut self, min: u32) -> Self {
+        self.min_connections = Some(min);
+        self
+    }
+
+    pub fn acquire_timeout(mut self, timeout: Duration) -> Result<Self, crate::BinderyError> {
+        if timeout.as_secs() == 0 {
+            return Err(crate::BinderyError::ConfigurationError(
+                "acquire_timeout must be greater than 0 seconds".to_string()
+            ));
+        }
+
+        if timeout > Duration::from_secs(300) {
+            return Err(crate::BinderyError::ConfigurationError(
+                "acquire_timeout should not exceed 5 minutes for responsiveness".to_string()
+            ));
+        }
+
+        self.acquire_timeout = Some(timeout);
+        Ok(self)
+    }
+
+    pub fn idle_timeout(mut self, timeout: Duration) -> Result<Self, crate::BinderyError> {
+        if timeout.as_secs() < 60 {
+            return Err(crate::BinderyError::ConfigurationError(
+                "idle_timeout should be at least 60 seconds to avoid connection churn".to_string()
+            ));
+        }
+
+        self.idle_timeout = Some(timeout);
+        Ok(self)
+    }
+
+    pub fn max_connection_lifetime(mut self, lifetime: Duration) -> Result<Self, crate::BinderyError> {
+        if lifetime.as_secs() < 300 {
+            return Err(crate::BinderyError::ConfigurationError(
+                "max_connection_lifetime should be at least 5 minutes".to_string()
+            ));
+        }
+
+        self.max_connection_lifetime = Some(lifetime);
+        Ok(self)
+    }
+
+    pub fn test_before_acquire(mut self, enabled: bool) -> Self {
+        self.test_before_acquire = Some(enabled);
+        self
+    }
+
+    pub fn build(self) -> Result<DatabasePoolConfig, crate::BinderyError> {
+        let max_connections = self.max_connections.unwrap_or(20);
+        let min_connections = self.min_connections.unwrap_or(2);
+
+        // Validate min/max relationship
+        if min_connections > max_connections {
+            return Err(crate::BinderyError::ConfigurationError(
+                format!(
+                    "min_connections ({}) cannot be greater than max_connections ({})",
+                    min_connections, max_connections
+                )
+            ));
+        }
+
+        let config = DatabasePoolConfig {
+            max_connections,
+            min_connections,
+            max_connection_lifetime: self.max_connection_lifetime.unwrap_or(Duration::from_secs(30 * 60)),
+            acquire_timeout: self.acquire_timeout.unwrap_or(Duration::from_secs(10)),
+            idle_timeout: self.idle_timeout.unwrap_or(Duration::from_secs(10 * 60)),
+            test_before_acquire: self.test_before_acquire.unwrap_or(true),
+        };
+
+        config.validate()?;
+        Ok(config)
+    }
+}
+
 /// Pool metrics for monitoring
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PoolMetrics {
@@ -127,6 +363,8 @@ impl Database {
         database_path: impl AsRef<Path>,
         config: DatabasePoolConfig
     ) -> Result<Self> {
+        // Validate configuration before proceeding
+        config.validate().map_err(|e| anyhow::anyhow!("Database pool configuration validation failed: {}", e))?;
         let database_url = format!("sqlite:{}?mode=rwc", database_path.as_ref().display());
         info!("Initializing database with pool config: {}", database_url);
         debug!("Pool configuration: max_connections={}, min_connections={}, acquire_timeout={:?}",

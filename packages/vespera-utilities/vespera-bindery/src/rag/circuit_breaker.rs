@@ -10,6 +10,7 @@ use anyhow::Result;
 use serde::{Serialize, Deserialize};
 use tokio::time::sleep;
 use tracing::{info, warn, error, debug};
+use crate::{BinderyError, BinderyResult};
 
 /// Circuit breaker state
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -58,6 +59,227 @@ impl Default for CircuitBreakerConfig {
     }
 }
 
+impl CircuitBreakerConfig {
+    /// Validate the circuit breaker configuration
+    pub fn validate(&self) -> BinderyResult<()> {
+        // Validate failure threshold
+        if self.failure_threshold == 0 {
+            return Err(BinderyError::ConfigurationError(
+                "failure_threshold must be greater than 0".to_string()
+            ));
+        }
+
+        if self.failure_threshold > 1000 {
+            return Err(BinderyError::ConfigurationError(
+                "failure_threshold should not exceed 1000 to avoid excessive sensitivity".to_string()
+            ));
+        }
+
+        // Validate success threshold
+        if self.success_threshold == 0 {
+            return Err(BinderyError::ConfigurationError(
+                "success_threshold must be greater than 0".to_string()
+            ));
+        }
+
+        if self.success_threshold > 100 {
+            return Err(BinderyError::ConfigurationError(
+                "success_threshold should not exceed 100 for practical recovery".to_string()
+            ));
+        }
+
+        // Validate recovery timeout
+        if self.recovery_timeout.as_secs() == 0 {
+            return Err(BinderyError::ConfigurationError(
+                "recovery_timeout must be greater than 0 seconds".to_string()
+            ));
+        }
+
+        if self.recovery_timeout > Duration::from_secs(3600) {
+            return Err(BinderyError::ConfigurationError(
+                "recovery_timeout should not exceed 1 hour (3600 seconds) for responsiveness".to_string()
+            ));
+        }
+
+        // Validate request timeout
+        if self.request_timeout.as_secs() == 0 {
+            return Err(BinderyError::ConfigurationError(
+                "request_timeout must be greater than 0 seconds".to_string()
+            ));
+        }
+
+        if self.request_timeout > Duration::from_secs(300) {
+            return Err(BinderyError::ConfigurationError(
+                "request_timeout should not exceed 5 minutes (300 seconds) for user experience".to_string()
+            ));
+        }
+
+        // Validate max retries
+        if self.max_retries > 10 {
+            return Err(BinderyError::ConfigurationError(
+                "max_retries should not exceed 10 to avoid excessive delays".to_string()
+            ));
+        }
+
+        // Validate backoff configuration
+        if self.initial_backoff.as_millis() == 0 {
+            return Err(BinderyError::ConfigurationError(
+                "initial_backoff must be greater than 0 milliseconds".to_string()
+            ));
+        }
+
+        if self.initial_backoff > self.max_backoff {
+            return Err(BinderyError::ConfigurationError(
+                format!(
+                    "initial_backoff ({:?}) cannot be greater than max_backoff ({:?})",
+                    self.initial_backoff, self.max_backoff
+                )
+            ));
+        }
+
+        if self.max_backoff > Duration::from_secs(300) {
+            return Err(BinderyError::ConfigurationError(
+                "max_backoff should not exceed 5 minutes (300 seconds)".to_string()
+            ));
+        }
+
+        // Validate backoff multiplier
+        if self.backoff_multiplier <= 1.0 {
+            return Err(BinderyError::ConfigurationError(
+                "backoff_multiplier must be greater than 1.0 for exponential backoff".to_string()
+            ));
+        }
+
+        if self.backoff_multiplier > 10.0 {
+            return Err(BinderyError::ConfigurationError(
+                "backoff_multiplier should not exceed 10.0 to avoid extremely long delays".to_string()
+            ));
+        }
+
+        // Validate timeout relationships
+        if self.request_timeout > self.recovery_timeout {
+            tracing::warn!(
+                "request_timeout ({:?}) is greater than recovery_timeout ({:?}). This may cause unexpected behavior",
+                self.request_timeout, self.recovery_timeout
+            );
+        }
+
+        Ok(())
+    }
+
+    /// Create a new circuit breaker configuration with validation
+    pub fn new() -> BinderyResult<Self> {
+        let config = Self::default();
+        config.validate()?;
+        Ok(config)
+    }
+
+    /// Set failure threshold with validation
+    pub fn with_failure_threshold(mut self, threshold: u32) -> BinderyResult<Self> {
+        if threshold == 0 {
+            return Err(BinderyError::ConfigurationError(
+                "failure_threshold must be greater than 0".to_string()
+            ));
+        }
+        if threshold > 1000 {
+            return Err(BinderyError::ConfigurationError(
+                "failure_threshold should not exceed 1000".to_string()
+            ));
+        }
+        self.failure_threshold = threshold;
+        Ok(self)
+    }
+
+    /// Set success threshold with validation
+    pub fn with_success_threshold(mut self, threshold: u32) -> BinderyResult<Self> {
+        if threshold == 0 {
+            return Err(BinderyError::ConfigurationError(
+                "success_threshold must be greater than 0".to_string()
+            ));
+        }
+        if threshold > 100 {
+            return Err(BinderyError::ConfigurationError(
+                "success_threshold should not exceed 100".to_string()
+            ));
+        }
+        self.success_threshold = threshold;
+        Ok(self)
+    }
+
+    /// Set timeouts with validation
+    pub fn with_timeouts(
+        mut self,
+        recovery_timeout: Duration,
+        request_timeout: Duration
+    ) -> BinderyResult<Self> {
+        if recovery_timeout.as_secs() == 0 {
+            return Err(BinderyError::ConfigurationError(
+                "recovery_timeout must be greater than 0 seconds".to_string()
+            ));
+        }
+        if request_timeout.as_secs() == 0 {
+            return Err(BinderyError::ConfigurationError(
+                "request_timeout must be greater than 0 seconds".to_string()
+            ));
+        }
+        if recovery_timeout > Duration::from_secs(3600) {
+            return Err(BinderyError::ConfigurationError(
+                "recovery_timeout should not exceed 1 hour".to_string()
+            ));
+        }
+        if request_timeout > Duration::from_secs(300) {
+            return Err(BinderyError::ConfigurationError(
+                "request_timeout should not exceed 5 minutes".to_string()
+            ));
+        }
+
+        self.recovery_timeout = recovery_timeout;
+        self.request_timeout = request_timeout;
+        Ok(self)
+    }
+
+    /// Set retry configuration with validation
+    pub fn with_retry_config(
+        mut self,
+        max_retries: u32,
+        initial_backoff: Duration,
+        max_backoff: Duration,
+        backoff_multiplier: f64
+    ) -> BinderyResult<Self> {
+        if max_retries > 10 {
+            return Err(BinderyError::ConfigurationError(
+                "max_retries should not exceed 10".to_string()
+            ));
+        }
+        if initial_backoff.as_millis() == 0 {
+            return Err(BinderyError::ConfigurationError(
+                "initial_backoff must be greater than 0 milliseconds".to_string()
+            ));
+        }
+        if initial_backoff > max_backoff {
+            return Err(BinderyError::ConfigurationError(
+                "initial_backoff cannot be greater than max_backoff".to_string()
+            ));
+        }
+        if backoff_multiplier <= 1.0 {
+            return Err(BinderyError::ConfigurationError(
+                "backoff_multiplier must be greater than 1.0".to_string()
+            ));
+        }
+        if backoff_multiplier > 10.0 {
+            return Err(BinderyError::ConfigurationError(
+                "backoff_multiplier should not exceed 10.0".to_string()
+            ));
+        }
+
+        self.max_retries = max_retries;
+        self.initial_backoff = initial_backoff;
+        self.max_backoff = max_backoff;
+        self.backoff_multiplier = backoff_multiplier;
+        Ok(self)
+    }
+}
+
 /// Circuit breaker metrics
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CircuitBreakerMetrics {
@@ -97,14 +319,17 @@ pub struct CircuitBreaker {
 
 impl CircuitBreaker {
     /// Create a new circuit breaker for a service
-    pub fn new(service_name: String, config: CircuitBreakerConfig) -> Self {
+    pub fn new(service_name: String, config: CircuitBreakerConfig) -> BinderyResult<Self> {
+        // Validate configuration before creating the circuit breaker
+        config.validate()?;
+
         info!("Initializing circuit breaker for service: {}", service_name);
-        
-        Self {
+
+        Ok(Self {
             service_name,
             config,
             metrics: Arc::new(Mutex::new(CircuitBreakerMetrics::default())),
-        }
+        })
     }
 
     /// Execute a function with circuit breaker protection
@@ -117,7 +342,7 @@ impl CircuitBreaker {
         // Check if circuit is open
         if self.should_reject_request().await? {
             return Err(anyhow::anyhow!(
-                "Circuit breaker is OPEN for service: {}", 
+                "Circuit breaker is OPEN for service: {}",
                 self.service_name
             ));
         }
@@ -128,7 +353,7 @@ impl CircuitBreaker {
 
         for attempt in 0..=self.config.max_retries {
             self.increment_total_requests().await;
-            
+
             debug!(
                 "Attempting request {} for service: {} (attempt {}/{})",
                 self.get_total_requests().await,
@@ -153,7 +378,7 @@ impl CircuitBreaker {
                 }
                 Err(_) => {
                     last_error = Some(anyhow::anyhow!(
-                        "Request timeout after {}ms", 
+                        "Request timeout after {}ms",
                         self.config.request_timeout.as_millis()
                     ));
                 }
@@ -167,7 +392,7 @@ impl CircuitBreaker {
                     backoff.as_millis()
                 );
                 sleep(backoff).await;
-                
+
                 // Exponential backoff with jitter
                 backoff = Duration::from_millis(
                     std::cmp::min(
@@ -181,7 +406,7 @@ impl CircuitBreaker {
         // All retries failed
         let error = last_error.unwrap_or_else(|| anyhow::anyhow!("Unknown error"));
         self.record_failure().await?;
-        
+
         Err(error.context(format!(
             "All {} retry attempts failed for service: {}",
             self.config.max_retries + 1,
@@ -265,14 +490,14 @@ impl CircuitBreaker {
         match metrics.state {
             CircuitState::Closed => {
                 if metrics.failure_count >= self.config.failure_threshold {
-                    warn!("Opening circuit breaker for service: {} (failures: {})", 
+                    warn!("Opening circuit breaker for service: {} (failures: {})",
                           self.service_name, metrics.failure_count);
                     metrics.state = CircuitState::Open;
                     metrics.state_transitions += 1;
                 }
             }
             CircuitState::HalfOpen => {
-                warn!("Reopening circuit breaker for service: {} (half-open test failed)", 
+                warn!("Reopening circuit breaker for service: {} (half-open test failed)",
                       self.service_name);
                 metrics.state = CircuitState::Open;
                 metrics.state_transitions += 1;
@@ -323,14 +548,14 @@ impl CircuitBreaker {
         let mut metrics = self.metrics.lock().map_err(|_| {
             anyhow::anyhow!("Failed to acquire metrics lock")
         })?;
-        
+
         info!("Manually resetting circuit breaker for service: {}", self.service_name);
-        
+
         metrics.state = CircuitState::Closed;
         metrics.failure_count = 0;
         metrics.success_count = 0;
         metrics.state_transitions += 1;
-        
+
         Ok(())
     }
 
@@ -339,13 +564,13 @@ impl CircuitBreaker {
         let mut metrics = self.metrics.lock().map_err(|_| {
             anyhow::anyhow!("Failed to acquire metrics lock")
         })?;
-        
+
         warn!("Manually forcing circuit breaker OPEN for service: {}", self.service_name);
-        
+
         metrics.state = CircuitState::Open;
         metrics.last_failure_time = Some(Instant::now());
         metrics.state_transitions += 1;
-        
+
         Ok(())
     }
 
@@ -368,11 +593,14 @@ pub struct CircuitBreakerRegistry {
 
 impl CircuitBreakerRegistry {
     /// Create a new registry
-    pub fn new(default_config: CircuitBreakerConfig) -> Self {
-        Self {
+    pub fn new(default_config: CircuitBreakerConfig) -> BinderyResult<Self> {
+        // Validate the default configuration
+        default_config.validate()?;
+
+        Ok(Self {
             breakers: Arc::new(Mutex::new(HashMap::new())),
             default_config,
-        }
+        })
     }
 
     /// Get or create a circuit breaker for a service
@@ -387,7 +615,7 @@ impl CircuitBreakerRegistry {
             let breaker = Arc::new(CircuitBreaker::new(
                 service_name.to_string(),
                 self.default_config.clone(),
-            ));
+            )?);
             breakers.insert(service_name.to_string(), Arc::clone(&breaker));
             Ok(breaker)
         }
@@ -409,7 +637,7 @@ impl CircuitBreakerRegistry {
             let breaker = Arc::new(CircuitBreaker::new(
                 service_name.to_string(),
                 config,
-            ));
+            )?);
             breakers.insert(service_name.to_string(), Arc::clone(&breaker));
             Ok(breaker)
         }
@@ -451,7 +679,7 @@ impl CircuitBreakerRegistry {
         let breakers = self.breakers.lock().map_err(|_| {
             anyhow::anyhow!("Failed to acquire breakers lock")
         })?;
-        
+
         Ok(breakers.keys().cloned().collect())
     }
 }
@@ -516,6 +744,58 @@ mod tests {
     use std::sync::atomic::{AtomicU32, Ordering};
     use tokio::time::timeout;
 
+    #[test]
+    fn test_circuit_breaker_config_validation() {
+        // Valid config
+        let config = CircuitBreakerConfig::default();
+        assert!(config.validate().is_ok());
+
+        // Invalid failure threshold
+        let mut config = CircuitBreakerConfig::default();
+        config.failure_threshold = 0;
+        assert!(config.validate().is_err());
+
+        // Invalid success threshold
+        let mut config = CircuitBreakerConfig::default();
+        config.success_threshold = 0;
+        assert!(config.validate().is_err());
+
+        // Invalid backoff multiplier
+        let mut config = CircuitBreakerConfig::default();
+        config.backoff_multiplier = 0.5;
+        assert!(config.validate().is_err());
+
+        // Invalid backoff timing
+        let mut config = CircuitBreakerConfig::default();
+        config.initial_backoff = Duration::from_secs(10);
+        config.max_backoff = Duration::from_secs(5);
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_circuit_breaker_config_builder_methods() {
+        // Test with_failure_threshold
+        let config = CircuitBreakerConfig::default()
+            .with_failure_threshold(10)
+            .unwrap();
+        assert_eq!(config.failure_threshold, 10);
+
+        // Test invalid failure threshold
+        let result = CircuitBreakerConfig::default()
+            .with_failure_threshold(0);
+        assert!(result.is_err());
+
+        // Test with_timeouts
+        let config = CircuitBreakerConfig::default()
+            .with_timeouts(
+                Duration::from_secs(60),
+                Duration::from_secs(20)
+            )
+            .unwrap();
+        assert_eq!(config.recovery_timeout, Duration::from_secs(60));
+        assert_eq!(config.request_timeout, Duration::from_secs(20));
+    }
+
     #[tokio::test]
     async fn test_circuit_breaker_success() {
         let config = CircuitBreakerConfig {
@@ -529,16 +809,16 @@ mod tests {
             success_threshold: 2,
         };
 
-        let breaker = CircuitBreaker::new("test_service".to_string(), config);
-        
+        let breaker = CircuitBreaker::new("test_service".to_string(), config).unwrap();
+
         // Test successful operation
         let result = breaker.execute(|| {
             Box::pin(async { Ok::<i32, anyhow::Error>(42) })
         }).await;
-        
+
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), 42);
-        
+
         let metrics = breaker.get_metrics().await.unwrap();
         assert_eq!(metrics.state, CircuitState::Closed);
         assert_eq!(metrics.total_requests, 1);
@@ -558,27 +838,27 @@ mod tests {
             success_threshold: 1,
         };
 
-        let breaker = CircuitBreaker::new("test_service".to_string(), config);
-        
+        let breaker = CircuitBreaker::new("test_service".to_string(), config).unwrap();
+
         // First failure
         let result1 = breaker.execute(|| {
             Box::pin(async { Err::<i32, anyhow::Error>(anyhow::anyhow!("test error")) })
         }).await;
         assert!(result1.is_err());
-        
+
         let metrics = breaker.get_metrics().await.unwrap();
         assert_eq!(metrics.state, CircuitState::Closed);
         assert_eq!(metrics.failure_count, 1);
-        
+
         // Second failure - should open circuit
         let result2 = breaker.execute(|| {
             Box::pin(async { Err::<i32, anyhow::Error>(anyhow::anyhow!("test error")) })
         }).await;
         assert!(result2.is_err());
-        
+
         let metrics = breaker.get_metrics().await.unwrap();
         assert_eq!(metrics.state, CircuitState::Open);
-        
+
         // Third request should be rejected immediately
         let result3 = breaker.execute(|| {
             Box::pin(async { Ok::<i32, anyhow::Error>(42) })
@@ -600,25 +880,25 @@ mod tests {
             success_threshold: 1,
         };
 
-        let breaker = CircuitBreaker::new("test_service".to_string(), config);
-        
+        let breaker = CircuitBreaker::new("test_service".to_string(), config).unwrap();
+
         // Cause failure to open circuit
         let _ = breaker.execute(|| {
             Box::pin(async { Err::<i32, anyhow::Error>(anyhow::anyhow!("test error")) })
         }).await;
-        
+
         let metrics = breaker.get_metrics().await.unwrap();
         assert_eq!(metrics.state, CircuitState::Open);
-        
+
         // Wait for recovery timeout
         sleep(Duration::from_millis(60)).await;
-        
+
         // Next request should transition to half-open and succeed
         let result = breaker.execute(|| {
             Box::pin(async { Ok::<i32, anyhow::Error>(42) })
         }).await;
         assert!(result.is_ok());
-        
+
         let metrics = breaker.get_metrics().await.unwrap();
         assert_eq!(metrics.state, CircuitState::Closed);
     }
@@ -626,19 +906,19 @@ mod tests {
     #[tokio::test]
     async fn test_circuit_breaker_registry() {
         let config = CircuitBreakerConfig::default();
-        let registry = CircuitBreakerRegistry::new(config);
-        
+        let registry = CircuitBreakerRegistry::new(config).unwrap();
+
         // Get breaker for service1
         let breaker1 = registry.get_breaker("service1").await.unwrap();
         let breaker1_again = registry.get_breaker("service1").await.unwrap();
-        
+
         // Should be the same instance
         assert_eq!(breaker1.service_name(), breaker1_again.service_name());
-        
+
         // Get breaker for service2
         let breaker2 = registry.get_breaker("service2").await.unwrap();
         assert_ne!(breaker1.service_name(), breaker2.service_name());
-        
+
         // Check service names
         let names = registry.get_service_names().await.unwrap();
         assert_eq!(names.len(), 2);
@@ -659,14 +939,14 @@ mod tests {
             success_threshold: 1,
         };
 
-        let breaker = CircuitBreaker::new("test_service".to_string(), config);
+        let breaker = CircuitBreaker::new("test_service".to_string(), config).unwrap();
         let start_time = Instant::now();
-        
+
         // This should take at least 10 + 20 + 40 = 70ms due to backoff
         let result = breaker.execute(|| {
             Box::pin(async { Err::<i32, anyhow::Error>(anyhow::anyhow!("test error")) })
         }).await;
-        
+
         let elapsed = start_time.elapsed();
         assert!(result.is_err());
         assert!(elapsed >= Duration::from_millis(70)); // At least the backoff time
@@ -685,8 +965,8 @@ mod tests {
             success_threshold: 1,
         };
 
-        let breaker = CircuitBreaker::new("test_service".to_string(), config);
-        
+        let breaker = CircuitBreaker::new("test_service".to_string(), config).unwrap();
+
         // Operation that takes longer than timeout
         let result = breaker.execute(|| {
             Box::pin(async {
@@ -694,8 +974,20 @@ mod tests {
                 Ok::<i32, anyhow::Error>(42)
             })
         }).await;
-        
+
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("timeout"));
+    }
+
+    #[test]
+    fn test_circuit_breaker_registry_validation() {
+        // Valid config should work
+        let config = CircuitBreakerConfig::default();
+        assert!(CircuitBreakerRegistry::new(config).is_ok());
+
+        // Invalid config should fail
+        let mut config = CircuitBreakerConfig::default();
+        config.failure_threshold = 0;
+        assert!(CircuitBreakerRegistry::new(config).is_err());
     }
 }

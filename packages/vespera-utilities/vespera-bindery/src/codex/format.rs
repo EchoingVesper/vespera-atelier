@@ -9,16 +9,16 @@ use crate::{BinderyResult, crdt::VesperaCRDT};
 pub enum CodexFormat {
     /// JSON5 format (human-readable with comments)
     Json5,
-    
+
     /// Compact JSON format
     Json,
-    
+
     /// YAML format
     Yaml,
-    
+
     /// Binary format (MessagePack)
     Binary,
-    
+
     /// Compressed binary format
     CompressedBinary,
 }
@@ -38,13 +38,13 @@ impl CodexSerializer {
             compress: false,
         }
     }
-    
+
     /// Enable/disable compression
     pub fn with_compression(mut self, compress: bool) -> Self {
         self.compress = compress;
         self
     }
-    
+
     /// Serialize a CRDT to bytes
     pub fn serialize(&self, crdt: &VesperaCRDT) -> BinderyResult<Vec<u8>> {
         let bytes = match self.format {
@@ -66,7 +66,7 @@ impl CodexSerializer {
                 ));
             }
         };
-        
+
         if self.compress {
             // TODO: Implement compression
             Ok(bytes)
@@ -74,7 +74,7 @@ impl CodexSerializer {
             Ok(bytes)
         }
     }
-    
+
     /// Deserialize bytes to a CRDT
     pub fn deserialize(&self, bytes: &[u8]) -> BinderyResult<VesperaCRDT> {
         let bytes = if self.compress {
@@ -83,22 +83,35 @@ impl CodexSerializer {
         } else {
             bytes
         };
-        
+
         match self.format {
             CodexFormat::Json5 => {
                 let json = String::from_utf8(bytes.to_vec())
-                    .map_err(|e| crate::BinderyError::DeserializationError(e.to_string()))?;
-                let crdt = json5::from_str(&json)?;
+                    .map_err(|e| crate::BinderyError::DeserializationError(
+                        format!("Failed to convert JSON5 bytes to UTF-8: {}", e)
+                    ))?;
+                let crdt = json5::from_str(&json)
+                    .map_err(|e| crate::BinderyError::DeserializationError(
+                        format!("Failed to parse JSON5 format: {}", e)
+                    ))?;
                 Ok(crdt)
             }
             CodexFormat::Json => {
-                let crdt = serde_json::from_slice(bytes)?;
+                let crdt = serde_json::from_slice(bytes)
+                    .map_err(|e| crate::BinderyError::DeserializationError(
+                        format!("Failed to parse JSON format: {}", e)
+                    ))?;
                 Ok(crdt)
             }
             CodexFormat::Yaml => {
                 let yaml = String::from_utf8(bytes.to_vec())
-                    .map_err(|e| crate::BinderyError::DeserializationError(e.to_string()))?;
-                let crdt = serde_yaml::from_str(&yaml)?;
+                    .map_err(|e| crate::BinderyError::DeserializationError(
+                        format!("Failed to convert YAML bytes to UTF-8: {}", e)
+                    ))?;
+                let crdt = serde_yaml::from_str(&yaml)
+                    .map_err(|e| crate::BinderyError::DeserializationError(
+                        format!("Failed to parse YAML format: {}", e)
+                    ))?;
                 Ok(crdt)
             }
             CodexFormat::Binary | CodexFormat::CompressedBinary => {
@@ -108,10 +121,14 @@ impl CodexSerializer {
             }
         }
     }
-}
 
-impl Default for CodexFormat {
-    fn default() -> Self {
-        Self::Json5
+    /// Get the format used by this serializer
+    pub fn format(&self) -> &CodexFormat {
+        &self.format
+    }
+
+    /// Check if compression is enabled
+    pub fn is_compressed(&self) -> bool {
+        self.compress
     }
 }

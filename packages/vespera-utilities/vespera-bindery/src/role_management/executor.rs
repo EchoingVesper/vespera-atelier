@@ -201,7 +201,7 @@ impl RoleExecutor {
     async fn execute_context_logic(&self, role: &Role, context: &str, runtime: &mut ExecutionRuntime) -> Result<String, BinderyError> {
         // Parse context for execution instructions
         if context.starts_with("cmd:") {
-            let command_line = context.strip_prefix("cmd:").unwrap().trim();
+            let command_line = context.strip_prefix("cmd:").ok_or_else(|| BinderyError::InvalidInput("Invalid command context format".to_string()))?.trim();
             let parts: Vec<&str> = command_line.split_whitespace().collect();
             if let Some((command, args)) = parts.split_first() {
                 runtime.tools_used.insert("command_execution".to_string());
@@ -210,7 +210,7 @@ impl RoleExecutor {
                 Err(BinderyError::InvalidInput("Empty command".to_string()))
             }
         } else if context.starts_with("file:") {
-            let file_path = context.strip_prefix("file:").unwrap().trim();
+            let file_path = context.strip_prefix("file:").ok_or_else(|| BinderyError::InvalidInput("Invalid file context format".to_string()))?.trim();
             self.read_file_with_validation(role, file_path, runtime).await
         } else {
             // Default: treat as a simple execution context

@@ -261,7 +261,7 @@ impl FallbackEmbeddingService {
                     matrix[i - 1][j] + 1,     // deletion
                     matrix[i][j - 1] + 1,     // insertion
                     matrix[i - 1][j - 1] + cost, // substitution
-                ].iter().min().unwrap().clone();
+                ].iter().min().copied().unwrap_or(0);
             }
         }
 
