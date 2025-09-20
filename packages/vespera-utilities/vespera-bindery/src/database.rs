@@ -243,10 +243,10 @@ impl Database {
             status_breakdown: serde_json::Value::Object(status_breakdown),
             priority_breakdown: serde_json::Value::Object(priority_breakdown),
             recent_tasks,
-            overdue_tasks: Vec::new(), // TODO: Implement overdue logic
-            upcoming_tasks: Vec::new(), // TODO: Implement upcoming logic
+            overdue_tasks: Vec::new(), // TODO: Implement overdue logic - query tasks where due_date < now() and status != 'completed'
+            upcoming_tasks: Vec::new(), // TODO: Implement upcoming logic - query tasks where due_date > now() and due_date < now() + 7 days
             project_breakdown: serde_json::Value::Object(serde_json::Map::new()),
-            completion_rate: 0.0, // TODO: Calculate completion rate
+            completion_rate: 0.0, // TODO: Calculate completion rate as (completed_tasks / total_tasks) * 100
             average_completion_time: None,
         })
     }
@@ -257,7 +257,7 @@ impl Database {
         let now_str = now.to_rfc3339();
         
         // Build query dynamically based on what fields are provided
-        let (query_str, result) = match (title, status) {
+        let (_query_str, result) = match (title, status) { // TODO: Use _query_str for logging
             (Some(t), Some(s)) => {
                 let query_str = "UPDATE tasks SET title = ?, status = ?, updated_at = ? WHERE id = ?";
                 let result = sqlx::query(query_str)

@@ -1,25 +1,22 @@
 /// Task Service - Codex-based task persistence and CRDT operations
-/// 
+///
 /// This service replaces the Python TaskService with a Rust implementation
 /// that treats tasks as Codex entries with full CRDT collaborative editing support.
 
 use super::{
-    TaskStatus, TaskPriority, TaskRelation, TaskInput, TaskUpdateInput, 
+    TaskStatus, TaskPriority, TaskRelation, TaskInput, TaskUpdateInput,
     TaskTree, TaskSummary, TaskDashboard, TaskExecutionResult,
-    ExecutionStatus, DependencyAnalysis
+    DependencyAnalysis
 };
 use crate::codex::{Codex, CodexManagerExt};
 use crate::CodexId;
 use crate::CodexManager;
-use crate::crdt::VesperaCRDT;
 use crate::templates::{TemplateId, TemplateValue};
 use crate::errors::{BinderyError, BinderyResult};
-use serde_json::{json, Value};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use uuid::Uuid;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 
 /// Task service for managing task-based Codex entries
 #[derive(Debug)]
@@ -48,7 +45,7 @@ impl TaskService {
 
         // Initialize task content using CRDT operations
         self.initialize_task_content(&task_id, &input).await?;
-        
+
         // Create subtasks if provided
         for subtask_input in input.subtasks {
             let mut subtask_input = subtask_input;
@@ -66,7 +63,7 @@ impl TaskService {
 
     /// Update task fields using CRDT operations
     pub async fn update_task(&self, input: TaskUpdateInput) -> BinderyResult<()> {
-        let codex = self.codex_manager.get_codex_ext(&input.task_id).await?
+        let _codex = self.codex_manager.get_codex_ext(&input.task_id).await?
             .ok_or_else(|| BinderyError::NotFound(format!("Task {}", input.task_id)))?;
 
         let mut updates = HashMap::new();
@@ -80,13 +77,15 @@ impl TaskService {
         }
 
         if let Some(status) = input.status {
-            updates.insert("status".to_string(), 
-                TemplateValue::Enum(serde_json::to_string(&status).unwrap()));
+            let status_json = serde_json::to_string(&status)
+                .map_err(|e| BinderyError::SerializationError(format!("Failed to serialize task status: {}", e)))?;
+            updates.insert("status".to_string(), TemplateValue::Enum(status_json));
         }
 
         if let Some(priority) = input.priority {
-            updates.insert("priority".to_string(), 
-                TemplateValue::Enum(serde_json::to_string(&priority).unwrap()));
+            let priority_json = serde_json::to_string(&priority)
+                .map_err(|e| BinderyError::SerializationError(format!("Failed to serialize task priority: {}", e)))?;
+            updates.insert("priority".to_string(), TemplateValue::Enum(priority_json));
         }
 
         if let Some(assignee) = input.assignee {
@@ -94,7 +93,7 @@ impl TaskService {
         }
 
         if let Some(due_date) = input.due_date {
-            updates.insert("due_date".to_string(), 
+            updates.insert("due_date".to_string(),
                 TemplateValue::DateTime(due_date));
         }
 
@@ -145,14 +144,14 @@ impl TaskService {
             .await?;
 
         let mut tasks = Vec::new();
-        
+
         for codex in all_codices {
             // Check if this Codex matches our filters
             if let Some(summary) = self.codex_to_task_summary(&codex).await? {
                 let matches = self.matches_filters(
                     &summary,
                     project_id,
-                    status_filter.as_ref(), 
+                    status_filter.as_ref(),
                     priority_filter.as_ref(),
                     assignee,
                     parent_id,
@@ -218,7 +217,7 @@ impl TaskService {
             .ok_or_else(|| BinderyError::NotFound(format!("Task {}", task_id)))?;
 
         let references = codex.reference_layer.elements();
-        
+
         let mut depends_on = Vec::new();
         let mut blocks = Vec::new();
 
@@ -233,22 +232,24 @@ impl TaskService {
         // Find tasks that depend on this one
         let blocking_tasks = self.find_tasks_depending_on(task_id).await?;
         let is_blocked = self.check_if_blocked(task_id).await?;
-        
+
+        let dependency_depth = depends_on.len(); // Calculate before moving
+
         Ok(DependencyAnalysis {
             task_id: task_id.clone(),
             depends_on,
             blocks,
             is_blocked,
             blocking_tasks,
-            dependency_depth: 0, // TODO: Calculate actual depth
-            critical_path: false, // TODO: Implement critical path analysis
+            dependency_depth, // TODO: Calculate actual graph depth with cycle detection
+            critical_path: false, // TODO: Implement critical path analysis using dependency graph
         })
     }
 
     /// Get task dashboard statistics
     pub async fn get_task_dashboard(&self, project_id: Option<&str>) -> BinderyResult<TaskDashboard> {
         let tasks = self.list_tasks(project_id, None, None, None, None, 1000).await?;
-        
+
         let total_tasks = tasks.len();
         let mut status_breakdown = HashMap::new();
         let mut priority_breakdown = HashMap::new();
@@ -257,9 +258,9 @@ impl TaskService {
         for task in &tasks {
             *status_breakdown.entry(task.status.clone()).or_insert(0) += 1;
             *priority_breakdown.entry(task.priority.clone()).or_insert(0) += 1;
-            
+
             if let Some(ref proj_id) = task.project_id {
-                *project_breakdown.entry(proj_id.clone()).or_insert(0) += 1;
+                *project_breakdown.entry(proj_id.clone()).or_insert(0usize) += 1;
             }
         }
 
@@ -306,12 +307,11 @@ impl TaskService {
             total_tasks,
             status_breakdown,
             priority_breakdown,
+            project_breakdown,
             recent_tasks,
             overdue_tasks,
-            upcoming_tasks,
-            project_breakdown,
             completion_rate,
-            average_completion_time: None, // TODO: Calculate from execution history
+            avg_completion_time_hours: None, // TODO: Calculate average completion time from execution history
         })
     }
 
@@ -338,10 +338,11 @@ impl TaskService {
         let mut content = HashMap::new();
 
         content.insert("status".to_string(), TemplateValue::Enum("todo".to_string()));
-        
+
         if let Some(priority) = &input.priority {
-            content.insert("priority".to_string(), 
-                TemplateValue::Enum(serde_json::to_string(priority).unwrap()));
+            let priority_json = serde_json::to_string(priority)
+                .map_err(|e| BinderyError::SerializationError(format!("Failed to serialize task priority: {}", e)))?;
+            content.insert("priority".to_string(), TemplateValue::Enum(priority_json));
         } else {
             content.insert("priority".to_string(), TemplateValue::Enum("normal".to_string()));
         }
@@ -366,10 +367,11 @@ impl TaskService {
             content.insert("parent_id".to_string(), TemplateValue::Text(parent_id.to_string()));
         }
 
-        content.insert("tags".to_string(), 
+        content.insert("tags".to_string(),
             TemplateValue::Array(input.tags.iter().map(|t| TemplateValue::Text(t.clone())).collect()));
 
-        let labels_json = serde_json::to_value(&input.labels).unwrap();
+        let labels_json = serde_json::to_value(&input.labels)
+            .map_err(|e| BinderyError::SerializationError(format!("Failed to serialize task labels: {}", e)))?;
         content.insert("labels".to_string(), TemplateValue::Object(labels_json));
 
         content.insert("created_at".to_string(), TemplateValue::DateTime(Utc::now()));
@@ -426,7 +428,7 @@ impl TaskService {
     async fn codex_to_task_summary(&self, codex: &Codex) -> BinderyResult<Option<TaskSummary>> {
         // Extract task fields from Codex content
         let content = &codex.content;
-        
+
         let status_str = content.template_fields.get("status")
             .and_then(|field_value| match field_value {
                 crate::types::TemplateFieldValue::Text { value } => Some(value.as_str()),
@@ -492,6 +494,7 @@ impl TaskService {
             updated_at: codex.updated_at,
             due_date,
             tags,
+            progress: None, // TODO: Calculate progress from task completion status
         }))
     }
 
@@ -553,10 +556,10 @@ impl TaskService {
     ) -> std::pin::Pin<Box<dyn std::future::Future<Output = BinderyResult<TaskTree>> + Send + 'a>> {
         Box::pin(async move {
         let mut children = Vec::new();
-        
+
         if current_depth < max_depth {
             let child_ids = self.get_child_tasks(&task.id).await?;
-            
+
             for child_id in child_ids {
                 if let Some(crdt) = self.codex_manager.get_codex(&child_id).await {
                     let codex = self.crdt_to_codex(&crdt).await?;
@@ -572,6 +575,7 @@ impl TaskService {
             task: task.clone(),
             children,
             depth: current_depth,
+            is_expanded: true, // Default to expanded for initial view
         })
         })
     }
@@ -587,12 +591,16 @@ impl TaskService {
     }
 
     async fn find_tasks_depending_on(&self, task_id: &CodexId) -> BinderyResult<Vec<CodexId>> {
-        // TODO: Implement reverse dependency lookup
+        // TODO: Implement reverse dependency lookup by scanning all tasks for references to this task_id
+        // For now, return empty list as placeholder
+        let _ = task_id; // Suppress unused parameter warning
         Ok(Vec::new())
     }
 
     async fn check_if_blocked(&self, task_id: &CodexId) -> BinderyResult<bool> {
-        // TODO: Check if any dependencies are incomplete
+        // TODO: Check if any dependencies are incomplete by querying task status
+        // For now, assume not blocked as placeholder
+        let _ = task_id; // Suppress unused parameter warning
         Ok(false)
     }
 }

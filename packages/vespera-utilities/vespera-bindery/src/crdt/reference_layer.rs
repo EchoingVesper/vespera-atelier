@@ -48,7 +48,7 @@ where
     pub fn add(&mut self, element: T) -> ORTag {
         let tag = ORTag {
             operation_id: Uuid::new_v4(),
-            user_id: "system".to_string(), // TODO: Get from context
+            user_id: "system".to_string(), // TODO: Get user ID from operation context
             timestamp: Utc::now(),
         };
         
@@ -173,7 +173,6 @@ where
     /// Merge with another OR-Set
     pub fn merge(&mut self, other: &ORSet<T>) -> ORSetMergeResult {
         let mut added_elements = 0;
-        let mut removed_elements = 0;
         
         // Merge elements
         for (element, tags) in &other.elements {
@@ -201,7 +200,7 @@ where
             }
         }
         
-        removed_elements = elements_to_remove.len();
+        let removed_elements = elements_to_remove.len();
         for element in elements_to_remove {
             self.elements.remove(&element);
         }

@@ -4,19 +4,17 @@
 /// for the Codex-based system.
 
 use super::{
-    HookAgent, TimedAgent, HookTrigger, HookExecutionResult, HookAgentInput, 
-    TimedAgentInput, HookTriggerInput, HookCondition, HookAction, ActionType
+    HookAgent, TimedAgent, HookTrigger, HookExecutionResult, HookAgentInput,
+    TimedAgentInput, HookTriggerInput, HookAction, ActionType
 };
-use crate::{CodexId, CodexManager};
+use crate::{CodexId, CodexManager, TaskInput, TaskUpdateInput};
 use crate::codex::{Codex, CodexManagerExt};
-use crate::task_management::{TaskInput, TaskUpdateInput};
-use crate::TemplateId;
 use crate::errors::{BinderyError, BinderyResult};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{RwLock, Mutex};
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use serde_json::Value;
 
 /// Hook manager for event-driven automation
@@ -44,7 +42,7 @@ impl HookManager {
     /// Create a default hook manager for testing/development
     pub fn default() -> Self {
         // Create a stub CodexManager
-        let stub_manager = Arc::new(crate::CodexManager::new().unwrap());
+        let stub_manager = Arc::new(crate::CodexManager::new().unwrap_or_else(|e| { panic!("Failed to create stub CodexManager: {}", e); }));
         
         Self {
             codex_manager: stub_manager,
@@ -371,7 +369,7 @@ impl HookManager {
             },
             
             _ => {
-                // TODO: Implement remaining action types
+                // TODO: Implement remaining action types (send_notification, run_command, etc.)
                 Ok(format!("Action type {:?} not yet implemented", action.action_type))
             }
         }
@@ -402,8 +400,9 @@ impl HookManager {
 
     async fn execute_timed_agent_actions(
         agent: &TimedAgent,
-        codex_manager: &Arc<CodexManager>,
+        _codex_manager: &Arc<CodexManager>,
     ) -> BinderyResult<HookExecutionResult> {
+        // TODO: Use _codex_manager for Codex operations when implementing timed agent actions
         let start_time = std::time::Instant::now();
         let execution_time = Utc::now();
         
@@ -456,8 +455,8 @@ impl HookManager {
             name,
             description,
             trigger,
-            conditions: vec![], // TODO: Parse conditions from rule
-            actions: vec![],    // TODO: Parse actions from rule
+            conditions: vec![], // TODO: Parse conditions from rule input structure
+            actions: vec![],    // TODO: Parse actions from rule input structure
             template_id: Some(input.template_id.clone()),
             enabled: true,
             created_at: Utc::now(),
@@ -507,7 +506,7 @@ impl HookManager {
             name,
             description: "Template-generated timed agent".to_string(),
             schedule,
-            actions: vec![], // TODO: Parse actions from automation rule
+            actions: vec![], // TODO: Parse actions from automation rule input structure
             template_id: Some(input.template_id.clone()),
             enabled: true,
             created_at: Utc::now(),

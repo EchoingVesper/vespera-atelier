@@ -3,12 +3,11 @@
 /// This module provides tools to migrate existing task data and integrate
 /// with the Python MCP server during the transition period.
 
-use crate::task_management::{TaskManager, TaskInput, TaskStatus, TaskPriority};
+use crate::task_management::{TaskManager, TaskInput, TaskPriority};
 use crate::role_management::RoleManager;
 use crate::hook_system::HookManager;
 use crate::templates::{Template, TemplateId, FieldDefinition, FieldType, CrdtLayer, TemplateValue};
 use crate::errors::{BinderyError, BinderyResult};
-use crate::CodexManager;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -400,7 +399,7 @@ async def list_tasks_rust(
             "high" => Some(TaskPriority::High),
             "normal" => Some(TaskPriority::Normal),
             "low" => Some(TaskPriority::Low),
-            "someday" => Some(TaskPriority::Someday),
+            "someday" => Some(TaskPriority::Low),
             _ => Some(TaskPriority::Normal),
         };
 
@@ -420,6 +419,7 @@ async def list_tasks_rust(
             parent_id,
             assignee: python_task.assignee,
             due_date,
+            role: None, // No role information in legacy Python task data
             tags: python_task.tags,
             labels: python_task.labels,
             subtasks: Vec::new(), // Will be handled separately for hierarchical tasks
@@ -496,7 +496,7 @@ async def list_tasks_rust(
             assignee,
             assigned_role,
             parent_id,
-            child_ids: Vec::new(), // TODO: Extract child IDs
+            child_ids: Vec::new(), // TODO: Extract child IDs from task hierarchy relationships
             tags,
             labels,
             created_at,

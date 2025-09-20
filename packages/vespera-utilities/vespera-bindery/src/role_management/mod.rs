@@ -8,7 +8,7 @@ pub mod definitions;
 pub mod executor;
 
 pub use manager::RoleManager;
-pub use definitions::*;
+// Note: Role struct is defined below, so we don't import it from definitions
 pub use executor::RoleExecutor;
 
 use serde::{Deserialize, Serialize};
@@ -31,7 +31,7 @@ pub enum ToolGroup {
     Deployment,
     Monitoring,
     Security,
-    AI_LLM,
+    AiLlm,
     Development,
 }
 

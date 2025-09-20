@@ -82,11 +82,28 @@ regex = "1.10"
 # Database persistence
 sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite", "uuid", "chrono"] }
 
+# RAG system dependencies
+glob = "0.3"
+tempfile = "3.10"
+
+# Embedding models and ML
+candle-core = { version = "0.8", optional = true }
+candle-nn = { version = "0.8", optional = true }
+candle-transformers = { version = "0.8", optional = true }
+ort = { version = "2.0.0-rc.8", optional = true }
+tokenizers = { version = "0.20", optional = true }
+hf-hub = { version = "0.3", optional = true }
+
+# API clients for external embeddings
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false, optional = true }
+
+# Environment variables for API keys
+dotenvy = { version = "0.15", optional = true }
+
 [dev-dependencies]
 tokio-test = "0.4"
 criterion = "0.5"
 proptest = "1.4"
-tempfile = "3.10"
 
 [build-dependencies]
 napi-build = { version = "2.1", optional = true }
@@ -116,6 +133,12 @@ benchmarks = []
 task-management = []
 role-management = []
 hook-system = []
+
+# Embedding features
+embeddings-local = ["candle-core", "candle-nn", "candle-transformers", "tokenizers", "hf-hub"]
+embeddings-onnx = ["ort", "tokenizers", "hf-hub"]
+embeddings-api = ["reqwest", "dotenvy"]
+embeddings-all = ["embeddings-local", "embeddings-onnx", "embeddings-api"]
 
 [profile.release]
 opt-level = 3

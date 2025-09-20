@@ -50,8 +50,8 @@ pub trait CodexManagerExt {
 
 impl CodexManagerExt for crate::CodexManager {
     async fn create_codex_ext(&self, title: String, template_id: TemplateId) -> BinderyResult<CodexId> {
-        // Placeholder - integrate with existing create_codex method
-        Ok(CodexId::new_v4())
+        // Use the existing create_codex method from CodexManager
+        self.create_codex(title, template_id).await
     }
 
     async fn get_codex_ext(&self, _id: &CodexId) -> BinderyResult<Option<Codex>> {

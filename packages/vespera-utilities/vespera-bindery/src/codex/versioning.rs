@@ -52,12 +52,12 @@ impl VersionManager {
     /// Create a new version
     pub fn create_version(
         &mut self,
-        codex_id: CodexId,
-        content_hash: ContentHash,
-        message: String,
-        author: UserId,
+        _codex_id: CodexId,
+        _content_hash: ContentHash,
+        _message: String,
+        _author: UserId,
     ) -> BinderyResult<String> {
-        // TODO: Implement version creation
+        // TODO: Implement version creation using _codex_id, _content_hash, _message, and _author
         Err(crate::BinderyError::NotImplemented(
             "Version creation not yet implemented".to_string()
         ))

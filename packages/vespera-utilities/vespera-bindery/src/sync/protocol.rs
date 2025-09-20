@@ -1,7 +1,7 @@
 //! Network protocol for CRDT synchronization
 
 use serde::{Deserialize, Serialize};
-use crate::{types::{CodexId, UserId, OperationId}, crdt::CRDTOperation};
+use crate::{types::{CodexId, UserId}, crdt::CRDTOperation};
 
 /// Synchronization protocol implementation
 #[derive(Debug)]
