@@ -41,7 +41,7 @@ impl CircuitState {
             CircuitState::Open => "open",
             CircuitState::HalfOpen => "half_open",
         }
-
+    }
 }
 
 /// Circuit breaker configuration

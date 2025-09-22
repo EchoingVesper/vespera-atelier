@@ -1,0 +1,429 @@
+# V2 Task Tree: {{ project_description }}
+# Generated from meta-development-project template
+# Preserves V1 meta-PRP executive dysfunction support patterns
+
+project_info:
+  name: "{{ project_name }}"
+  description: "{{ project_description }}"
+  complexity: "{{ complexity_level }}"
+  technologies: "{{ primary_technologies }}"
+  created_date: "{{ _copier_answers._now }}"
+
+# Root Task (equivalent to V1 main coordination)
+root_task:
+  id: "{{ project_name }}-root"
+  title: "{{ project_description }}"
+  description: |
+    Main coordination task for {{ project_name }} development project.
+    
+    This task tree preserves V1 meta-PRP executive dysfunction support patterns:
+    - Pre-structured task breakdown eliminates decision paralysis
+    - Clear numbered progression reduces cognitive load  
+    - Hook integration provides automated reminders instead of agent spawning
+    - Each task has clear boundaries and completion criteria
+  
+  role: "coordinator"
+  priority: "high"
+  
+  # Hook Configuration (replaces V1 agent spawning)
+  hooks:
+    {% if enable_git_hooks %}
+    - trigger: "task_status_change"
+      condition: 
+        status: "started"
+      action: "programmatic"
+      implementation: "hooks.actions.git_operations.create_branch"
+      parameters:
+        branch_prefix: "{{ feature_branch_prefix if use_feature_branch else 'task/' }}"
+        auto_create: {{ use_feature_branch | lower }}
+    
+    - trigger: "task_completion_attempt"
+      action: "programmatic"
+      implementation: "hooks.actions.git_operations.check_uncommitted_changes"
+      parameters:
+        block_completion: true
+        reminder_message: "⚠️ Uncommitted changes detected. Please commit your work before completing this task."
+    {% endif %}
+    
+    {% if enable_testing_hooks %}
+    - trigger: "subtask_completion" 
+      condition:
+        subtask_role: ["developer", "coder"]
+      action: "programmatic"
+      implementation: "hooks.actions.testing.remind_test_execution"
+      parameters:
+        reminder_message: "🧪 Remember to run tests after code changes"
+        suggest_command: "python run_tests.py --suite related"
+    {% endif %}
+
+# Task Hierarchy (mirrors V1 multi-phase structure)
+task_hierarchy:
+
+{% if include_research_phase %}
+  # Phase 1: Research & Analysis (V1 Research Phase)
+  - id: "{{ project_name }}-research"
+    title: "Research & Requirements Analysis"
+    description: |
+      Comprehensive research phase following V1 meta-PRP systematic methodology.
+      
+      Key V1 Lessons Applied:
+      - Pattern recognition over individual debugging  
+      - Research-first methodology before any implementation
+      - Infrastructure stability focus for multiplicative impact
+    
+    parent_id: "{{ project_name }}-root"
+    role: "researcher"
+    priority: "critical"
+    order: 1
+    
+    # Executive dysfunction support: pre-structured subtasks
+    subtasks:
+      - id: "{{ project_name }}-research-existing"
+        title: "Analyze Existing Codebase & Patterns"
+        description: "Survey existing code patterns, dependencies, and architectural decisions"
+        role: "researcher"
+        estimated_hours: 2
+        
+        completion_criteria:
+          - "Document existing patterns and dependencies"
+          - "Identify reusable components and potential conflicts"
+          - "Note any security or performance considerations"
+      
+      - id: "{{ project_name }}-research-requirements"
+        title: "Gather Comprehensive Requirements"
+        description: "Define functional and non-functional requirements with security considerations"
+        role: "analyst" 
+        estimated_hours: 3
+        depends_on: ["{{ project_name }}-research-existing"]
+        
+        completion_criteria:
+          - "Functional requirements documented with acceptance criteria"
+          - "Non-functional requirements (performance, security) defined"
+          - "Dependencies and integration points identified"
+    
+    # Research Phase Hooks (replaces V1 research sub-agents)
+    hooks:
+      {% if enable_security_hooks %}
+      - trigger: "task_started"
+        action: "programmatic"
+        implementation: "hooks.actions.security.research_security_requirements"
+        parameters:
+          checklist: 
+            - "Review OWASP guidelines for technology stack"
+            - "Identify authentication/authorization requirements"
+            - "Check for data protection and privacy considerations"
+      {% endif %}
+      
+      - trigger: "task_completion_attempt"
+        action: "programmatic"
+        implementation: "hooks.actions.validation.check_research_completeness"
+        parameters:
+          required_artifacts:
+            - "requirements-analysis.md"
+            - "existing-patterns-survey.md"
+            - "security-considerations.md"
+          block_completion_if_missing: true
+{% endif %}
+
+{% if include_design_phase %}
+  # Phase 2: Architecture & Design (V1 Design Phase)  
+  - id: "{{ project_name }}-design"
+    title: "Architecture & Design Planning"
+    description: |
+      Systematic design phase following clean architecture principles.
+      
+      V1 Infrastructure Focus Applied:
+      - Design solutions with multiplicative impact
+      - Address root causes in architecture and configuration
+      - Create reusable patterns for future development
+    
+    parent_id: "{{ project_name }}-root"
+    {% if include_research_phase %}depends_on: ["{{ project_name }}-research"]{% endif %}
+    role: "architect"
+    priority: "high"
+    order: 2
+    
+    subtasks:
+      - id: "{{ project_name }}-design-architecture"
+        title: "Define System Architecture"
+        description: "Create high-level system design following clean architecture"
+        role: "architect"
+        estimated_hours: 4
+        
+        completion_criteria:
+          - "System architecture diagram created"
+          - "Component interactions documented"
+          - "Data flow and state management defined"
+      
+      - id: "{{ project_name }}-design-api"
+        title: "API Design & Contracts"
+        description: "Define API interfaces and contracts"
+        role: "api_designer"
+        estimated_hours: 3
+        depends_on: ["{{ project_name }}-design-architecture"]
+        
+        completion_criteria:
+          - "API endpoints and methods documented"
+          - "Request/response schemas defined"
+          - "Error handling patterns specified"
+    
+    hooks:
+      {% if enable_security_hooks %}
+      - trigger: "task_started"
+        action: "programmatic"
+        implementation: "hooks.actions.security.design_security_review"
+        parameters:
+          security_checklist:
+            - "Authentication and authorization design"
+            - "Input validation and sanitization"
+            - "Data encryption and storage security"
+            - "API security considerations"
+      {% endif %}
+      
+      - trigger: "subtask_completion"
+        action: "programmatic"
+        implementation: "hooks.actions.documentation.update_design_docs"
+        parameters:
+          auto_update_files: ["ARCHITECTURE.md", "API_DESIGN.md"]
+          reminder_message: "📐 Design documentation updated. Review for consistency."
+{% endif %}
+
+{% if include_implementation_phase %}
+  # Phase 3: Implementation (V1 Implementation Phase)
+  - id: "{{ project_name }}-implementation"
+    title: "Core Implementation"
+    description: |
+      Implementation phase with automated quality gates.
+      
+      V1 Hook Integration Applied:
+      - Automated problem prevention over correction
+      - Systematic automation for known failure patterns
+      - Quality gates prevent issues before they occur
+    
+    parent_id: "{{ project_name }}-root"
+    {% if include_design_phase %}depends_on: ["{{ project_name }}-design"]{% endif %}
+    role: "developer"
+    priority: "high"
+    order: 3
+    
+    {% if complexity_level in ["complex", "comprehensive"] %}
+    subtasks:
+      - id: "{{ project_name }}-impl-core"
+        title: "Core Logic Implementation"
+        description: "Implement main business logic and core functionality"
+        role: "developer"
+        estimated_hours: 8
+        
+        completion_criteria:
+          - "Core functionality implemented with error handling"
+          - "Unit tests written with >80% coverage"
+          - "Code follows project style guidelines"
+      
+      - id: "{{ project_name }}-impl-integration"
+        title: "Integration Layer Implementation"
+        description: "Implement external integrations and data persistence"
+        role: "developer"
+        estimated_hours: 6
+        depends_on: ["{{ project_name }}-impl-core"]
+        
+        completion_criteria:
+          - "Database/persistence layer implemented"
+          - "External API integrations working"
+          - "Integration tests passing"
+      
+      - id: "{{ project_name }}-impl-ui"
+        title: "User Interface Implementation"
+        description: "Implement user-facing interfaces and interactions"
+        role: "frontend_developer"
+        estimated_hours: 5
+        depends_on: ["{{ project_name }}-impl-integration"]
+        
+        completion_criteria:
+          - "User interfaces implemented and responsive"
+          - "User interactions working as designed"
+          - "Accessibility guidelines followed"
+    {% endif %}
+    
+    # Implementation Hooks (replaces V1 implementation sub-agents)
+    hooks:
+      {% if enable_testing_hooks %}
+      - trigger: "file_change"
+        condition:
+          file_patterns: ["*.py", "*.js", "*.ts"]
+        action: "programmatic"
+        implementation: "hooks.actions.testing.run_relevant_tests"
+        parameters:
+          test_scope: "related"
+          auto_fix: false
+          reminder_only: true
+      {% endif %}
+      
+      {% if enable_git_hooks %}
+      - trigger: "task_progress"
+        condition:
+          progress_threshold: 0.5
+        action: "programmatic"
+        implementation: "hooks.actions.git_operations.remind_commit"
+        parameters:
+          message: "📝 You're halfway through implementation. Consider committing your progress."
+          check_uncommitted_files: true
+      {% endif %}
+      
+      - trigger: "task_completion_attempt"
+        action: "programmatic"
+        implementation: "hooks.actions.validation.check_implementation_quality"
+        parameters:
+          required_checks:
+            - "Code linting passes"
+            - "Type checking passes" 
+            - "Unit tests pass with required coverage"
+            - "No security vulnerabilities detected"
+          block_completion_if_failed: true
+{% endif %}
+
+{% if include_validation_phase %}
+  # Phase 4: Testing & Validation (V1 Validation Phase)
+  - id: "{{ project_name }}-validation"
+    title: "Comprehensive Testing & Validation"
+    description: |
+      Multi-stage validation following V1 systematic testing methodology.
+      
+      V1 Validation Principles Applied:
+      - Comprehensive quality gates from syntax to production
+      - Security validation at each stage
+      - Performance and integration testing
+    
+    parent_id: "{{ project_name }}-root"
+    {% if include_implementation_phase %}depends_on: ["{{ project_name }}-implementation"]{% endif %}
+    role: "tester"
+    priority: "high"
+    order: 4
+    
+    subtasks:
+      - id: "{{ project_name }}-test-unit"
+        title: "Unit Test Validation"
+        description: "Comprehensive unit testing with coverage analysis"
+        role: "tester"
+        estimated_hours: 3
+        
+        completion_criteria:
+          - "All unit tests passing"
+          - "Code coverage >80%"
+          - "Edge cases covered"
+      
+      - id: "{{ project_name }}-test-integration"
+        title: "Integration Testing" 
+        description: "Test component interactions and external dependencies"
+        role: "tester"
+        estimated_hours: 4
+        depends_on: ["{{ project_name }}-test-unit"]
+        
+        completion_criteria:
+          - "Integration tests passing"
+          - "Database operations tested"
+          - "External API interactions tested"
+      
+      {% if enable_security_hooks %}
+      - id: "{{ project_name }}-test-security"
+        title: "Security Validation"
+        description: "Security testing and vulnerability assessment"
+        role: "security_auditor"
+        estimated_hours: 3
+        depends_on: ["{{ project_name }}-test-integration"]
+        
+        completion_criteria:
+          - "Security scan completed"
+          - "Authentication/authorization tested"
+          - "Input validation verified"
+          - "No high-severity vulnerabilities"
+      {% endif %}
+    
+    hooks:
+      - trigger: "task_started"
+        action: "programmatic"
+        implementation: "hooks.actions.testing.prepare_test_environment"
+        parameters:
+          setup_commands:
+            - "Install test dependencies"
+            - "Set up test database"
+            - "Configure test environment variables"
+      
+      - trigger: "subtask_completion"
+        action: "programmatic" 
+        implementation: "hooks.actions.validation.update_test_reports"
+        parameters:
+          generate_reports: ["coverage", "test-results", "security-scan"]
+          update_readme: true
+      
+      - trigger: "task_completion_attempt"
+        action: "programmatic"
+        implementation: "hooks.actions.validation.final_validation"
+        parameters:
+          validation_gates:
+            - "All tests passing"
+            - "Security requirements met"
+            - "Performance benchmarks met"
+            - "Documentation updated"
+          block_completion_if_failed: true
+{% endif %}
+
+# Final Completion Hooks (replaces V1 result synthesis)
+completion_hooks:
+  {% if enable_git_hooks %}
+  - trigger: "project_completion"
+    action: "programmatic"
+    implementation: "hooks.actions.git_operations.prepare_merge_request"
+    parameters:
+      create_pr: {{ use_feature_branch | lower }}
+      pr_template: |
+        ## {{ project_description }}
+        
+        ### Summary
+        This PR implements {{ project_name }} following V2 task tree methodology with hook-based automation.
+        
+        ### Testing
+        - [ ] Unit tests passing
+        - [ ] Integration tests passing
+        {% if enable_security_hooks %}- [ ] Security validation completed{% endif %}
+        
+        ### Validation
+        All V2 hook validations have passed automatically.
+      
+      cleanup_feature_branch: false  # Keep for review
+  {% endif %}
+  
+  {% if enable_documentation_hooks %}
+  - trigger: "project_completion" 
+    action: "programmatic"
+    implementation: "hooks.actions.documentation.generate_project_summary"
+    parameters:
+      output_file: "{{ project_name }}-completion-summary.md"
+      include_metrics: true
+      include_lessons_learned: true
+  {% endif %}
+
+# Executive Dysfunction Support Metadata
+executive_dysfunction_support:
+  pre_structured_tasks: {{ preserve_executive_dysfunction_support | lower }}
+  clear_numbering: true
+  decision_reduction: "Tasks pre-defined with clear completion criteria"
+  progress_tracking: "Multiple granularities via hook system"
+  momentum_preservation: "Git hooks ensure work is preserved automatically"
+  conflict_prevention: "Hook validation prevents known failure patterns"
+
+# V1 to V2 Migration Notes
+migration_notes: |
+  This V2 task tree preserves key V1 meta-PRP patterns:
+  
+  ✅ Executive dysfunction support via pre-structured tasks
+  ✅ Multi-phase approach (research → design → implementation → validation)
+  ✅ Systematic automation via hooks (replaces agent spawning)
+  ✅ Git integration for work preservation
+  ✅ Hook-based problem prevention (replaces manual coordination)
+  
+  Key improvements in V2:
+  🚀 Real hook system with programmatic actions
+  🚀 MCP task management integration  
+  🚀 Template-based generation via Copier
+  🚀 Hierarchical task dependencies
+  🚀 Role-based capability restrictions

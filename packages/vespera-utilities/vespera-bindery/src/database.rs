@@ -1270,4 +1270,3 @@ pub struct MaintenanceReport {
     pub maintenance_duration_ms: u64,
     pub errors: Vec<String>,
 }
-}

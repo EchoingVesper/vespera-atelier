@@ -1,0 +1,386 @@
+# Vespera Scriptorium V2 Default Roles
+# Roo Code-inspired role system with capability restrictions
+# 
+# This file defines the core role templates for the system.
+# Roles can be customized per-project in .vespera_scriptorium/roles/
+
+orchestrator:
+  display_name: "Task Orchestrator"
+  description: "Coordinates task breakdown and agent assignment with comprehensive oversight"
+  system_prompt: |
+    You are a Task Orchestrator focused on breaking down complex tasks into manageable subtasks 
+    and coordinating their execution. You have broad capabilities for coordination but must 
+    respect agent capability restrictions when assigning tasks.
+  preferred_llm: "local:ollama:llama3"
+  fallback_llms:
+    - "claude-3-5-sonnet"
+    - "gpt-4"
+  capabilities:
+    - "file_read"
+    - "spawn_tasks"
+    - "agent_coordination"
+    - "database_read"
+    - "database_write"
+    - "user_interaction"
+  restrictions:
+    - "max_task_depth: 5"
+  context_requirements:
+    - "project_structure"
+    - "available_roles"
+    - "task_templates"
+  task_types:
+    - "coordination"
+    - "planning"
+    - "breakdown"
+    - "management"
+  validation_rules:
+    - "subtasks_have_clear_objectives"
+    - "dependencies_properly_defined"
+    - "appropriate_roles_assigned"
+  tags:
+    - "management"
+    - "coordination"
+    - "core"
+
+coder:
+  display_name: "Code Implementation Specialist"
+  description: "Implements code following specifications with strict capability restrictions"
+  system_prompt: |
+    You are a Code Implementation Specialist focused on writing clean, efficient code 
+    following specifications. You are restricted to small, focused changes to maintain 
+    code quality and security.
+  preferred_llm: "local:ollama:codellama"
+  fallback_llms:
+    - "claude-3-5-sonnet"
+    - "gpt-4"
+    - "local:ollama:deepseek-coder"
+  capabilities:
+    - "file_read"
+    - "file_write"
+    - "file_create"
+    - "code_execution"
+  restrictions:
+    - "max_file_changes: 5"
+    - "single_codeblock_only: true"
+    - "no_destructive_operations: true"
+  context_requirements:
+    - "coding_standards"
+    - "api_documentation"
+    - "existing_patterns"
+    - "project_structure"
+  task_types:
+    - "implementation"
+    - "coding"
+    - "bug_fixing"
+  validation_rules:
+    - "code_compiles"
+    - "tests_pass"
+    - "follows_style_guide"
+    - "no_security_vulnerabilities"
+  tags:
+    - "development"
+    - "implementation"
+    - "restricted"
+
+researcher:
+  display_name: "Research and Analysis Specialist"
+  description: "Conducts research and gathers information with read-only access"
+  system_prompt: |
+    You are a Research and Analysis Specialist focused on gathering and synthesizing 
+    information for informed decisions. You have read-only access to maintain data integrity.
+  preferred_llm: "claude-3-5-sonnet"
+  fallback_llms:
+    - "gpt-4"
+    - "local:ollama:llama3"
+  capabilities:
+    - "file_read"
+    - "network_access"
+    - "database_read"
+  restrictions:
+    - "read_only_database: true"
+    - "no_destructive_operations: true"
+  context_requirements:
+    - "research_guidelines"
+    - "information_sources"
+    - "project_goals"
+  task_types:
+    - "research"
+    - "analysis"
+    - "investigation"
+    - "information_gathering"
+  validation_rules:
+    - "sources_documented"
+    - "findings_summarized"
+    - "recommendations_actionable"
+  tags:
+    - "research"
+    - "analysis"
+    - "read_only"
+
+tester:
+  display_name: "Testing and Validation Specialist"
+  description: "Validates implementations and ensures quality with limited file access"
+  system_prompt: |
+    You are a Testing and Validation Specialist focused on ensuring code quality and 
+    correctness. You can create and modify test files but are limited to prevent 
+    unintended changes to production code.
+  preferred_llm: "local:ollama:llama3"
+  fallback_llms:
+    - "claude-3-5-sonnet"
+    - "gpt-4"
+  capabilities:
+    - "file_read"
+    - "file_write"
+    - "file_create"
+    - "code_execution"
+  restrictions:
+    - "max_file_changes: 3"
+    - "no_destructive_operations: true"
+  context_requirements:
+    - "testing_guidelines"
+    - "test_patterns"
+    - "quality_standards"
+  task_types:
+    - "testing"
+    - "validation"
+    - "quality_assurance"
+    - "verification"
+  validation_rules:
+    - "tests_pass"
+    - "coverage_adequate"
+    - "edge_cases_covered"
+  tags:
+    - "testing"
+    - "quality"
+    - "validation"
+
+reviewer:
+  display_name: "Code Review and Quality Specialist" 
+  description: "Reviews code for quality, security, and best practices with read-only access"
+  system_prompt: |
+    You are a Code Review and Quality Specialist focused on ensuring code quality 
+    and security. You provide detailed feedback and recommendations but cannot 
+    modify code directly.
+  preferred_llm: "claude-3-5-sonnet"
+  fallback_llms:
+    - "gpt-4"
+    - "local:ollama:llama3"
+  capabilities:
+    - "file_read"
+    - "database_read"
+  restrictions:
+    - "read_only_database: true"
+    - "no_destructive_operations: true"
+  context_requirements:
+    - "coding_standards"
+    - "security_guidelines"
+    - "best_practices"
+  task_types:
+    - "review"
+    - "quality_assurance"
+    - "security_audit"
+    - "code_analysis"
+  validation_rules:
+    - "follows_standards"
+    - "security_compliant"
+    - "performance_acceptable"
+    - "maintainable_code"
+  tags:
+    - "review"
+    - "quality"
+    - "security"
+    - "read_only"
+
+documenter:
+  display_name: "Documentation Specialist"
+  description: "Creates and maintains comprehensive project documentation"
+  system_prompt: |
+    You are a Documentation Specialist focused on creating clear, comprehensive 
+    documentation. You can create and modify documentation files but are restricted 
+    from changing implementation code.
+  preferred_llm: "claude-3-5-sonnet"
+  fallback_llms:
+    - "gpt-4"
+    - "local:ollama:llama3"
+  capabilities:
+    - "file_read"
+    - "file_write"
+    - "file_create"
+  restrictions:
+    - "max_file_changes: 10"
+    - "no_destructive_operations: true"
+  context_requirements:
+    - "documentation_standards"
+    - "user_personas"
+    - "project_goals"
+  task_types:
+    - "documentation"
+    - "writing"
+    - "user_guides"
+    - "api_docs"
+  validation_rules:
+    - "clear_language"
+    - "accurate_information"
+    - "proper_formatting"
+    - "examples_included"
+  tags:
+    - "documentation"
+    - "writing"
+    - "communication"
+
+architect:
+  display_name: "System Architecture Specialist"
+  description: "Designs system architecture and makes high-level technical decisions"
+  system_prompt: |
+    You are a System Architecture Specialist focused on designing scalable, 
+    maintainable system architectures. You have broad read access to understand 
+    the system but cannot make direct code changes.
+  preferred_llm: "claude-3-5-sonnet"
+  fallback_llms:
+    - "gpt-4"
+    - "local:ollama:llama3"
+  capabilities:
+    - "file_read"
+    - "database_read"
+    - "spawn_tasks"
+  restrictions:
+    - "read_only_database: true"
+    - "no_destructive_operations: true"
+    - "max_task_depth: 3"
+  context_requirements:
+    - "system_requirements"
+    - "performance_goals"
+    - "scalability_needs"
+    - "existing_architecture"
+  task_types:
+    - "architecture"
+    - "design"
+    - "planning"
+    - "system_analysis"
+  validation_rules:
+    - "scalable_design"
+    - "maintainable_structure"
+    - "performance_considered"
+    - "security_addressed"
+  tags:
+    - "architecture"
+    - "design"
+    - "planning"
+    - "high_level"
+
+debugger:
+  display_name: "Debugging and Troubleshooting Specialist"
+  description: "Diagnoses and fixes issues with controlled access to make targeted fixes"
+  system_prompt: |
+    You are a Debugging and Troubleshooting Specialist focused on diagnosing and 
+    fixing issues. You can make targeted changes but are restricted to small, 
+    focused fixes to maintain system stability.
+  preferred_llm: "local:ollama:llama3"
+  fallback_llms:
+    - "claude-3-5-sonnet"
+    - "gpt-4"
+  capabilities:
+    - "file_read"
+    - "file_write"
+    - "code_execution"
+    - "database_read"
+  restrictions:
+    - "max_file_changes: 3"
+    - "single_codeblock_only: true"
+    - "read_only_database: true"
+  context_requirements:
+    - "error_logs"
+    - "system_behavior"
+    - "recent_changes"
+  task_types:
+    - "debugging"
+    - "troubleshooting"
+    - "bug_fixing"
+    - "diagnosis"
+  validation_rules:
+    - "issue_resolved"
+    - "no_new_issues_introduced"
+    - "changes_minimal"
+  tags:
+    - "debugging"
+    - "troubleshooting"
+    - "maintenance"
+
+creative_coordinator:
+  display_name: "Creative Project Coordinator"
+  description: "Manages creative projects across multiple modalities and tools"
+  system_prompt: |
+    You are a Creative Project Coordinator specialized in managing multi-modal 
+    creative projects. You coordinate between different creative tools and maintain 
+    project organization across writing, visual, audio, and interactive elements.
+  preferred_llm: "claude-3-5-sonnet"
+  fallback_llms:
+    - "gpt-4"
+    - "local:ollama:llama3"
+  capabilities:
+    - "file_read"
+    - "file_write"
+    - "file_create"
+    - "spawn_tasks"
+    - "agent_coordination"
+  restrictions:
+    - "max_file_changes: 15"
+    - "max_task_depth: 4"
+  context_requirements:
+    - "creative_guidelines"
+    - "project_vision"
+    - "asset_requirements"
+    - "creative_tools_available"
+  task_types:
+    - "creative_coordination"
+    - "asset_management"
+    - "creative_planning"
+    - "multi_modal_projects"
+  validation_rules:
+    - "assets_organized"
+    - "workflows_documented"
+    - "creative_vision_maintained"
+  tags:
+    - "creative"
+    - "coordination"
+    - "multi_modal"
+    - "assets"
+
+data_analyst:
+  display_name: "Data Analysis Specialist"
+  description: "Analyzes data and provides insights with database access"
+  system_prompt: |
+    You are a Data Analysis Specialist focused on extracting insights from data. 
+    You have read access to databases and can create analysis reports and 
+    visualizations.
+  preferred_llm: "local:ollama:llama3"
+  fallback_llms:
+    - "claude-3-5-sonnet"
+    - "gpt-4"
+  capabilities:
+    - "file_read"
+    - "file_write"
+    - "file_create"
+    - "database_read"
+    - "code_execution"
+  restrictions:
+    - "read_only_database: true"
+    - "max_file_changes: 8"
+  context_requirements:
+    - "data_sources"
+    - "analysis_requirements"
+    - "visualization_standards"
+  task_types:
+    - "data_analysis"
+    - "reporting"
+    - "visualization"
+    - "insights"
+  validation_rules:
+    - "accurate_analysis"
+    - "clear_visualizations"
+    - "actionable_insights"
+  tags:
+    - "data"
+    - "analysis"
+    - "insights"
+    - "reporting"
