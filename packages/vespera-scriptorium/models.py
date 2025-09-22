@@ -4,8 +4,45 @@ Serves as the contract between the FastMCP server and Rust Bindery backend.
 """
 
 from typing import Optional, List, Dict, Any, Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
+from enum import Enum
+
+
+# Enums
+class TaskStatus(str, Enum):
+    """Task status enumeration matching Bindery backend."""
+    TODO = "todo"
+    DOING = "doing"
+    DONE = "done"
+    BLOCKED = "blocked"
+    CANCELLED = "cancelled"
+
+
+class TaskPriority(str, Enum):
+    """Task priority enumeration matching Bindery backend."""
+    LOW = "low"
+    NORMAL = "normal"
+    HIGH = "high"
+    URGENT = "urgent"
+
+
+class DocumentType(str, Enum):
+    """Document type enumeration for RAG indexing."""
+    TEXT = "text"
+    CODE = "code"
+    MARKDOWN = "markdown"
+    DOCUMENTATION = "documentation"
+    CONFIGURATION = "configuration"
+    DATA = "data"
+
+
+class HealthStatus(str, Enum):
+    """Health status enumeration."""
+    HEALTHY = "healthy"
+    DEGRADED = "degraded"
+    UNHEALTHY = "unhealthy"
+    UNKNOWN = "unknown"
 
 
 # Task Management Models
@@ -13,11 +50,15 @@ class TaskInput(BaseModel):
     """Input model for creating a new task."""
     title: str = Field(..., description="Task title")
     description: Optional[str] = Field(None, description="Task description")
-    priority: Optional[Literal["low", "medium", "high", "urgent"]] = Field(
-        "medium", description="Task priority level"
+    priority: Optional[TaskPriority] = Field(
+        TaskPriority.NORMAL, description="Task priority level"
     )
+    status: Optional[TaskStatus] = Field(TaskStatus.TODO, description="Task status")
     tags: Optional[List[str]] = Field(default_factory=list, description="Task tags")
     parent_id: Optional[str] = Field(None, description="Parent task ID for subtasks")
+    project_id: Optional[str] = Field(None, description="Associated project ID")
+    labels: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Task labels")
+    subtasks: Optional[List["TaskInput"]] = Field(None, description="Nested subtasks")
 
 
 class TaskOutput(BaseModel):
@@ -25,12 +66,15 @@ class TaskOutput(BaseModel):
     id: str = Field(..., description="Task ID")
     title: str = Field(..., description="Task title")
     description: Optional[str] = Field(None, description="Task description")
-    status: str = Field(..., description="Task status")
-    priority: str = Field(..., description="Task priority")
+    status: TaskStatus = Field(..., description="Task status")
+    priority: TaskPriority = Field(..., description="Task priority")
     tags: List[str] = Field(default_factory=list, description="Task tags")
+    labels: Dict[str, Any] = Field(default_factory=dict, description="Task labels")
     created_at: datetime = Field(..., description="Task creation timestamp")
     updated_at: datetime = Field(..., description="Task update timestamp")
+    completed_at: Optional[datetime] = Field(None, description="Task completion timestamp")
     parent_id: Optional[str] = Field(None, description="Parent task ID")
+    project_id: Optional[str] = Field(None, description="Associated project ID")
     children: List[str] = Field(default_factory=list, description="Child task IDs")
 
 
@@ -38,13 +82,15 @@ class TaskUpdateInput(BaseModel):
     """Input model for updating an existing task."""
     title: Optional[str] = Field(None, description="Updated task title")
     description: Optional[str] = Field(None, description="Updated task description")
-    status: Optional[Literal["pending", "in_progress", "completed", "cancelled"]] = Field(
+    status: Optional[TaskStatus] = Field(
         None, description="Updated task status"
     )
-    priority: Optional[Literal["low", "medium", "high", "urgent"]] = Field(
+    priority: Optional[TaskPriority] = Field(
         None, description="Updated task priority"
     )
     tags: Optional[List[str]] = Field(None, description="Updated task tags")
+    labels: Optional[Dict[str, Any]] = Field(None, description="Updated task labels")
+    project_id: Optional[str] = Field(None, description="Updated project ID")
 
 
 # Project Management Models
@@ -148,3 +194,48 @@ class ListResponse(BaseModel):
     total: int = Field(..., description="Total number of items")
     page: Optional[int] = Field(None, description="Current page number")
     per_page: Optional[int] = Field(None, description="Items per page")
+
+
+# Role Management Models
+class RoleDefinition(BaseModel):
+    """Role definition model."""
+    name: str = Field(..., description="Role name")
+    description: str = Field(..., description="Role description")
+    capabilities: List[str] = Field(default_factory=list, description="Role capabilities")
+    file_patterns: List[str] = Field(default_factory=list, description="Allowed file patterns")
+    restrictions: Dict[str, Any] = Field(default_factory=dict, description="Role restrictions")
+    model_context_limit: Optional[int] = Field(None, description="Model context limit in tokens")
+
+
+# Document/RAG Models
+class DocumentInput(BaseModel):
+    """Input model for document indexing."""
+    content: str = Field(..., description="Document content")
+    title: str = Field(..., description="Document title")
+    document_type: DocumentType = Field(DocumentType.TEXT, description="Document type")
+    source_path: Optional[str] = Field(None, description="Source file path")
+    tags: Optional[List[str]] = Field(default_factory=list, description="Document tags")
+    project_id: Optional[str] = Field(None, description="Associated project ID")
+
+
+# Additional Response Models
+class DeleteTaskResponse(BaseModel):
+    """Response for delete task operation."""
+    success: bool = Field(..., description="Operation success status")
+    task_id: str = Field(..., description="Deleted task ID")
+    message: Optional[str] = Field(None, description="Additional message")
+
+
+class CompleteTaskResponse(BaseModel):
+    """Response for complete task operation."""
+    success: bool = Field(..., description="Operation success status")
+    task: TaskOutput = Field(..., description="Completed task data")
+    completion_notes: Optional[str] = Field(None, description="Completion notes")
+
+
+class ExecuteTaskResponse(BaseModel):
+    """Response for execute task operation."""
+    success: bool = Field(..., description="Operation success status")
+    task_id: str = Field(..., description="Task ID")
+    role_assigned: str = Field(..., description="Assigned role")
+    execution_id: Optional[str] = Field(None, description="Execution ID for tracking")

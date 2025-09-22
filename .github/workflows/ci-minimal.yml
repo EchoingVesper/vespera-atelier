@@ -39,11 +39,11 @@ jobs:
         python3 -m pip install --upgrade pip || python -m pip install --upgrade pip
         pip install -r requirements.txt
     
-    - name: Run V2 linting
+    - name: Run linting
       working-directory: packages/vespera-scriptorium
       run: |
-        black --check roles/ tasks/ hooks/ templates/ *.py || true
-        isort --check-only roles/ tasks/ hooks/ templates/ *.py || true
+        black --check *.py || true
+        isort --check-only *.py || true
     
     - name: Run V2 type checking
       working-directory: packages/vespera-scriptorium
@@ -51,28 +51,33 @@ jobs:
         # mypy roles/ tasks/ --ignore-missing-imports || true  # Disabled for V2 initially
         echo "Type checking skipped for V2 development phase"
     
-    - name: Run V2 tests
+    - name: Run MCP tests
       working-directory: packages/vespera-scriptorium
       run: |
-        # Run system tests
-        if [ -f "run_tests.py" ]; then
-          python run_tests.py --suite system || true
+        # Install additional requirements
+        if [ -f "requirements_bindery.txt" ]; then
+          pip install -r requirements_bindery.txt
         fi
-        
-        # Run hook system test specifically
-        if [ -f "tests/system/test_hook_system.py" ]; then
-          python tests/system/test_hook_system.py || true
+
+        # Test FastMCP tool registration
+        if [ -f "test_fastmcp_registration.py" ]; then
+          python test_fastmcp_registration.py
         fi
-        
-        # Run template system test
-        if [ -f "tests/system/test_template_system.py" ]; then
-          python tests/system/test_template_system.py || true
+
+        # Run MCP mock tests
+        if [ -f "test_bindery_tools_mock.py" ]; then
+          python test_bindery_tools_mock.py || true
+        fi
+
+        # Test MCP server startup (with timeout for server process)
+        if [ -f "mcp_server.py" ]; then
+          timeout 5 python mcp_server.py || [ $? -eq 124 ]
         fi
     
-    - name: Verify V2 imports
+    - name: Verify MCP imports
       working-directory: packages/vespera-scriptorium
       run: |
-        python -c "from tasks.models import Task; from roles.definitions import ToolGroup; print('V2 imports successful')"
+        python -c "from models import TaskInput, TaskOutput; from resilience import ResilienceManager; print('MCP imports successful')"
 
   # Test Obsidian plugin (DISABLED - plugin not yet implemented)
   # test-obsidian-plugin:
@@ -133,15 +138,20 @@ jobs:
       with:
         python-version: '3.11'
     
-    - name: Verify V2 system structure
+    - name: Verify MCP system structure
       working-directory: packages/vespera-scriptorium
       run: |
-        # Verify directory structure
-        ls -la roles/ tasks/ hooks/ templates/ || true
-        
-        # Install and verify imports
+        # Verify files exist
+        ls -la mcp_server.py bindery_client.py models.py resilience.py || true
+
+        # Install requirements
         pip install -r requirements.txt
-        python -c "from tasks.models import Task; from roles.definitions import ToolGroup; from hooks import HookEngine; print('V2 imports successful')"
+        if [ -f "requirements_bindery.txt" ]; then
+          pip install -r requirements_bindery.txt
+        fi
+
+        # Verify imports
+        python -c "from models import TaskInput; from bindery_client import BinderyClient; from resilience import ResilienceManager; print('MCP system imports successful')"
     
     # Obsidian plugin build (DISABLED - plugin not yet implemented)
     # - name: Setup Node.js for Obsidian build
@@ -158,11 +168,11 @@ jobs:
     - name: Upload V2 build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: v2-build-artifacts
+        name: mcp-build-artifacts
         path: |
-          packages/vespera-scriptorium/roles/
-          packages/vespera-scriptorium/tasks/
-          packages/vespera-scriptorium/hooks/
-          packages/vespera-scriptorium/templates/
-          packages/vespera-scriptorium/mcp_server_v2.py
+          packages/vespera-scriptorium/mcp_server.py
+          packages/vespera-scriptorium/bindery_client.py
+          packages/vespera-scriptorium/models.py
+          packages/vespera-scriptorium/resilience.py
           packages/vespera-scriptorium/requirements.txt
+          packages/vespera-scriptorium/requirements_bindery.txt

@@ -12,15 +12,18 @@ from unittest.mock import AsyncMock, patch, MagicMock
 from typing import Dict, Any
 
 from mcp_server import (
-    create_task, get_task, update_task, list_tasks,
-    create_project, get_dashboard_stats, search_entities,
-    health_check, error_handler
+    create_task, get_task, update_task, list_tasks, delete_task,
+    complete_task, execute_task, assign_role_to_task, list_roles,
+    index_document, create_project, get_dashboard_stats,
+    search_entities, health_check, error_handler
 )
 from models import (
-    TaskInput, TaskOutput, TaskUpdateInput,
+    TaskInput, TaskOutput, TaskUpdateInput, TaskStatus,
     ProjectInput, ProjectOutput,
     SearchInput, SearchOutput, SearchResult,
-    DashboardStats
+    DashboardStats, DocumentInput, DocumentType,
+    DeleteTaskResponse, CompleteTaskResponse, ExecuteTaskResponse,
+    RoleDefinition
 )
 from bindery_client import BinderyClient, BinderyClientError
 
@@ -432,3 +435,222 @@ class TestInputValidation:
         """Test task update with invalid status"""
         with pytest.raises(ValueError):
             TaskUpdateInput(status="invalid_status")  # Not in allowed literals
+
+
+class TestAdditionalTaskOperations:
+    """Test additional task operations MCP tools"""
+
+    @pytest.mark.asyncio
+    async def test_delete_task_success(self):
+        """Test successful task deletion"""
+        with patch('mcp_server.BinderyClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.delete_task.return_value = {"success": True}
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+
+            result = await delete_task("task-123")
+
+            mock_client.delete_task.assert_called_once_with("task-123")
+            assert result["success"] is True
+            assert result["task_id"] == "task-123"
+            assert "deleted successfully" in result["message"]
+
+    @pytest.mark.asyncio
+    async def test_delete_task_not_found(self):
+        """Test deleting non-existent task"""
+        with patch('mcp_server.BinderyClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.delete_task.side_effect = BinderyClientError(
+                message="Task not found",
+                status_code=404
+            )
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+
+            result = await delete_task("nonexistent-task")
+
+            assert result["error"] == "Task not found"
+            assert result["status_code"] == 404
+
+    @pytest.mark.asyncio
+    async def test_complete_task_success(self):
+        """Test successful task completion"""
+        completed_task = TaskOutput(
+            id="task-123",
+            title="Test Task",
+            description="Test description",
+            status=TaskStatus.DONE,
+            priority="medium",
+            tags=["test"],
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+            parent_id=None,
+            children=[]
+        )
+
+        with patch('mcp_server.BinderyClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.update_task.return_value = completed_task
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+
+            result = await complete_task("task-123", "Task completed successfully")
+
+            # Verify the task was updated with DONE status
+            from models import TaskUpdateInput
+            update_call = mock_client.update_task.call_args
+            assert update_call[0][0] == "task-123"
+            assert update_call[0][1].status == TaskStatus.DONE
+
+            assert result["success"] is True
+            assert result["completion_notes"] == "Task completed successfully"
+
+    @pytest.mark.asyncio
+    async def test_execute_task_success(self):
+        """Test successful task execution"""
+        with patch('mcp_server.BinderyClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.execute_task.return_value = {
+                "execution_id": "exec-456",
+                "status": "started"
+            }
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+
+            result = await execute_task("task-123", "developer")
+
+            mock_client.execute_task.assert_called_once_with("task-123", "developer")
+            assert result["success"] is True
+            assert result["task_id"] == "task-123"
+            assert result["role_assigned"] == "developer"
+            assert result["execution_id"] == "exec-456"
+
+    @pytest.mark.asyncio
+    async def test_assign_role_to_task_success(self):
+        """Test successful role assignment to task"""
+        with patch('mcp_server.BinderyClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.assign_role.return_value = {"success": True}
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+
+            result = await assign_role_to_task("task-123", "architect")
+
+            mock_client.assign_role.assert_called_once_with("task-123", "architect")
+            assert result["success"] is True
+            assert result["task_id"] == "task-123"
+            assert result["role_assigned"] == "architect"
+            assert "assigned to task" in result["message"]
+
+
+class TestRoleManagement:
+    """Test role management MCP tools"""
+
+    @pytest.mark.asyncio
+    async def test_list_roles_success(self):
+        """Test successful role listing"""
+        mock_roles_data = {
+            "roles": [
+                {
+                    "name": "developer",
+                    "description": "Development tasks",
+                    "capabilities": ["code_write", "code_review"],
+                    "file_patterns": ["*.py", "*.js"],
+                    "restrictions": {"max_files": 10},
+                    "model_context_limit": 8192
+                },
+                {
+                    "name": "architect",
+                    "description": "Architecture design",
+                    "capabilities": ["design", "review"],
+                    "file_patterns": ["*.md", "*.yml"],
+                    "restrictions": {"max_files": 20},
+                    "model_context_limit": 16384
+                }
+            ]
+        }
+
+        with patch('mcp_server.BinderyClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.list_roles.return_value = mock_roles_data
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+
+            result = await list_roles()
+
+            assert result["success"] is True
+            assert result["total_roles"] == 2
+            assert len(result["roles"]) == 2
+            assert result["roles"][0]["name"] == "developer"
+            assert result["roles"][1]["name"] == "architect"
+
+    @pytest.mark.asyncio
+    async def test_list_roles_empty(self):
+        """Test listing roles when none exist"""
+        with patch('mcp_server.BinderyClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.list_roles.return_value = {"roles": []}
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+
+            result = await list_roles()
+
+            assert result["success"] is True
+            assert result["total_roles"] == 0
+            assert len(result["roles"]) == 0
+
+
+class TestDocumentIndexing:
+    """Test document indexing MCP tools"""
+
+    @pytest.fixture
+    def sample_document_input(self):
+        """Sample document input for testing"""
+        return DocumentInput(
+            content="This is a test document for indexing",
+            title="Test Document",
+            document_type=DocumentType.TEXT,
+            tags=["test", "indexing"],
+            metadata={"author": "test_user", "version": "1.0"}
+        )
+
+    @pytest.mark.asyncio
+    async def test_index_document_success(self, sample_document_input):
+        """Test successful document indexing"""
+        with patch('mcp_server.BinderyClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.index_document.return_value = {
+                "document_id": "doc-789",
+                "chunks_created": 5
+            }
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+
+            result = await index_document(sample_document_input)
+
+            mock_client.index_document.assert_called_once_with(sample_document_input)
+            assert result["success"] is True
+            assert result["document_id"] == "doc-789"
+            assert result["chunks_created"] == 5
+            assert "indexed successfully" in result["message"]
+
+    @pytest.mark.asyncio
+    async def test_index_document_validation_error(self):
+        """Test document indexing with validation error"""
+        # Test with empty content
+        with pytest.raises(ValueError):
+            DocumentInput(
+                content="",  # Empty content should fail validation
+                title="Test Document",
+                document_type=DocumentType.TEXT
+            )
+
+    @pytest.mark.asyncio
+    async def test_index_document_backend_error(self, sample_document_input):
+        """Test document indexing with backend error"""
+        with patch('mcp_server.BinderyClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.index_document.side_effect = BinderyClientError(
+                message="Indexing service unavailable",
+                status_code=503
+            )
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+
+            result = await index_document(sample_document_input)
+
+            assert result["error"] == "Indexing service unavailable"
+            assert result["status_code"] == 503
+            assert result["operation"] == "index_document"

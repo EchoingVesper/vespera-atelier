@@ -21,12 +21,14 @@ from pydantic import BaseModel, Field
 
 from bindery_client import BinderyClient, BinderyClientError, with_bindery_client
 from models import (
-    TaskInput, TaskOutput, TaskUpdateInput,
+    TaskInput, TaskOutput, TaskUpdateInput, TaskStatus, TaskPriority,
     ProjectInput, ProjectOutput,
     SearchInput, SearchOutput,
     NoteInput, NoteOutput,
     DashboardStats,
-    SuccessResponse
+    SuccessResponse,
+    DeleteTaskResponse, CompleteTaskResponse, ExecuteTaskResponse,
+    RoleDefinition, DocumentInput, DocumentType
 )
 
 # Configure structured logging to stderr only
@@ -244,6 +246,174 @@ async def search_entities(search_input: SearchInput) -> Dict[str, Any]:
 
 
 @mcp.tool()
+async def delete_task(task_id: str) -> Dict[str, Any]:
+    """
+    Delete a task by its ID.
+
+    Args:
+        task_id: Unique identifier for the task to delete
+
+    Returns:
+        Deletion confirmation or error information
+    """
+    async def operation():
+        async with BinderyClient() as client:
+            result = await client.delete_task(task_id)
+            return DeleteTaskResponse(
+                success=True,
+                task_id=task_id,
+                message="Task deleted successfully"
+            ).model_dump()
+
+    return await error_handler.handle_tool_error("delete_task", operation)
+
+
+@mcp.tool()
+async def complete_task(
+    task_id: str,
+    completion_notes: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Mark a task as completed.
+
+    Args:
+        task_id: Unique identifier for the task
+        completion_notes: Optional notes about the completion
+
+    Returns:
+        Completed task data or error information
+    """
+    async def operation():
+        async with BinderyClient() as client:
+            # Update task status to DONE
+            update_data = TaskUpdateInput(status=TaskStatus.DONE)
+            task = await client.update_task(task_id, update_data)
+
+            return CompleteTaskResponse(
+                success=True,
+                task=task,
+                completion_notes=completion_notes
+            ).model_dump()
+
+    return await error_handler.handle_tool_error("complete_task", operation)
+
+
+@mcp.tool()
+async def execute_task(
+    task_id: str,
+    role_name: str
+) -> Dict[str, Any]:
+    """
+    Execute a task with a specific role assignment.
+
+    Args:
+        task_id: Unique identifier for the task
+        role_name: Name of the role to use for execution
+
+    Returns:
+        Execution details or error information
+    """
+    async def operation():
+        async with BinderyClient() as client:
+            # Assign role and update status to in_progress
+            result = await client.execute_task(task_id, role_name)
+
+            return ExecuteTaskResponse(
+                success=True,
+                task_id=task_id,
+                role_assigned=role_name,
+                execution_id=result.get("execution_id")
+            ).model_dump()
+
+    return await error_handler.handle_tool_error("execute_task", operation)
+
+
+@mcp.tool()
+async def assign_role_to_task(
+    task_id: str,
+    role_name: str
+) -> Dict[str, Any]:
+    """
+    Assign a role to a task for future execution.
+
+    Args:
+        task_id: Unique identifier for the task
+        role_name: Name of the role to assign
+
+    Returns:
+        Assignment confirmation or error information
+    """
+    async def operation():
+        async with BinderyClient() as client:
+            result = await client.assign_role(task_id, role_name)
+            return {
+                "success": True,
+                "task_id": task_id,
+                "role_assigned": role_name,
+                "message": f"Role '{role_name}' assigned to task {task_id}"
+            }
+
+    return await error_handler.handle_tool_error("assign_role_to_task", operation)
+
+
+@mcp.tool()
+async def list_roles() -> Dict[str, Any]:
+    """
+    List all available roles and their capabilities.
+
+    Returns:
+        List of roles with their configurations or error information
+    """
+    async def operation():
+        async with BinderyClient() as client:
+            roles_data = await client.list_roles()
+
+            # Transform to RoleDefinition models
+            roles = []
+            for role_dict in roles_data.get("roles", []):
+                roles.append(RoleDefinition(
+                    name=role_dict.get("name", ""),
+                    description=role_dict.get("description", ""),
+                    capabilities=role_dict.get("capabilities", []),
+                    file_patterns=role_dict.get("file_patterns", []),
+                    restrictions=role_dict.get("restrictions", {}),
+                    model_context_limit=role_dict.get("model_context_limit")
+                ).model_dump())
+
+            return {
+                "success": True,
+                "roles": roles,
+                "total_roles": len(roles)
+            }
+
+    return await error_handler.handle_tool_error("list_roles", operation)
+
+
+@mcp.tool()
+async def index_document(document_input: DocumentInput) -> Dict[str, Any]:
+    """
+    Index a document for RAG search.
+
+    Args:
+        document_input: Document data including content, title, and type
+
+    Returns:
+        Indexing confirmation or error information
+    """
+    async def operation():
+        async with BinderyClient() as client:
+            result = await client.index_document(document_input)
+            return {
+                "success": True,
+                "document_id": result.get("document_id"),
+                "message": "Document indexed successfully",
+                "chunks_created": result.get("chunks_created", 0)
+            }
+
+    return await error_handler.handle_tool_error("index_document", operation)
+
+
+@mcp.tool()
 async def health_check() -> Dict[str, Any]:
     """
     Check the health of the Bindery backend.
@@ -276,9 +446,10 @@ def setup_signal_handlers():
     signal.signal(signal.SIGTERM, signal_handler)
 
 
-async def run_server():
+def run_server():
     """
     Run the FastMCP server with proper error handling and graceful shutdown.
+    FastMCP handles its own async loop internally.
     """
     global shutdown_requested
 
@@ -288,20 +459,22 @@ async def run_server():
         logger.info("Starting Vespera Scriptorium FastMCP Server")
         logger.info("Configured as translation layer to Rust Bindery backend at http://localhost:3000")
 
-        # Test connection to Bindery on startup
+        # Test connection to Bindery on startup (synchronous check)
+        import httpx
         try:
-            async with BinderyClient() as client:
-                await client.health_check()
-                logger.info("Successfully connected to Bindery backend")
-        except BinderyClientError as e:
+            with httpx.Client(timeout=5.0) as client:
+                response = client.get("http://localhost:3000/health")
+                if response.status_code == 200:
+                    logger.info("Successfully connected to Bindery backend")
+        except Exception as e:
             logger.warning(
                 "Could not connect to Bindery backend on startup",
-                error=e.message,
+                error=str(e),
                 note="Server will continue running; tools will return errors until backend is available"
             )
 
-        # Run the MCP server
-        await mcp.run(transport="stdio")
+        # Run the MCP server - FastMCP handles its own async loop
+        mcp.run(transport="stdio")
 
     except KeyboardInterrupt:
         logger.info("Received keyboard interrupt")
@@ -321,8 +494,8 @@ def main():
     logger.info("Initializing Vespera Scriptorium FastMCP Server")
 
     try:
-        # Run the async server
-        asyncio.run(run_server())
+        # FastMCP handles its own event loop, just call run_server directly
+        run_server()
     except KeyboardInterrupt:
         logger.info("Server interrupted by user")
         sys.exit(0)
