@@ -13,7 +13,7 @@ use axum::{
     extract::State,
     http::StatusCode,
     response::Json,
-    routing::post,
+    routing::{get, post},
     Router,
 };
 use clap::{Parser, Subcommand};
@@ -383,6 +383,7 @@ async fn run_http_server_with_port(port: u16) -> Result<()> {
 
     let app = Router::new()
         .route("/rpc", post(handle_http_json_rpc))
+        .route("/health", get(handle_health_check))
         .layer(
             ServiceBuilder::new()
                 .layer(CorsLayer::permissive())
@@ -401,6 +402,15 @@ async fn run_http_server_with_port(port: u16) -> Result<()> {
         .context("Server error")?;
 
     Ok(())
+}
+
+/// Handle health check requests
+async fn handle_health_check() -> Json<Value> {
+    Json(json!({
+        "status": "healthy",
+        "service": "vespera-bindery",
+        "version": env!("CARGO_PKG_VERSION")
+    }))
 }
 
 /// Handle HTTP JSON-RPC requests

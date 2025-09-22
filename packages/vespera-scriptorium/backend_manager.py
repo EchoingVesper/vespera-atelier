@@ -135,9 +135,9 @@ class BinderyBackendManager:
             env["BINDERY_PORT"] = str(self.port)
             env["RUST_LOG"] = "info"
 
-            # Start the backend process
+            # Start the backend process with port argument
             self.process = subprocess.Popen(
-                [str(self.binary_path)],
+                [str(self.binary_path), "--port", str(self.port)],
                 cwd=self.bindery_path,
                 env=env,
                 stdout=subprocess.PIPE,
