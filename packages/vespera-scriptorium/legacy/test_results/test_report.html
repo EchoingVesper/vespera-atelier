@@ -1,0 +1,121 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vespera V2 Test Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { background: #f0f0f0; padding: 20px; border-radius: 5px; }
+        .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 20px 0; }
+        .metric { background: #e9f4ff; padding: 15px; border-radius: 5px; text-align: center; }
+        .passed { background: #d4edda; }
+        .failed { background: #f8d7da; }
+        .test-results { margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .pass { color: green; }
+        .fail { color: red; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Vespera V2 Test Report</h1>
+        <p>Generated: 2025-08-19T00:23:07.168845</p>
+    </div>
+    
+    <div class="summary">
+        <div class="metric">
+            <h3>Total Tests</h3>
+            <p>6</p>
+        </div>
+        <div class="metric passed">
+            <h3>Passed</h3>
+            <p>0</p>
+        </div>
+        <div class="metric failed">
+            <h3>Failed</h3>
+            <p>6</p>
+        </div>
+        <div class="metric">
+            <h3>Success Rate</h3>
+            <p>0.0%</p>
+        </div>
+    </div>
+    
+    <div class="summary">
+        <div class="metric">
+            <h3>Total Time</h3>
+            <p>1.30s</p>
+        </div>
+        <div class="metric">
+            <h3>Average Test Time</h3>
+            <p>0.22s</p>
+        </div>
+        <div class="metric">
+            <h3>Fastest Test</h3>
+            <p>0.20s</p>
+        </div>
+        <div class="metric">
+            <h3>Slowest Test</h3>
+            <p>0.24s</p>
+        </div>
+    </div>
+    
+    <div class="test-results">
+        <h2>Test Results</h2>
+        <table>
+            <tr>
+                <th>Test File</th>
+                <th>Status</th>
+                <th>Execution Time</th>
+                <th>Exit Code</th>
+            </tr>
+    
+            <tr>
+                <td>test_error_handling.py</td>
+                <td class="fail">FAIL</td>
+                <td>0.24s</td>
+                <td>1</td>
+            </tr>
+        
+            <tr>
+                <td>test_background_services.py</td>
+                <td class="fail">FAIL</td>
+                <td>0.20s</td>
+                <td>1</td>
+            </tr>
+        
+            <tr>
+                <td>test_sync_coordinator.py</td>
+                <td class="fail">FAIL</td>
+                <td>0.24s</td>
+                <td>1</td>
+            </tr>
+        
+            <tr>
+                <td>test_api_layer.py</td>
+                <td class="fail">FAIL</td>
+                <td>0.20s</td>
+                <td>1</td>
+            </tr>
+        
+            <tr>
+                <td>test_new_mcp_tools.py</td>
+                <td class="fail">FAIL</td>
+                <td>0.21s</td>
+                <td>1</td>
+            </tr>
+        
+            <tr>
+                <td>test_triple_db_service.py</td>
+                <td class="fail">FAIL</td>
+                <td>0.21s</td>
+                <td>1</td>
+            </tr>
+        
+        </table>
+    </div>
+</body>
+</html>
+    

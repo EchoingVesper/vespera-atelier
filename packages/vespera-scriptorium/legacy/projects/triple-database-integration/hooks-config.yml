@@ -1,0 +1,270 @@
+# V2 Hook Configuration for triple-database-integration
+# Replaces V1 agent spawning with programmatic automation
+# Based on VESPERA_VISION_PLANNING_WORKSHEET.md priorities
+
+hook_registry_id: "triple-database-integration-hooks"
+project_name: "triple-database-integration"
+created_date: ""
+
+# Hook Definitions (Ordered by Priority)
+hooks:
+
+
+  # Priority 9 (High): Git Operations - V1 Agent Replacement
+  - id: "triple-database-integration-git-branch-creation"
+    name: "Automated Git Branch Management"
+    description: "Replaces V1 git agent spawning with automated branch operations"
+    priority: "HIGH"  # Priority 9 from worksheet
+    
+    trigger:
+      type: "TASK_STATUS"
+      conditions:
+        status: "started"
+        task_type: ["implementation", "research", "design"]
+    
+    actions:
+      - type: "PROGRAMMATIC"
+        implementation: "hooks.actions.git_operations.create_branch"
+        parameters:
+          branch_prefix: ""
+          auto_create: true
+          naming_pattern: "{prefix}{task_id}"
+        
+        # V1 Agent Replacement: Instead of spawning git agent
+        replacement_for: "V1 git_operations_agent spawning"
+        v1_equivalent: "orchestrator_plan_task with git specialist"
+
+  - id: "triple-database-integration-git-commit-reminders"
+    name: "Commit Progress Preservation"
+    description: "Automated reminders to preserve work (executive dysfunction support)"
+    priority: "HIGH"  # Priority 9
+    
+    trigger:
+      type: "TIME_BASED"
+      conditions:
+        interval_minutes: 30
+        only_when_active: true
+    
+    actions:
+      - type: "PROGRAMMATIC"
+        implementation: "hooks.actions.git_operations.remind_commit_progress"
+        parameters:
+          check_uncommitted_files: true
+          reminder_message: "⏰ Automated reminder: Consider committing your progress to preserve work"
+          create_wip_commit: false  # Just remind, don't auto-commit
+        
+        replacement_for: "V1 auto-preservation WIP commits"
+        executive_dysfunction_support: true
+
+  - id: "triple-database-integration-git-completion-gate"
+    name: "Git Status Validation Gate"
+    description: "Prevents task completion with uncommitted changes"
+    priority: "CRITICAL"  # Priority 10
+    
+    trigger:
+      type: "TASK_STATUS"
+      conditions:
+        status: "completion_attempt"
+    
+    actions:
+      - type: "PROGRAMMATIC"
+        implementation: "hooks.actions.git_operations.validate_commit_status"
+        parameters:
+          block_completion_if_uncommitted: true
+          reminder_message: "⚠️ Please commit all changes before completing this task"
+          suggest_commands: ["git add -A", "git commit -m 'feat(triple-database-integration): task completion'"]
+        
+        replacement_for: "V1 manual git status checking"
+        prevents_known_failure: "Completing tasks with uncommitted work"
+
+
+
+  # Priority 8 (Normal): Test Execution Reminders - V1 Testing Agent Replacement
+  - id: "triple-database-integration-test-after-code-changes"
+    name: "Automated Test Execution Reminders"
+    description: "Replaces V1 testing agent with automated test reminders"
+    priority: "NORMAL"  # Priority 8
+    
+    trigger:
+      type: "FILE_CHANGE"
+      conditions:
+        file_patterns: ["*.py", "*.js", "*.ts", "*.jsx", "*.tsx"]
+        change_types: ["modified", "created"]
+    
+    actions:
+      - type: "PROGRAMMATIC"
+        implementation: "hooks.actions.testing.remind_test_execution"
+        parameters:
+          test_scope: "related"
+          reminder_message: "🧪 Code changes detected. Consider running tests:"
+          suggested_commands:
+            - "python run_tests.py --suite related"
+            - "pytest tests/unit/ -v"
+            - "npm test"
+          
+          # V1 Integration: Instead of spawning testing agent
+          run_tests_automatically: false  # Remind only, don't auto-run
+        
+        replacement_for: "V1 testing_implementation_agent spawning"
+        v1_equivalent: "orchestrator_execute_task with tester specialist"
+
+  - id: "triple-database-integration-test-completion-validation"
+    name: "Test Coverage Validation"
+    description: "Ensures adequate test coverage before task completion"
+    priority: "NORMAL"  # Priority 8
+    
+    trigger:
+      type: "TASK_STATUS"
+      conditions:
+        status: "completion_attempt"
+        task_role: ["developer", "coder"]
+    
+    actions:
+      - type: "PROGRAMMATIC"
+        implementation: "hooks.actions.testing.validate_test_coverage"
+        parameters:
+          minimum_coverage: 80
+          block_completion_if_insufficient: true
+          reminder_message: "📊 Test coverage validation required before completing development tasks"
+          coverage_report_command: "pytest --cov=src --cov-report=term-missing"
+        
+        replacement_for: "V1 manual test coverage checking"
+        quality_gate: true
+
+
+
+  # Priority 10 (Critical): Security Validation - V1 Security Agent Replacement
+  - id: "triple-database-integration-security-design-review"
+    name: "Automated Security Design Validation"
+    description: "Replaces V1 security agent with automated security checks"
+    priority: "CRITICAL"  # Priority 10
+    
+    trigger:
+      type: "TASK_STATUS"
+      conditions:
+        status: "started"
+        task_type: ["design", "architecture"]
+    
+    actions:
+      - type: "PROGRAMMATIC"
+        implementation: "hooks.actions.security.validate_design_security"
+        parameters:
+          security_checklist:
+            - "Authentication and authorization patterns reviewed"
+            - "Input validation strategies defined"  
+            - "Data encryption and storage security considered"
+            - "API security measures documented"
+          
+          reminder_message: "🔒 Security design validation checklist activated"
+          block_progress_until_reviewed: true
+        
+        replacement_for: "V1 security_design_agent spawning"
+        v1_equivalent: "orchestrator_execute_task with reviewer specialist"
+
+  - id: "triple-database-integration-security-implementation-scan"
+    name: "Security Vulnerability Scanning"
+    description: "Automated security scanning during implementation"
+    priority: "CRITICAL"  # Priority 10
+    
+    trigger:
+      type: "TASK_STATUS" 
+      conditions:
+        status: "completion_attempt"
+        task_type: ["implementation"]
+    
+    actions:
+      - type: "PROGRAMMATIC"
+        implementation: "hooks.actions.security.run_security_scan"
+        parameters:
+          scan_tools: ["bandit", "safety", "semgrep"]
+          block_completion_on_high_severity: true
+          generate_security_report: true
+          report_location: "security-reports/triple-database-integration-scan.json"
+        
+        replacement_for: "V1 security_validation_agent spawning"
+        prevents_known_failure: "Deploying code with security vulnerabilities"
+
+
+
+
+  # Priority 10 (Critical): File Context Loading - V1 Context Agent Replacement
+  - id: "triple-database-integration-context-loading"
+    name: "Automated Context Document Loading"
+    description: "Loads relevant context documents based on file types (V1 context agent replacement)"
+    priority: "CRITICAL"  # Priority 10
+    
+    trigger:
+      type: "FILE_CHANGE"
+      conditions:
+        file_patterns: ["*.py", "*.md", "*.yml", "*.json"]
+        change_types: ["created", "modified"]
+    
+    actions:
+      - type: "PROGRAMMATIC"
+        implementation: "hooks.actions.file_context.load_context_documents"
+        parameters:
+          # V1 FILE_TYPE_HOOKS integration
+          context_mapping:
+            "*.py": 
+              documents: ["CLAUDE.md", "ARCHITECTURE.md", "requirements.txt"]
+              suggested_roles: ["developer", "coder"]
+            "*.md":
+              documents: ["docs/style-guide.md", "CONTRIBUTING.md"]
+              suggested_roles: ["technical_writer"]
+            "*.yml":
+              documents: [".github/workflows/ci-minimal.yml", "copier.yml"]
+              suggested_roles: ["devops_engineer"]
+          
+          reminder_message: "📋 Context documents loaded for current file type"
+        
+        replacement_for: "V1 context loading sub-agents"
+        v1_equivalent: "FILE_TYPE_HOOKS automatic context loading"
+
+# Hook Engine Configuration
+engine_config:
+  max_concurrent_hooks: 5
+  hook_timeout_seconds: 300
+  retry_failed_hooks: 3
+  
+  # Executive Dysfunction Support
+  executive_dysfunction_support:
+    enable_progress_preservation: true
+    enable_decision_reduction: true
+    enable_automated_reminders: true
+    
+  # V1 Migration Support
+  v1_compatibility:
+    simulate_agent_coordination: false  # Don't simulate, use hooks
+    preserve_worktree_strategy: true
+    maintain_systematic_approach: true
+
+# Hook Priorities (from VESPERA_VISION_PLANNING_WORKSHEET.md)
+priority_mapping:
+  CRITICAL: 10    # File context loading, task breakdown, security gates
+  HIGH: 9         # Git operations, dependency tracking
+  NORMAL: 8       # Test execution, progress summarization  
+  LOW: 7          # Documentation updates
+  BACKGROUND: 6   # Code review reminders
+  OPTIONAL: 5     # CI/CD integration
+  DEFERRED: 4     # Non-critical compliance
+
+# V1 to V2 Migration Summary
+migration_summary: |
+  This hook configuration replaces V1 meta-PRP agent spawning patterns:
+  
+  V1 Agent Type                    → V2 Hook Replacement
+  ================================   ========================
+  research_agent                   → Context loading hooks
+  architecture_agent               → Design validation hooks
+  implementation_agent             → Code quality hooks
+  testing_agent                    → Test execution reminders
+  security_agent                   → Security validation hooks
+  documentation_agent              → Doc sync hooks
+  git_operations_agent            → Git management hooks
+  
+  Key V1 Patterns Preserved:
+  ✅ Executive dysfunction support via automated reminders
+  ✅ Systematic approach with quality gates
+  ✅ Hook-based problem prevention
+  ✅ Multi-phase workflow coordination
+  ✅ Work preservation through git integration
