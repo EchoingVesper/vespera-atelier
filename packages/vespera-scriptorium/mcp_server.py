@@ -12,6 +12,7 @@ All logging goes to stderr only to avoid interfering with MCP protocol on stdout
 import asyncio
 import signal
 import sys
+import os
 from typing import Optional, List, Any, Dict
 from contextlib import asynccontextmanager
 
@@ -30,6 +31,7 @@ from models import (
     DeleteTaskResponse, CompleteTaskResponse, ExecuteTaskResponse,
     RoleDefinition, DocumentInput, DocumentType
 )
+from backend_manager import BinderyBackendManager
 
 # Configure structured logging to stderr only
 structlog.configure(
@@ -450,28 +452,50 @@ def run_server():
     """
     Run the FastMCP server with proper error handling and graceful shutdown.
     FastMCP handles its own async loop internally.
+    Automatically manages the Bindery backend lifecycle.
     """
     global shutdown_requested
 
     setup_signal_handlers()
 
+    # Check if we should auto-manage the backend
+    auto_launch_backend = os.environ.get("MCP_AUTO_LAUNCH_BACKEND", "true").lower() == "true"
+    backend_manager = None
+
     try:
         logger.info("Starting Vespera Scriptorium FastMCP Server")
-        logger.info("Configured as translation layer to Rust Bindery backend at http://localhost:3000")
 
-        # Test connection to Bindery on startup (synchronous check)
-        import httpx
-        try:
-            with httpx.Client(timeout=5.0) as client:
-                response = client.get("http://localhost:3000/health")
-                if response.status_code == 200:
-                    logger.info("Successfully connected to Bindery backend")
-        except Exception as e:
-            logger.warning(
-                "Could not connect to Bindery backend on startup",
-                error=str(e),
-                note="Server will continue running; tools will return errors until backend is available"
-            )
+        if auto_launch_backend:
+            logger.info("Auto-launching Bindery backend...")
+            backend_manager = BinderyBackendManager()
+
+            # Try to start the backend
+            if asyncio.run(backend_manager.start_and_wait()):
+                logger.info("Bindery backend started successfully")
+            else:
+                logger.warning(
+                    "Failed to auto-launch Bindery backend",
+                    note="Server will continue; tools will return errors until backend is manually started"
+                )
+                backend_manager = None  # Don't try to stop if we didn't start it
+        else:
+            logger.info("Auto-launch disabled, expecting external Bindery backend")
+
+            # Test connection to existing Bindery (synchronous check)
+            import httpx
+            try:
+                with httpx.Client(timeout=5.0) as client:
+                    response = client.get("http://localhost:3000/health")
+                    if response.status_code == 200:
+                        logger.info("Successfully connected to existing Bindery backend")
+            except Exception as e:
+                logger.warning(
+                    "Could not connect to Bindery backend on startup",
+                    error=str(e),
+                    note="Server will continue running; tools will return errors until backend is available"
+                )
+
+        logger.info("Starting MCP server on stdio transport")
 
         # Run the MCP server - FastMCP handles its own async loop
         mcp.run(transport="stdio")
@@ -482,6 +506,12 @@ def run_server():
         logger.error("Server error", error=str(e), error_type=type(e).__name__)
         raise
     finally:
+        # Clean up backend if we started it
+        if backend_manager:
+            logger.info("Shutting down Bindery backend...")
+            backend_manager.stop_backend()
+            logger.info("Bindery backend stopped")
+
         logger.info("FastMCP server shutdown complete")
 
 
