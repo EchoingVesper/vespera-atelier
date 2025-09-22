@@ -77,8 +77,7 @@ impl TemplateLoader {
 
     /// Load a template by ID
     pub fn load_template(&self, template_id: &TemplateId) -> BinderyResult<Template> {
-        use crate::types::{TemplateField, TemplateSectionDefinition, TemplateValidation, TemplateUiConfig};
-        use crate::templates::FieldType;
+        use crate::types::{TemplateField, TemplateSectionDefinition, TemplateValidation, TemplateUiConfig, TemplateFieldType, FieldValidation, FieldUiConfig, ContentType, SectionUiConfig, UiLayout, FieldGroup};
         use chrono::Utc;
 
         // Try to load from filesystem first
@@ -107,33 +106,83 @@ impl TemplateLoader {
                         id: "title".to_string(),
                         label: "Task Title".to_string(),
                         description: Some("The title of the task".to_string()),
-                        field_type: FieldType::Text,
+                        field_type: TemplateFieldType::Text { max_length: Some(200) },
                         required: true,
                         default_value: None,
+                        validation: FieldValidation::default(),
+                        ui_config: FieldUiConfig::default(),
                     },
                     TemplateField {
                         id: "description".to_string(),
                         label: "Description".to_string(),
                         description: Some("Detailed description of the task".to_string()),
-                        field_type: FieldType::LongText,
+                        field_type: TemplateFieldType::Textarea { max_length: Some(2000) },
                         required: false,
                         default_value: None,
+                        validation: FieldValidation::default(),
+                        ui_config: FieldUiConfig::default(),
                     },
                     TemplateField {
                         id: "status".to_string(),
                         label: "Status".to_string(),
                         description: Some("Current status of the task".to_string()),
-                        field_type: FieldType::Text,
+                        field_type: TemplateFieldType::Select {
+                            options: vec![
+                                crate::types::SelectOption {
+                                    value: "pending".to_string(),
+                                    label: "Pending".to_string(),
+                                    description: None,
+                                    disabled: false,
+                                },
+                                crate::types::SelectOption {
+                                    value: "in_progress".to_string(),
+                                    label: "In Progress".to_string(),
+                                    description: None,
+                                    disabled: false,
+                                },
+                                crate::types::SelectOption {
+                                    value: "completed".to_string(),
+                                    label: "Completed".to_string(),
+                                    description: None,
+                                    disabled: false,
+                                },
+                            ]
+                        },
                         required: true,
-                        default_value: Some("pending".to_string()),
+                        default_value: Some(serde_json::Value::String("pending".to_string())),
+                        validation: FieldValidation::default(),
+                        ui_config: FieldUiConfig::default(),
                     },
                     TemplateField {
                         id: "priority".to_string(),
                         label: "Priority".to_string(),
                         description: Some("Task priority level".to_string()),
-                        field_type: FieldType::Text,
+                        field_type: TemplateFieldType::Select {
+                            options: vec![
+                                crate::types::SelectOption {
+                                    value: "low".to_string(),
+                                    label: "Low".to_string(),
+                                    description: None,
+                                    disabled: false,
+                                },
+                                crate::types::SelectOption {
+                                    value: "medium".to_string(),
+                                    label: "Medium".to_string(),
+                                    description: None,
+                                    disabled: false,
+                                },
+                                crate::types::SelectOption {
+                                    value: "high".to_string(),
+                                    label: "High".to_string(),
+                                    description: None,
+                                    disabled: false,
+                                },
+                            ]
+                        },
                         required: false,
-                        default_value: Some("medium".to_string()),
+                        default_value: Some(serde_json::Value::String("medium".to_string())),
+                        validation: FieldValidation::default(),
+                        ui_config: FieldUiConfig::default(),
                     },
                 ],
                 sections: vec![
@@ -141,23 +190,23 @@ impl TemplateLoader {
                         id: "main".to_string(),
                         title: "Task Details".to_string(),
                         description: Some("Main task information".to_string()),
-                        field_ids: vec!["title".to_string(), "description".to_string(), "status".to_string(), "priority".to_string()],
+                        content_type: ContentType::PlainText,
                         required: true,
-                        order: 0,
+                        default_content: None,
+                        ui_config: SectionUiConfig::default(),
                     }
                 ],
                 validation: TemplateValidation {
-                    field_rules: HashMap::new(),
-                    cross_field_rules: vec![],
-                    custom_validators: vec![],
+                    required_fields: vec!["title".to_string()],
+                    field_dependencies: HashMap::new(),
+                    custom_rules: vec![],
                 },
                 ui_config: TemplateUiConfig {
-                    layout: "form".to_string(),
-                    theme: None,
+                    icon: None,
+                    color: None,
+                    layout: UiLayout::SingleColumn,
+                    field_groups: vec![],
                     custom_css: None,
-                    field_ordering: vec!["title".to_string(), "description".to_string(), "status".to_string(), "priority".to_string()],
-                    section_ordering: vec!["main".to_string()],
-                    responsive_breakpoints: HashMap::new(),
                 },
                 created_at: Utc::now(),
                 updated_at: Utc::now(),
@@ -176,17 +225,21 @@ impl TemplateLoader {
                             id: "title".to_string(),
                             label: "Title".to_string(),
                             description: Some("The title of the content".to_string()),
-                            field_type: FieldType::Text,
+                            field_type: TemplateFieldType::Text { max_length: Some(200) },
                             required: true,
                             default_value: None,
+                            validation: FieldValidation::default(),
+                            ui_config: FieldUiConfig::default(),
                         },
                         TemplateField {
                             id: "content".to_string(),
                             label: "Content".to_string(),
                             description: Some("The main content".to_string()),
-                            field_type: FieldType::LongText,
+                            field_type: TemplateFieldType::Textarea { max_length: Some(5000) },
                             required: false,
                             default_value: None,
+                            validation: FieldValidation::default(),
+                            ui_config: FieldUiConfig::default(),
                         },
                     ],
                     sections: vec![
@@ -194,23 +247,23 @@ impl TemplateLoader {
                             id: "main".to_string(),
                             title: "Main Content".to_string(),
                             description: Some("Primary content section".to_string()),
-                            field_ids: vec!["title".to_string(), "content".to_string()],
+                            content_type: ContentType::PlainText,
                             required: true,
-                            order: 0,
+                            default_content: None,
+                            ui_config: SectionUiConfig::default(),
                         }
                     ],
                     validation: TemplateValidation {
-                        field_rules: HashMap::new(),
-                        cross_field_rules: vec![],
-                        custom_validators: vec![],
+                        required_fields: vec!["title".to_string()],
+                        field_dependencies: HashMap::new(),
+                        custom_rules: vec![],
                     },
                     ui_config: TemplateUiConfig {
-                        layout: "form".to_string(),
-                        theme: None,
+                        icon: None,
+                        color: None,
+                        layout: UiLayout::SingleColumn,
+                        field_groups: vec![],
                         custom_css: None,
-                        field_ordering: vec!["title".to_string(), "content".to_string()],
-                        section_ordering: vec!["main".to_string()],
-                        responsive_breakpoints: HashMap::new(),
                     },
                     created_at: Utc::now(),
                     updated_at: Utc::now(),

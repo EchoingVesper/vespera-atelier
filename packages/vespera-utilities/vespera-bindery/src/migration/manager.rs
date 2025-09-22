@@ -340,6 +340,47 @@ impl MigrationManager {
         Ok(results)
     }
 
+    /// Execute migrations up to a specific version
+    pub async fn migrate_up(&self, to_version: Option<i64>, user_context: Option<UserContext>) -> BinderyResult<Vec<MigrationResult>> {
+        let current_version = self.get_current_version().await?;
+        let target_version = to_version.unwrap_or_else(|| {
+            // Find the highest available migration version
+            self.migrations.keys().max().copied().unwrap_or(current_version)
+        });
+
+        if target_version <= current_version {
+            info!("Already at or beyond target version {}", target_version);
+            return Ok(Vec::new());
+        }
+
+        let mut pending: Vec<_> = self.migrations.values()
+            .filter(|m| m.version > current_version && m.version <= target_version)
+            .cloned()
+            .collect();
+
+        pending.sort_by_key(|m| m.version);
+
+        if pending.is_empty() {
+            info!("No migrations to execute up to version {}", target_version);
+            return Ok(Vec::new());
+        }
+
+        info!("Executing {} migrations up to version {}", pending.len(), target_version);
+
+        let mut results = Vec::new();
+        for migration in pending {
+            let result = self.execute_migration_up(&migration, user_context.as_ref()).await?;
+            results.push(result);
+        }
+
+        Ok(results)
+    }
+
+    /// Alias for rollback_to for consistency with migrate_up
+    pub async fn migrate_down(&self, to_version: i64, user_context: Option<UserContext>) -> BinderyResult<Vec<MigrationResult>> {
+        self.rollback_to(to_version, user_context).await
+    }
+
     /// Execute a single migration up with audit logging
     async fn execute_migration_up(&self, migration: &MigrationInfo, user_context: Option<&UserContext>) -> BinderyResult<MigrationResult> {
         info!("Executing migration {} ({})", migration.version, migration.name);
@@ -591,7 +632,7 @@ impl MigrationManager {
 
         // Re-apply if rollback was successful - FIXED: Safe access to last element
         let should_reapply = results.last()
-            .ok_or_else(|| BinderyError::Internal("No rollback result available".to_string()))?
+            .ok_or_else(|| BinderyError::InternalError("No rollback result available".to_string()))?
             .success;
 
         if should_reapply {

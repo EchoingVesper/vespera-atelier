@@ -197,7 +197,7 @@ impl HealthMonitor {
         //     self.config.check_timeout,
         //     service.health_check(),
         // ).await;
-        let check_result: Result<Result<(), anyhow::Error>, _> = Ok(Ok(()));
+        let check_result: Result<Result<(), anyhow::Error>, anyhow::Error> = Ok(Ok(()));
         
         let response_time = start_time.elapsed().as_millis() as u64;
         health.response_time_ms = Some(response_time);
@@ -226,13 +226,23 @@ impl HealthMonitor {
             }
             Ok(Err(e)) => {
                 // Service returned an error
-                self.handle_service_failure(health, format!("Health check failed: {}", e));
+                let error_msg = format!("Health check failed: {}", e);
                 self.failed_requests += 1;
+                // We'll handle the failure after the match
+                health.consecutive_failures += 1;
+                health.consecutive_successes = 0;
+                health.error_message = Some(error_msg);
+                health.status = SystemHealthStatus::Unhealthy;
             }
             Err(_) => {
                 // Timeout
-                self.handle_service_failure(health, "Health check timed out".to_string());
+                let error_msg = "Health check timed out".to_string();
                 self.failed_requests += 1;
+                // We'll handle the failure after the match
+                health.consecutive_failures += 1;
+                health.consecutive_successes = 0;
+                health.error_message = Some(error_msg);
+                health.status = SystemHealthStatus::Unhealthy;
             }
         }
         

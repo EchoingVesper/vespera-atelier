@@ -5,7 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Registry};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Registry, Layer};
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
 use anyhow::Result;
 use crate::{BinderyError, BinderyResult};
@@ -1277,7 +1277,6 @@ pub fn init_logging(config: &LoggingConfig) -> Result<()> {
         let console_layer = if config.json_format {
             tracing_subscriber::fmt::layer()
                 .json()
-                .with_source_location(config.with_source_location)
                 .with_thread_names(config.with_thread_names)
                 .with_span_events(
                     if config.with_span_events {
@@ -1289,7 +1288,6 @@ pub fn init_logging(config: &LoggingConfig) -> Result<()> {
                 .boxed()
         } else {
             tracing_subscriber::fmt::layer()
-                .with_source_location(config.with_source_location)
                 .with_thread_names(config.with_thread_names)
                 .with_span_events(
                     if config.with_span_events {
@@ -1325,7 +1323,6 @@ pub fn init_logging(config: &LoggingConfig) -> Result<()> {
             tracing_subscriber::fmt::layer()
                 .json()
                 .with_writer(file_appender)
-                .with_source_location(config.with_source_location)
                 .with_thread_names(config.with_thread_names)
                 .with_span_events(
                     if config.with_span_events {
@@ -1338,7 +1335,6 @@ pub fn init_logging(config: &LoggingConfig) -> Result<()> {
         } else {
             tracing_subscriber::fmt::layer()
                 .with_writer(file_appender)
-                .with_source_location(config.with_source_location)
                 .with_thread_names(config.with_thread_names)
                 .with_span_events(
                     if config.with_span_events {

@@ -264,6 +264,7 @@ async fn main() -> Result<()> {
         logging: logging_config,
         opentelemetry: None, // TODO: Add OpenTelemetry configuration from CLI args
         metrics: None,       // TODO: Add metrics configuration from CLI args
+        alerting: None,      // TODO: Add alerting configuration from CLI args
     };
 
     // Initialize observability system

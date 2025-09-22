@@ -130,7 +130,7 @@ impl TaskExecutor {
                             timeout_secs = timeout.as_secs(),
                             "Executing task with timeout"
                         );
-                        tokio::time::timeout(timeout, self.execute_with_role(&task, &role, &context)).await
+                        tokio::time::timeout(timeout, self.execute_task_with_role(&task, &role, &context)).await
                             .map_err(|_| {
                                 warn!(
                                     task_id = %task_id,
@@ -142,7 +142,7 @@ impl TaskExecutor {
                     }
                     None => {
                         debug!(task_id = %task_id, "Executing task without timeout");
-                        self.execute_with_role(&task, &role, &context).await
+                        self.execute_task_with_role(&task, &role, &context).await
                     }
                 };
 
@@ -196,7 +196,7 @@ impl TaskExecutor {
         };
 
         // Execute the task
-        let result = self.execute_with_role(&task, &role, &context).await;
+        let result = self.execute_task_with_role(&task, &role, &context).await;
         let execution_result = self.create_execution_result(&context, result).await;
 
         // Record the execution
@@ -249,7 +249,7 @@ impl TaskExecutor {
     }
 
     /// Execute the actual task logic with role constraints
-    async fn execute_with_role(
+    async fn execute_task_with_role(
         &self,
         task: &Codex,
         role: &Role,

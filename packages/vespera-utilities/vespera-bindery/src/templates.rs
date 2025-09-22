@@ -119,6 +119,8 @@ pub struct FieldDefinition {
 #[serde(rename_all = "snake_case")]
 pub enum FieldType {
     Text,
+    LongText,
+    RichText,
     Number,
     Boolean,
     DateTime,
@@ -258,6 +260,8 @@ impl Template {
                 // Generate appropriate default for required fields
                 let default_value = match field_def.field_type {
                     FieldType::Text => TemplateValue::Text(String::new()),
+                    FieldType::LongText => TemplateValue::Text(String::new()),
+                    FieldType::RichText => TemplateValue::Text(String::new()),
                     FieldType::Number => TemplateValue::Number(0.0),
                     FieldType::Boolean => TemplateValue::Boolean(false),
                     FieldType::DateTime => TemplateValue::DateTime(Utc::now()),
@@ -283,6 +287,8 @@ impl Template {
         // Type validation
         let type_matches = match (&field_def.field_type, value) {
             (FieldType::Text, TemplateValue::Text(_)) => true,
+            (FieldType::LongText, TemplateValue::Text(_)) => true,
+            (FieldType::RichText, TemplateValue::Text(_)) => true,
             (FieldType::Number, TemplateValue::Number(_)) => true,
             (FieldType::Boolean, TemplateValue::Boolean(_)) => true,
             (FieldType::DateTime, TemplateValue::DateTime(_)) => true,

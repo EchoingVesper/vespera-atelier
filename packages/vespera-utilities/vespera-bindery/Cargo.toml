@@ -146,6 +146,9 @@ relay-sync = []
 dev = []
 benchmarks = []
 
+# Template features
+regex = []
+
 # Task management features
 task-management = []
 role-management = []

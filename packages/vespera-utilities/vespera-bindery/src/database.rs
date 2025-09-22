@@ -22,7 +22,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use tokio::time::Instant;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct TaskSummary {
     pub id: String,
     pub title: String,
@@ -32,7 +32,8 @@ pub struct TaskSummary {
     pub updated_at: DateTime<Utc>,
     pub parent_id: Option<String>,
     pub child_count: i64,
-    pub tags: Option<Vec<String>>,
+    #[sqlx(default)]
+    pub tags: Option<String>,  // Store as JSON string
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -514,14 +515,14 @@ impl Database {
             return Ok(());
         }
 
-        match MigrationManager::new(self.pool.clone(), &migrations_dir).await {
+        match MigrationManager::new(self.pool.clone(), migrations_dir).await {
             Ok(migration_manager) => {
                 let status = migration_manager.get_status().await?;
 
                 if status.pending_count > 0 {
                     info!("Found {} pending migrations, applying them...", status.pending_count);
 
-                    let results = migration_manager.migrate_up(None).await?;
+                    let results = migration_manager.migrate_up(None, None).await?;
                     let successful_count = results.iter().filter(|r| r.success).count();
                     let failed_count = results.len() - successful_count;
 
@@ -542,7 +543,7 @@ impl Database {
                 }
 
                 // Validate migration checksums
-                let checksum_errors = migration_manager.validate_checksums().await?;
+                let checksum_errors = migration_manager.validate_checksums(None).await?;
                 if !checksum_errors.is_empty() {
                     warn!("Found {} migration checksum mismatches:", checksum_errors.len());
                     for (version, error) in checksum_errors {

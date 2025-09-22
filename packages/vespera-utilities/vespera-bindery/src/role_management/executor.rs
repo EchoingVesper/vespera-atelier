@@ -15,7 +15,7 @@ use crate::observability::audit::{
 use std::collections::{HashSet, HashMap};
 use std::time::Instant;
 use std::sync::Arc;
-use tracing::{info, debug, warn, error};
+use tracing::{info, debug, error};
 use tokio::fs;
 use chrono::Utc;
 use uuid::Uuid;
@@ -38,7 +38,7 @@ pub struct ExecutionRuntime {
     start_time: Instant,
     files_accessed: HashSet<String>,
     tools_used: HashSet<String>,
-    max_memory_bytes: Option<u64>,
+    _max_memory_bytes: Option<u64>, // TODO: Implement memory tracking
     network_calls_made: u32,
     /// User context for audit logging
     user_context: UserContext,
@@ -83,7 +83,7 @@ impl RoleExecutor {
             start_time,
             files_accessed: HashSet::new(),
             tools_used: HashSet::new(),
-            max_memory_bytes: role.execution_context.max_memory_usage.map(|mb| mb * 1024 * 1024),
+            _max_memory_bytes: role.execution_context.max_memory_usage.map(|mb| mb * 1024 * 1024),
             network_calls_made: 0,
             user_context: user_context.clone(),
             session_id: session_id.clone(),
@@ -99,7 +99,7 @@ impl RoleExecutor {
         if let Err(ref e) = capability_result {
             // Audit: Log capability validation failure
             self.audit_capability_failure(role, task, &user_context, &session_id, e).await;
-            return capability_result;
+            return Err(e.clone());
         }
 
         // Execute the task based on its type and content
@@ -136,7 +136,7 @@ impl RoleExecutor {
             start_time,
             files_accessed: HashSet::new(),
             tools_used: HashSet::new(),
-            max_memory_bytes: role.execution_context.max_memory_usage.map(|mb| mb * 1024 * 1024),
+            _max_memory_bytes: role.execution_context.max_memory_usage.map(|mb| mb * 1024 * 1024),
             network_calls_made: 0,
             user_context: user_context.clone(),
             session_id: session_id.clone(),
@@ -207,7 +207,7 @@ impl RoleExecutor {
             start_time,
             files_accessed: HashSet::new(),
             tools_used: HashSet::new(),
-            max_memory_bytes: role.execution_context.max_memory_usage.map(|mb| mb * 1024 * 1024),
+            _max_memory_bytes: role.execution_context.max_memory_usage.map(|mb| mb * 1024 * 1024),
             network_calls_made: 0,
             user_context: user_context.clone(),
             session_id: session_id.clone(),
@@ -538,26 +538,24 @@ impl RoleExecutor {
     /// Create execution result with comprehensive metrics
     async fn create_execution_result(
         &self,
-        role: &Role,
+        _role: &Role,
         result: Result<String, BinderyError>,
         runtime: ExecutionRuntime,
         duration: std::time::Duration,
     ) -> RoleExecutionResult {
-        let (success, output, error_message) = match result {
-            Ok(output) => (true, output, None),
-            Err(e) => (false, String::new(), Some(e.to_string())),
+        let (success, output, error) = match result {
+            Ok(output) => (true, Some(output), None),
+            Err(e) => (false, None, Some(e.to_string())),
         };
 
         RoleExecutionResult {
             success,
             output,
-            error_message,
-            execution_time: duration,
-            role_name: role.name.clone(),
-            capabilities_used: runtime.tools_used.into_iter().collect(),
+            error,
+            duration,
             files_accessed: runtime.files_accessed.into_iter().collect(),
-            memory_used_bytes: 0, // TODO: Implement actual memory tracking
-            network_calls_made: runtime.network_calls_made,
+            tools_used: runtime.tools_used.into_iter().collect(),
+            exit_code: None, // TODO: Implement actual exit code tracking
         }
     }
 
@@ -595,12 +593,12 @@ impl RoleExecutor {
             let outcome = OperationOutcome {
                 success: result.success,
                 result_code: Some(if result.success { 200 } else { 500 }),
-                error_message: result.error_message.clone(),
-                duration_ms: result.execution_time.as_millis() as i64,
+                error_message: result.error.clone(),
+                duration_ms: result.duration.as_millis() as i64,
                 records_affected: Some(1),
             };
 
-            let permissions = result.capabilities_used.clone();
+            let permissions = result.tools_used.clone();
             let event = create_role_execution_event(
                 user_context.clone(),
                 &role.name,
@@ -699,15 +697,15 @@ impl RoleExecutor {
                 },
                 security_context: SecurityContext {
                     roles: vec![role.name.clone()],
-                    permissions: result.capabilities_used.clone(),
+                    permissions: result.tools_used.clone(),
                     security_level: None,
                     auth_method: None,
                 },
                 outcome: OperationOutcome {
                     success: result.success,
                     result_code: Some(if result.success { 200 } else { 500 }),
-                    error_message: result.error_message.clone(),
-                    duration_ms: result.execution_time.as_millis() as i64,
+                    error_message: result.error.clone(),
+                    duration_ms: result.duration.as_millis() as i64,
                     records_affected: Some(1),
                 },
                 previous_hash: None,
@@ -873,15 +871,15 @@ impl RoleExecutor {
                 },
                 security_context: SecurityContext {
                     roles: vec![role.name.clone()],
-                    permissions: result.capabilities_used.clone(),
+                    permissions: result.tools_used.clone(),
                     security_level: Some("high".to_string()),
                     auth_method: None,
                 },
                 outcome: OperationOutcome {
                     success: result.success,
                     result_code: Some(if result.success { 200 } else { 500 }),
-                    error_message: result.error_message.clone(),
-                    duration_ms: result.execution_time.as_millis() as i64,
+                    error_message: result.error.clone(),
+                    duration_ms: result.duration.as_millis() as i64,
                     records_affected: Some(1),
                 },
                 previous_hash: None,
