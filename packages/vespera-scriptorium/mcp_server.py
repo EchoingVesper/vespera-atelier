@@ -71,10 +71,18 @@ shutdown_requested = False
 PRODUCTION_MODE = os.getenv('MCP_PRODUCTION', 'false').lower() == 'true'
 set_production_mode(PRODUCTION_MODE)
 
+# Initialize metrics configuration
+INCLUDE_METRICS = os.getenv('MCP_INCLUDE_METRICS', 'false').lower() == 'true'
+
 if PRODUCTION_MODE:
     logger.info("Running in PRODUCTION mode - enhanced security enabled")
 else:
     logger.info("Running in DEVELOPMENT mode - verbose errors enabled")
+
+if INCLUDE_METRICS:
+    logger.info("Performance metrics enabled in responses")
+else:
+    logger.info("Performance metrics disabled (set MCP_INCLUDE_METRICS=true to enable)")
 
 
 class MCPErrorHandler:
@@ -199,8 +207,8 @@ class MCPErrorHandler:
             logger.info(f"Completed {operation_name} successfully",
                        execution_time_ms=execution_time * 1000)
 
-            # Add metrics to successful responses if result is a dict
-            if isinstance(result, dict) and not result.get('error'):
+            # Add metrics to successful responses if result is a dict and metrics are enabled
+            if INCLUDE_METRICS and isinstance(result, dict) and not result.get('error'):
                 result['metrics'] = {
                     'execution_time_ms': round(execution_time * 1000, 2),
                     'operation': operation_name
@@ -240,14 +248,15 @@ class MCPErrorHandler:
             # Calculate execution time even for errors
             execution_time = time.perf_counter() - start_time
 
-            # Add metrics to context
-            if not context:
-                context = {}
-            context['metrics'] = {
-                'execution_time_ms': round(execution_time * 1000, 2),
-                'operation': operation_name,
-                'failed': True
-            }
+            # Add metrics to context if enabled
+            if INCLUDE_METRICS:
+                if not context:
+                    context = {}
+                context['metrics'] = {
+                    'execution_time_ms': round(execution_time * 1000, 2),
+                    'operation': operation_name,
+                    'failed': True
+                }
 
             # Create standardized error response
             error_response = StandardErrorResponse(
