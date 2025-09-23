@@ -154,14 +154,30 @@ impl AppState {
         let vespera_dir = workspace_root.join(".vespera");
         eprintln!("Debug: Creating vespera directory: {:?}", vespera_dir);
         tokio::fs::create_dir_all(&vespera_dir).await?;
-        
-        // Initialize database in .vespera folder
+
+        // Initialize database in .vespera folder with optimized pool configuration
         let database_path = vespera_dir.join("tasks.db");
         eprintln!("Debug: Database path: {:?}", database_path);
-        let database = Database::new(database_path).await?;
-        
+
+        // Create optimized database pool configuration for high-throughput
+        let pool_config = vespera_bindery::database::DatabasePoolConfig::builder()
+            .max_connections(8)? // Optimized for SQLite with WAL mode
+            .min_connections(2)   // Keep some connections warm
+            .acquire_timeout(std::time::Duration::from_secs(3))? // Fast timeout for responsiveness
+            .idle_timeout(std::time::Duration::from_secs(300))? // 5 minutes idle timeout
+            .max_connection_lifetime(std::time::Duration::from_secs(3600))? // 1 hour lifetime
+            .test_before_acquire(true)
+            .build()?;
+
+        let database = Database::new_with_config(database_path, pool_config).await?;
+
         // Initialize schema manually since sqlx migrations might not work
         database.init_schema().await?;
+
+        // Log pool health information for monitoring
+        let health_info = database.get_pool_health_info().await;
+        eprintln!("Debug: Database pool initialized - Status: {:?}, Connections: {}/{}",
+                 health_info.status, health_info.active_connections, health_info.max_connections);
         
         let mut roles = Vec::new();
         roles.push(Role {
@@ -430,6 +446,9 @@ async fn run_http_server_with_port(port: u16, workspace: Option<PathBuf>) -> Res
         .route("/rpc", post(handle_http_json_rpc))
         // Health check
         .route("/health", get(handle_health_check))
+        // Pool metrics endpoint for monitoring
+        .route("/api/pool/metrics", get(api_pool_metrics))
+        .route("/api/pool/health", get(api_pool_health))
         // REST API endpoints for MCP server
         .route("/api/tasks", post(api_create_task))
         .route("/api/tasks", get(api_list_tasks))
@@ -463,12 +482,38 @@ async fn run_http_server_with_port(port: u16, workspace: Option<PathBuf>) -> Res
     Ok(())
 }
 
-/// Handle health check requests
-async fn handle_health_check() -> Json<Value> {
+/// Handle health check requests with database pool health information
+async fn handle_health_check(State(state): State<Arc<AppState>>) -> Json<Value> {
+    let pool_metrics = state.database.get_pool_metrics().await;
+    let pool_health = state.database.get_pool_health_info().await;
+    let is_db_healthy = state.database.is_pool_healthy().await;
+
+    let overall_status = if is_db_healthy {
+        match pool_health.status {
+            vespera_bindery::database::PoolHealthStatus::Healthy => "healthy",
+            vespera_bindery::database::PoolHealthStatus::Warning => "warning",
+            vespera_bindery::database::PoolHealthStatus::Unhealthy => "unhealthy",
+        }
+    } else {
+        "unhealthy"
+    };
+
     Json(json!({
-        "status": "healthy",
+        "status": overall_status,
         "service": "vespera-bindery",
-        "version": env!("CARGO_PKG_VERSION")
+        "version": env!("CARGO_PKG_VERSION"),
+        "database": {
+            "pool_healthy": is_db_healthy,
+            "active_connections": pool_metrics.active_connections,
+            "max_connections": pool_health.max_connections,
+            "utilization_percent": pool_metrics.pool_utilization,
+            "success_rate_percent": pool_health.success_rate,
+            "avg_acquisition_time_ms": pool_metrics.average_acquisition_time_ms,
+            "total_queries": pool_health.total_queries,
+            "slow_queries": pool_health.slow_query_count,
+            "deadlocks": pool_health.deadlock_count,
+            "recommendations": pool_health.recommendations
+        }
     }))
 }
 
@@ -990,6 +1035,34 @@ async fn api_index_document(
         "document_id": document_id,
         "message": "Document indexed successfully",
         "chunks_created": 1
+    })))
+}
+
+/// Get pool metrics (GET /api/pool/metrics)
+async fn api_pool_metrics(
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<Value>, StatusCode> {
+    let pool_metrics = state.database.get_pool_metrics().await;
+    Ok(Json(serde_json::to_value(pool_metrics).unwrap_or(json!({}))))
+}
+
+/// Get pool health information (GET /api/pool/health)
+async fn api_pool_health(
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<Value>, StatusCode> {
+    let pool_health = state.database.get_pool_health_info().await;
+    let pool_config = state.database.get_pool_config();
+
+    Ok(Json(json!({
+        "health": pool_health,
+        "configuration": {
+            "max_connections": pool_config.max_connections,
+            "min_connections": pool_config.min_connections,
+            "acquire_timeout_ms": pool_config.acquire_timeout.as_millis(),
+            "idle_timeout_ms": pool_config.idle_timeout.as_millis(),
+            "max_lifetime_ms": pool_config.max_connection_lifetime.as_millis(),
+            "test_before_acquire": pool_config.test_before_acquire
+        }
     })))
 }
 

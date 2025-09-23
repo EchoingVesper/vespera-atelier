@@ -22,6 +22,12 @@ from fastmcp import FastMCP
 from pydantic import BaseModel, Field, ValidationError
 
 from bindery_client import BinderyClient, BinderyClientError, with_bindery_client
+from security import (
+    secure_deserialize_mcp_param,
+    ErrorSanitizer,
+    set_production_mode,
+    schema_cache
+)
 from models import (
     TaskInput, TaskOutput, TaskUpdateInput, TaskStatus, TaskPriority,
     ProjectInput, ProjectOutput,
@@ -58,51 +64,14 @@ logger = structlog.get_logger()
 # Global shutdown flag
 shutdown_requested = False
 
-# Type variable for generic Pydantic model handling
-T = TypeVar('T', bound=BaseModel)
+# Initialize security mode based on environment
+PRODUCTION_MODE = os.getenv('MCP_PRODUCTION', 'false').lower() == 'true'
+set_production_mode(PRODUCTION_MODE)
 
-
-def deserialize_mcp_param(param: Union[str, Dict, BaseModel], model_class: Type[T]) -> T:
-    """
-    Deserialize MCP parameter from various input formats to a Pydantic model.
-
-    Handles three cases:
-    1. Already a Pydantic model instance - return as-is
-    2. JSON string - parse and validate
-    3. Dictionary - validate directly
-
-    Args:
-        param: The input parameter (could be JSON string, dict, or model instance)
-        model_class: The Pydantic model class to deserialize to
-
-    Returns:
-        Validated instance of the model class
-
-    Raises:
-        ValidationError: If the parameter cannot be validated against the model
-    """
-    # Case 1: Already the right type
-    if isinstance(param, model_class):
-        return param
-
-    # Case 2: JSON string (common from MCP protocol)
-    if isinstance(param, str):
-        try:
-            # Try to parse as JSON
-            data = json.loads(param)
-            return model_class(**data)
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse JSON parameter: {e}")
-            raise ValidationError(f"Invalid JSON: {e}")
-
-    # Case 3: Dictionary
-    if isinstance(param, dict):
-        return model_class(**param)
-
-    # Unexpected type
-    raise ValidationError(
-        f"Cannot deserialize parameter of type {type(param).__name__} to {model_class.__name__}"
-    )
+if PRODUCTION_MODE:
+    logger.info("Running in PRODUCTION mode - enhanced security enabled")
+else:
+    logger.info("Running in DEVELOPMENT mode - verbose errors enabled")
 
 
 class MCPErrorHandler:
@@ -137,12 +106,13 @@ class MCPErrorHandler:
                 status_code=e.status_code,
                 details=e.details
             )
-            # Return structured error response instead of raising
+            # Sanitize error for external exposure
+            error_info = ErrorSanitizer.sanitize_error_message(e, operation_name)
             return {
-                "error": e.message,
+                "error": error_info["error"],
                 "operation": operation_name,
                 "status_code": e.status_code,
-                "details": e.details
+                "type": "client_error"
             }
 
         except Exception as e:
@@ -151,11 +121,12 @@ class MCPErrorHandler:
                 error=str(e),
                 error_type=type(e).__name__
             )
-            # Return structured error response instead of raising
+            # Sanitize error for external exposure
+            error_info = ErrorSanitizer.sanitize_error_message(e, operation_name)
             return {
-                "error": f"Internal server error: {str(e)}",
+                "error": error_info["error"],
                 "operation": operation_name,
-                "error_type": type(e).__name__
+                "type": error_info["type"]
             }
 
 
@@ -179,8 +150,8 @@ async def create_task(task_input: Union[str, Dict, TaskInput]) -> Dict[str, Any]
         Created task data or error information
     """
     async def operation():
-        # Deserialize the input parameter
-        task = deserialize_mcp_param(task_input, TaskInput)
+        # Deserialize the input parameter with enhanced security
+        task = secure_deserialize_mcp_param(task_input, TaskInput)
 
         async with BinderyClient() as client:
             return (await client.create_task(task)).model_dump()
@@ -220,8 +191,8 @@ async def update_task(task_id: str, task_update: Union[str, Dict, TaskUpdateInpu
         Updated task data or error information
     """
     async def operation():
-        # Deserialize the update input
-        update = deserialize_mcp_param(task_update, TaskUpdateInput)
+        # Deserialize the update input with enhanced security
+        update = secure_deserialize_mcp_param(task_update, TaskUpdateInput)
 
         async with BinderyClient() as client:
             return (await client.update_task(task_id, update)).model_dump()
@@ -264,8 +235,8 @@ async def create_project(project_input: Union[str, Dict, ProjectInput]) -> Dict[
         Created project data or error information
     """
     async def operation():
-        # Deserialize the input parameter
-        project = deserialize_mcp_param(project_input, ProjectInput)
+        # Deserialize the input parameter with enhanced security
+        project = secure_deserialize_mcp_param(project_input, ProjectInput)
 
         async with BinderyClient() as client:
             return (await client.create_project(project)).model_dump()
@@ -301,8 +272,8 @@ async def search_entities(search_input: Union[str, Dict, SearchInput]) -> Dict[s
         Search results or error information
     """
     async def operation():
-        # Deserialize the input parameter
-        search = deserialize_mcp_param(search_input, SearchInput)
+        # Deserialize the input parameter with enhanced security
+        search = secure_deserialize_mcp_param(search_input, SearchInput)
 
         async with BinderyClient() as client:
             return (await client.search(search)).model_dump()
@@ -467,8 +438,8 @@ async def index_document(document_input: Union[str, Dict, DocumentInput]) -> Dic
         Indexing confirmation or error information
     """
     async def operation():
-        # Deserialize the input parameter
-        document = deserialize_mcp_param(document_input, DocumentInput)
+        # Deserialize the input parameter with enhanced security
+        document = secure_deserialize_mcp_param(document_input, DocumentInput)
 
         async with BinderyClient() as client:
             result = await client.index_document(document)

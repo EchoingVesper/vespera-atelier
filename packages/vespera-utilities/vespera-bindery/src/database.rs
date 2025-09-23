@@ -81,11 +81,13 @@ pub struct DatabasePoolConfig {
 impl Default for DatabasePoolConfig {
     fn default() -> Self {
         Self {
-            max_connections: 20,
-            min_connections: 2,
-            max_connection_lifetime: Duration::from_secs(30 * 60), // 30 minutes
-            acquire_timeout: Duration::from_secs(10),
-            idle_timeout: Duration::from_secs(10 * 60), // 10 minutes
+            // Optimized for SQLite's single-writer concurrent-readers model
+            // SQLite with WAL mode can handle multiple readers + 1 writer efficiently
+            max_connections: 10, // Reduced for SQLite - more connections don't help much
+            min_connections: 3,  // Keep a few connections warm
+            max_connection_lifetime: Duration::from_secs(60 * 60), // 1 hour - longer for stability
+            acquire_timeout: Duration::from_secs(5), // Faster timeout for high-throughput
+            idle_timeout: Duration::from_secs(5 * 60), // 5 minutes - more aggressive cleanup
             test_before_acquire: true,
         }
     }
@@ -336,7 +338,31 @@ pub struct PoolMetrics {
     pub total_acquired: u64,
     pub total_acquisition_failures: u64,
     pub average_acquisition_time_ms: f64,
+    pub pool_utilization: f64, // As percentage
+}
+
+/// Pool health status enumeration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum PoolHealthStatus {
+    Healthy,
+    Warning,
+    Unhealthy,
+}
+
+/// Comprehensive pool health information
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PoolHealthInfo {
+    pub status: PoolHealthStatus,
+    pub is_healthy: bool,
     pub pool_utilization: f64,
+    pub success_rate: f64,
+    pub average_acquisition_time_ms: f64,
+    pub total_queries: u64,
+    pub slow_query_count: u64,
+    pub deadlock_count: u64,
+    pub active_connections: u32,
+    pub max_connections: u32,
+    pub recommendations: Vec<String>,
 }
 
 /// Query performance metrics
@@ -460,18 +486,54 @@ impl Database {
             .test_before_acquire(config.test_before_acquire)
             .after_connect(|mut conn, _meta| {
                 Box::pin(async move {
-                    // Enable WAL mode for better concurrency
+                    // High-performance SQLite configuration for throughput
+
+                    // Enable WAL mode for better concurrency (readers don't block)
                     sqlx::query("PRAGMA journal_mode = WAL")
                         .execute(&mut *conn)
                         .await?;
-                    // Set synchronous mode for performance
+
+                    // Set synchronous to NORMAL for better performance
+                    // NORMAL is safe with WAL mode and provides good performance
                     sqlx::query("PRAGMA synchronous = NORMAL")
                         .execute(&mut *conn)
                         .await?;
-                    // Enable foreign key constraints
+
+                    // Enable foreign key constraints for data integrity
                     sqlx::query("PRAGMA foreign_keys = ON")
                         .execute(&mut *conn)
                         .await?;
+
+                    // Optimize cache size for better performance (64MB cache)
+                    sqlx::query("PRAGMA cache_size = -65536")
+                        .execute(&mut *conn)
+                        .await?;
+
+                    // Set busy timeout for better concurrency handling
+                    sqlx::query("PRAGMA busy_timeout = 5000")
+                        .execute(&mut *conn)
+                        .await?;
+
+                    // Enable memory-mapped I/O for better performance (256MB)
+                    sqlx::query("PRAGMA mmap_size = 268435456")
+                        .execute(&mut *conn)
+                        .await?;
+
+                    // Optimize temp storage to memory for performance
+                    sqlx::query("PRAGMA temp_store = MEMORY")
+                        .execute(&mut *conn)
+                        .await?;
+
+                    // Set WAL checkpoint optimizations
+                    sqlx::query("PRAGMA wal_autocheckpoint = 1000")
+                        .execute(&mut *conn)
+                        .await?;
+
+                    // Enable query planner optimization
+                    sqlx::query("PRAGMA optimize")
+                        .execute(&mut *conn)
+                        .await?;
+
                     Ok(())
                 })
             })
@@ -895,7 +957,7 @@ impl Database {
         Ok(result.rows_affected() > 0)
     }
 
-    /// Get pool metrics for monitoring
+    /// Get comprehensive pool metrics for monitoring
     pub async fn get_pool_metrics(&self) -> PoolMetrics {
         let pool_state = self.pool.size();
         let total_acquired = self.total_acquired.load(Ordering::Relaxed);
@@ -912,9 +974,9 @@ impl Database {
             total_ms / acquisition_times.len() as f64
         };
 
-        // Calculate pool utilization
+        // Calculate pool utilization as percentage
         let utilization = if self.config.max_connections > 0 {
-            (pool_state as f64) / (self.config.max_connections as f64)
+            (pool_state as f64) / (self.config.max_connections as f64) * 100.0
         } else {
             0.0
         };
@@ -930,20 +992,143 @@ impl Database {
         }
     }
 
+    /// Get detailed pool health information
+    pub async fn get_pool_health_info(&self) -> PoolHealthInfo {
+        let is_healthy = self.is_pool_healthy().await;
+        let metrics = self.get_pool_metrics().await;
+        let total_queries = self.total_queries.load(Ordering::Relaxed);
+        let slow_queries = self.queries_over_threshold.load(Ordering::Relaxed);
+        let deadlocks = self.deadlocks_detected.load(Ordering::Relaxed);
+
+        // Calculate success rate
+        let success_rate = if metrics.total_acquired > 0 {
+            ((metrics.total_acquired - metrics.total_acquisition_failures) as f64 / metrics.total_acquired as f64) * 100.0
+        } else {
+            100.0
+        };
+
+        // Determine health status
+        let status = if !is_healthy {
+            PoolHealthStatus::Unhealthy
+        } else if metrics.pool_utilization > 90.0 {
+            PoolHealthStatus::Warning
+        } else if metrics.average_acquisition_time_ms > 1000.0 {
+            PoolHealthStatus::Warning
+        } else {
+            PoolHealthStatus::Healthy
+        };
+
+        PoolHealthInfo {
+            status,
+            is_healthy,
+            pool_utilization: metrics.pool_utilization,
+            success_rate,
+            average_acquisition_time_ms: metrics.average_acquisition_time_ms,
+            total_queries,
+            slow_query_count: slow_queries,
+            deadlock_count: deadlocks,
+            active_connections: metrics.active_connections,
+            max_connections: self.config.max_connections,
+            recommendations: self.generate_health_recommendations(&metrics, success_rate).await,
+        }
+    }
+
+    /// Generate recommendations based on pool health
+    async fn generate_health_recommendations(&self, metrics: &PoolMetrics, success_rate: f64) -> Vec<String> {
+        let mut recommendations = Vec::new();
+
+        if metrics.pool_utilization > 90.0 {
+            recommendations.push("Consider increasing max_connections for better throughput".to_string());
+        }
+
+        if metrics.average_acquisition_time_ms > 500.0 {
+            recommendations.push("High connection acquisition time - consider optimizing queries or increasing pool size".to_string());
+        }
+
+        if success_rate < 95.0 {
+            recommendations.push("Low connection success rate - investigate connection failures".to_string());
+        }
+
+        let slow_query_rate = if self.total_queries.load(Ordering::Relaxed) > 0 {
+            (self.queries_over_threshold.load(Ordering::Relaxed) as f64 / self.total_queries.load(Ordering::Relaxed) as f64) * 100.0
+        } else {
+            0.0
+        };
+
+        if slow_query_rate > 10.0 {
+            recommendations.push("High slow query rate - consider query optimization or adding indices".to_string());
+        }
+
+        if self.deadlocks_detected.load(Ordering::Relaxed) > 0 {
+            recommendations.push("Deadlocks detected - review transaction handling and query patterns".to_string());
+        }
+
+        recommendations
+    }
+
     /// Get pool configuration
     pub fn get_pool_config(&self) -> &DatabasePoolConfig {
         &self.config
     }
 
-    /// Check if pool is healthy
+    /// Check if pool is healthy with comprehensive testing
     pub async fn is_pool_healthy(&self) -> bool {
-        // Attempt a simple query to test pool health
+        // Test connection acquisition and basic query execution
         match self.pool.acquire().await {
-            Ok(_) => true,
+            Ok(mut conn) => {
+                // Test with a simple query to ensure the connection actually works
+                match sqlx::query("SELECT 1 as test")
+                    .fetch_one(&mut *conn)
+                    .await
+                {
+                    Ok(_) => {
+                        debug!("Pool health check passed");
+                        true
+                    }
+                    Err(e) => {
+                        error!("Pool health check query failed: {}", e);
+                        self.total_acquisition_failures.fetch_add(1, Ordering::Relaxed);
+                        false
+                    }
+                }
+            }
             Err(e) => {
-                error!("Pool health check failed: {}", e);
+                error!("Pool health check connection acquisition failed: {}", e);
                 self.total_acquisition_failures.fetch_add(1, Ordering::Relaxed);
                 false
+            }
+        }
+    }
+
+    /// Perform pool recovery operations when unhealthy
+    pub async fn recover_pool(&self) -> Result<()> {
+        warn!("Attempting pool recovery operations");
+
+        // Force checkpoint to ensure WAL consistency
+        match self.pool.acquire().await {
+            Ok(mut conn) => {
+                // Force WAL checkpoint to clear any locks
+                if let Err(e) = sqlx::query("PRAGMA wal_checkpoint(TRUNCATE)")
+                    .execute(&mut *conn)
+                    .await
+                {
+                    warn!("Failed to checkpoint WAL during recovery: {}", e);
+                }
+
+                // Re-optimize query planner
+                if let Err(e) = sqlx::query("PRAGMA optimize")
+                    .execute(&mut *conn)
+                    .await
+                {
+                    warn!("Failed to optimize during recovery: {}", e);
+                }
+
+                info!("Pool recovery completed successfully");
+                Ok(())
+            }
+            Err(e) => {
+                error!("Pool recovery failed - unable to acquire connection: {}", e);
+                Err(e.into())
             }
         }
     }
