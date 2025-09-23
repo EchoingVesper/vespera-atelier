@@ -14,6 +14,7 @@ import signal
 import sys
 import os
 import json
+import time
 from typing import Optional, List, Any, Dict, TypeVar, Type, Union
 from contextlib import asynccontextmanager
 
@@ -26,7 +27,9 @@ from security import (
     secure_deserialize_mcp_param,
     ErrorSanitizer,
     set_production_mode,
-    schema_cache
+    schema_cache,
+    validate_task_recursion_depth,
+    MAX_TASK_DEPTH
 )
 from models import (
     TaskInput, TaskOutput, TaskUpdateInput, TaskStatus, TaskPriority,
@@ -34,7 +37,7 @@ from models import (
     SearchInput, SearchOutput,
     NoteInput, NoteOutput,
     DashboardStats,
-    SuccessResponse,
+    SuccessResponse, StandardErrorResponse,
     DeleteTaskResponse, CompleteTaskResponse, ExecuteTaskResponse,
     RoleDefinition, DocumentInput, DocumentType
 )
@@ -77,13 +80,104 @@ else:
 class MCPErrorHandler:
     """
     Error handling middleware for MCP tool calls.
-    Prevents "Interrupted by user" errors by ensuring proper error responses.
+    Provides standardized error responses with consistent format across all tools.
     """
 
     @staticmethod
-    async def handle_tool_error(operation_name: str, operation_func, *args, **kwargs):
+    def _map_exception_to_error_code(exception: Exception) -> str:
+        """Map exception types to standardized error codes."""
+        if isinstance(exception, ValidationError):
+            return "validation_error"
+        elif isinstance(exception, BinderyClientError):
+            if exception.status_code == 404:
+                return "not_found"
+            elif exception.status_code == 403:
+                return "permission_denied"
+            elif exception.status_code in [500, 502, 503, 504]:
+                return "internal_error"
+            elif exception.status_code == 408:
+                return "timeout_error"
+            elif exception.status_code == 429:
+                return "rate_limit_exceeded"
+            elif "connect" in str(exception).lower() or "connection" in str(exception).lower():
+                return "connection_error"
+            else:
+                return "client_error"
+        elif "timeout" in str(exception).lower():
+            return "timeout_error"
+        elif "connection" in str(exception).lower() or "connect" in str(exception).lower():
+            return "connection_error"
+        elif "permission" in str(exception).lower() or "unauthorized" in str(exception).lower():
+            return "permission_denied"
+        elif "depth" in str(exception).lower() and "exceeded" in str(exception).lower():
+            return "task_depth_exceeded"
+        else:
+            return "internal_error"
+
+    @staticmethod
+    def _get_error_suggestions(error_code: str, operation: str, exception: Exception) -> List[str]:
+        """Get actionable suggestions based on error code and context."""
+        suggestions = []
+
+        if error_code == "connection_error":
+            suggestions.extend([
+                "Ensure the Bindery backend server is running on localhost:3000",
+                "Check if the backend process is healthy using the health_check tool",
+                "Verify network connectivity and firewall settings"
+            ])
+        elif error_code == "not_found":
+            if "task" in operation:
+                suggestions.extend([
+                    "Verify the task ID exists using the list_tasks tool",
+                    "Check if the task was deleted or moved to another project"
+                ])
+            elif "project" in operation:
+                suggestions.extend([
+                    "Verify the project ID exists",
+                    "Check if the project was archived or deleted"
+                ])
+        elif error_code == "validation_error":
+            suggestions.extend([
+                "Check that all required fields are provided",
+                "Verify field types match the expected schema",
+                "Ensure string fields don't exceed maximum length limits"
+            ])
+        elif error_code == "timeout_error":
+            suggestions.extend([
+                "Retry the operation after a brief delay",
+                "Check if the backend is under heavy load",
+                "Consider breaking large operations into smaller chunks"
+            ])
+        elif error_code == "rate_limit_exceeded":
+            suggestions.extend([
+                "Wait before retrying the operation",
+                "Reduce the frequency of API calls",
+                "Check if there are concurrent operations running"
+            ])
+        elif error_code == "task_depth_exceeded":
+            suggestions.extend([
+                "Reduce the nesting depth of subtasks",
+                "Create subtasks as separate operations instead of deeply nested structures",
+                f"Maximum task depth is {MAX_TASK_DEPTH} levels"
+            ])
+        elif error_code == "permission_denied":
+            suggestions.extend([
+                "Verify you have the necessary permissions for this operation",
+                "Check if the resource requires specific role assignments"
+            ])
+        elif error_code == "internal_error":
+            suggestions.extend([
+                "Try the operation again after a brief delay",
+                "Check the backend logs for more details",
+                "Contact support if the issue persists"
+            ])
+
+        return suggestions
+
+    @staticmethod
+    async def handle_tool_error(operation_name: str, operation_func, *args, **kwargs) -> Dict[str, Any]:
         """
-        Wrap tool operations with proper error handling.
+        Wrap tool operations with standardized error handling and performance monitoring.
 
         Args:
             operation_name: Name of the operation for logging
@@ -91,43 +185,81 @@ class MCPErrorHandler:
             *args, **kwargs: Arguments to pass to the operation
 
         Returns:
-            Result of the operation or a structured error response
+            Result of the operation or a standardized error response with metrics
         """
+        start_time = time.perf_counter()
+
         try:
             logger.info(f"Starting {operation_name}")
             result = await operation_func(*args, **kwargs)
-            logger.info(f"Completed {operation_name} successfully")
+
+            # Calculate execution time
+            execution_time = time.perf_counter() - start_time
+
+            logger.info(f"Completed {operation_name} successfully",
+                       execution_time_ms=execution_time * 1000)
+
+            # Add metrics to successful responses if result is a dict
+            if isinstance(result, dict) and not result.get('error'):
+                result['metrics'] = {
+                    'execution_time_ms': round(execution_time * 1000, 2),
+                    'operation': operation_name
+                }
+
             return result
 
-        except BinderyClientError as e:
+        except Exception as e:
+            # Map exception to error code
+            error_code = MCPErrorHandler._map_exception_to_error_code(e)
+
+            # Log the error with full details
             logger.error(
-                f"Bindery client error in {operation_name}",
-                error=e.message,
-                status_code=e.status_code,
-                details=e.details
+                f"Error in {operation_name}",
+                error=str(e),
+                error_type=type(e).__name__,
+                error_code=error_code,
+                status_code=getattr(e, 'status_code', None)
             )
-            # Sanitize error for external exposure
+
+            # Sanitize error message for external exposure
             error_info = ErrorSanitizer.sanitize_error_message(e, operation_name)
-            return {
-                "error": error_info["error"],
-                "operation": operation_name,
-                "status_code": e.status_code,
-                "type": "client_error"
+
+            # Build additional context
+            context = {}
+            if isinstance(e, BinderyClientError):
+                context.update({
+                    "status_code": e.status_code,
+                    "backend_details": e.details
+                })
+            if hasattr(e, '__class__'):
+                context["exception_type"] = e.__class__.__name__
+
+            # Get suggestions for recovery
+            suggestions = MCPErrorHandler._get_error_suggestions(error_code, operation_name, e)
+
+            # Calculate execution time even for errors
+            execution_time = time.perf_counter() - start_time
+
+            # Add metrics to context
+            if not context:
+                context = {}
+            context['metrics'] = {
+                'execution_time_ms': round(execution_time * 1000, 2),
+                'operation': operation_name,
+                'failed': True
             }
 
-        except Exception as e:
-            logger.error(
-                f"Unexpected error in {operation_name}",
-                error=str(e),
-                error_type=type(e).__name__
+            # Create standardized error response
+            error_response = StandardErrorResponse(
+                success=False,
+                error=error_info["error"],
+                error_code=error_code,
+                operation=operation_name,
+                context=context,
+                suggestions=suggestions if suggestions else None
             )
-            # Sanitize error for external exposure
-            error_info = ErrorSanitizer.sanitize_error_message(e, operation_name)
-            return {
-                "error": error_info["error"],
-                "operation": operation_name,
-                "type": error_info["type"]
-            }
+
+            return error_response.model_dump()
 
 
 # Initialize FastMCP server
@@ -152,6 +284,27 @@ async def create_task(task_input: Union[str, Dict, TaskInput]) -> Dict[str, Any]
     async def operation():
         # Deserialize the input parameter with enhanced security
         task = secure_deserialize_mcp_param(task_input, TaskInput)
+
+        # Validate task recursion depth before sending to backend
+        try:
+            max_depth = validate_task_recursion_depth(task)
+            logger.info(f"Task recursion depth validated: max_depth={max_depth}")
+        except ValueError as e:
+            logger.warning(f"Task recursion depth validation failed: {e}")
+            # Return standardized error response
+            error_response = StandardErrorResponse(
+                success=False,
+                error=str(e),
+                error_code="task_depth_exceeded",
+                operation="create_task",
+                context={"max_allowed_depth": MAX_TASK_DEPTH},
+                suggestions=[
+                    "Reduce the nesting depth of subtasks",
+                    "Create subtasks as separate operations instead of deeply nested structures",
+                    f"Maximum task depth is {MAX_TASK_DEPTH} levels"
+                ]
+            )
+            return error_response.model_dump()
 
         async with BinderyClient() as client:
             return (await client.create_task(task)).model_dump()
