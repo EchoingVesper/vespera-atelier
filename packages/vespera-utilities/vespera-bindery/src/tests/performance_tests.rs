@@ -306,7 +306,7 @@ async fn test_memory_pressure_performance() {
             for j in 0..OPERATIONS_PER_CODEX {
                 // Simulate memory-intensive operations
                 let field_name = format!("field_{}_{}", i, j);
-                let field_value = format!("value_{}_{}_{'x'.repeat(100)}", i, j, j); // Add padding
+                let field_value = format!("value_{}_{}_{}", i, j, "x".repeat(100)); // Add padding
 
                 // This would require interior mutability in real implementation
                 // For now, we measure the overhead of the operations
