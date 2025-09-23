@@ -17,9 +17,12 @@ from security import (
     ErrorSanitizer,
     secure_deserialize_mcp_param,
     set_production_mode,
-    schema_cache
+    schema_cache,
+    validate_task_recursion_depth,
+    MAX_TASK_DEPTH
 )
-from models import TaskInput, ProjectInput, SearchInput
+from models import TaskInput, TaskOutput, TaskStatus, TaskPriority, ProjectInput, SearchInput
+from datetime import datetime
 from bindery_client import BinderyClient, BinderyClientError
 from pydantic import ValidationError
 
@@ -379,6 +382,256 @@ class TestIntegrationScenarios:
 
         # Should be fast even with security checks
         assert avg_time < 0.01  # Less than 10ms per operation
+
+
+class TestTaskRecursionDepthValidation:
+    """Test task recursion depth validation for security."""
+
+    def test_task_recursion_depth_valid_shallow(self):
+        """Test that shallow task trees are accepted (depth 0-5)."""
+        # Depth 0 - no subtasks
+        shallow_task = TaskInput(title="Root Task")
+        max_depth = validate_task_recursion_depth(shallow_task)
+        assert max_depth == 0
+
+        # Depth 1 - simple subtasks
+        depth_1_task = TaskInput(
+            title="Parent Task",
+            subtasks=[
+                TaskInput(title="Child 1"),
+                TaskInput(title="Child 2")
+            ]
+        )
+        max_depth = validate_task_recursion_depth(depth_1_task)
+        assert max_depth == 1
+
+        # Depth 5 - deeper but valid
+        current = TaskInput(title="Level 5")
+        for level in range(4, -1, -1):
+            current = TaskInput(title=f"Level {level}", subtasks=[current])
+
+        max_depth = validate_task_recursion_depth(current)
+        assert max_depth == 5
+
+    def test_task_recursion_depth_valid_at_limit(self):
+        """Test that tasks at exactly the depth limit are accepted."""
+        # Create task tree at exactly MAX_TASK_DEPTH (10)
+        current = TaskInput(title="Level 10")
+        for level in range(9, -1, -1):
+            current = TaskInput(title=f"Level {level}", subtasks=[current])
+
+        max_depth = validate_task_recursion_depth(current)
+        assert max_depth == MAX_TASK_DEPTH
+        assert max_depth == 10
+
+    def test_task_recursion_depth_invalid_exceeds_limit(self):
+        """Test that tasks exceeding depth limit are rejected."""
+        # Create task tree at depth 11 (exceeds limit)
+        current = TaskInput(title="Level 11")
+        for level in range(10, -1, -1):
+            current = TaskInput(title=f"Level {level}", subtasks=[current])
+
+        with pytest.raises(ValueError, match="recursion depth exceeds maximum"):
+            validate_task_recursion_depth(current)
+
+    def test_task_recursion_depth_invalid_deeply_nested(self):
+        """Test that deeply nested tasks are rejected with proper error."""
+        # Create very deep task tree (depth 25)
+        current = TaskInput(title="Level 25")
+        for level in range(24, -1, -1):
+            current = TaskInput(title=f"Level {level}", subtasks=[current])
+
+        with pytest.raises(ValueError) as exc_info:
+            validate_task_recursion_depth(current)
+
+        error_msg = str(exc_info.value)
+        assert "recursion depth exceeds maximum" in error_msg
+        assert "Found depth: 11" in error_msg  # Should stop at first violation
+        assert str(MAX_TASK_DEPTH) in error_msg
+
+    def test_task_recursion_wide_tree(self):
+        """Test wide trees with many subtasks at each level."""
+        # Create wide tree: 10 subtasks at each level for 3 levels
+        # Root (depth 0) -> Level 1 (depth 1) -> Level 2 (depth 2)
+        level_2_tasks = [TaskInput(title=f"Level 2 Task {i}") for i in range(10)]
+        level_1_tasks = [TaskInput(title=f"Level 1 Task {i}", subtasks=level_2_tasks) for i in range(10)]
+        root_task = TaskInput(title="Root", subtasks=level_1_tasks)
+
+        max_depth = validate_task_recursion_depth(root_task)
+        assert max_depth == 2
+
+    def test_task_recursion_mixed_depths(self):
+        """Test trees where different branches have different depths."""
+        # Create mixed depth tree
+        shallow_branch = TaskInput(title="Shallow")  # Depth 1 from root
+        medium_branch = TaskInput(
+            title="Medium",
+            subtasks=[TaskInput(title="Medium Child")]  # Depth 2 from root
+        )
+
+        # Create deep branch: Root -> Deep Level 1 -> Deep Level 2 -> ... -> Deep Level 7
+        deep_branch = TaskInput(title="Deep Level 7")
+        for level in range(6, 0, -1):  # Build from level 6 down to 1
+            deep_branch = TaskInput(title=f"Deep Level {level}", subtasks=[deep_branch])
+
+        root_task = TaskInput(
+            title="Root",
+            subtasks=[shallow_branch, medium_branch, deep_branch]
+        )
+
+        max_depth = validate_task_recursion_depth(root_task)
+        assert max_depth == 7  # Should find the deepest branch
+
+    def test_task_recursion_empty_subtasks(self):
+        """Test handling of empty subtask lists."""
+        task_with_empty_subtasks = TaskInput(title="Task", subtasks=[])
+        max_depth = validate_task_recursion_depth(task_with_empty_subtasks)
+        assert max_depth == 0
+
+    def test_task_recursion_none_subtasks(self):
+        """Test handling of None subtasks."""
+        task_with_none_subtasks = TaskInput(title="Task", subtasks=None)
+        max_depth = validate_task_recursion_depth(task_with_none_subtasks)
+        assert max_depth == 0
+
+    def test_task_recursion_performance_large_wide_tree(self):
+        """Test performance with reasonably large task trees."""
+        import time
+
+        # Create large wide tree: 50 subtasks at level 1, 20 at level 2
+        level_2_tasks = [TaskInput(title=f"Level 2 Task {i}") for i in range(20)]
+        level_1_tasks = [TaskInput(title=f"Level 1 Task {i}", subtasks=level_2_tasks) for i in range(50)]
+        root_task = TaskInput(title="Root", subtasks=level_1_tasks)
+
+        start_time = time.time()
+        max_depth = validate_task_recursion_depth(root_task)
+        elapsed = time.time() - start_time
+
+        assert max_depth == 2
+        assert elapsed < 1.0  # Should complete within 1 second
+
+    def test_mcp_integration_depth_validation_valid(self):
+        """Test depth validation through secure deserialization (valid case)."""
+        # Test valid depth task through the same path as MCP
+        valid_task_dict = {
+            "title": "Valid Task",
+            "subtasks": [
+                {"title": "Subtask 1"},
+                {"title": "Subtask 2"}
+            ]
+        }
+
+        # This should succeed (same path as MCP server)
+        task = secure_deserialize_mcp_param(valid_task_dict, TaskInput)
+        max_depth = validate_task_recursion_depth(task)
+        assert max_depth == 1  # Root + 1 level of subtasks
+
+    def test_mcp_integration_depth_validation_invalid(self):
+        """Test depth validation through secure deserialization (invalid case)."""
+        # Since JSON validation limits depth to 10, we need to test at the edge
+        # Create task that is valid for JSON but invalid for task depth
+        # JSON depth counts all nesting, task depth counts only task nesting
+
+        # Create task with bypass of strict JSON validation
+        invalid_task_dict = {"title": "Root"}
+        current = invalid_task_dict
+        for level in range(11):  # Create depth 11 task (exceeds task limit)
+            current["subtasks"] = [{"title": f"Level {level + 1}"}]
+            current = current["subtasks"][0]
+
+        # Test with strict_mode=False to bypass JSON depth validation
+        # This focuses specifically on task recursion depth validation
+        task = secure_deserialize_mcp_param(invalid_task_dict, TaskInput, strict_mode=False)
+        with pytest.raises(ValueError, match="recursion depth exceeds maximum"):
+            validate_task_recursion_depth(task)
+
+    def test_malicious_depth_attack(self):
+        """Test handling of malicious depth attack attempts."""
+        # Simulate extremely deep nesting attack
+        malicious_task = TaskInput(title="Malicious")
+        current = malicious_task
+
+        # Create very deep nesting (depth 100)
+        for level in range(100):
+            subtask = TaskInput(title=f"Attack Level {level}")
+            current.subtasks = [subtask]
+            current = subtask
+
+        # Should fail fast and not consume excessive resources
+        import time
+        start_time = time.time()
+
+        with pytest.raises(ValueError, match="recursion depth exceeds maximum"):
+            validate_task_recursion_depth(malicious_task)
+
+        elapsed = time.time() - start_time
+        # Should fail quickly (within 100ms) due to early termination
+        assert elapsed < 0.1
+
+    def test_recursion_depth_boundary_conditions(self):
+        """Test boundary conditions around the depth limit."""
+        # Test exactly at limit (depth 10)
+        at_limit_task = TaskInput(title="Level 0")
+        current = at_limit_task
+        for level in range(1, 11):
+            subtask = TaskInput(title=f"Level {level}")
+            current.subtasks = [subtask]
+            current = subtask
+
+        max_depth = validate_task_recursion_depth(at_limit_task)
+        assert max_depth == 10
+
+        # Test one over limit (depth 11)
+        over_limit_task = TaskInput(title="Level 0")
+        current = over_limit_task
+        for level in range(1, 12):
+            subtask = TaskInput(title=f"Level {level}")
+            current.subtasks = [subtask]
+            current = subtask
+
+        with pytest.raises(ValueError, match="Found depth: 11"):
+            validate_task_recursion_depth(over_limit_task)
+
+    def test_partial_failure_handling(self):
+        """Test handling when some subtasks are invalid."""
+        # Create task with mix of valid and invalid subtasks
+        valid_subtask = TaskInput(title="Valid")
+
+        # Create invalid subtask (too deep)
+        invalid_subtask = TaskInput(title="Invalid Root")
+        current = invalid_subtask
+        for level in range(15):  # Deep enough to exceed limit
+            subtask = TaskInput(title=f"Invalid Level {level}")
+            current.subtasks = [subtask]
+            current = subtask
+
+        mixed_task = TaskInput(
+            title="Mixed",
+            subtasks=[valid_subtask, invalid_subtask]
+        )
+
+        # Should fail because one subtask is invalid
+        with pytest.raises(ValueError, match="recursion depth exceeds maximum"):
+            validate_task_recursion_depth(mixed_task)
+
+    def test_error_message_includes_depth_info(self):
+        """Test that error messages include useful depth information."""
+        # Create task that exceeds depth limit
+        deep_task = TaskInput(title="Level 0")
+        current = deep_task
+        for level in range(1, 15):  # Go to depth 15
+            subtask = TaskInput(title=f"Level {level}")
+            current.subtasks = [subtask]
+            current = subtask
+
+        with pytest.raises(ValueError) as exc_info:
+            validate_task_recursion_depth(deep_task)
+
+        error_msg = str(exc_info.value)
+        # Should include specific depth information
+        assert "Found depth: 11" in error_msg  # First violation
+        assert f"maximum allowed depth of {MAX_TASK_DEPTH}" in error_msg
+        assert "recursion depth exceeds maximum" in error_msg
 
 
 # Run tests if executed directly

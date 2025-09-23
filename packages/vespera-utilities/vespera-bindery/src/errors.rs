@@ -40,6 +40,7 @@ pub enum BinderyError {
     ExecutionError(String),
     ExecutionTimeout(String),
     RoleValidationError(String),
+    CircularReferenceError(String),
 
     /// Hook system errors
     HookError(String),
@@ -110,6 +111,7 @@ impl fmt::Display for BinderyError {
             BinderyError::ExecutionError(msg) => write!(f, "Execution error: {}", msg),
             BinderyError::ExecutionTimeout(msg) => write!(f, "Execution timeout: {}", msg),
             BinderyError::RoleValidationError(msg) => write!(f, "Role validation error: {}", msg),
+            BinderyError::CircularReferenceError(msg) => write!(f, "Circular reference error: {}", msg),
 
             BinderyError::HookError(msg) => write!(f, "Hook error: {}", msg),
             BinderyError::HookConditionError(msg) => write!(f, "Hook condition error: {}", msg),
@@ -191,7 +193,8 @@ impl BinderyError {
             BinderyError::InvalidInput(_) |
             BinderyError::PermissionDenied(_) |
             BinderyError::TemplateNotFound(_) |
-            BinderyError::NotImplemented(_) => {
+            BinderyError::NotImplemented(_) |
+            BinderyError::CircularReferenceError(_) => {
                 warn!(
                     error = %self,
                     component = component,
@@ -236,7 +239,8 @@ impl BinderyError {
 
             BinderyError::ExecutionError(_) |
             BinderyError::ExecutionTimeout(_) |
-            BinderyError::RoleValidationError(_) => "execution",
+            BinderyError::RoleValidationError(_) |
+            BinderyError::CircularReferenceError(_) => "execution",
 
             BinderyError::HookError(_) |
             BinderyError::HookConditionError(_) |

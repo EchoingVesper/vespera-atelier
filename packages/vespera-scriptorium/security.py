@@ -8,10 +8,14 @@ for the MCP-Bindery integration layer.
 import re
 import json
 import html
-from typing import Any, Dict, Optional, Union, Type, TypeVar
+from typing import Any, Dict, Optional, Union, Type, TypeVar, TYPE_CHECKING
 from functools import lru_cache
 from pydantic import BaseModel, ValidationError
 import structlog
+
+# Use TYPE_CHECKING to avoid circular imports
+if TYPE_CHECKING:
+    from models import TaskInput
 
 logger = structlog.get_logger()
 
@@ -20,6 +24,7 @@ T = TypeVar('T', bound=BaseModel)
 
 # Security constants
 MAX_JSON_DEPTH = 10
+MAX_TASK_DEPTH = 10  # Match Rust backend
 MAX_STRING_LENGTH = 10000
 MAX_ARRAY_LENGTH = 1000
 MAX_OBJECT_KEYS = 100
@@ -141,6 +146,44 @@ class SecurityValidator:
             raise ValidationError("JSON string is too large")
 
         return json_str.strip()
+
+
+def validate_task_recursion_depth(task_input: "TaskInput", current_depth: int = 0) -> int:
+    """
+    Validate task recursion depth and return the maximum depth found.
+
+    Recursively traverses the subtask tree to count the maximum depth and validates
+    that it doesn't exceed MAX_TASK_DEPTH. This provides frontend validation to
+    complement the Rust backend protection.
+
+    Args:
+        task_input: The TaskInput object to validate
+        current_depth: Current recursion depth (used internally for recursion)
+
+    Returns:
+        The maximum depth found in the subtask tree
+
+    Raises:
+        ValueError: If recursion depth exceeds MAX_TASK_DEPTH
+    """
+    # Check current depth against limit
+    if current_depth > MAX_TASK_DEPTH:
+        raise ValueError(
+            f"Task recursion depth exceeded: maximum depth is {MAX_TASK_DEPTH}, found depth {current_depth}"
+        )
+
+    # Track the maximum depth found
+    max_depth = current_depth
+
+    # Recursively check subtasks if they exist
+    if task_input.subtasks:
+        for subtask in task_input.subtasks:
+            # Recursively validate each subtask
+            subtask_depth = validate_task_recursion_depth(subtask, current_depth + 1)
+            # Track the deepest path found
+            max_depth = max(max_depth, subtask_depth)
+
+    return max_depth
 
 
 class ErrorSanitizer:

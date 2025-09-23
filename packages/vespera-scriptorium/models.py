@@ -181,6 +181,16 @@ class BinderyError(BaseModel):
     details: Optional[Dict[str, Any]] = Field(None, description="Additional error details")
 
 
+class StandardErrorResponse(BaseModel):
+    """Standardized error response for all MCP tools."""
+    success: bool = Field(False, description="Always False for errors")
+    error: str = Field(..., description="Human-readable error message")
+    error_code: str = Field(..., description="Machine-readable error code (snake_case)")
+    operation: str = Field(..., description="Operation that failed")
+    context: Optional[Dict[str, Any]] = Field(None, description="Additional error context")
+    suggestions: Optional[List[str]] = Field(None, description="Actionable suggestions for recovery")
+
+
 # Generic Response Models
 class SuccessResponse(BaseModel):
     """Generic success response."""

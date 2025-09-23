@@ -10,6 +10,13 @@ use sqlx::{sqlite::{SqlitePool, SqlitePoolOptions}, Pool, Sqlite, Row};
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 use crate::migration::MigrationManager;
+use futures::future::try_join_all;
+use tokio::sync::Semaphore;
+
+/// Maximum recursion depth for task creation to prevent stack overflow
+pub const MAX_TASK_DEPTH: usize = 10;
+/// Maximum concurrent subtask operations to prevent connection pool exhaustion
+const MAX_CONCURRENT_SUBTASKS: usize = 5;
 // TODO: Add observability when dependencies are resolved
 // use crate::observability::{
 //     instrumentation::DatabaseInstrumentation,
@@ -17,7 +24,7 @@ use crate::migration::MigrationManager;
 //     instrument,
 // };
 use tracing::{info, warn, error, debug, instrument};
-use std::collections::VecDeque;
+use std::collections::{VecDeque, HashSet};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use tokio::time::Instant;
@@ -692,7 +699,102 @@ impl Database {
         subtask_count = input.subtasks.len()
     ))]
     pub async fn create_task(&self, input: &TaskInput) -> Result<String> {
+        self.create_task_transactional(input).await
+    }
+
+    /// Create a new task tree with transactional atomicity
+    /// Ensures that if ANY subtask fails to create, the entire tree creation is rolled back
+    #[instrument(skip(self, input), fields(
+        task_title = %input.title,
+        parent_id = ?input.parent_id,
+        subtask_count = input.subtasks.len()
+    ))]
+    pub async fn create_task_transactional(&self, input: &TaskInput) -> Result<String> {
+        info!(
+            task_title = %input.title,
+            subtask_count = input.subtasks.len(),
+            "Starting transactional task tree creation"
+        );
+
+        // Begin transaction
+        let mut tx = self.pool.begin().await
+            .map_err(|e| anyhow::anyhow!("Failed to begin transaction: {}", e))?;
+
+        // Create the task tree within the transaction
+        match self.create_task_with_depth_tx(&mut tx, input, 0).await {
+            Ok(id) => {
+                // Commit transaction only if all tasks were created successfully
+                tx.commit().await
+                    .map_err(|e| anyhow::anyhow!("Failed to commit transaction: {}", e))?;
+
+                info!(
+                    task_id = %id,
+                    task_title = %input.title,
+                    "Successfully committed task tree creation"
+                );
+
+                Ok(id)
+            }
+            Err(e) => {
+                // Transaction automatically rolls back on drop, but we can be explicit
+                if let Err(rollback_err) = tx.rollback().await {
+                    error!(
+                        original_error = %e,
+                        rollback_error = %rollback_err,
+                        "Failed to rollback transaction after task creation error"
+                    );
+                } else {
+                    info!(
+                        error = %e,
+                        task_title = %input.title,
+                        "Rolled back task tree creation due to error"
+                    );
+                }
+                Err(e)
+            }
+        }
+    }
+
+    /// Create a new task with depth tracking to prevent stack overflow (non-transactional version)
+    /// This method is kept for backward compatibility but should not be used for new code
+    /// Use create_task_transactional() instead for atomicity guarantees
+    #[instrument(skip(self, input), fields(
+        task_title = %input.title,
+        parent_id = ?input.parent_id,
+        subtask_count = input.subtasks.len(),
+        depth = depth
+    ))]
+    pub async fn create_task_with_depth(&self, input: &TaskInput, depth: usize) -> Result<String> {
+        warn!("Using non-transactional create_task_with_depth - consider using create_task_transactional for atomicity");
+        // Check recursion depth to prevent stack overflow
+        if depth > MAX_TASK_DEPTH {
+            return Err(anyhow::anyhow!(
+                crate::BinderyError::ExecutionError(
+                    format!(
+                        "Task recursion depth exceeded: maximum depth is {}, found depth {}",
+                        MAX_TASK_DEPTH, depth
+                    )
+                )
+            ));
+        }
+
+        // Generate task ID first to check for circular references
         let id = Uuid::new_v4().to_string();
+
+        // Check for circular references if a parent_id is specified
+        if let Some(parent_id) = &input.parent_id {
+            if self.would_create_cycle(&id, parent_id).await? {
+                return Err(anyhow::anyhow!(
+                    crate::BinderyError::CircularReferenceError(
+                        format!(
+                            "Cannot set parent_id '{}' for task '{}': would create circular reference",
+                            parent_id, id
+                        )
+                    )
+                ));
+            }
+        }
+
         let now = Utc::now();
         let tags_json = serde_json::to_string(&input.tags)?;
         let labels_json = serde_json::to_string(&input.labels)?;
@@ -701,7 +803,7 @@ impl Database {
             task_id = %id,
             task_title = %input.title,
             priority = input.priority.as_deref().unwrap_or("normal"),
-            "Creating new task"
+            "Creating new task (non-transactional)"
         );
 
         // Execute with connection acquisition tracking and instrumentation
@@ -725,16 +827,169 @@ impl Database {
                 .execute(&self.pool).await
         }).await?;
 
-        // Create subtasks recursively using Box::pin for async recursion
-        for subtask in &input.subtasks {
-            let mut subtask_input = subtask.clone();
-            subtask_input.parent_id = Some(id.clone());
-            Box::pin(self.create_task(&subtask_input)).await?;
+        // Create subtasks in parallel to improve performance for sibling tasks
+        if !input.subtasks.is_empty() {
+            // Use a semaphore to limit concurrent operations based on pool size
+            let max_concurrent = std::cmp::min(MAX_CONCURRENT_SUBTASKS, self.config.max_connections as usize / 2);
+            let semaphore = Arc::new(Semaphore::new(max_concurrent));
+
+            info!(
+                subtask_count = input.subtasks.len(),
+                max_concurrent = max_concurrent,
+                "Creating subtasks in parallel"
+            );
+
+            // Create futures for all sibling subtasks
+            let subtask_futures: Vec<_> = input.subtasks
+                .iter()
+                .map(|subtask| {
+                    let mut subtask_input = subtask.clone();
+                    subtask_input.parent_id = Some(id.clone());
+                    let semaphore = Arc::clone(&semaphore);
+
+                    async move {
+                        // Acquire semaphore permit to limit concurrency
+                        let _permit = semaphore.acquire().await.map_err(|e| {
+                            anyhow::anyhow!("Failed to acquire semaphore permit: {}", e)
+                        })?;
+
+                        // Create subtask with depth tracking
+                        Box::pin(self.create_task_with_depth(&subtask_input, depth + 1)).await
+                    }
+                })
+                .collect();
+
+            // Execute all siblings concurrently and collect results
+            let subtask_ids = try_join_all(subtask_futures).await?;
+
+            info!(
+                created_count = subtask_ids.len(),
+                "Successfully created subtasks in parallel"
+            );
         }
 
         Ok(id)
     }
-    
+
+    /// Create a new task tree with depth tracking within a transaction
+    /// This is the core transactional implementation that ensures atomicity
+    #[instrument(skip(self, tx, input), fields(
+        task_title = %input.title,
+        parent_id = ?input.parent_id,
+        subtask_count = input.subtasks.len(),
+        depth = depth
+    ))]
+    async fn create_task_with_depth_tx(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+        input: &TaskInput,
+        depth: usize,
+    ) -> Result<String> {
+        // Check recursion depth to prevent stack overflow
+        if depth > MAX_TASK_DEPTH {
+            return Err(anyhow::anyhow!(
+                crate::BinderyError::ExecutionError(
+                    format!(
+                        "Task recursion depth exceeded: maximum depth is {}, found depth {}",
+                        MAX_TASK_DEPTH, depth
+                    )
+                )
+            ));
+        }
+
+        let id = Uuid::new_v4().to_string();
+        let now = Utc::now();
+        let tags_json = serde_json::to_string(&input.tags)
+            .map_err(|e| anyhow::anyhow!("Failed to serialize tags: {}", e))?;
+        let labels_json = serde_json::to_string(&input.labels)
+            .map_err(|e| anyhow::anyhow!("Failed to serialize labels: {}", e))?;
+
+        debug!(
+            task_id = %id,
+            task_title = %input.title,
+            priority = input.priority.as_deref().unwrap_or("normal"),
+            depth = depth,
+            "Creating task within transaction"
+        );
+
+        // Insert the task within the transaction
+        let query = r#"
+            INSERT INTO tasks (id, title, description, priority, parent_id, project_id, tags, labels, created_at, updated_at)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
+        "#;
+
+        let result = sqlx::query(query)
+            .bind(&id)
+            .bind(&input.title)
+            .bind(&input.description)
+            .bind(input.priority.as_deref().unwrap_or("normal"))
+            .bind(&input.parent_id)
+            .bind(&input.project_id)
+            .bind(&tags_json)
+            .bind(&labels_json)
+            .bind(now.to_rfc3339())
+            .bind(now.to_rfc3339())
+            .execute(&mut **tx)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to insert task '{}': {}", input.title, e))?;
+
+        debug!(
+            task_id = %id,
+            rows_affected = result.rows_affected(),
+            "Task inserted successfully within transaction"
+        );
+
+        // Create subtasks recursively within the same transaction
+        // Note: We use sequential processing within transaction for atomicity
+        // This trades some performance for data consistency guarantees
+        for (subtask_index, subtask) in input.subtasks.iter().enumerate() {
+            let mut subtask_input = subtask.clone();
+            subtask_input.parent_id = Some(id.clone());
+
+            debug!(
+                parent_task_id = %id,
+                subtask_index = subtask_index,
+                subtask_title = %subtask.title,
+                "Creating subtask within transaction"
+            );
+
+            // Recursive call with Box::pin for async recursion
+            match Box::pin(self.create_task_with_depth_tx(tx, &subtask_input, depth + 1)).await {
+                Ok(subtask_id) => {
+                    debug!(
+                        parent_task_id = %id,
+                        subtask_id = %subtask_id,
+                        subtask_title = %subtask.title,
+                        "Subtask created successfully within transaction"
+                    );
+                }
+                Err(e) => {
+                    error!(
+                        parent_task_id = %id,
+                        subtask_title = %subtask.title,
+                        subtask_index = subtask_index,
+                        error = %e,
+                        "Failed to create subtask within transaction"
+                    );
+                    return Err(anyhow::anyhow!(
+                        "Failed to create subtask '{}' for parent '{}': {}",
+                        subtask.title, input.title, e
+                    ));
+                }
+            }
+        }
+
+        debug!(
+            task_id = %id,
+            task_title = %input.title,
+            subtask_count = input.subtasks.len(),
+            depth = depth,
+            "Successfully created task and all subtasks within transaction"
+        );
+
+        Ok(id)
+    }
+
     /// List tasks with optional filtering and pool metrics tracking
     // Instrumentation removed for compilation
     pub async fn list_tasks(&self, limit: Option<i32>, parent_id: Option<&str>) -> Result<Vec<TaskSummary>> {
@@ -954,6 +1209,143 @@ impl Database {
                 .bind(task_id)
                 .execute(&self.pool).await
         }).await?;
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// Check if setting parent_id would create a circular reference
+    ///
+    /// This method traverses the parent chain upward from the proposed parent
+    /// to detect if the task would become its own ancestor.
+    ///
+    /// # Arguments
+    /// * `task_id` - The ID of the task that would have its parent set
+    /// * `proposed_parent_id` - The ID of the proposed parent task
+    ///
+    /// # Returns
+    /// * `Ok(true)` - Setting this parent would create a cycle
+    /// * `Ok(false)` - No cycle would be created
+    /// * `Err(_)` - Database error occurred
+    pub async fn would_create_cycle(
+        &self,
+        task_id: &str,
+        proposed_parent_id: &str
+    ) -> Result<bool> {
+        // If task is trying to be its own parent, that's definitely a cycle
+        if task_id == proposed_parent_id {
+            return Ok(true);
+        }
+
+        // Get all ancestors of the proposed parent
+        let ancestors = self.get_ancestor_ids(proposed_parent_id).await?;
+
+        // If task_id appears in the ancestor chain, it would create a cycle
+        Ok(ancestors.contains(task_id))
+    }
+
+    /// Get all ancestor IDs for a task by traversing the parent chain upward
+    ///
+    /// # Arguments
+    /// * `task_id` - The task to find ancestors for
+    ///
+    /// # Returns
+    /// * `Ok(HashSet<String>)` - Set of all ancestor task IDs
+    /// * `Err(_)` - Database error occurred
+    pub async fn get_ancestor_ids(&self, task_id: &str) -> Result<HashSet<String>> {
+        let mut ancestors = HashSet::new();
+        let mut current_id = task_id.to_string();
+        let mut iterations = 0;
+        const MAX_ITERATIONS: usize = 1000; // Prevent infinite loops in corrupted data
+
+        loop {
+            iterations += 1;
+            if iterations > MAX_ITERATIONS {
+                warn!(
+                    "get_ancestor_ids hit maximum iterations for task {}, possible data corruption",
+                    task_id
+                );
+                break;
+            }
+
+            // Get parent_id for current task
+            let parent_result = self.execute_with_metrics(async {
+                sqlx::query("SELECT parent_id FROM tasks WHERE id = ?")
+                    .bind(&current_id)
+                    .fetch_optional(&self.pool).await
+            }).await?;
+
+            match parent_result {
+                Some(row) => {
+                    if let Some(parent_id) = row.get::<Option<String>, _>("parent_id") {
+                        // If we've seen this parent before, we have a cycle in existing data
+                        if ancestors.contains(&parent_id) {
+                            warn!(
+                                "Circular reference detected in existing data: task {} has circular parent chain",
+                                task_id
+                            );
+                            break;
+                        }
+
+                        ancestors.insert(parent_id.clone());
+                        current_id = parent_id;
+                    } else {
+                        // This task has no parent, we've reached the root
+                        break;
+                    }
+                }
+                None => {
+                    // Task doesn't exist, break the chain
+                    debug!("Task {} not found while traversing ancestor chain", current_id);
+                    break;
+                }
+            }
+        }
+
+        Ok(ancestors)
+    }
+
+    /// Update a task's parent_id with circular reference detection
+    ///
+    /// This method safely updates a task's parent while preventing cycles.
+    ///
+    /// # Arguments
+    /// * `task_id` - The task to update
+    /// * `new_parent_id` - The new parent task ID (None to make it a root task)
+    ///
+    /// # Returns
+    /// * `Ok(true)` - Parent was successfully updated
+    /// * `Ok(false)` - Task was not found or parent was already set to this value
+    /// * `Err(CircularReferenceError)` - Would create a circular reference
+    /// * `Err(_)` - Other database error
+    pub async fn update_task_parent(
+        &self,
+        task_id: &str,
+        new_parent_id: Option<&str>
+    ) -> Result<bool> {
+        // Check for circular references if setting a new parent
+        if let Some(parent_id) = new_parent_id {
+            if self.would_create_cycle(task_id, parent_id).await? {
+                return Err(anyhow::anyhow!(
+                    crate::BinderyError::CircularReferenceError(
+                        format!(
+                            "Cannot set parent_id '{}' for task '{}': would create circular reference",
+                            parent_id, task_id
+                        )
+                    )
+                ));
+            }
+        }
+
+        let now = Utc::now();
+        let now_str = now.to_rfc3339();
+
+        let result = self.execute_with_metrics(async {
+            sqlx::query("UPDATE tasks SET parent_id = ?, updated_at = ? WHERE id = ?")
+                .bind(new_parent_id)
+                .bind(&now_str)
+                .bind(task_id)
+                .execute(&self.pool).await
+        }).await?;
+
         Ok(result.rows_affected() > 0)
     }
 
@@ -1456,3 +1848,4 @@ pub struct MaintenanceReport {
     pub maintenance_duration_ms: u64,
     pub errors: Vec<String>,
 }
+
