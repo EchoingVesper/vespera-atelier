@@ -13,12 +13,13 @@ import asyncio
 import signal
 import sys
 import os
-from typing import Optional, List, Any, Dict
+import json
+from typing import Optional, List, Any, Dict, TypeVar, Type, Union
 from contextlib import asynccontextmanager
 
 import structlog
 from fastmcp import FastMCP
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from bindery_client import BinderyClient, BinderyClientError, with_bindery_client
 from models import (
@@ -56,6 +57,52 @@ logger = structlog.get_logger()
 
 # Global shutdown flag
 shutdown_requested = False
+
+# Type variable for generic Pydantic model handling
+T = TypeVar('T', bound=BaseModel)
+
+
+def deserialize_mcp_param(param: Union[str, Dict, BaseModel], model_class: Type[T]) -> T:
+    """
+    Deserialize MCP parameter from various input formats to a Pydantic model.
+
+    Handles three cases:
+    1. Already a Pydantic model instance - return as-is
+    2. JSON string - parse and validate
+    3. Dictionary - validate directly
+
+    Args:
+        param: The input parameter (could be JSON string, dict, or model instance)
+        model_class: The Pydantic model class to deserialize to
+
+    Returns:
+        Validated instance of the model class
+
+    Raises:
+        ValidationError: If the parameter cannot be validated against the model
+    """
+    # Case 1: Already the right type
+    if isinstance(param, model_class):
+        return param
+
+    # Case 2: JSON string (common from MCP protocol)
+    if isinstance(param, str):
+        try:
+            # Try to parse as JSON
+            data = json.loads(param)
+            return model_class(**data)
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON parameter: {e}")
+            raise ValidationError(f"Invalid JSON: {e}")
+
+    # Case 3: Dictionary
+    if isinstance(param, dict):
+        return model_class(**param)
+
+    # Unexpected type
+    raise ValidationError(
+        f"Cannot deserialize parameter of type {type(param).__name__} to {model_class.__name__}"
+    )
 
 
 class MCPErrorHandler:
@@ -120,19 +167,23 @@ error_handler = MCPErrorHandler()
 
 
 @mcp.tool()
-async def create_task(task_input: TaskInput) -> Dict[str, Any]:
+async def create_task(task_input: Union[str, Dict, TaskInput]) -> Dict[str, Any]:
     """
     Create a new task in the Bindery backend.
 
     Args:
         task_input: Task creation data including title, description, priority, and tags
+                   Can be a TaskInput object, dict, or JSON string
 
     Returns:
         Created task data or error information
     """
     async def operation():
+        # Deserialize the input parameter
+        task = deserialize_mcp_param(task_input, TaskInput)
+
         async with BinderyClient() as client:
-            return (await client.create_task(task_input)).model_dump()
+            return (await client.create_task(task)).model_dump()
 
     return await error_handler.handle_tool_error("create_task", operation)
 
@@ -156,20 +207,24 @@ async def get_task(task_id: str) -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def update_task(task_id: str, task_update: TaskUpdateInput) -> Dict[str, Any]:
+async def update_task(task_id: str, task_update: Union[str, Dict, TaskUpdateInput]) -> Dict[str, Any]:
     """
     Update an existing task.
 
     Args:
         task_id: Unique identifier for the task
         task_update: Updated task data (only non-None fields will be updated)
+                    Can be a TaskUpdateInput object, dict, or JSON string
 
     Returns:
         Updated task data or error information
     """
     async def operation():
+        # Deserialize the update input
+        update = deserialize_mcp_param(task_update, TaskUpdateInput)
+
         async with BinderyClient() as client:
-            return (await client.update_task(task_id, task_update)).model_dump()
+            return (await client.update_task(task_id, update)).model_dump()
 
     return await error_handler.handle_tool_error("update_task", operation)
 
@@ -197,19 +252,23 @@ async def list_tasks(
 
 
 @mcp.tool()
-async def create_project(project_input: ProjectInput) -> Dict[str, Any]:
+async def create_project(project_input: Union[str, Dict, ProjectInput]) -> Dict[str, Any]:
     """
     Create a new project in the Bindery backend.
 
     Args:
         project_input: Project creation data including name, description, and tags
+                      Can be a ProjectInput object, dict, or JSON string
 
     Returns:
         Created project data or error information
     """
     async def operation():
+        # Deserialize the input parameter
+        project = deserialize_mcp_param(project_input, ProjectInput)
+
         async with BinderyClient() as client:
-            return (await client.create_project(project_input)).model_dump()
+            return (await client.create_project(project)).model_dump()
 
     return await error_handler.handle_tool_error("create_project", operation)
 
@@ -230,19 +289,23 @@ async def get_dashboard_stats() -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def search_entities(search_input: SearchInput) -> Dict[str, Any]:
+async def search_entities(search_input: Union[str, Dict, SearchInput]) -> Dict[str, Any]:
     """
     Search across tasks, projects, and notes.
 
     Args:
         search_input: Search parameters including query string and entity types
+                     Can be a SearchInput object, dict, or JSON string
 
     Returns:
         Search results or error information
     """
     async def operation():
+        # Deserialize the input parameter
+        search = deserialize_mcp_param(search_input, SearchInput)
+
         async with BinderyClient() as client:
-            return (await client.search(search_input)).model_dump()
+            return (await client.search(search)).model_dump()
 
     return await error_handler.handle_tool_error("search_entities", operation)
 
@@ -392,19 +455,23 @@ async def list_roles() -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def index_document(document_input: DocumentInput) -> Dict[str, Any]:
+async def index_document(document_input: Union[str, Dict, DocumentInput]) -> Dict[str, Any]:
     """
     Index a document for RAG search.
 
     Args:
         document_input: Document data including content, title, and type
+                       Can be a DocumentInput object, dict, or JSON string
 
     Returns:
         Indexing confirmation or error information
     """
     async def operation():
+        # Deserialize the input parameter
+        document = deserialize_mcp_param(document_input, DocumentInput)
+
         async with BinderyClient() as client:
-            result = await client.index_document(document_input)
+            result = await client.index_document(document)
             return {
                 "success": True,
                 "document_id": result.get("document_id"),
