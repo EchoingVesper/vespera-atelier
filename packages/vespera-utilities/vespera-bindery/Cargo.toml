@@ -121,6 +121,8 @@ criterion = { version = "0.5", features = ["html_reports"] }
 proptest = "1.4"
 rand_core = "0.6"
 rand_xorshift = "0.3"
+tracing-subscriber = "0.3"
+futures = "0.3"
 
 [build-dependencies]
 napi-build = { version = "2.1", optional = true }
@@ -145,6 +147,9 @@ relay-sync = []
 # Development features
 dev = []
 benchmarks = []
+
+# Template features
+regex = []
 
 # Task management features
 task-management = []

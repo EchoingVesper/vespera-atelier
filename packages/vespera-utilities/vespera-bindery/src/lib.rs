@@ -759,10 +759,10 @@ impl CodexManager {
     pub async fn gc_all_codices_with_config(&self, config: GarbageCollectionConfig) -> Result<CodexManagerGCStats> {
         let mut total_stats = CodexManagerGCStats::default();
         let cutoff = chrono::Utc::now() - chrono::Duration::hours(config.cutoff_hours);
+        let mut processed_codices = Vec::new();
 
         {
             let codices = self.inner.codices.read().await;
-            let mut processed_codices = Vec::new();
 
             // First pass: collect IDs and check memory usage
             for (id, crdt) in codices.iter() {

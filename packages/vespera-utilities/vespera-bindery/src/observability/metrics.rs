@@ -4,12 +4,11 @@
 //! usage patterns, and health indicators. Includes comprehensive alerting
 //! system with configurable thresholds and severity levels.
 
-use metrics::{counter, gauge, histogram, register_counter, register_gauge, register_histogram};
-use std::sync::{Arc, Mutex, atomic::{AtomicU64, Ordering}, OnceLock};
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
-use std::collections::HashMap;
+use metrics::{counter, gauge, histogram};
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant, SystemTime};
 use serde::{Deserialize, Serialize};
-use tracing::{warn, error, info, debug};
+use tracing::{info};
 use crate::{BinderyError, BinderyResult};
 
 /// Central metrics collector for the Bindery service
@@ -30,78 +29,92 @@ impl MetricsCollector {
         collector
     }
 
-    /// Register all metrics with the metrics system
+    /// Register all metrics with the metrics system by describing them
     fn register_metrics(&self) {
+        use metrics::{describe_counter, describe_gauge, describe_histogram, Unit};
+
         // Database metrics
-        register_counter!("bindery_database_operations_total", "Total database operations");
-        register_histogram!("bindery_database_operation_duration_seconds", "Database operation duration");
-        register_gauge!("bindery_database_connections_active", "Active database connections");
-        register_gauge!("bindery_database_connections_max", "Maximum database connections in pool");
-        register_gauge!("bindery_database_connection_pool_utilization_percent", "Database connection pool utilization percentage");
-        register_counter!("bindery_database_query_timeouts_total", "Total database query timeouts");
-        register_histogram!("bindery_database_query_rows_affected", "Number of rows affected by database queries");
-        register_counter!("bindery_database_deadlocks_total", "Total database deadlocks detected");
-        register_gauge!("bindery_database_transaction_depth", "Current transaction nesting depth");
+        describe_counter!("bindery_database_operations_total", Unit::Count, "Total database operations");
+        describe_histogram!("bindery_database_operation_duration_seconds", Unit::Seconds, "Database operation duration");
+        describe_gauge!("bindery_database_connections_active", Unit::Count, "Active database connections");
+        describe_gauge!("bindery_database_connections_max", Unit::Count, "Maximum database connections in pool");
+        describe_gauge!("bindery_database_connection_pool_utilization_percent", Unit::Percent, "Database connection pool utilization percentage");
+        describe_counter!("bindery_database_query_timeouts_total", Unit::Count, "Total database query timeouts");
+        describe_histogram!("bindery_database_query_rows_affected", Unit::Count, "Number of rows affected by database queries");
+        describe_counter!("bindery_database_deadlocks_total", Unit::Count, "Total database deadlocks detected");
+        describe_gauge!("bindery_database_transaction_depth", Unit::Count, "Current transaction nesting depth");
+        describe_counter!("bindery_database_slow_queries_total", Unit::Count, "Total slow database queries");
+        describe_histogram!("bindery_database_connection_acquisition_duration_seconds", Unit::Seconds, "Database connection acquisition duration");
+        describe_counter!("bindery_database_maintenance_operations_total", Unit::Count, "Total database maintenance operations");
+        describe_histogram!("bindery_database_maintenance_duration_seconds", Unit::Seconds, "Database maintenance operation duration");
+        describe_histogram!("bindery_database_maintenance_items_processed", Unit::Count, "Number of items processed during maintenance");
+        describe_counter!("bindery_database_maintenance_failures_total", Unit::Count, "Total database maintenance failures");
 
         // CRDT metrics
-        register_counter!("bindery_crdt_operations_total", "Total CRDT operations");
-        register_histogram!("bindery_crdt_operation_duration_seconds", "CRDT operation duration");
-        register_gauge!("bindery_crdt_documents_active", "Active CRDT documents");
-        register_counter!("bindery_crdt_sync_operations_total", "Total CRDT sync operations");
-        register_histogram!("bindery_crdt_sync_duration_seconds", "CRDT sync duration");
-        register_gauge!("bindery_crdt_memory_usage_bytes", "CRDT memory usage in bytes");
-        register_counter!("bindery_crdt_gc_operations_total", "Total CRDT garbage collection operations");
-        register_histogram!("bindery_crdt_gc_duration_seconds", "CRDT garbage collection duration");
-        register_gauge!("bindery_crdt_vector_clock_size", "Size of CRDT vector clocks");
-        register_counter!("bindery_crdt_conflicts_total", "Total CRDT conflicts detected");
-        register_histogram!("bindery_crdt_operation_size_bytes", "Size of CRDT operations in bytes");
-        register_gauge!("bindery_crdt_document_size_bytes", "Size of CRDT documents in bytes");
+        describe_counter!("bindery_crdt_operations_total", Unit::Count, "Total CRDT operations");
+        describe_histogram!("bindery_crdt_operation_duration_seconds", Unit::Seconds, "CRDT operation duration");
+        describe_gauge!("bindery_crdt_documents_active", Unit::Count, "Active CRDT documents");
+        describe_counter!("bindery_crdt_sync_operations_total", Unit::Count, "Total CRDT sync operations");
+        describe_histogram!("bindery_crdt_sync_duration_seconds", Unit::Seconds, "CRDT sync duration");
+        describe_gauge!("bindery_crdt_memory_usage_bytes", Unit::Bytes, "CRDT memory usage in bytes");
+        describe_counter!("bindery_crdt_gc_operations_total", Unit::Count, "Total CRDT garbage collection operations");
+        describe_histogram!("bindery_crdt_gc_duration_seconds", Unit::Seconds, "CRDT garbage collection duration");
+        describe_gauge!("bindery_crdt_vector_clock_size", Unit::Count, "Size of CRDT vector clocks");
+        describe_counter!("bindery_crdt_conflicts_total", Unit::Count, "Total CRDT conflicts detected");
+        describe_histogram!("bindery_crdt_operation_size_bytes", Unit::Bytes, "Size of CRDT operations in bytes");
+        describe_gauge!("bindery_crdt_document_size_bytes", Unit::Bytes, "Size of CRDT documents in bytes");
+        describe_counter!("bindery_crdt_memory_pressure_operations_total", Unit::Count, "Total CRDT operations under memory pressure");
+        describe_gauge!("bindery_crdt_operation_log_size", Unit::Count, "Size of CRDT operation log");
+        describe_histogram!("bindery_crdt_gc_items_collected", Unit::Count, "Number of items collected during CRDT garbage collection");
+        describe_histogram!("bindery_crdt_gc_memory_freed_bytes", Unit::Bytes, "Memory freed during CRDT garbage collection");
+        describe_counter!("bindery_crdt_gc_failures_total", Unit::Count, "Total CRDT garbage collection failures");
 
         // RAG system metrics
-        register_counter!("bindery_rag_embeddings_generated_total", "Total embeddings generated");
-        register_histogram!("bindery_rag_embedding_generation_duration_seconds", "Embedding generation duration");
-        register_counter!("bindery_rag_searches_total", "Total vector searches");
-        register_histogram!("bindery_rag_search_duration_seconds", "Vector search duration");
-        register_gauge!("bindery_rag_documents_indexed", "Number of indexed documents");
+        describe_counter!("bindery_rag_embeddings_generated_total", Unit::Count, "Total embeddings generated");
+        describe_histogram!("bindery_rag_embedding_generation_duration_seconds", Unit::Seconds, "Embedding generation duration");
+        describe_counter!("bindery_rag_searches_total", Unit::Count, "Total vector searches");
+        describe_histogram!("bindery_rag_search_duration_seconds", Unit::Seconds, "Vector search duration");
+        describe_gauge!("bindery_rag_documents_indexed", Unit::Count, "Number of indexed documents");
 
         // Task management metrics
-        register_counter!("bindery_tasks_created_total", "Total tasks created");
-        register_counter!("bindery_tasks_completed_total", "Total tasks completed");
-        register_counter!("bindery_tasks_failed_total", "Total tasks failed");
-        register_histogram!("bindery_task_execution_duration_seconds", "Task execution duration");
-        register_gauge!("bindery_tasks_active", "Active tasks");
-        register_counter!("bindery_task_timeouts_total", "Total task execution timeouts");
-        register_counter!("bindery_task_retries_total", "Total task retry attempts");
-        register_gauge!("bindery_task_queue_size", "Number of tasks in execution queue");
-        register_histogram!("bindery_task_queue_wait_duration_seconds", "Time tasks wait in queue before execution");
+        describe_counter!("bindery_tasks_created_total", Unit::Count, "Total tasks created");
+        describe_counter!("bindery_tasks_completed_total", Unit::Count, "Total tasks completed");
+        describe_counter!("bindery_tasks_failed_total", Unit::Count, "Total tasks failed");
+        describe_histogram!("bindery_task_execution_duration_seconds", Unit::Seconds, "Task execution duration");
+        describe_gauge!("bindery_tasks_active", Unit::Count, "Active tasks");
+        describe_counter!("bindery_task_timeouts_total", Unit::Count, "Total task execution timeouts");
+        describe_counter!("bindery_task_retries_total", Unit::Count, "Total task retry attempts");
+        describe_gauge!("bindery_task_queue_size", Unit::Count, "Number of tasks in execution queue");
+        describe_histogram!("bindery_task_queue_wait_duration_seconds", Unit::Seconds, "Time tasks wait in queue before execution");
+        describe_histogram!("bindery_task_subtasks_created", Unit::Count, "Number of subtasks created by parent tasks");
 
         // Role management metrics
-        register_counter!("bindery_role_assignments_total", "Total role assignments");
-        register_gauge!("bindery_roles_active", "Active roles");
-        register_counter!("bindery_role_permission_checks_total", "Total role permission checks");
-        register_counter!("bindery_role_permission_denials_total", "Total role permission denials");
-        register_histogram!("bindery_role_execution_duration_seconds", "Duration of role-based executions");
+        describe_counter!("bindery_role_assignments_total", Unit::Count, "Total role assignments");
+        describe_gauge!("bindery_roles_active", Unit::Count, "Active roles");
+        describe_counter!("bindery_role_permission_checks_total", Unit::Count, "Total role permission checks");
+        describe_counter!("bindery_role_permission_denials_total", Unit::Count, "Total role permission denials");
+        describe_histogram!("bindery_role_execution_duration_seconds", Unit::Seconds, "Duration of role-based executions");
 
         // Circuit breaker metrics
-        register_gauge!("bindery_circuit_breaker_state", "Circuit breaker state (0=closed, 1=open, 2=half-open)");
-        register_counter!("bindery_circuit_breaker_state_changes_total", "Total circuit breaker state transitions");
-        register_counter!("bindery_circuit_breaker_failures_total", "Total circuit breaker failures");
-        register_counter!("bindery_circuit_breaker_successes_total", "Total circuit breaker successes");
-        register_histogram!("bindery_circuit_breaker_request_duration_seconds", "Circuit breaker request duration");
-        register_gauge!("bindery_circuit_breaker_failure_rate_percent", "Circuit breaker failure rate percentage");
+        describe_gauge!("bindery_circuit_breaker_state", Unit::Count, "Circuit breaker state (0=closed, 1=open, 2=half-open)");
+        describe_counter!("bindery_circuit_breaker_state_changes_total", Unit::Count, "Total circuit breaker state transitions");
+        describe_counter!("bindery_circuit_breaker_failures_total", Unit::Count, "Total circuit breaker failures");
+        describe_counter!("bindery_circuit_breaker_successes_total", Unit::Count, "Total circuit breaker successes");
+        describe_histogram!("bindery_circuit_breaker_request_duration_seconds", Unit::Seconds, "Circuit breaker request duration");
+        describe_gauge!("bindery_circuit_breaker_failure_rate_percent", Unit::Percent, "Circuit breaker failure rate percentage");
 
         // Migration system metrics
-        register_counter!("bindery_migrations_executed_total", "Total migrations executed");
-        register_counter!("bindery_migrations_failed_total", "Total migration failures");
-        register_counter!("bindery_migrations_rolled_back_total", "Total migration rollbacks");
-        register_histogram!("bindery_migration_duration_seconds", "Migration execution duration");
-        register_gauge!("bindery_migration_version", "Current migration version");
+        describe_counter!("bindery_migrations_executed_total", Unit::Count, "Total migrations executed");
+        describe_counter!("bindery_migrations_failed_total", Unit::Count, "Total migration failures");
+        describe_counter!("bindery_migrations_rolled_back_total", Unit::Count, "Total migration rollbacks");
+        describe_histogram!("bindery_migration_duration_seconds", Unit::Seconds, "Migration execution duration");
+        describe_gauge!("bindery_migration_version", Unit::Count, "Current migration version");
 
         // System metrics
-        register_gauge!("bindery_memory_usage_bytes", "Memory usage in bytes");
-        register_gauge!("bindery_cpu_usage_percent", "CPU usage percentage");
-        register_counter!("bindery_errors_total", "Total errors");
-        register_histogram!("bindery_request_duration_seconds", "Request duration");
+        describe_gauge!("bindery_memory_usage_bytes", Unit::Bytes, "Memory usage in bytes");
+        describe_gauge!("bindery_cpu_usage_percent", Unit::Percent, "CPU usage percentage");
+        describe_counter!("bindery_errors_total", Unit::Count, "Total errors");
+        describe_histogram!("bindery_request_duration_seconds", Unit::Seconds, "Request duration");
     }
 }
 
@@ -138,7 +151,8 @@ impl BinderyMetrics {
         }
 
         if !success {
-            counter!("bindery_errors_total", [("component", "database"), ("operation", operation)])
+            let error_labels = [("component", "database".to_string()), ("operation", operation.to_string())];
+            counter!("bindery_errors_total", &error_labels)
                 .increment(1);
         }
     }
@@ -182,13 +196,15 @@ impl BinderyMetrics {
 
     /// Record database query timeouts
     pub fn record_database_timeout(operation: &str) {
-        counter!("bindery_database_query_timeouts_total", [("operation", operation)])
+        let labels = [("operation", operation.to_string())];
+        counter!("bindery_database_query_timeouts_total", &labels)
             .increment(1);
     }
 
     /// Record database deadlocks
     pub fn record_database_deadlock(operation: &str) {
-        counter!("bindery_database_deadlocks_total", [("operation", operation)])
+        let labels = [("operation", operation.to_string())];
+        counter!("bindery_database_deadlocks_total", &labels)
             .increment(1);
     }
 
@@ -235,11 +251,12 @@ impl BinderyMetrics {
         }
 
         if !success {
-            counter!("bindery_errors_total", [
-                ("component", "crdt"),
-                ("operation", operation),
-                ("document_type", document_type)
-            ]).increment(1);
+            let error_labels = [
+                ("component", "crdt".to_string()),
+                ("operation", operation.to_string()),
+                ("document_type", document_type.to_string())
+            ];
+            counter!("bindery_errors_total", &error_labels).increment(1);
         }
     }
 
@@ -302,7 +319,8 @@ impl BinderyMetrics {
             .record(duration.as_secs_f64());
 
         if !success {
-            counter!("bindery_errors_total", [("component", "crdt_sync"), ("operation", operation)])
+            let error_labels = [("component", "crdt_sync".to_string()), ("operation", operation.to_string())];
+            counter!("bindery_errors_total", &error_labels)
                 .increment(1);
         }
     }
@@ -316,7 +334,8 @@ impl BinderyMetrics {
             .record(duration.as_secs_f64());
 
         if !success {
-            counter!("bindery_errors_total", [("component", "rag_embeddings"), ("provider", provider)])
+            let error_labels = [("component", "rag_embeddings".to_string()), ("provider", provider.to_string())];
+            counter!("bindery_errors_total", &error_labels)
                 .increment(1);
         }
     }
@@ -333,7 +352,8 @@ impl BinderyMetrics {
             .record(duration.as_secs_f64());
 
         if !success {
-            counter!("bindery_errors_total", [("component", "rag_search"), ("query_type", query_type)])
+            let error_labels = [("component", "rag_search".to_string()), ("query_type", query_type.to_string())];
+            counter!("bindery_errors_total", &error_labels)
                 .increment(1);
         }
     }
@@ -389,7 +409,8 @@ impl BinderyMetrics {
         }
 
         if !success {
-            counter!("bindery_errors_total", [("component", "task_management"), ("task_type", task_type)])
+            let error_labels = [("component", "task_management".to_string()), ("task_type", task_type.to_string())];
+            counter!("bindery_errors_total", &error_labels)
                 .increment(1);
         }
     }
@@ -402,7 +423,8 @@ impl BinderyMetrics {
 
     /// Record task timeout
     pub fn record_task_timeout(task_type: &str) {
-        counter!("bindery_task_timeouts_total", [("task_type", task_type)])
+        let labels = [("task_type", task_type.to_string())];
+        counter!("bindery_task_timeouts_total", &labels)
             .increment(1);
     }
 
@@ -417,7 +439,8 @@ impl BinderyMetrics {
         counter!("bindery_role_assignments_total", &labels).increment(1);
 
         if !success {
-            counter!("bindery_errors_total", [("component", "role_management"), ("role", role_name)])
+            let error_labels = [("component", "role_management".to_string()), ("role", role_name.to_string())];
+            counter!("bindery_errors_total", &error_labels)
                 .increment(1);
         }
     }
@@ -439,10 +462,11 @@ impl BinderyMetrics {
 
     /// Record a general error
     pub fn record_error(component: &str, error_type: &str) {
-        counter!("bindery_errors_total", [
-            ("component", component),
-            ("error_type", error_type)
-        ]).increment(1);
+        let labels = [
+            ("component", component.to_string()),
+            ("error_type", error_type.to_string())
+        ];
+        counter!("bindery_errors_total", &labels).increment(1);
     }
 
     /// Record request duration
@@ -455,6 +479,86 @@ impl BinderyMetrics {
 
         histogram!("bindery_request_duration_seconds", &labels)
             .record(duration.as_secs_f64());
+    }
+
+    /// Record migration operation
+    pub fn record_migration(operation: &str, version: u64, duration: Duration, success: bool) {
+        let labels = [
+            ("operation", operation.to_string()),
+            ("version", version.to_string()),
+        ];
+
+        counter!("bindery_migrations_executed_total", &labels).increment(1);
+        histogram!("bindery_migration_duration_seconds", &labels)
+            .record(duration.as_secs_f64());
+
+        if success {
+            gauge!("bindery_migration_version").set(version as f64);
+        } else {
+            counter!("bindery_migrations_failed_total", &labels).increment(1);
+        }
+    }
+
+    /// Record migration rollback
+    pub fn record_migration_rollback(from_version: u64, to_version: u64, duration: Duration) {
+        let labels = [
+            ("from_version", from_version.to_string()),
+            ("to_version", to_version.to_string()),
+        ];
+
+        counter!("bindery_migrations_rolled_back_total", &labels).increment(1);
+        histogram!("bindery_migration_duration_seconds", &labels)
+            .record(duration.as_secs_f64());
+        gauge!("bindery_migration_version").set(to_version as f64);
+    }
+
+    /// Record circuit breaker request
+    pub fn record_circuit_breaker_request(
+        service_name: &str,
+        operation: &str,
+        duration: Duration,
+        success: bool,
+    ) {
+        let labels = [
+            ("service", service_name.to_string()),
+            ("operation", operation.to_string()),
+            ("success", success.to_string()),
+        ];
+
+        histogram!("bindery_circuit_breaker_request_duration_seconds", &labels)
+            .record(duration.as_secs_f64());
+
+        if success {
+            counter!("bindery_circuit_breaker_successes_total", &labels).increment(1);
+        } else {
+            counter!("bindery_circuit_breaker_failures_total", &labels).increment(1);
+        }
+    }
+
+    /// Record circuit breaker state change
+    pub fn record_circuit_breaker_state_change(
+        service_name: &str,
+        from_state: &str,
+        to_state: &str,
+        failure_rate: f64,
+    ) {
+        let labels = [
+            ("service", service_name.to_string()),
+            ("from_state", from_state.to_string()),
+            ("to_state", to_state.to_string()),
+        ];
+
+        counter!("bindery_circuit_breaker_state_changes_total", &labels).increment(1);
+        gauge!("bindery_circuit_breaker_failure_rate_percent").set(failure_rate * 100.0);
+
+        // Set state as numeric gauge for easier querying
+        let state_value = match to_state {
+            "closed" => 0.0,
+            "open" => 1.0,
+            "half_open" => 2.0,
+            _ => -1.0,
+        };
+        gauge!("bindery_circuit_breaker_state").set(state_value);
     }
 }
 

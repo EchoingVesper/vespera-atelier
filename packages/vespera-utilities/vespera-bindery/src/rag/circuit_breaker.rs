@@ -368,9 +368,9 @@ impl CircuitBreaker {
             // Record metrics for rejected request
             BinderyMetrics::record_circuit_breaker_request(
                 &self.service_name,
-                false,
+                "rejected",
                 Duration::ZERO,
-                self.get_failure_rate().await,
+                false,
             );
 
             return Err(anyhow::anyhow!(
@@ -409,9 +409,9 @@ impl CircuitBreaker {
                     // Record successful request metrics
                     BinderyMetrics::record_circuit_breaker_request(
                         &self.service_name,
-                        true,
+                        "execute",
                         operation_duration,
-                        self.get_failure_rate().await,
+                        true,
                     );
 
                     return Ok(value);
@@ -455,9 +455,9 @@ impl CircuitBreaker {
         // Record failed request metrics
         BinderyMetrics::record_circuit_breaker_request(
             &self.service_name,
-            false,
+            "execute",
             total_duration,
-            self.get_failure_rate().await,
+            false,
         );
 
         Err(error.context(format!(
@@ -655,50 +655,6 @@ impl CircuitBreaker {
         &self.config
     }
 
-    /// Increment total request counter
-    async fn increment_total_requests(&self) {
-        if let Ok(mut metrics) = self.metrics.lock() {
-            metrics.total_requests += 1;
-        }
-    }
-
-    /// Get total request count
-    async fn get_total_requests(&self) -> u64 {
-        self.metrics.lock().map(|m| m.total_requests).unwrap_or(0)
-    }
-
-    /// Get current metrics
-    pub async fn get_metrics(&self) -> Result<CircuitBreakerMetrics> {
-        let metrics = self.metrics.lock().map_err(|_| {
-            anyhow::anyhow!("Failed to acquire metrics lock")
-        })?;
-        Ok(metrics.clone())
-    }
-
-    /// Get current state
-    pub async fn get_state(&self) -> Result<CircuitState> {
-        let metrics = self.metrics.lock().map_err(|_| {
-            anyhow::anyhow!("Failed to acquire metrics lock")
-        })?;
-        Ok(metrics.state.clone())
-    }
-
-    /// Manually reset the circuit breaker
-    pub async fn reset(&self) -> Result<()> {
-        let mut metrics = self.metrics.lock().map_err(|_| {
-            anyhow::anyhow!("Failed to acquire metrics lock")
-        })?;
-
-        info!("Manually resetting circuit breaker for service: {}", self.service_name);
-
-        metrics.state = CircuitState::Closed;
-        metrics.failure_count = 0;
-        metrics.success_count = 0;
-        metrics.state_transitions += 1;
-
-        Ok(())
-    }
-
     /// Force circuit open (for testing/maintenance)
     pub async fn force_open(&self) -> Result<()> {
         let mut metrics = self.metrics.lock().map_err(|_| {
@@ -712,16 +668,6 @@ impl CircuitBreaker {
         metrics.state_transitions += 1;
 
         Ok(())
-    }
-
-    /// Get service name
-    pub fn service_name(&self) -> &str {
-        &self.service_name
-    }
-
-    /// Get configuration
-    pub fn config(&self) -> &CircuitBreakerConfig {
-        &self.config
     }
 }
 
@@ -791,9 +737,8 @@ impl CircuitBreakerRegistry {
 
         let mut metrics = HashMap::new();
         for (name, breaker) in breakers.iter() {
-            if let Ok(breaker_metrics) = breaker.get_metrics().await {
-                metrics.insert(name.clone(), breaker_metrics);
-            }
+            let breaker_metrics = breaker.get_metrics().await;
+            metrics.insert(name.clone(), breaker_metrics);
         }
 
         Ok(metrics)
@@ -846,32 +791,31 @@ impl CircuitBreakerRegistry {
         let now = Instant::now();
 
         for (name, breaker) in breakers.iter() {
-            if let Ok(metrics) = breaker.get_metrics().await {
-                let failure_rate = if metrics.total_requests > 0 {
-                    metrics.failed_requests as f64 / metrics.total_requests as f64
-                } else {
-                    0.0
-                };
+            let metrics = breaker.get_metrics().await;
+            let failure_rate = if metrics.total_requests > 0 {
+                metrics.failed_requests as f64 / metrics.total_requests as f64
+            } else {
+                0.0
+            };
 
-                let last_failure = metrics.last_failure_time
-                    .map(|t| now.duration_since(t));
+            let last_failure = metrics.last_failure_time
+                .map(|t| now.duration_since(t));
 
-                let uptime = metrics.last_success_time
-                    .map(|t| now.duration_since(t))
-                    .unwrap_or(Duration::from_secs(0));
+            let uptime = metrics.last_success_time
+                .map(|t| now.duration_since(t))
+                .unwrap_or(Duration::from_secs(0));
 
-                let is_healthy = matches!(metrics.state, CircuitState::Closed | CircuitState::HalfOpen)
-                    && failure_rate < 0.5;
+            let is_healthy = matches!(metrics.state, CircuitState::Closed | CircuitState::HalfOpen)
+                && failure_rate < 0.5;
 
-                health_status.push(CircuitBreakerHealth {
-                    service_name: name.clone(),
-                    state: metrics.state,
-                    is_healthy,
-                    failure_rate,
-                    last_failure,
-                    uptime,
-                });
-            }
+            health_status.push(CircuitBreakerHealth {
+                service_name: name.clone(),
+                state: metrics.state,
+                is_healthy,
+                failure_rate,
+                last_failure,
+                uptime,
+            });
         }
 
         Ok(health_status)

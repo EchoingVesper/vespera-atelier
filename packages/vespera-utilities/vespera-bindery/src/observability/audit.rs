@@ -169,6 +169,7 @@ pub struct AuditStats {
 }
 
 /// Main audit logger implementation
+#[derive(Debug)]
 pub struct AuditLogger {
     config: AuditConfig,
     pool: Pool<Sqlite>,

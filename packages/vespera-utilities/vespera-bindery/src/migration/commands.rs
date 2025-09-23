@@ -128,14 +128,14 @@ impl MigrationCommandExecutor {
         println!("│ Pending Migrations: {:<44} │", status.pending_count);
         println!("└─────────────────────────────────────────────────────────────────┘");
 
-        if !status.executed_migrations.is_empty() {
+        if !status.applied_migrations.is_empty() {
             println!("\nExecuted Migrations:");
             println!("┌─────────┬─────────────────────────────┬─────────────┬─────────────────────┐");
             println!("│ Version │ Name                        │ Status      │ Executed At         │");
             println!("├─────────┼─────────────────────────────┼─────────────┼─────────────────────┤");
 
-            for migration in &status.executed_migrations {
-                let status_str = if migration.success { "SUCCESS" } else { "FAILED" };
+            for migration in &status.applied_migrations {
+                let status_str = "SUCCESS"; // Applied migrations are considered successful
                 let executed_at = migration.executed_at.format("%Y-%m-%d %H:%M:%S").to_string();
 
                 println!("│ {:<7} │ {:<27} │ {:<11} │ {:<19} │",
@@ -186,7 +186,7 @@ impl MigrationCommandExecutor {
         }
 
         info!("Running migrations up to version {:?}", target_version);
-        let results = self.manager.migrate_up(target_version).await?;
+        let results = self.manager.migrate_up(target_version, None).await?;
 
         self.print_migration_results(&results);
         Ok(())
@@ -202,7 +202,7 @@ impl MigrationCommandExecutor {
             println!("Current version: {}", current_version);
             println!("Target version: {}", target_version);
 
-            for migration in status.executed_migrations.iter().rev() {
+            for migration in status.applied_migrations.iter().rev() {
                 if migration.version > target_version {
                     println!("  ← {} ({})", migration.version, migration.name);
                 }
@@ -211,7 +211,7 @@ impl MigrationCommandExecutor {
         }
 
         warn!("Rolling back migrations to version {}", target_version);
-        let results = self.manager.migrate_down(target_version).await?;
+        let results = self.manager.migrate_down(target_version, None).await?;
 
         self.print_migration_results(&results);
         Ok(())
@@ -231,7 +231,7 @@ impl MigrationCommandExecutor {
         }
 
         info!("Redoing last migration");
-        let results = self.manager.redo_last().await?;
+        let results = self.manager.redo_last(None).await?;
 
         self.print_migration_results(&results);
         Ok(())
@@ -240,7 +240,7 @@ impl MigrationCommandExecutor {
     /// Validate migration checksums
     async fn validate(&self) -> BinderyResult<()> {
         info!("Validating migration checksums");
-        let mismatches = self.manager.validate_checksums().await?;
+        let mismatches = self.manager.validate_checksums(None).await?;
 
         if mismatches.is_empty() {
             println!("✓ All migration checksums are valid");
@@ -272,7 +272,7 @@ impl MigrationCommandExecutor {
         }
 
         warn!("Force marking migration {} as executed", version);
-        self.manager.mark_as_executed(version).await?;
+        self.manager.mark_as_executed(version, None).await?;
         println!("Migration {} marked as executed", version);
 
         Ok(())
@@ -334,7 +334,7 @@ impl MigrationCommandExecutor {
             .find(|m| m.version == version)
             .or_else(|| {
                 // Look for it in executed migrations by checking if it exists
-                status.executed_migrations.iter()
+                status.applied_migrations.iter()
                     .find(|m| m.version == version)
                     .and_then(|_| {
                         // TODO: We need to refactor this to store migration info with executed migrations

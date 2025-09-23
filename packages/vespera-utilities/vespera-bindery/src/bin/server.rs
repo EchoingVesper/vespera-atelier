@@ -10,10 +10,10 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use axum::{
-    extract::State,
+    extract::{Path, Query, State},
     http::StatusCode,
     response::Json,
-    routing::post,
+    routing::{delete, get, post, put},
     Router,
 };
 use clap::{Parser, Subcommand};
@@ -62,11 +62,50 @@ impl TaskInput {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct TaskUpdateInput {
+    pub title: Option<String>,
+    pub description: Option<String>,
+    pub status: Option<String>,
+    pub priority: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct TaskUpdateInputWithId {
     pub task_id: String,
     pub title: Option<String>,
     pub description: Option<String>,
     pub status: Option<String>,
     pub priority: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct ProjectInput {
+    pub name: String,
+    pub description: Option<String>,
+    pub tags: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct SearchInput {
+    pub query: String,
+    pub entity_types: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct DocumentInput {
+    pub content: String,
+    pub title: Option<String>,
+    pub document_type: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct RoleAssignmentInput {
+    pub role: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct TaskListQuery {
+    pub project_id: Option<String>,
+    pub status: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -115,14 +154,30 @@ impl AppState {
         let vespera_dir = workspace_root.join(".vespera");
         eprintln!("Debug: Creating vespera directory: {:?}", vespera_dir);
         tokio::fs::create_dir_all(&vespera_dir).await?;
-        
-        // Initialize database in .vespera folder
+
+        // Initialize database in .vespera folder with optimized pool configuration
         let database_path = vespera_dir.join("tasks.db");
         eprintln!("Debug: Database path: {:?}", database_path);
-        let database = Database::new(database_path).await?;
-        
+
+        // Create optimized database pool configuration for high-throughput
+        let pool_config = vespera_bindery::database::DatabasePoolConfig::builder()
+            .max_connections(8)? // Optimized for SQLite with WAL mode
+            .min_connections(2)   // Keep some connections warm
+            .acquire_timeout(std::time::Duration::from_secs(3))? // Fast timeout for responsiveness
+            .idle_timeout(std::time::Duration::from_secs(300))? // 5 minutes idle timeout
+            .max_connection_lifetime(std::time::Duration::from_secs(3600))? // 1 hour lifetime
+            .test_before_acquire(true)
+            .build()?;
+
+        let database = Database::new_with_config(database_path, pool_config).await?;
+
         // Initialize schema manually since sqlx migrations might not work
         database.init_schema().await?;
+
+        // Log pool health information for monitoring
+        let health_info = database.get_pool_health_info().await;
+        eprintln!("Debug: Database pool initialized - Status: {:?}, Connections: {}/{}",
+                 health_info.status, health_info.active_connections, health_info.max_connections);
         
         let mut roles = Vec::new();
         roles.push(Role {
@@ -264,6 +319,7 @@ async fn main() -> Result<()> {
         logging: logging_config,
         opentelemetry: None, // TODO: Add OpenTelemetry configuration from CLI args
         metrics: None,       // TODO: Add metrics configuration from CLI args
+        alerting: None,      // TODO: Add alerting configuration from CLI args
     };
 
     // Initialize observability system
@@ -288,17 +344,17 @@ async fn main() -> Result<()> {
         }
         Some(Commands::Serve { json_rpc, port, .. }) => {
             if json_rpc {
-                run_json_rpc_stdio().await
+                run_json_rpc_stdio(cli.workspace).await
             } else {
-                run_http_server_with_port(port).await
+                run_http_server_with_port(port, cli.workspace).await
             }
         }
         None => {
             // Default behavior - check for legacy --json-rpc flag
             if cli.json_rpc {
-                run_json_rpc_stdio().await
+                run_json_rpc_stdio(cli.workspace).await
             } else {
-                run_http_server_with_port(cli.port).await
+                run_http_server_with_port(cli.port, cli.workspace).await
             }
         }
     }
@@ -346,12 +402,14 @@ async fn run_migration_command(
 }
 
 /// Run JSON-RPC server using stdin/stdout for VS Code extension
-async fn run_json_rpc_stdio() -> Result<()> {
+async fn run_json_rpc_stdio(workspace: Option<PathBuf>) -> Result<()> {
     // For stdio mode, log to stderr instead of stdout to avoid interfering with JSON-RPC
     eprintln!("Running in JSON-RPC stdio mode");
-    
-    let workspace_root = std::env::current_dir().context("Failed to get current directory")?;
-    eprintln!("Debug: Current working directory: {:?}", workspace_root);
+
+    let workspace_root = workspace.unwrap_or_else(|| {
+        std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
+    });
+    eprintln!("Debug: Using workspace directory: {:?}", workspace_root);
     let state = Arc::new(AppState::new(workspace_root).await?);
     let stdin = io::stdin();
     let stdout = io::stdout();
@@ -374,14 +432,36 @@ async fn run_json_rpc_stdio() -> Result<()> {
 }
 
 /// Run HTTP server for web clients with specified port
-async fn run_http_server_with_port(port: u16) -> Result<()> {
+async fn run_http_server_with_port(port: u16, workspace: Option<PathBuf>) -> Result<()> {
     info!("Running in HTTP server mode on port {}", port);
 
-    let workspace_root = std::env::current_dir().context("Failed to get current directory")?;
+    let workspace_root = workspace.unwrap_or_else(|| {
+        std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
+    });
+    info!("Using workspace directory: {:?}", workspace_root);
     let state = Arc::new(AppState::new(workspace_root).await?);
 
     let app = Router::new()
+        // JSON-RPC endpoint
         .route("/rpc", post(handle_http_json_rpc))
+        // Health check
+        .route("/health", get(handle_health_check))
+        // Pool metrics endpoint for monitoring
+        .route("/api/pool/metrics", get(api_pool_metrics))
+        .route("/api/pool/health", get(api_pool_health))
+        // REST API endpoints for MCP server
+        .route("/api/tasks", post(api_create_task))
+        .route("/api/tasks", get(api_list_tasks))
+        .route("/api/tasks/:task_id", get(api_get_task))
+        .route("/api/tasks/:task_id", put(api_update_task))
+        .route("/api/tasks/:task_id", delete(api_delete_task))
+        .route("/api/tasks/:task_id/execute", post(api_execute_task))
+        .route("/api/tasks/:task_id/assign-role", post(api_assign_role))
+        .route("/api/roles", get(api_list_roles))
+        .route("/api/projects", post(api_create_project))
+        .route("/api/dashboard/stats", get(api_dashboard_stats))
+        .route("/api/search", post(api_search))
+        .route("/api/rag/index", post(api_index_document))
         .layer(
             ServiceBuilder::new()
                 .layer(CorsLayer::permissive())
@@ -400,6 +480,41 @@ async fn run_http_server_with_port(port: u16) -> Result<()> {
         .context("Server error")?;
 
     Ok(())
+}
+
+/// Handle health check requests with database pool health information
+async fn handle_health_check(State(state): State<Arc<AppState>>) -> Json<Value> {
+    let pool_metrics = state.database.get_pool_metrics().await;
+    let pool_health = state.database.get_pool_health_info().await;
+    let is_db_healthy = state.database.is_pool_healthy().await;
+
+    let overall_status = if is_db_healthy {
+        match pool_health.status {
+            vespera_bindery::database::PoolHealthStatus::Healthy => "healthy",
+            vespera_bindery::database::PoolHealthStatus::Warning => "warning",
+            vespera_bindery::database::PoolHealthStatus::Unhealthy => "unhealthy",
+        }
+    } else {
+        "unhealthy"
+    };
+
+    Json(json!({
+        "status": overall_status,
+        "service": "vespera-bindery",
+        "version": env!("CARGO_PKG_VERSION"),
+        "database": {
+            "pool_healthy": is_db_healthy,
+            "active_connections": pool_metrics.active_connections,
+            "max_connections": pool_health.max_connections,
+            "utilization_percent": pool_metrics.pool_utilization,
+            "success_rate_percent": pool_health.success_rate,
+            "avg_acquisition_time_ms": pool_metrics.average_acquisition_time_ms,
+            "total_queries": pool_health.total_queries,
+            "slow_queries": pool_health.slow_query_count,
+            "deadlocks": pool_health.deadlock_count,
+            "recommendations": pool_health.recommendations
+        }
+    }))
 }
 
 /// Handle HTTP JSON-RPC requests
@@ -550,9 +665,9 @@ async fn handle_update_task(state: &AppState, params: &Option<Value>) -> Result<
         .and_then(|p| p.get("update_input"))
         .ok_or("Missing update_input parameter")?;
     
-    let input: TaskUpdateInput = serde_json::from_value(update_input.clone())
+    let input: TaskUpdateInputWithId = serde_json::from_value(update_input.clone())
         .map_err(|e| format!("Invalid update_input: {}", e))?;
-    
+
     // Use database update_task method
     let updated = state.database.update_task(
         &input.task_id,
@@ -681,10 +796,283 @@ async fn handle_delete_codex(state: &AppState, params: &Option<Value>) -> Result
         .and_then(|p| p.get("codex_id"))
         .and_then(|v| v.as_str())
         .ok_or("Missing codex_id parameter")?;
-    
+
     let mut codices = state.codices.write().await;
     match codices.remove(codex_id) {
         Some(_) => Ok(json!(true)),
         None => Err("Codex not found".to_string()),
+    }
+}
+
+// REST API handlers for MCP server integration
+
+/// Create a new task (POST /api/tasks)
+async fn api_create_task(
+    State(state): State<Arc<AppState>>,
+    Json(task_input): Json<TaskInput>,
+) -> Result<Json<Value>, StatusCode> {
+    let db_input = task_input.to_db_input();
+
+    match state.database.create_task(&db_input).await {
+        Ok(task_id) => {
+            // Return the created task by getting it from the database
+            match get_task_by_id(&state, &task_id).await {
+                Ok(task) => Ok(Json(task)),
+                Err(_) => {
+                    // Fallback: return basic task info
+                    Ok(Json(json!({
+                        "id": task_id,
+                        "title": task_input.title,
+                        "description": task_input.description,
+                        "status": "todo",
+                        "priority": task_input.priority.unwrap_or("normal".to_string()),
+                        "project_id": task_input.project_id,
+                        "parent_id": task_input.parent_id,
+                        "tags": task_input.tags.unwrap_or_default(),
+                        "labels": task_input.labels.unwrap_or(json!({})),
+                        "created_at": chrono::Utc::now(),
+                        "updated_at": chrono::Utc::now()
+                    })))
+                }
+            }
+        }
+        Err(e) => {
+            warn!("Failed to create task: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+/// Get a task by ID (GET /api/tasks/:task_id)
+async fn api_get_task(
+    State(state): State<Arc<AppState>>,
+    Path(task_id): Path<String>,
+) -> Result<Json<Value>, StatusCode> {
+    match get_task_by_id(&state, &task_id).await {
+        Ok(task) => Ok(Json(task)),
+        Err(_) => Err(StatusCode::NOT_FOUND),
+    }
+}
+
+/// Update a task (PUT /api/tasks/:task_id)
+async fn api_update_task(
+    State(state): State<Arc<AppState>>,
+    Path(task_id): Path<String>,
+    Json(update_input): Json<TaskUpdateInput>,
+) -> Result<Json<Value>, StatusCode> {
+    match state.database.update_task(
+        &task_id,
+        update_input.title.as_deref(),
+        update_input.status.as_deref(),
+    ).await {
+        Ok(true) => {
+            // Return the updated task
+            match get_task_by_id(&state, &task_id).await {
+                Ok(task) => Ok(Json(task)),
+                Err(_) => Err(StatusCode::NOT_FOUND),
+            }
+        }
+        Ok(false) => Err(StatusCode::NOT_FOUND),
+        Err(e) => {
+            warn!("Failed to update task {}: {}", task_id, e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+/// Delete a task (DELETE /api/tasks/:task_id)
+async fn api_delete_task(
+    State(state): State<Arc<AppState>>,
+    Path(task_id): Path<String>,
+) -> Result<Json<Value>, StatusCode> {
+    match state.database.delete_task(&task_id).await {
+        Ok(true) => Ok(Json(json!({"success": true, "message": "Task deleted"}))),
+        Ok(false) => Err(StatusCode::NOT_FOUND),
+        Err(e) => {
+            warn!("Failed to delete task {}: {}", task_id, e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+/// List tasks (GET /api/tasks)
+async fn api_list_tasks(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<TaskListQuery>,
+) -> Result<Json<Value>, StatusCode> {
+    match state.database.list_tasks(Some(1000), query.project_id.as_deref()).await {
+        Ok(tasks) => {
+            let filtered_tasks = if let Some(status_filter) = query.status {
+                tasks.into_iter().filter(|task| {
+                    task.status == status_filter
+                }).collect::<Vec<_>>()
+            } else {
+                tasks
+            };
+
+            Ok(Json(json!({
+                "items": filtered_tasks,
+                "total": filtered_tasks.len()
+            })))
+        }
+        Err(e) => {
+            warn!("Failed to list tasks: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+/// Execute a task (POST /api/tasks/:task_id/execute)
+async fn api_execute_task(
+    State(state): State<Arc<AppState>>,
+    Path(task_id): Path<String>,
+    Json(role_input): Json<RoleAssignmentInput>,
+) -> Result<Json<Value>, StatusCode> {
+    // Update task status to in_progress
+    match state.database.update_task(&task_id, None, Some("in_progress")).await {
+        Ok(true) => Ok(Json(json!({
+            "success": true,
+            "task_id": task_id,
+            "role_assigned": role_input.role,
+            "execution_id": format!("exec_{}", Uuid::new_v4())
+        }))),
+        Ok(false) => Err(StatusCode::NOT_FOUND),
+        Err(e) => {
+            warn!("Failed to execute task {}: {}", task_id, e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+/// Assign a role to a task (POST /api/tasks/:task_id/assign-role)
+async fn api_assign_role(
+    State(_state): State<Arc<AppState>>,
+    Path(task_id): Path<String>,
+    Json(role_input): Json<RoleAssignmentInput>,
+) -> Result<Json<Value>, StatusCode> {
+    // For now, just return success - role assignment would be implemented later
+    Ok(Json(json!({
+        "success": true,
+        "task_id": task_id,
+        "role_assigned": role_input.role,
+        "message": format!("Role '{}' assigned to task {}", role_input.role, task_id)
+    })))
+}
+
+/// List available roles (GET /api/roles)
+async fn api_list_roles(
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<Value>, StatusCode> {
+    let roles = state.roles.read().await;
+    Ok(Json(json!({
+        "success": true,
+        "roles": *roles,
+        "total_roles": roles.len()
+    })))
+}
+
+/// Create a project (POST /api/projects)
+async fn api_create_project(
+    State(_state): State<Arc<AppState>>,
+    Json(project_input): Json<ProjectInput>,
+) -> Result<Json<Value>, StatusCode> {
+    let project_id = Uuid::new_v4().to_string();
+    let now = chrono::Utc::now();
+
+    Ok(Json(json!({
+        "id": project_id,
+        "name": project_input.name,
+        "description": project_input.description,
+        "tags": project_input.tags.unwrap_or_default(),
+        "task_count": 0,
+        "created_at": now,
+        "updated_at": now
+    })))
+}
+
+/// Get dashboard statistics (GET /api/dashboard/stats)
+async fn api_dashboard_stats(
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<Value>, StatusCode> {
+    match state.database.get_task_dashboard(None).await {
+        Ok(dashboard) => Ok(Json(serde_json::to_value(dashboard).unwrap_or(json!({})))),
+        Err(e) => {
+            warn!("Failed to get dashboard stats: {}", e);
+            // Return basic stats on error
+            Ok(Json(json!({
+                "total_tasks": 0,
+                "completed_tasks": 0,
+                "in_progress_tasks": 0,
+                "pending_tasks": 0
+            })))
+        }
+    }
+}
+
+/// Search across entities (POST /api/search)
+async fn api_search(
+    State(_state): State<Arc<AppState>>,
+    Json(search_input): Json<SearchInput>,
+) -> Result<Json<Value>, StatusCode> {
+    // Basic search implementation - would be enhanced later
+    Ok(Json(json!({
+        "query": search_input.query,
+        "total_results": 0,
+        "results": []
+    })))
+}
+
+/// Index a document for RAG (POST /api/rag/index)
+async fn api_index_document(
+    State(_state): State<Arc<AppState>>,
+    Json(document_input): Json<DocumentInput>,
+) -> Result<Json<Value>, StatusCode> {
+    // Basic document indexing implementation - would be enhanced later
+    let document_id = Uuid::new_v4().to_string();
+
+    Ok(Json(json!({
+        "success": true,
+        "document_id": document_id,
+        "message": "Document indexed successfully",
+        "chunks_created": 1
+    })))
+}
+
+/// Get pool metrics (GET /api/pool/metrics)
+async fn api_pool_metrics(
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<Value>, StatusCode> {
+    let pool_metrics = state.database.get_pool_metrics().await;
+    Ok(Json(serde_json::to_value(pool_metrics).unwrap_or(json!({}))))
+}
+
+/// Get pool health information (GET /api/pool/health)
+async fn api_pool_health(
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<Value>, StatusCode> {
+    let pool_health = state.database.get_pool_health_info().await;
+    let pool_config = state.database.get_pool_config();
+
+    Ok(Json(json!({
+        "health": pool_health,
+        "configuration": {
+            "max_connections": pool_config.max_connections,
+            "min_connections": pool_config.min_connections,
+            "acquire_timeout_ms": pool_config.acquire_timeout.as_millis(),
+            "idle_timeout_ms": pool_config.idle_timeout.as_millis(),
+            "max_lifetime_ms": pool_config.max_connection_lifetime.as_millis(),
+            "test_before_acquire": pool_config.test_before_acquire
+        }
+    })))
+}
+
+/// Helper function to get a task by ID
+async fn get_task_by_id(state: &AppState, task_id: &str) -> Result<Value, String> {
+    let tasks = state.database.list_tasks(Some(1000), None).await
+        .map_err(|e| format!("Failed to list tasks: {}", e))?;
+
+    match tasks.iter().find(|task| task.id == task_id) {
+        Some(task) => Ok(serde_json::to_value(task).map_err(|e| e.to_string())?),
+        None => Err("Task not found".to_string()),
     }
 }

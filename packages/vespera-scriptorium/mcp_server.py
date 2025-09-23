@@ -13,14 +13,21 @@ import asyncio
 import signal
 import sys
 import os
-from typing import Optional, List, Any, Dict
+import json
+from typing import Optional, List, Any, Dict, TypeVar, Type, Union
 from contextlib import asynccontextmanager
 
 import structlog
 from fastmcp import FastMCP
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from bindery_client import BinderyClient, BinderyClientError, with_bindery_client
+from security import (
+    secure_deserialize_mcp_param,
+    ErrorSanitizer,
+    set_production_mode,
+    schema_cache
+)
 from models import (
     TaskInput, TaskOutput, TaskUpdateInput, TaskStatus, TaskPriority,
     ProjectInput, ProjectOutput,
@@ -57,6 +64,15 @@ logger = structlog.get_logger()
 # Global shutdown flag
 shutdown_requested = False
 
+# Initialize security mode based on environment
+PRODUCTION_MODE = os.getenv('MCP_PRODUCTION', 'false').lower() == 'true'
+set_production_mode(PRODUCTION_MODE)
+
+if PRODUCTION_MODE:
+    logger.info("Running in PRODUCTION mode - enhanced security enabled")
+else:
+    logger.info("Running in DEVELOPMENT mode - verbose errors enabled")
+
 
 class MCPErrorHandler:
     """
@@ -90,12 +106,13 @@ class MCPErrorHandler:
                 status_code=e.status_code,
                 details=e.details
             )
-            # Return structured error response instead of raising
+            # Sanitize error for external exposure
+            error_info = ErrorSanitizer.sanitize_error_message(e, operation_name)
             return {
-                "error": e.message,
+                "error": error_info["error"],
                 "operation": operation_name,
                 "status_code": e.status_code,
-                "details": e.details
+                "type": "client_error"
             }
 
         except Exception as e:
@@ -104,11 +121,12 @@ class MCPErrorHandler:
                 error=str(e),
                 error_type=type(e).__name__
             )
-            # Return structured error response instead of raising
+            # Sanitize error for external exposure
+            error_info = ErrorSanitizer.sanitize_error_message(e, operation_name)
             return {
-                "error": f"Internal server error: {str(e)}",
+                "error": error_info["error"],
                 "operation": operation_name,
-                "error_type": type(e).__name__
+                "type": error_info["type"]
             }
 
 
@@ -120,19 +138,23 @@ error_handler = MCPErrorHandler()
 
 
 @mcp.tool()
-async def create_task(task_input: TaskInput) -> Dict[str, Any]:
+async def create_task(task_input: Union[str, Dict, TaskInput]) -> Dict[str, Any]:
     """
     Create a new task in the Bindery backend.
 
     Args:
         task_input: Task creation data including title, description, priority, and tags
+                   Can be a TaskInput object, dict, or JSON string
 
     Returns:
         Created task data or error information
     """
     async def operation():
+        # Deserialize the input parameter with enhanced security
+        task = secure_deserialize_mcp_param(task_input, TaskInput)
+
         async with BinderyClient() as client:
-            return (await client.create_task(task_input)).model_dump()
+            return (await client.create_task(task)).model_dump()
 
     return await error_handler.handle_tool_error("create_task", operation)
 
@@ -156,20 +178,24 @@ async def get_task(task_id: str) -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def update_task(task_id: str, task_update: TaskUpdateInput) -> Dict[str, Any]:
+async def update_task(task_id: str, task_update: Union[str, Dict, TaskUpdateInput]) -> Dict[str, Any]:
     """
     Update an existing task.
 
     Args:
         task_id: Unique identifier for the task
         task_update: Updated task data (only non-None fields will be updated)
+                    Can be a TaskUpdateInput object, dict, or JSON string
 
     Returns:
         Updated task data or error information
     """
     async def operation():
+        # Deserialize the update input with enhanced security
+        update = secure_deserialize_mcp_param(task_update, TaskUpdateInput)
+
         async with BinderyClient() as client:
-            return (await client.update_task(task_id, task_update)).model_dump()
+            return (await client.update_task(task_id, update)).model_dump()
 
     return await error_handler.handle_tool_error("update_task", operation)
 
@@ -197,19 +223,23 @@ async def list_tasks(
 
 
 @mcp.tool()
-async def create_project(project_input: ProjectInput) -> Dict[str, Any]:
+async def create_project(project_input: Union[str, Dict, ProjectInput]) -> Dict[str, Any]:
     """
     Create a new project in the Bindery backend.
 
     Args:
         project_input: Project creation data including name, description, and tags
+                      Can be a ProjectInput object, dict, or JSON string
 
     Returns:
         Created project data or error information
     """
     async def operation():
+        # Deserialize the input parameter with enhanced security
+        project = secure_deserialize_mcp_param(project_input, ProjectInput)
+
         async with BinderyClient() as client:
-            return (await client.create_project(project_input)).model_dump()
+            return (await client.create_project(project)).model_dump()
 
     return await error_handler.handle_tool_error("create_project", operation)
 
@@ -230,19 +260,23 @@ async def get_dashboard_stats() -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def search_entities(search_input: SearchInput) -> Dict[str, Any]:
+async def search_entities(search_input: Union[str, Dict, SearchInput]) -> Dict[str, Any]:
     """
     Search across tasks, projects, and notes.
 
     Args:
         search_input: Search parameters including query string and entity types
+                     Can be a SearchInput object, dict, or JSON string
 
     Returns:
         Search results or error information
     """
     async def operation():
+        # Deserialize the input parameter with enhanced security
+        search = secure_deserialize_mcp_param(search_input, SearchInput)
+
         async with BinderyClient() as client:
-            return (await client.search(search_input)).model_dump()
+            return (await client.search(search)).model_dump()
 
     return await error_handler.handle_tool_error("search_entities", operation)
 
@@ -392,19 +426,23 @@ async def list_roles() -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def index_document(document_input: DocumentInput) -> Dict[str, Any]:
+async def index_document(document_input: Union[str, Dict, DocumentInput]) -> Dict[str, Any]:
     """
     Index a document for RAG search.
 
     Args:
         document_input: Document data including content, title, and type
+                       Can be a DocumentInput object, dict, or JSON string
 
     Returns:
         Indexing confirmation or error information
     """
     async def operation():
+        # Deserialize the input parameter with enhanced security
+        document = secure_deserialize_mcp_param(document_input, DocumentInput)
+
         async with BinderyClient() as client:
-            result = await client.index_document(document_input)
+            result = await client.index_document(document)
             return {
                 "success": True,
                 "document_id": result.get("document_id"),

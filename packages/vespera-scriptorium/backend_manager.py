@@ -123,10 +123,15 @@ class BinderyBackendManager:
             logger.error("Bindery binary not found", path=str(self.binary_path))
             return False
 
+        # Get the workspace path from where the MCP server was launched
+        # This ensures data is created in the correct location
+        workspace_path = Path.cwd()
+
         logger.info(
             "Starting Bindery backend",
             binary=str(self.binary_path),
-            port=self.port
+            port=self.port,
+            workspace=str(workspace_path)
         )
 
         try:
@@ -135,9 +140,14 @@ class BinderyBackendManager:
             env["BINDERY_PORT"] = str(self.port)
             env["RUST_LOG"] = "info"
 
-            # Start the backend process
+            # Start the backend process with port and workspace arguments
+            # The workspace argument tells Bindery where to create the .vespera directory
             self.process = subprocess.Popen(
-                [str(self.binary_path)],
+                [
+                    str(self.binary_path),
+                    "--port", str(self.port),
+                    "--workspace", str(workspace_path)
+                ],
                 cwd=self.bindery_path,
                 env=env,
                 stdout=subprocess.PIPE,

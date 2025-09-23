@@ -632,34 +632,28 @@ impl VesperaCRDT {
         })?;
 
         // Initialize template fields with default values from template definition
-        for (field_name, field_def) in &template.fields {
+        for field_def in &template.fields {
+            let field_name = &field_def.id;
             if let Some(default_value) = &field_def.default_value {
                 // Convert template default value to CRDT TemplateValue
                 let crdt_value = match default_value {
-                    crate::templates::TemplateValue::Text(text) => crate::crdt::TemplateValue::Text {
+                    serde_json::Value::String(text) => crate::crdt::TemplateValue::Text {
                         value: text.clone(),
                         timestamp: Utc::now(),
                         user_id: created_by.clone(),
                     },
-                    crate::templates::TemplateValue::Number(num) => crate::crdt::TemplateValue::Structured {
-                        value: serde_json::Value::Number(
-                            serde_json::Number::from_f64(*num).unwrap_or_else(|| serde_json::Number::from(0))
-                        ),
+                    serde_json::Value::Number(num) => crate::crdt::TemplateValue::Structured {
+                        value: serde_json::Value::Number(num.clone()),
                         timestamp: Utc::now(),
                         user_id: created_by.clone(),
                     },
-                    crate::templates::TemplateValue::Boolean(bool_val) => crate::crdt::TemplateValue::Structured {
+                    serde_json::Value::Bool(bool_val) => crate::crdt::TemplateValue::Structured {
                         value: serde_json::Value::Bool(*bool_val),
                         timestamp: Utc::now(),
                         user_id: created_by.clone(),
                     },
-                    crate::templates::TemplateValue::DateTime(dt) => crate::crdt::TemplateValue::Structured {
-                        value: serde_json::Value::String(dt.to_rfc3339()),
-                        timestamp: Utc::now(),
-                        user_id: created_by.clone(),
-                    },
                     other => crate::crdt::TemplateValue::Structured {
-                        value: other.to_json(),
+                        value: other.clone(),
                         timestamp: Utc::now(),
                         user_id: created_by.clone(),
                     },
@@ -668,13 +662,13 @@ impl VesperaCRDT {
                 crdt.set_metadata(field_name.clone(), crdt_value)?;
             } else {
                 // Initialize with appropriate empty value based on field type
-                let empty_value = match field_def.field_type {
-                    crate::templates::FieldType::Text => crate::crdt::TemplateValue::Text {
+                let empty_value = match &field_def.field_type {
+                    crate::types::TemplateFieldType::Text { .. } => crate::crdt::TemplateValue::Text {
                         value: String::new(),
                         timestamp: Utc::now(),
                         user_id: created_by.clone(),
                     },
-                    crate::templates::FieldType::RichText => crate::crdt::TemplateValue::RichText {
+                    crate::types::TemplateFieldType::RichText { .. } => crate::crdt::TemplateValue::RichText {
                         content_id: format!("{}_{}_{}", codex_id, field_name, uuid::Uuid::new_v4())
                     },
                     _ => crate::crdt::TemplateValue::Structured {

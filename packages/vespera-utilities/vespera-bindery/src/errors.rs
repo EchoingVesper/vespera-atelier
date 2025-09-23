@@ -342,6 +342,34 @@ impl From<json5::Error> for BinderyError {
     }
 }
 
+impl From<sqlx::Error> for BinderyError {
+    fn from(err: sqlx::Error) -> Self {
+        match err {
+            sqlx::Error::RowNotFound => {
+                BinderyError::NotFound("Database row not found".to_string())
+            }
+            sqlx::Error::Database(db_err) => {
+                BinderyError::DatabaseQueryError(format!("Database error: {}", db_err))
+            }
+            sqlx::Error::Io(io_err) => {
+                BinderyError::DatabaseConnectionError(format!("I/O error: {}", io_err))
+            }
+            sqlx::Error::PoolTimedOut => {
+                BinderyError::DatabaseConnectionError("Connection pool timed out".to_string())
+            }
+            sqlx::Error::PoolClosed => {
+                BinderyError::DatabaseConnectionError("Connection pool is closed".to_string())
+            }
+            sqlx::Error::WorkerCrashed => {
+                BinderyError::DatabaseConnectionError("Database worker crashed".to_string())
+            }
+            _ => {
+                BinderyError::DatabaseError(format!("SQLx error: {}", err))
+            }
+        }
+    }
+}
+
 #[cfg(feature = "regex")]
 impl From<regex::Error> for BinderyError {
     fn from(err: regex::Error) -> Self {
@@ -385,6 +413,12 @@ pub trait BinderyResultExt<T> {
 
     /// Convert the error to a TemplateError with context
     fn template_error(self, context: &str) -> BinderyResult<T>;
+
+    /// Log the error and return it
+    fn log_error(self, component: &str, operation: &str) -> BinderyResult<T>;
+
+    /// Log the error and record metrics, then return it
+    fn log_and_metric(self, component: &str, operation: &str) -> BinderyResult<T>;
 }
 
 impl<T, E> BinderyResultExt<T> for Result<T, E>
@@ -417,19 +451,21 @@ where
 
     fn log_error(self, component: &str, operation: &str) -> BinderyResult<T> {
         self.map_err(|e| {
-            e.log_error(component, operation);
-            e
+            let error_msg = format!("{}: {} - {}", component, operation, e);
+            error!("{}", error_msg);
+            BinderyError::InternalError(error_msg)
         })
     }
 
     fn log_and_metric(self, component: &str, operation: &str) -> BinderyResult<T> {
         self.map_err(|e| {
-            e.log_error(component, operation);
+            let error_msg = format!("{}: {} - {}", component, operation, e);
+            error!("{}", error_msg);
 
             // TODO: Record error metrics
             // BinderyMetrics::record_error(component, e.error_category());
 
-            e
+            BinderyError::InternalError(error_msg)
         })
     }
 }
