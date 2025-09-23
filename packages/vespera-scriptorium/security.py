@@ -169,8 +169,7 @@ def validate_task_recursion_depth(task_input: "TaskInput", current_depth: int = 
     # Check current depth against limit
     if current_depth > MAX_TASK_DEPTH:
         raise ValueError(
-            f"Task recursion depth exceeds maximum allowed depth of {MAX_TASK_DEPTH}. "
-            f"Found depth: {current_depth}"
+            f"Task recursion depth exceeded: maximum depth is {MAX_TASK_DEPTH}, found depth {current_depth}"
         )
 
     # Track the maximum depth found

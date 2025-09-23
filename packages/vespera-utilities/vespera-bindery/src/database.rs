@@ -14,7 +14,7 @@ use futures::future::try_join_all;
 use tokio::sync::Semaphore;
 
 /// Maximum recursion depth for task creation to prevent stack overflow
-const MAX_TASK_DEPTH: usize = 10;
+pub const MAX_TASK_DEPTH: usize = 10;
 /// Maximum concurrent subtask operations to prevent connection pool exhaustion
 const MAX_CONCURRENT_SUBTASKS: usize = 5;
 // TODO: Add observability when dependencies are resolved
@@ -771,8 +771,7 @@ impl Database {
             return Err(anyhow::anyhow!(
                 crate::BinderyError::ExecutionError(
                     format!(
-                        "Maximum task recursion depth exceeded ({}). Current depth: {}. \
-                         This prevents stack overflow from deeply nested subtasks.",
+                        "Task recursion depth exceeded: maximum depth is {}, found depth {}",
                         MAX_TASK_DEPTH, depth
                     )
                 )
@@ -788,8 +787,7 @@ impl Database {
                 return Err(anyhow::anyhow!(
                     crate::BinderyError::CircularReferenceError(
                         format!(
-                            "Cannot set parent_id '{}' for task '{}': would create circular reference. \
-                             Task cannot be its own ancestor.",
+                            "Cannot set parent_id '{}' for task '{}': would create circular reference",
                             parent_id, id
                         )
                     )
@@ -892,8 +890,7 @@ impl Database {
             return Err(anyhow::anyhow!(
                 crate::BinderyError::ExecutionError(
                     format!(
-                        "Maximum task recursion depth exceeded ({}). Current depth: {}. \
-                         This prevents stack overflow from deeply nested subtasks.",
+                        "Task recursion depth exceeded: maximum depth is {}, found depth {}",
                         MAX_TASK_DEPTH, depth
                     )
                 )
@@ -1330,8 +1327,7 @@ impl Database {
                 return Err(anyhow::anyhow!(
                     crate::BinderyError::CircularReferenceError(
                         format!(
-                            "Cannot set parent_id '{}' for task '{}': would create circular reference. \
-                             Task cannot be its own ancestor.",
+                            "Cannot set parent_id '{}' for task '{}': would create circular reference",
                             parent_id, task_id
                         )
                     )
@@ -1912,7 +1908,7 @@ mod tests {
 
         let error = result.err().unwrap();
         let error_msg = error.to_string();
-        assert!(error_msg.contains("Maximum task recursion depth exceeded"),
+        assert!(error_msg.contains("Task recursion depth exceeded"),
                 "Error message should mention depth exceeded: {}", error_msg);
         assert!(error_msg.contains(&MAX_TASK_DEPTH.to_string()),
                 "Error message should include max depth value: {}", error_msg);
@@ -2014,10 +2010,8 @@ mod tests {
 
         let error = result_over.err().unwrap();
         let error_msg = error.to_string();
-        assert!(error_msg.contains("Maximum task recursion depth exceeded"),
+        assert!(error_msg.contains("Task recursion depth exceeded"),
                 "Error should mention recursion depth: {}", error_msg);
-        assert!(error_msg.contains("stack overflow"),
-                "Error should mention stack overflow prevention: {}", error_msg);
     }
 
     // =====================================================
