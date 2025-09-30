@@ -1,0 +1,42 @@
+{
+  "name": "@vespera/typescript-shared",
+  "version": "0.1.0",
+  "description": "Shared TypeScript utilities for Vespera Atelier projects (error handling, validation, lifecycle management, etc.)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "clean": "rm -rf dist",
+    "test": "vitest",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\""
+  },
+  "keywords": [
+    "vespera",
+    "utilities",
+    "typescript",
+    "error-handling",
+    "validation",
+    "lifecycle"
+  ],
+  "author": "Vespera Atelier",
+  "license": "AGPL-3.0",
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0",
+    "eslint": "^8.56.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "prettier": "^3.2.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/vespera-atelier.git",
+    "directory": "packages/vespera-utilities/typescript-shared"
+  }
+}
