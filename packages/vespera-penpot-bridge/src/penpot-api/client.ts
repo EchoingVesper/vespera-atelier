@@ -97,7 +97,7 @@ export class PenpotAPIClient {
       this.axiosClient.defaults.headers.common['Authorization'] = `Bearer ${this.accessToken}`;
     } catch (error) {
       logger.error('Authentication failed:', error);
-      throw new Error(`Authentication failed: ${error.message}`);
+      throw new Error(`Authentication failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -236,12 +236,7 @@ export class PenpotAPIClient {
 
     await this.updateFile(options.fileId, [change]);
 
-    return {
-      id: shapeId,
-      type: 'rect',
-      name: options.name || 'Rectangle',
-      ...change.obj,
-    };
+    return change.obj as PenpotObject;
   }
 
   async createEllipse(options: CreateShapeOptions): Promise<PenpotObject> {
@@ -270,12 +265,7 @@ export class PenpotAPIClient {
 
     await this.updateFile(options.fileId, [change]);
 
-    return {
-      id: shapeId,
-      type: 'ellipse',
-      name: options.name || 'Ellipse',
-      ...change.obj,
-    };
+    return change.obj as PenpotObject;
   }
 
   async createText(options: CreateShapeOptions & { content?: string; fontSize?: number }): Promise<PenpotObject> {
@@ -307,12 +297,7 @@ export class PenpotAPIClient {
 
     await this.updateFile(options.fileId, [change]);
 
-    return {
-      id: shapeId,
-      type: 'text',
-      name: options.name || 'Text',
-      ...change.obj,
-    };
+    return change.obj as PenpotObject;
   }
 
   async createBoard(options: CreateShapeOptions): Promise<PenpotObject> {
@@ -340,12 +325,7 @@ export class PenpotAPIClient {
 
     await this.updateFile(options.fileId, [change]);
 
-    return {
-      id: boardId,
-      type: 'frame',
-      name: options.name || 'Board',
-      ...change.obj,
-    };
+    return change.obj as PenpotObject;
   }
 
   async createPath(options: CreateShapeOptions & { pathData?: string }): Promise<PenpotObject> {
@@ -375,12 +355,7 @@ export class PenpotAPIClient {
 
     await this.updateFile(options.fileId, [change]);
 
-    return {
-      id: shapeId,
-      type: 'path',
-      name: options.name || 'Path',
-      ...change.obj,
-    };
+    return change.obj as PenpotObject;
   }
 
   async appendToParent(parentId: string, childId: string): Promise<void> {

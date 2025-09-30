@@ -187,7 +187,7 @@ export class VesperaPenpotBridge {
 
         throw new McpError(
           ErrorCode.InternalError,
-          `Failed to execute tool: ${error.message}`
+          `Failed to execute tool: ${error instanceof Error ? error.message : String(error)}`
         );
       }
     });
