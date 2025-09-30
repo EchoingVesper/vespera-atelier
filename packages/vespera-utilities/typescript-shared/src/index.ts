@@ -14,8 +14,36 @@ export * from './validation/index.js';
 // Lifecycle management
 export * from './lifecycle/index.js';
 
-// Logging
-export * from './logging/index.js';
+// Logging (re-export with explicit naming to avoid conflicts)
+export type {
+  Logger as StructuredLoggerInterface,
+  LogContext,
+  LogEntry,
+  LogTransport,
+  LoggerConfig,
+  LogFormatter,
+  PrettyFormatterOptions,
+  FileTransportOptions,
+  BufferedTransportOptions,
+} from './logging/index.js';
+
+export {
+  LogLevel,
+  StructuredLogger,
+  createLogger,
+  getLogLevelName,
+  parseLogLevel,
+  JSONFormatter,
+  PrettyFormatter,
+  CompactFormatter,
+  ConsoleTransport,
+  FileTransport,
+  BufferedTransport,
+  MultiTransport,
+  FilterTransport,
+  createDefaultLogger,
+  createJSONLogger,
+} from './logging/index.js';
 
 // Circuit breaker
 export * from './circuit-breaker/index.js';
