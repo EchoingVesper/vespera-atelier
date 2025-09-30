@@ -57,7 +57,9 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
     "axios": "^1.7.2",
+    "axios-cookiejar-support": "^6.0.4",
     "dotenv": "^16.4.5",
+    "tough-cookie": "^5.1.2",
     "transit-js": "^0.8.874",
     "zod": "^3.23.8"
   },

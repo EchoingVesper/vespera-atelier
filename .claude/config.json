@@ -10,16 +10,6 @@
         "env": {
           "PYTHONPATH": "${workspaceFolder}/packages/vespera-scriptorium"
         }
-      },
-      "vespera-penpot-bridge": {
-        "command": "node",
-        "args": ["${workspaceFolder}/packages/vespera-penpot-bridge/dist/mcp-server.js"],
-        "cwd": "packages/vespera-penpot-bridge",
-        "env": {
-          "PENPOT_API_URL": "https://design.penpot.app/api",
-          "DEBUG": "false",
-          "LOG_LEVEL": "info"
-        }
       }
     }
   },

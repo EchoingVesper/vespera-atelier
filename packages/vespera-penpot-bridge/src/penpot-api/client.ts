@@ -6,6 +6,8 @@
  */
 
 import axios, { AxiosInstance } from 'axios';
+import { wrapper } from 'axios-cookiejar-support';
+import { CookieJar } from 'tough-cookie';
 import transit from 'transit-js';
 import { logger } from '../utils/logger.js';
 import {
@@ -31,13 +33,16 @@ export class PenpotAPIClient {
     password?: string;
     accessToken?: string;
   }) {
-    this.axiosClient = axios.create({
+    const jar = new CookieJar();
+    this.axiosClient = wrapper(axios.create({
       baseURL: config.baseUrl,
       headers: {
         'Content-Type': 'application/transit+json',
         'Accept': 'application/transit+json',
       },
-    });
+      jar, // Cookie jar for persistence
+      withCredentials: true,
+    }));
 
     // Add Transit format encoding/decoding
     this.setupTransitInterceptors();
@@ -49,7 +54,8 @@ export class PenpotAPIClient {
 
     // Request interceptor to encode with Transit
     this.axiosClient.interceptors.request.use((config) => {
-      if (config.data && typeof config.data === 'object') {
+      if (config.data !== undefined) {
+        // Always encode data with Transit, including null
         config.data = writer.write(config.data);
       }
       return config;
@@ -84,17 +90,25 @@ export class PenpotAPIClient {
         throw new Error('No authentication credentials provided');
       }
 
-      const response = await this.axiosClient.post('/rpc/mutation/login', {
-        email: this.config.username,
-        password: this.config.password,
-      });
+      // Create Transit map with keyword keys for Penpot API
+      const loginData = transit.map([
+        transit.keyword('email'), this.config.username,
+        transit.keyword('password'), this.config.password,
+      ]);
 
-      this.accessToken = response.data.accessToken;
-      this.profileId = response.data.profileId;
+      const response = await this.axiosClient.post('/rpc/command/login-with-password', loginData);
+
+      // Penpot 2.x uses cookie-based authentication (auth-token cookie)
+      // The response contains the profile data as a Transit map
+      // Transit maps have a .get() method for keyword lookup
+      const profileData = response.data;
+      if (profileData && typeof profileData.get === 'function') {
+        const idKey = transit.keyword('id');
+        this.profileId = profileData.get(idKey);
+      }
       this.authenticated = true;
 
-      // Add token to default headers
-      this.axiosClient.defaults.headers.common['Authorization'] = `Bearer ${this.accessToken}`;
+      logger.info('Authentication successful', { profileId: this.profileId });
     } catch (error) {
       logger.error('Authentication failed:', error);
       throw new Error(`Authentication failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -109,32 +123,36 @@ export class PenpotAPIClient {
 
   async listProjects(): Promise<PenpotProject[]> {
     await this.authenticate();
-    const response = await this.axiosClient.post('/rpc/command/get-all-projects');
+    const response = await this.axiosClient.post('/rpc/command/get-all-projects', null);
     return response.data;
   }
 
   async getProjectFiles(projectId: string): Promise<PenpotFile[]> {
     await this.authenticate();
-    const response = await this.axiosClient.post('/rpc/command/get-project-files', {
-      projectId,
-    });
+    const params = transit.map([
+      transit.keyword('project-id'), projectId,
+    ]);
+    const response = await this.axiosClient.post('/rpc/command/get-project-files', params);
     return response.data;
   }
 
   async getFile(fileId: string): Promise<PenpotFile> {
     await this.authenticate();
-    const response = await this.axiosClient.post('/rpc/command/get-file', {
-      id: fileId,
-    });
+    const params = transit.map([
+      transit.keyword('id'), fileId,
+    ]);
+    const response = await this.axiosClient.post('/rpc/command/get-file', params);
     return response.data;
   }
 
   async getPage(fileId: string, pageId?: string): Promise<PenpotPage> {
     await this.authenticate();
-    const response = await this.axiosClient.post('/rpc/command/get-page', {
-      fileId,
-      pageId,
-    });
+    const paramList = [transit.keyword('file-id'), fileId];
+    if (pageId) {
+      paramList.push(transit.keyword('page-id'), pageId);
+    }
+    const params = transit.map(paramList);
+    const response = await this.axiosClient.post('/rpc/command/get-page', params);
     return response.data;
   }
 
@@ -215,10 +233,14 @@ export class PenpotAPIClient {
     await this.ensureSession(options.fileId);
 
     const shapeId = options.id || crypto.randomUUID();
+    // In Penpot, frameId is required. Use pageId as frameId for root-level shapes
+    const frameId = options.parentId || options.pageId;
+
     const change = {
       type: 'add-obj',
       id: shapeId,
       pageId: options.pageId,
+      frameId: frameId,
       obj: {
         id: shapeId,
         type: 'rect',
@@ -244,10 +266,13 @@ export class PenpotAPIClient {
     await this.ensureSession(options.fileId);
 
     const shapeId = options.id || crypto.randomUUID();
+    const frameId = options.parentId || options.pageId;
+
     const change = {
       type: 'add-obj',
       id: shapeId,
       pageId: options.pageId,
+      frameId: frameId,
       obj: {
         id: shapeId,
         type: 'ellipse',
@@ -273,10 +298,13 @@ export class PenpotAPIClient {
     await this.ensureSession(options.fileId);
 
     const shapeId = options.id || crypto.randomUUID();
+    const frameId = options.parentId || options.pageId;
+
     const change = {
       type: 'add-obj',
       id: shapeId,
       pageId: options.pageId,
+      frameId: frameId,
       obj: {
         id: shapeId,
         type: 'text',
@@ -305,10 +333,13 @@ export class PenpotAPIClient {
     await this.ensureSession(options.fileId);
 
     const boardId = options.id || crypto.randomUUID();
+    const frameId = options.parentId || options.pageId;
+
     const change = {
       type: 'add-obj',
       id: boardId,
       pageId: options.pageId,
+      frameId: frameId,
       obj: {
         id: boardId,
         type: 'frame',  // Boards are frames in Penpot
@@ -333,10 +364,13 @@ export class PenpotAPIClient {
     await this.ensureSession(options.fileId);
 
     const shapeId = options.id || crypto.randomUUID();
+    const frameId = options.parentId || options.pageId;
+
     const change = {
       type: 'add-obj',
       id: shapeId,
       pageId: options.pageId,
+      frameId: frameId,
       obj: {
         id: shapeId,
         type: 'path',
@@ -477,16 +511,49 @@ export class PenpotAPIClient {
   }
 
   private async updateFile(fileId: string, changes: any[]): Promise<void> {
-    const file = await this.getFile(fileId);
+    // Try to use revn=0 to start, as Penpot can handle version conflicts
+    // Getting the full file is too large and causes issues
+    const revn = 0;
 
-    const updatePayload = {
-      id: fileId,
-      sessionId: this.sessionId,
-      revn: file.revn || 0,
-      vern: file.vern || 0,
-      changes,
-    };
+    // Convert changes to Transit maps with keyword keys
+    const transitChanges = changes.map(change => {
+      const changeMap: any[] = [
+        transit.keyword('type'), change.type,
+        transit.keyword('id'), change.id,
+      ];
 
-    await this.axiosClient.post('/rpc/command/update-file', updatePayload);
+      if (change.pageId) {
+        changeMap.push(transit.keyword('page-id'), change.pageId);
+      }
+      if (change.frameId) {
+        changeMap.push(transit.keyword('frame-id'), change.frameId);
+      }
+      if (change.parentId !== undefined) {
+        changeMap.push(transit.keyword('parent-id'), change.parentId);
+      }
+      if (change.index !== undefined) {
+        changeMap.push(transit.keyword('index'), change.index);
+      }
+      if (change.obj) {
+        // Convert obj to Transit map with keyword keys
+        const objMap: any[] = [];
+        for (const [key, value] of Object.entries(change.obj)) {
+          objMap.push(transit.keyword(key), value);
+        }
+        changeMap.push(transit.keyword('obj'), transit.map(objMap));
+      }
+
+      return transit.map(changeMap);
+    });
+
+    // Penpot API requires Transit keyword encoding
+    const params = transit.map([
+      transit.keyword('id'), fileId,
+      transit.keyword('session-id'), this.sessionId,
+      transit.keyword('revn'), revn,
+      transit.keyword('changes'), transitChanges,
+    ]);
+
+    await this.axiosClient.post('/rpc/command/update-file', params);
   }
 }
