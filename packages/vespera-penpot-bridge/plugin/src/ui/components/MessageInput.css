@@ -1,0 +1,64 @@
+.message-input-form {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+  background: var(--input-bg, #ffffff);
+}
+
+.message-input-textarea {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid var(--input-border, #d1d5db);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.875rem;
+  resize: none;
+  background: var(--input-field-bg, #ffffff);
+  color: var(--input-text, #111827);
+  transition: border-color 0.2s;
+}
+
+.message-input-textarea:focus {
+  outline: none;
+  border-color: var(--input-border-focus, #3b82f6);
+}
+
+.message-input-textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.message-input-button {
+  padding: 0.75rem 1.5rem;
+  background: var(--button-bg, #3b82f6);
+  color: var(--button-text, #ffffff);
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.message-input-button:hover:not(:disabled) {
+  background: var(--button-bg-hover, #2563eb);
+}
+
+.message-input-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] {
+  --border-color: #374151;
+  --input-bg: #1f2937;
+  --input-border: #4b5563;
+  --input-field-bg: #111827;
+  --input-text: #f9fafb;
+  --input-border-focus: #60a5fa;
+  --button-bg: #2563eb;
+  --button-bg-hover: #1d4ed8;
+}

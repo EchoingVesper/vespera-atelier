@@ -1,0 +1,78 @@
+.chat-interface {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg-color, #ffffff);
+  color: var(--text-color, #111827);
+}
+
+.chat-header {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+  background: var(--header-bg, #f9fafb);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-header h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--header-text, #111827);
+}
+
+.status-indicator {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-idle {
+  background: var(--status-idle-bg, #e5e7eb);
+  color: var(--status-idle-text, #6b7280);
+}
+
+.status-working {
+  background: var(--status-working-bg, #dbeafe);
+  color: var(--status-working-text, #1e40af);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.status-success {
+  background: var(--status-success-bg, #d1fae5);
+  color: var(--status-success-text, #065f46);
+}
+
+.status-error {
+  background: var(--status-error-bg, #fee2e2);
+  color: var(--status-error-text, #991b1b);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] {
+  --bg-color: #111827;
+  --text-color: #f9fafb;
+  --border-color: #374151;
+  --header-bg: #1f2937;
+  --header-text: #f9fafb;
+  --status-idle-bg: #374151;
+  --status-idle-text: #9ca3af;
+  --status-working-bg: #1e3a8a;
+  --status-working-text: #93c5fd;
+  --status-success-bg: #064e3b;
+  --status-success-text: #6ee7b7;
+  --status-error-bg: #7f1d1d;
+  --status-error-text: #fca5a5;
+}
