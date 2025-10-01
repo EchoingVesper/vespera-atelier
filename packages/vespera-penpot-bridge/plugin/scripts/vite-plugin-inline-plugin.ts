@@ -94,8 +94,8 @@ export function inlinePluginImports(): Plugin {
       // Update the chunk code
       pluginChunk.code = fixedPlugin;
 
-      // Delete the imported chunk from the bundle
-      delete bundle[importedChunk.fileName];
+      // Don't delete the imported chunk - it might be used by other entry points (like index.js)
+      // Only plugin.js needs inlining for SES compatibility
 
       console.log('[inline-plugin-imports] ✓ Inlined imports into plugin.js');
     },
