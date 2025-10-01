@@ -25,7 +25,8 @@ export function ChatInterface() {
     } else if (message.toLowerCase().includes('help')) {
       showHelpMessage();
     } else {
-      showUnknownCommandMessage();
+      // Check for partial matches to provide helpful hints
+      showUnknownCommandMessage(message);
     }
   };
 
@@ -146,14 +147,28 @@ export function ChatInterface() {
     });
   }
 
-  function showUnknownCommandMessage() {
+  function showUnknownCommandMessage(input: string) {
+    const lower = input.toLowerCase();
+    let hint = '';
+
+    // Detect partial matches and provide specific hints
+    if (lower.includes('card') && !input.includes('|')) {
+      hint = '\n\n💡 Hint: Cards need the format "create card: Header | Body text"';
+    } else if (lower.includes('button') && !input.match(/button:?\s*.+/i)) {
+      hint = '\n\n💡 Hint: Buttons need a label, like "create button: Submit"';
+    } else if (lower.includes('input') && !input.match(/input(?:\s+field)?:?\s*.+/i)) {
+      hint = '\n\n💡 Hint: Input fields need a label, like "create input: Email"';
+    } else if (lower.includes('success') && !input.match(/success\s+dialog:?\s*.+/i)) {
+      hint = '\n\n💡 Hint: Success dialogs need a message, like "create success dialog: Done!"';
+    }
+
     dispatch({
       type: 'ADD_MESSAGE',
       message: {
         id: `unknown-${Date.now()}`,
         type: 'system',
         content:
-          'I didn\'t understand that command. Type "help" for available commands.',
+          `I didn't understand that command. Type "help" for available commands.${hint}`,
         timestamp: new Date(),
       },
     });
