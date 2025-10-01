@@ -107,8 +107,8 @@ export function createErrorDialog(config: ErrorDialogConfig): string {
       buttonText.verticalAlign = 'center';
     }
 
-    // Close X button
-    const closeX = buttonX - 40;
+    // Close X button in top-right corner
+    const closeX = dims.width - dims.padding - 24; // Right edge minus padding minus button width
     const closeY = dims.padding;
 
     closeButton = penpot.createText('✕');
