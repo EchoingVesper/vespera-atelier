@@ -100,20 +100,27 @@ export function createCard(config: CardConfig): string {
     }
   }
 
-  // Collect all shapes in an array (in reverse z-order for correct stacking)
+  // Add shapes to board FIRST (in reverse z-order for correct stacking)
   const shapes = [];
 
-  if (footerText) shapes.push(footerText);
-  if (bodyText) shapes.push(bodyText);
-  if (headerText) shapes.push(headerText);
+  if (footerText) {
+    board.appendChild(footerText);
+    shapes.push(footerText);
+  }
+  if (bodyText) {
+    board.appendChild(bodyText);
+    shapes.push(bodyText);
+  }
+  if (headerText) {
+    board.appendChild(headerText);
+    shapes.push(headerText);
+  }
+  board.appendChild(background);
   shapes.push(background);
 
-  // Group all shapes together first (for single-undo support)
+  // NOW group all shapes together (for single-undo support)
   const group = penpot.group(shapes);
-
   if (group) {
-    // Add the group to the board
-    board.appendChild(group);
     group.name = 'Card Content';
   }
 

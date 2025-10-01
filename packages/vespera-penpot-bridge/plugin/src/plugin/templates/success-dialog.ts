@@ -142,28 +142,44 @@ export function createSuccessDialog(config: SuccessDialogConfig): string {
     }
   }
 
-  // Collect all shapes in an array (in reverse z-order for correct stacking)
+  // Add shapes to board FIRST (in reverse z-order for correct stacking)
   const shapes = [];
 
   // Add buttons first (so they're on top)
-  if (closeButton) shapes.push(closeButton);
-  if (buttonText) shapes.push(buttonText);
-  if (buttonBg) shapes.push(buttonBg);
+  if (closeButton) {
+    board.appendChild(closeButton);
+    shapes.push(closeButton);
+  }
+  if (buttonText) {
+    board.appendChild(buttonText);
+    shapes.push(buttonText);
+  }
+  if (buttonBg) {
+    board.appendChild(buttonBg);
+    shapes.push(buttonBg);
+  }
 
   // Then message and title
-  if (messageText) shapes.push(messageText);
-  if (titleText) shapes.push(titleText);
-  if (checkmark) shapes.push(checkmark);
+  if (messageText) {
+    board.appendChild(messageText);
+    shapes.push(messageText);
+  }
+  if (titleText) {
+    board.appendChild(titleText);
+    shapes.push(titleText);
+  }
+  if (checkmark) {
+    board.appendChild(checkmark);
+    shapes.push(checkmark);
+  }
 
   // Background last (so it's at the back)
+  board.appendChild(background);
   shapes.push(background);
 
-  // Group all shapes together first (for single-undo support)
+  // NOW group all shapes together (for single-undo support)
   const group = penpot.group(shapes);
-
   if (group) {
-    // Add the group to the board
-    board.appendChild(group);
     group.name = 'Dialog Content';
   }
 

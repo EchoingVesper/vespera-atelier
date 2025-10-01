@@ -2,15 +2,30 @@
  * Main chat interface component
  */
 
+import { useEffect } from 'react';
 import { usePlugin } from '../state/context';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
+import { TemplateGallery } from './TemplateGallery';
 import { createUserMessage } from '../state/reducer';
 import type { UIToPluginMessage } from '../../shared/messages';
 import './ChatInterface.css';
 
 export function ChatInterface() {
   const { state, dispatch } = usePlugin();
+
+  // Handle Esc key to toggle gallery
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        dispatch({ type: 'TOGGLE_GALLERY' });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [dispatch]);
 
   const handleSendMessage = (message: string) => {
     // Add user message to chat
@@ -174,6 +189,51 @@ export function ChatInterface() {
     });
   }
 
+  // Handle template selection from gallery
+  const handleSelectTemplate = (templateId: string) => {
+    // Create default config based on template type
+    let config: Record<string, unknown> = {};
+
+    switch (templateId) {
+      case 'error-dialog':
+        config = { title: 'Error', message: 'An error occurred', severity: 'error', dismissible: true };
+        break;
+      case 'success-dialog':
+        config = { title: 'Success', message: 'Operation completed successfully', dismissible: true };
+        break;
+      case 'primary-button':
+        config = { label: 'Button', style: 'primary' };
+        break;
+      case 'input-field':
+        config = { label: 'Input Field', placeholder: 'Enter value...' };
+        break;
+      case 'info-card':
+        config = { header: 'Card Title', body: 'Card content goes here' };
+        break;
+    }
+
+    // Send create message to plugin backend
+    parent.postMessage(
+      {
+        type: templateId === 'error-dialog' ? 'create-error-dialog' : 'create-component',
+        templateId,
+        config,
+      } as UIToPluginMessage,
+      '*'
+    );
+
+    // Add system message to chat
+    dispatch({
+      type: 'ADD_MESSAGE',
+      message: {
+        id: `template-${Date.now()}`,
+        type: 'system',
+        content: `Creating ${templateId.replace('-', ' ')}...`,
+        timestamp: new Date(),
+      },
+    });
+  };
+
   return (
     <div className="chat-interface" data-theme={state.theme}>
       <div className="chat-header">
@@ -189,6 +249,15 @@ export function ChatInterface() {
         onSubmit={handleSendMessage}
         disabled={state.status === 'working'}
       />
+
+      {/* Template Gallery (Esc menu) */}
+      {state.isGalleryOpen && (
+        <TemplateGallery
+          onClose={() => dispatch({ type: 'CLOSE_GALLERY' })}
+          onSelectTemplate={handleSelectTemplate}
+          theme={state.theme}
+        />
+      )}
     </div>
   );
 }
