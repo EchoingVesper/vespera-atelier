@@ -99,11 +99,22 @@ export function createInputField(config: InputFieldConfig): string {
     }
   }
 
-  // Append in REVERSE order (Penpot: first appended = on top)
-  if (errorText) board.appendChild(errorText);
-  if (placeholderText) board.appendChild(placeholderText);
-  board.appendChild(inputBg);
-  if (labelText) board.appendChild(labelText);
+  // Collect all shapes in an array (in reverse z-order for correct stacking)
+  const shapes = [];
+
+  if (errorText) shapes.push(errorText);
+  if (placeholderText) shapes.push(placeholderText);
+  shapes.push(inputBg);
+  if (labelText) shapes.push(labelText);
+
+  // Group all shapes together first (for single-undo support)
+  const group = penpot.group(shapes);
+
+  if (group) {
+    // Add the group to the board
+    board.appendChild(group);
+    group.name = 'Input Field Content';
+  }
 
   // Center the input on the viewport
   const viewport = penpot.viewport;

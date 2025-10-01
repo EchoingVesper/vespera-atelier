@@ -100,11 +100,22 @@ export function createCard(config: CardConfig): string {
     }
   }
 
-  // Append in REVERSE order (Penpot: first appended = on top)
-  if (footerText) board.appendChild(footerText);
-  if (bodyText) board.appendChild(bodyText);
-  if (headerText) board.appendChild(headerText);
-  board.appendChild(background);
+  // Collect all shapes in an array (in reverse z-order for correct stacking)
+  const shapes = [];
+
+  if (footerText) shapes.push(footerText);
+  if (bodyText) shapes.push(bodyText);
+  if (headerText) shapes.push(headerText);
+  shapes.push(background);
+
+  // Group all shapes together first (for single-undo support)
+  const group = penpot.group(shapes);
+
+  if (group) {
+    // Add the group to the board
+    board.appendChild(group);
+    group.name = 'Card Content';
+  }
 
   // Center the card on the viewport
   const viewport = penpot.viewport;

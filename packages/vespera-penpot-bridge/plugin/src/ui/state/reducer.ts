@@ -22,6 +22,7 @@ export interface PluginState {
   messages: ChatMessage[];
   status: 'idle' | 'working' | 'success' | 'error';
   statusMessage?: string;
+  isGalleryOpen: boolean;
 }
 
 /**
@@ -31,7 +32,9 @@ export type PluginAction =
   | { type: 'SET_THEME'; theme: 'light' | 'dark' }
   | { type: 'ADD_MESSAGE'; message: ChatMessage }
   | { type: 'SET_STATUS'; status: PluginState['status']; message?: string }
-  | { type: 'HANDLE_PLUGIN_MESSAGE'; message: PluginToUIMessage };
+  | { type: 'HANDLE_PLUGIN_MESSAGE'; message: PluginToUIMessage }
+  | { type: 'TOGGLE_GALLERY' }
+  | { type: 'CLOSE_GALLERY' };
 
 /**
  * Initial state
@@ -42,11 +45,12 @@ export const initialState: PluginState = {
     {
       id: '1',
       type: 'system',
-      content: 'Welcome to Vespera UI Generator! Try typing "create error dialog" to get started.',
+      content: 'Welcome to Vespera UI Generator! Press Esc to open the template gallery, or type commands like "create error dialog".',
       timestamp: new Date(),
     },
   ],
   status: 'idle',
+  isGalleryOpen: false,
 };
 
 /**
@@ -78,6 +82,18 @@ export function pluginReducer(state: PluginState, action: PluginAction): PluginS
         ...state,
         status: action.status,
         statusMessage: action.message,
+      };
+
+    case 'TOGGLE_GALLERY':
+      return {
+        ...state,
+        isGalleryOpen: !state.isGalleryOpen,
+      };
+
+    case 'CLOSE_GALLERY':
+      return {
+        ...state,
+        isGalleryOpen: false,
       };
 
     case 'HANDLE_PLUGIN_MESSAGE': {

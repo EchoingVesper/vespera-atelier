@@ -142,21 +142,30 @@ export function createSuccessDialog(config: SuccessDialogConfig): string {
     }
   }
 
-  // Append in REVERSE order (Penpot: first appended = on top)
-  // We want: background at back, then text, then buttons on top
+  // Collect all shapes in an array (in reverse z-order for correct stacking)
+  const shapes = [];
 
-  // Append buttons first (so they're on top)
-  if (closeButton) board.appendChild(closeButton);
-  if (buttonText) board.appendChild(buttonText);
-  if (buttonBg) board.appendChild(buttonBg);
+  // Add buttons first (so they're on top)
+  if (closeButton) shapes.push(closeButton);
+  if (buttonText) shapes.push(buttonText);
+  if (buttonBg) shapes.push(buttonBg);
 
   // Then message and title
-  if (messageText) board.appendChild(messageText);
-  if (titleText) board.appendChild(titleText);
-  if (checkmark) board.appendChild(checkmark);
+  if (messageText) shapes.push(messageText);
+  if (titleText) shapes.push(titleText);
+  if (checkmark) shapes.push(checkmark);
 
   // Background last (so it's at the back)
-  board.appendChild(background);
+  shapes.push(background);
+
+  // Group all shapes together first (for single-undo support)
+  const group = penpot.group(shapes);
+
+  if (group) {
+    // Add the group to the board
+    board.appendChild(group);
+    group.name = 'Dialog Content';
+  }
 
   // Center the dialog on the viewport
   const viewport = penpot.viewport;
