@@ -5,9 +5,12 @@
 import type {
   PluginToUIMessage,
   CreateErrorDialogMessage,
+  CreateComponentMessage,
+  PreviewComponentMessage,
 } from '../shared/messages';
 import { isUIToPluginMessage } from '../shared/messages';
 import { createErrorDialog, validateErrorDialogConfig } from './templates/error-dialog';
+import { createComponent, getTemplate } from './templates/factory';
 
 // Open the plugin UI
 penpot.ui.open('Vespera UI Generator', `?theme=${penpot.theme}`, {
@@ -37,19 +40,11 @@ penpot.ui.onMessage((message: unknown) => {
       break;
 
     case 'create-component':
-      sendMessage({
-        type: 'error',
-        error: 'Generic component creation not yet implemented',
-        operation: 'create-component',
-      });
+      handleCreateComponent(message);
       break;
 
     case 'preview-component':
-      sendMessage({
-        type: 'error',
-        error: 'Component preview not yet implemented',
-        operation: 'preview-component',
-      });
+      handlePreviewComponent(message);
       break;
 
     default:
@@ -122,6 +117,84 @@ function handleCreateErrorDialog(message: CreateErrorDialogMessage): void {
       type: 'status',
       status: 'error',
       message: 'Failed to create error dialog',
+    });
+  }
+}
+
+/**
+ * Handle generic component creation request
+ */
+function handleCreateComponent(message: CreateComponentMessage): void {
+  // Send working status
+  sendMessage({
+    type: 'status',
+    status: 'working',
+    message: `Creating ${message.templateId}...`,
+  });
+
+  try {
+    // Verify template exists
+    const template = getTemplate(message.templateId);
+    if (!template) {
+      throw new Error(`Unknown template: ${message.templateId}`);
+    }
+
+    // Create the component using the factory
+    const componentId = createComponent(message.templateId, message.config);
+
+    // Send success message
+    sendMessage({
+      type: 'operation-result',
+      success: true,
+      operation: 'create-component',
+      message: `${template.name} created successfully`,
+      componentId,
+    });
+
+    sendMessage({
+      type: 'status',
+      status: 'success',
+      message: `${template.name} created!`,
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    sendMessage({
+      type: 'error',
+      error: `Failed to create component: ${errorMessage}`,
+      operation: 'create-component',
+    });
+    sendMessage({
+      type: 'status',
+      status: 'error',
+      message: 'Failed to create component',
+    });
+  }
+}
+
+/**
+ * Handle component preview request
+ */
+function handlePreviewComponent(message: PreviewComponentMessage): void {
+  // For Phase 2, we'll implement a simple preview that just returns template info
+  // In Phase 3, we could generate actual thumbnails or more detailed previews
+  try {
+    const template = getTemplate(message.templateId);
+    if (!template) {
+      throw new Error(`Unknown template: ${message.templateId}`);
+    }
+
+    sendMessage({
+      type: 'operation-result',
+      success: true,
+      operation: 'preview-component',
+      message: `Preview for ${template.name}`,
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    sendMessage({
+      type: 'error',
+      error: `Failed to preview component: ${errorMessage}`,
+      operation: 'preview-component',
     });
   }
 }

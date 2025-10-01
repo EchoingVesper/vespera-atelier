@@ -3,6 +3,22 @@
  */
 
 /**
+ * Template categories
+ */
+export type TemplateCategory = 'dialog' | 'button' | 'form' | 'card' | 'panel';
+
+/**
+ * Base template interface
+ */
+export interface ComponentTemplate {
+  id: string;
+  name: string;
+  category: TemplateCategory;
+  description: string;
+  config: Record<string, unknown>;
+}
+
+/**
  * Configuration for error dialog template
  */
 export interface ErrorDialogConfig {
@@ -10,6 +26,51 @@ export interface ErrorDialogConfig {
   message: string;
   severity: 'error' | 'warning' | 'info' | 'success';
   dismissible: boolean;
+}
+
+/**
+ * Configuration for success dialog template
+ */
+export interface SuccessDialogConfig {
+  title: string;
+  message: string;
+  dismissible: boolean;
+}
+
+/**
+ * Button style variants
+ */
+export type ButtonStyle = 'primary' | 'secondary' | 'outlined' | 'text';
+
+/**
+ * Configuration for button template
+ */
+export interface ButtonConfig {
+  label: string;
+  style: ButtonStyle;
+  width?: number;
+  height?: number;
+}
+
+/**
+ * Configuration for input field template
+ */
+export interface InputFieldConfig {
+  label: string;
+  placeholder?: string;
+  errorMessage?: string;
+  width?: number;
+}
+
+/**
+ * Configuration for info card template
+ */
+export interface CardConfig {
+  header: string;
+  body: string;
+  footer?: string;
+  width?: number;
+  padding?: number;
 }
 
 /**
@@ -43,6 +104,32 @@ export const SEVERITY_COLORS = {
 } as const;
 
 /**
+ * Button style colors
+ */
+export const BUTTON_COLORS = {
+  primary: {
+    background: '#3B82F6',
+    text: '#FFFFFF',
+    border: '#3B82F6',
+  },
+  secondary: {
+    background: '#6B7280',
+    text: '#FFFFFF',
+    border: '#6B7280',
+  },
+  outlined: {
+    background: 'transparent',
+    text: '#3B82F6',
+    border: '#3B82F6',
+  },
+  text: {
+    background: 'transparent',
+    text: '#3B82F6',
+    border: 'transparent',
+  },
+} as const;
+
+/**
  * Error dialog template dimensions
  */
 export const ERROR_DIALOG_DIMENSIONS = {
@@ -54,23 +141,86 @@ export const ERROR_DIALOG_DIMENSIONS = {
 } as const;
 
 /**
- * Error dialog component structure
+ * Success dialog template dimensions
  */
-export interface ErrorDialogTemplate {
-  id: 'error-dialog-v1';
-  name: 'Error Dialog';
-  category: 'dialog';
-  dimensions: typeof ERROR_DIALOG_DIMENSIONS;
-  colors: typeof SEVERITY_COLORS;
-}
+export const SUCCESS_DIALOG_DIMENSIONS = {
+  width: 400,
+  height: 200,
+  padding: 20,
+  borderRadius: 8,
+  borderWidth: 2,
+} as const;
 
 /**
- * The error dialog template definition
+ * Button template dimensions
  */
-export const ERROR_DIALOG_TEMPLATE: ErrorDialogTemplate = {
-  id: 'error-dialog-v1',
-  name: 'Error Dialog',
-  category: 'dialog',
-  dimensions: ERROR_DIALOG_DIMENSIONS,
-  colors: SEVERITY_COLORS,
+export const BUTTON_DIMENSIONS = {
+  defaultWidth: 120,
+  defaultHeight: 40,
+  borderRadius: 6,
+  borderWidth: 2,
+} as const;
+
+/**
+ * Input field template dimensions
+ */
+export const INPUT_FIELD_DIMENSIONS = {
+  defaultWidth: 300,
+  inputHeight: 40,
+  labelHeight: 20,
+  spacing: 8,
+  borderRadius: 4,
+  borderWidth: 1,
+} as const;
+
+/**
+ * Card template dimensions
+ */
+export const CARD_DIMENSIONS = {
+  defaultWidth: 350,
+  defaultPadding: 16,
+  headerHeight: 30,
+  borderRadius: 8,
+  borderWidth: 1,
+} as const;
+
+/**
+ * Template registry
+ */
+export const TEMPLATE_REGISTRY: Record<string, ComponentTemplate> = {
+  'error-dialog': {
+    id: 'error-dialog',
+    name: 'Error Dialog',
+    category: 'dialog',
+    description: 'A dialog for displaying error, warning, info, or success messages',
+    config: ERROR_DIALOG_DIMENSIONS,
+  },
+  'success-dialog': {
+    id: 'success-dialog',
+    name: 'Success Dialog',
+    category: 'dialog',
+    description: 'A dialog for displaying success messages with checkmark',
+    config: SUCCESS_DIALOG_DIMENSIONS,
+  },
+  'primary-button': {
+    id: 'primary-button',
+    name: 'Button',
+    category: 'button',
+    description: 'A configurable button with multiple style variants',
+    config: BUTTON_DIMENSIONS,
+  },
+  'input-field': {
+    id: 'input-field',
+    name: 'Input Field',
+    category: 'form',
+    description: 'A labeled input field with optional placeholder and error state',
+    config: INPUT_FIELD_DIMENSIONS,
+  },
+  'info-card': {
+    id: 'info-card',
+    name: 'Info Card',
+    category: 'card',
+    description: 'A card with header, body, and optional footer',
+    config: CARD_DIMENSIONS,
+  },
 };
