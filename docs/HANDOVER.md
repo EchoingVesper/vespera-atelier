@@ -1,8 +1,8 @@
 # Context Handover - Penpot Plugin Project
 
-**Date**: 2025-09-30
+**Date**: 2025-10-01
 **Branch**: `feat/penpot-bridge`
-**Status**: Phase 0 Complete, Ready for Phase 1
+**Status**: Phase 1 Complete ✅, Ready for Phase 2
 
 ---
 
@@ -79,129 +79,375 @@ We're building an **accessibility-focused Penpot plugin** that enables keyboard-
 
 ---
 
-## What's Next: Phase 1 - Walking Skeleton 🎯
+### Phase 1: Walking Skeleton - Error Dialog Template (COMPLETE ✅)
 
 **Goal**: Build ONE complete error dialog template end-to-end to validate architecture.
 
-**Estimated Time**: ~8 hours
+**Time Spent**: ~12 hours (including extensive debugging)
 
-### Tasks (In Order)
+#### Implementation Complete
 
-**Task 1: Set up React Plugin Project** (~2-3 hours)
-```bash
-cd /home/aya/Development/vespera-atelier/packages/vespera-penpot-bridge
-mkdir plugin
-cp -r /home/aya/Development/vespera-atelier/research/penpot-plugins/plugin-examples/react-example-plugin/* plugin/
-cd plugin
-npm install
-npm install @vespera/typescript-shared
+1. **React Plugin Setup** ✅
+   - Location: `/packages/vespera-penpot-bridge/plugin/`
+   - React 19 with TypeScript
+   - Vite build system with custom plugin for SES compatibility
+   - Dev server on `http://localhost:4402/`
+
+2. **Error Dialog Template** ✅
+   - File: `src/plugin/templates/error-dialog.ts`
+   - Creates complete dialog with:
+     - Background rectangle with border radius
+     - Title text (bold, 18px)
+     - Message text (regular, 14px)
+     - OK button with background
+     - Close button (X) in top-right corner
+   - Supports 4 severity levels: error, warning, info, success
+   - Color-coded backgrounds and borders
+   - Proper z-ordering (background at back, buttons on top)
+
+3. **Message Protocol** ✅
+   - File: `src/shared/messages.ts`
+   - Type-safe message passing between React UI and plugin backend
+   - Type guards to filter external messages
+   - Prevents pollution from browser extensions and Penpot internals
+
+4. **React Chat UI** ✅
+   - Basic chat interface with message input
+   - Create error dialog command working
+   - Theme support (light/dark mode)
+   - Status notifications
+
+#### Critical Bugs Fixed
+
+**Bug 1: SES Import Incompatibility** (CRITICAL)
+- **Issue**: Penpot's SES sandbox doesn't support ES module imports
+- **Symptom**: `SyntaxError: import declarations may only appear at top level of a module`
+- **Solution**: Created custom Vite plugin (`scripts/vite-plugin-inline-plugin.ts`)
+  - Automatically inlines imports into `plugin.js` after build
+  - Runs in both `generateBundle` and `closeBundle` hooks
+  - Preserves shared chunks for React UI while inlining for plugin backend
+- **Files**: `scripts/vite-plugin-inline-plugin.ts`, `vite.config.ts`
+
+**Bug 2: Minification Name Collisions**
+- **Issue**: Terser minifier created duplicate variable names after inlining
+- **Symptom**: `SyntaxError: redeclaration of function t`
+- **Solution**: Disabled minification entirely (`minify: false`)
+- **Trade-off**: plugin.js is 7.5KB instead of 3.9KB (acceptable)
+- **File**: `vite.config.ts:12`
+
+**Bug 3: Z-order Reversal**
+- **Issue**: Penpot's `appendChild` stacks first-appended on top (opposite of DOM)
+- **Symptom**: Background rectangle hiding all other elements
+- **Solution**: Reversed appendChild order (buttons first, background last)
+- **File**: `src/plugin/templates/error-dialog.ts:133-138`
+
+**Bug 4: Message Spam**
+- **Issue**: Both UI and backend catching ALL window messages
+- **Symptom**: "Unknown message type: Success" errors every few seconds
+- **Solution**: Added type guard filtering on both message handlers
+- **Files**: `src/plugin/plugin.ts:174-177`, `src/ui/state/context.tsx:38-42`
+
+**Bug 5: TypeScript Type Conflicts**
+- **Issue**: DOM `Text` type conflicting with Penpot's `Text` type
+- **Symptom**: `Type 'Text' is not assignable to type 'Text'`
+- **Solution**: Removed explicit type annotations, use type inference
+- **File**: `src/plugin/templates/error-dialog.ts:89-91`
+
+**Bug 6: Shared Chunk Deletion**
+- **Issue**: Inlining plugin was deleting chunks still needed by React UI
+- **Symptom**: Blank UI with "disallowed MIME type" error
+- **Solution**: Don't delete imported chunks, only inline into plugin.js
+- **File**: `scripts/vite-plugin-inline-plugin.ts:97-98`
+
+**Bug 7: Close Button Positioning**
+- **Issue**: Close button not aligned properly in top-right
+- **Solution**: Changed to absolute positioning from right edge
+- **File**: `src/plugin/templates/error-dialog.ts:111`
+
+#### Git Commits (5 new commits)
+
+All commits pushed to `origin/feat/penpot-bridge`:
+1. `81e8de2` - feat(penpot-plugin): Implement Phase 1 walking skeleton - error dialog template
+2. `07dac1e` - fix(penpot-plugin): Fix critical SES import error and Phase 1 bugs
+3. `1f521dc` - fix(penpot-plugin): Fix import inlining and property mangling bugs
+4. `702b248` - fix(penpot-plugin): Disable minification to prevent name collisions
+5. `de58a21` - fix(penpot-plugin): Don't delete messages chunk - it's shared with React UI
+6. `2c4ede6` - fix(penpot-plugin): Position close button in top-right corner
+
+#### Success Criteria Met ✅
+
+- ✅ Plugin loads in Penpot without errors
+- ✅ Chat interface appears with theme support
+- ✅ Can type "create error dialog" command
+- ✅ Error dialog is created in Penpot
+- ✅ Dialog is centered on viewport
+- ✅ All elements properly positioned (z-order correct)
+- ✅ Native undo (Ctrl+Z) removes dialog
+- ✅ Light/dark theme switching works
+- ✅ No message spam or errors in console
+
+#### Key Learnings
+
+1. **SES Sandbox Limitations**: Penpot's security model doesn't support ES imports
+   - Must inline everything into single file
+   - Custom Vite plugins required for post-processing
+
+2. **Penpot Z-order Behavior**: First appended = on top (opposite of DOM)
+   - Must append in reverse order (buttons first, background last)
+
+3. **Message Protocol Critical**: Browser environment has many message sources
+   - Type guards essential to filter external messages
+   - Password managers, browser extensions, Penpot internals all send messages
+
+4. **Minification Conflicts**: Code splitting + inlining + minification = name collisions
+   - Disable minification for plugin backend
+   - 7.5KB unminified is still acceptable
+
+5. **TypeScript Type Inference**: Let TypeScript infer types when globals conflict
+   - DOM types vs Penpot types can clash
+   - Type inference more reliable than explicit annotations
+
+#### Project Structure
+
 ```
-
-**Project Structure**:
-```
-plugin/
+packages/vespera-penpot-bridge/plugin/
 ├── src/
-│   ├── shared/          # NEW: Message protocol types
-│   │   ├── messages.ts
-│   │   └── templates.ts
-│   ├── plugin/          # Backend (Penpot API access)
-│   │   ├── plugin.ts
+│   ├── shared/
+│   │   └── messages.ts         # Type-safe message protocol
+│   ├── plugin/
+│   │   ├── plugin.ts           # Backend (Penpot API access)
 │   │   └── templates/
-│   │       └── error-dialog.ts
-│   ├── ui/              # Frontend (React)
-│   │   ├── App.tsx
+│   │       └── error-dialog.ts # Error dialog creation logic
+│   ├── ui/
+│   │   ├── App.tsx             # Main React component
 │   │   ├── state/
-│   │   │   ├── context.tsx
-│   │   │   └── reducer.ts
+│   │   │   ├── context.tsx     # React Context with message handling
+│   │   │   └── reducer.ts      # State management
 │   │   └── components/
 │   │       ├── ChatInterface.tsx
 │   │       ├── MessageList.tsx
 │   │       └── MessageInput.tsx
-│   ├── main.tsx
-│   └── index.css
-├── manifest.json
+│   ├── main.tsx                # React entry point
+│   └── index.css               # Styles
+├── scripts/
+│   └── vite-plugin-inline-plugin.ts  # Custom Vite plugin for SES compatibility
+├── dist/                       # Build output
+│   ├── plugin.js              # Backend (7.5KB unminified, SES-compatible)
+│   ├── index.js               # React UI
+│   └── index.html
+├── public/
+│   └── manifest.json          # Plugin metadata
 ├── package.json
+├── tsconfig.json
 └── vite.config.ts
 ```
 
-**Task 2: Define Error Dialog Template** (~1 hour)
+---
+
+## What's Next: Phase 2 - Template Expansion & Preview 🎯
+
+**Goal**: Expand from single error dialog to multiple component templates with preview functionality.
+
+**Estimated Time**: ~10-12 hours
+
+### Phase 2 Objectives
+
+1. **Generic Component Creation** (`create-component` message type)
+2. **Component Preview** (`preview-component` message type)
+3. **Template Library System**
+4. **Enhanced Command Parser**
+
+### Tasks (In Order)
+
+**Task 1: Create Template System** (~3-4 hours)
+
+Define template registry and abstract factory pattern:
 
 Create `src/shared/templates.ts`:
 ```typescript
-export interface ErrorDialogConfig {
-  title: string;
-  message: string;
-  severity: 'error' | 'warning' | 'info';
-  dismissible: boolean;
+export interface ComponentTemplate {
+  id: string;
+  name: string;
+  category: 'dialog' | 'button' | 'form' | 'card' | 'panel';
+  description: string;
+  config: Record<string, unknown>;
 }
 
-export const ERROR_DIALOG_TEMPLATE = {
-  id: 'error-dialog-v1',
-  name: 'Error Dialog',
-  category: 'dialog',
-  config: { width: 400, height: 250 },
-  // ... layer definitions
+export const TEMPLATE_REGISTRY = {
+  'error-dialog': { /* existing error dialog */ },
+  'success-dialog': { /* success variant */ },
+  'primary-button': { /* button template */ },
+  'input-field': { /* form input */ },
+  'info-card': { /* card layout */ }
 };
 ```
 
-**Task 3: Implement Error Dialog Creation** (~2-3 hours)
-
-Create `src/plugin/templates/error-dialog.ts`:
+Create factory in `src/plugin/templates/factory.ts`:
 ```typescript
-import { ErrorDialogConfig } from '../shared/templates';
+export function createComponent(templateId: string, config: unknown): string {
+  const template = TEMPLATE_REGISTRY[templateId];
+  if (!template) throw new Error(`Unknown template: ${templateId}`);
 
-export function createErrorDialog(config: ErrorDialogConfig): void {
-  const board = penpot.createBoard();
-  board.resize(400, 250);
-
-  // Create background, title, message, buttons
-  // Use Penpot API: createRectangle(), createText(), appendChild()
-  // Center on viewport using penpot.viewport.center
+  switch (templateId) {
+    case 'error-dialog':
+      return createErrorDialog(config as ErrorDialogConfig);
+    case 'success-dialog':
+      return createSuccessDialog(config as SuccessDialogConfig);
+    case 'primary-button':
+      return createButton(config as ButtonConfig);
+    // ... other cases
+  }
 }
 ```
 
-**Task 4: Build Minimal Chat UI** (~2-3 hours)
+**Task 2: Implement 4 New Templates** (~4-5 hours)
 
-Create `src/ui/App.tsx`:
+1. **Success Dialog** (`src/plugin/templates/success-dialog.ts`)
+   - Similar to error dialog but green theme
+   - Checkmark icon instead of X
+
+2. **Primary Button** (`src/plugin/templates/button.ts`)
+   - Configurable width, height, label
+   - Multiple styles: primary, secondary, outlined, text
+
+3. **Input Field** (`src/plugin/templates/input-field.ts`)
+   - Label + input box
+   - Optional placeholder text
+   - Error state styling
+
+4. **Info Card** (`src/plugin/templates/card.ts`)
+   - Header, body, optional footer
+   - Configurable padding and border radius
+
+**Task 3: Implement Preview System** (~2-3 hours)
+
+Update `src/shared/messages.ts`:
 ```typescript
-function App() {
-  const [state, dispatch] = useReducer(pluginReducer, initialState);
-  const [input, setInput] = useState('');
+export interface PreviewComponentMessage {
+  type: 'preview-component';
+  templateId: string;
+  config: Record<string, unknown>;
+}
 
-  const handleSubmit = (e: React.FormEvent) => {
-    // Simple keyword matching
-    if (input.includes('create error dialog')) {
-      parent.postMessage({ type: 'create-error-dialog', config: {...} }, '*');
-    }
+export interface PreviewResultMessage {
+  type: 'preview-result';
+  preview: {
+    templateId: string;
+    thumbnailUrl?: string; // Base64 or blob URL
+    description: string;
   };
+}
+```
 
+Create preview component in `src/ui/components/Preview.tsx`:
+```typescript
+function Preview({ templateId, config }: PreviewProps) {
+  // Show mockup of what will be created
+  // Allow parameter adjustments
+  // "Create" button to confirm
   return (
-    <div className="chat-container">
-      <MessageList messages={state.messages} />
-      <MessageInput value={input} onChange={setInput} onSubmit={handleSubmit} />
+    <div className="preview-panel">
+      <h3>{TEMPLATES[templateId].name}</h3>
+      <div className="preview-mockup">...</div>
+      <button onClick={() => confirmCreate()}>Create Component</button>
     </div>
   );
 }
 ```
 
-**Task 5: Test End-to-End** (~1-2 hours)
+**Task 4: Enhanced Command Parser** (~1-2 hours)
+
+Update `src/ui/state/reducer.ts` with better command parsing:
+```typescript
+function parseCommand(input: string): UIToPluginMessage | null {
+  // Keyword matching with parameter extraction
+  const dialogMatch = input.match(/create (error|success) dialog:?\s*(.+)/i);
+  if (dialogMatch) {
+    const [, severity, message] = dialogMatch;
+    return {
+      type: 'create-component',
+      templateId: `${severity}-dialog`,
+      config: { title: severity, message, severity }
+    };
+  }
+
+  const buttonMatch = input.match(/create button:?\s*"?([^"]+)"?/i);
+  if (buttonMatch) {
+    return {
+      type: 'create-component',
+      templateId: 'primary-button',
+      config: { label: buttonMatch[1] }
+    };
+  }
+
+  // ... more patterns
+  return null;
+}
+```
+
+**Task 5: Update Plugin Backend** (~1 hour)
+
+Update `src/plugin/plugin.ts` to handle new message types:
+```typescript
+penpot.ui.onMessage<UIToPluginMessage>((message) => {
+  switch (message.type) {
+    case 'create-error-dialog':
+      // Keep for backwards compatibility
+      handleCreateErrorDialog(message);
+      break;
+
+    case 'create-component':
+      handleCreateComponent(message);
+      break;
+
+    case 'preview-component':
+      handlePreviewComponent(message);
+      break;
+  }
+});
+
+function handleCreateComponent(message: CreateComponentMessage) {
+  try {
+    const componentId = createComponent(message.templateId, message.config);
+    sendMessage({
+      type: 'operation-result',
+      success: true,
+      operation: 'create-component',
+      componentId
+    });
+  } catch (error) {
+    sendMessage({
+      type: 'error',
+      error: error.message,
+      operation: 'create-component'
+    });
+  }
+}
+```
+
+**Task 6: Test All Templates** (~1-2 hours)
 ```bash
 npm run dev
 # Open Penpot (http://localhost:9001)
 # Press Ctrl+Alt+P
 # Load: http://localhost:4402/manifest.json
-# Type: "create error dialog"
-# Verify: Dialog appears centered on viewport
+
+# Test each template:
+# "create error dialog: Test error"
+# "create success dialog: Operation complete"
+# "create button: Submit"
+# "create input field: Email"
+# "create card: Info Card"
 ```
 
-**Success Criteria**:
-- [ ] Plugin loads without errors
-- [ ] Chat interface appears
-- [ ] Can type "create error dialog"
-- [ ] Error dialog is created in Penpot
-- [ ] Dialog is centered on viewport
-- [ ] Native undo (Ctrl+Z) removes dialog
-- [ ] Theme switching works
+**Success Criteria (Phase 2)**:
+- [ ] 5 total templates working (error dialog + 4 new)
+- [ ] Generic `create-component` message type functional
+- [ ] Preview system shows mockups before creating
+- [ ] Enhanced command parser handles natural language
+- [ ] All templates properly positioned and themed
+- [ ] Undo works for all component types
+- [ ] No SES errors or minification issues
 
 ---
 
@@ -276,9 +522,9 @@ curl http://localhost:3000/api/tasks/a288afdf-3648-4a93-aeb6-875c70710c6f | jq
 
 **Order**:
 1. Extract shared utilities FIRST ✅
-2. Build ONE complete template end-to-end
-3. Validate architecture works
-4. Then expand horizontally
+2. Build ONE complete template end-to-end ✅
+3. Validate architecture works ✅
+4. Then expand horizontally ← **PHASE 2**
 
 ### 3. MCP Integration Scope
 
@@ -435,22 +681,34 @@ curl http://localhost:9001/api/rpc/command/get-all-projects \
   -d '["^ "]'
 ```
 
-### Step 4: Start Phase 1
-Follow "What's Next: Phase 1" section above.
+### Step 4: Start Phase 2
+Follow "What's Next: Phase 2" section above.
 
 ---
 
-## Success Metrics for Phase 1
+## Success Metrics
 
-**Phase 1 is complete when**:
-1. Plugin loads in Penpot without errors
-2. User can type "create error dialog" in chat
-3. Error dialog appears centered on Penpot canvas
-4. Dialog has: background, title, message, OK button
-5. Native undo (Ctrl+Z) removes the dialog
-6. Light/dark theme switching works
+### Phase 1 ✅ (Complete)
 
-**After Phase 1**: Expand to 4 more templates (button, form, card, success dialog)
+**Achieved**:
+1. ✅ Plugin loads in Penpot without errors
+2. ✅ User can type "create error dialog" in chat
+3. ✅ Error dialog appears centered on Penpot canvas
+4. ✅ Dialog has: background, title, message, OK button, close button
+5. ✅ Native undo (Ctrl+Z) removes the dialog
+6. ✅ Light/dark theme switching works
+7. ✅ No message spam or SES errors
+
+### Phase 2 (Current Goals)
+
+**Phase 2 is complete when**:
+1. 5 total templates working (error dialog + 4 new)
+2. Generic `create-component` message type functional
+3. Preview system shows mockups before creating
+4. Enhanced command parser handles natural language patterns
+5. All templates properly positioned and themed
+6. Undo works for all component types
+7. No regressions from Phase 1 fixes
 
 ---
 
@@ -505,17 +763,27 @@ tail -f ~/.local/state/claude/logs/mcp-server.log
 ## Final Notes
 
 - **Branch**: `feat/penpot-bridge` (don't merge to main yet)
-- **Clean State**: All Phase 0 work committed
-- **Ready**: Can start Phase 1 immediately
-- **Estimated Phase 1 Time**: ~8 hours
-- **User's Next Availability**: After vet appointment (kitten neutering)
+- **Clean State**: All Phase 0 and Phase 1 work committed and pushed
+- **Ready**: Can start Phase 2 immediately
+- **Estimated Phase 2 Time**: ~10-12 hours
+- **Dev Server**: Running on `http://localhost:4402/` (multiple background processes)
 
-**Good luck with Phase 1!** 🚀
+**Current Status**: Phase 1 complete ✅ All bugs fixed, plugin working in Penpot
 
-Remember: Build ONE complete template first. Don't expand horizontally until the walking skeleton works end-to-end.
+**Key Achievements**:
+- ✅ Working error dialog template with full functionality
+- ✅ SES compatibility solved with custom Vite plugin
+- ✅ All z-order, message filtering, and positioning bugs resolved
+- ✅ 6 commits pushed to remote
+
+**Next Steps**: Expand to Phase 2 with template system and preview functionality
+
+**Good luck with Phase 2!** 🚀
+
+Remember: The walking skeleton proved the architecture works. Now expand horizontally with confidence, applying lessons learned from Phase 1 debugging.
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2025-09-30
-**Created By**: Claude Code Session (context about to rotate)
+**Document Version**: 2.0
+**Last Updated**: 2025-10-01
+**Created By**: Claude Code Session (Phase 1 complete, preparing for context rotation)
