@@ -73,9 +73,9 @@ export function createErrorDialog(config: ErrorDialogConfig): string {
   }
 
   // 4. Create button elements if dismissible
-  let buttonBg: Rectangle | null = null;
-  let buttonText: Text | null = null;
-  let closeButton: Text | null = null;
+  let buttonBg = null;
+  let buttonText = null;
+  let closeButton = null;
 
   if (dismissible) {
     const buttonWidth = 80;

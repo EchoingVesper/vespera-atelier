@@ -5,7 +5,6 @@
 import React, { createContext, useContext, useReducer, useEffect, type ReactNode } from 'react';
 import type { PluginState, PluginAction } from './reducer';
 import { pluginReducer, initialState } from './reducer';
-import type { PluginToUIMessage } from '../../shared/messages';
 import { isPluginToUIMessage } from '../../shared/messages';
 
 /**

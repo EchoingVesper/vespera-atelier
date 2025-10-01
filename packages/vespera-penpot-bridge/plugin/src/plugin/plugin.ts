@@ -3,7 +3,6 @@
  */
 
 import type {
-  UIToPluginMessage,
   PluginToUIMessage,
   CreateErrorDialogMessage,
 } from '../shared/messages';
