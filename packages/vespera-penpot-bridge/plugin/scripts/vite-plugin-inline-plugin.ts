@@ -44,29 +44,43 @@ export function inlinePluginImports(): Plugin {
       const importedModule = readFileSync(fullImportPath, 'utf8');
 
       // Extract exported names from the import statement
-      // Example: import{i as x}from"..." -> alias 'x' refers to export 'i'
+      // Example: import{i as x}from"..." -> 'x' is local alias, 'i' is export alias
       const importNames = importStatement.match(/import\s*{([^}]+)}/)?.[1];
       if (!importNames) {
         console.error('[inline-plugin-imports] Could not parse import names');
         return;
       }
 
-      // Parse: "i as x" -> exportName: 'i', alias: 'x'
+      // Parse: "i as x" -> exportAlias: 'i', localAlias: 'x'
       const aliasMatch = importNames.match(/(\w+)\s+as\s+(\w+)/);
       if (!aliasMatch) {
         console.error('[inline-plugin-imports] Could not parse alias');
         return;
       }
 
-      const [, exportName, alias] = aliasMatch;
+      const [, exportAlias, localAlias] = aliasMatch;
+
+      // Parse the export statement to find actual function name
+      // Example: export{o as i} means 'o' is the real function, 'i' is the export alias
+      const exportMatch = importedModule.match(
+        new RegExp(`export\\s*{[^}]*\\b(\\w+)\\s+as\\s+${exportAlias}\\b`)
+      );
+      if (!exportMatch) {
+        console.error(
+          `[inline-plugin-imports] Could not find export for '${exportAlias}'`
+        );
+        return;
+      }
+
+      const actualFunctionName = exportMatch[1];
 
       // Remove the export statement from the imported module
       const importedCode = importedModule.replace(/export\s*{\s*[^}]+};?/, '');
 
-      // Remove the import from plugin.js and replace alias with actual name
+      // Remove the import from plugin.js and replace local alias with actual function name
       let fixedPlugin = plugin
         .replace(importStatement, '')
-        .replace(new RegExp(`\\b${alias}\\b`, 'g'), exportName);
+        .replace(new RegExp(`\\b${localAlias}\\b`, 'g'), actualFunctionName);
 
       // Prepend the imported code
       fixedPlugin = importedCode + fixedPlugin;

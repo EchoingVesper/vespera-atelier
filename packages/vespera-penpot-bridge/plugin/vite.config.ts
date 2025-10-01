@@ -9,6 +9,14 @@ export default defineConfig({
     inlinePluginImports(), // Auto-inline imports for Penpot's SES sandbox
   ],
   build: {
+    // Use terser for minification to prevent property name mangling
+    minify: 'terser',
+    target: 'es2020',
+    terserOptions: {
+      mangle: {
+        properties: false, // Don't mangle property names - Penpot API requires 'x', 'y', 'fills', etc.
+      },
+    },
     rollupOptions: {
       input: {
         plugin: 'src/plugin/plugin.ts',
