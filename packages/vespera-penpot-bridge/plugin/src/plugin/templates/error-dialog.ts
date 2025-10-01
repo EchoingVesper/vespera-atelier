@@ -28,7 +28,9 @@ export function createErrorDialog(config: ErrorDialogConfig): string {
   board.name = `Error Dialog - ${title}`;
   board.resize(dims.width, dims.height);
 
-  // Create background rectangle
+  // Create all elements first (don't append yet)
+
+  // 1. Background rectangle
   const background = penpot.createRectangle();
   background.name = 'Background';
   background.resize(dims.width, dims.height);
@@ -43,9 +45,8 @@ export function createErrorDialog(config: ErrorDialogConfig): string {
     },
   ];
   background.borderRadius = dims.borderRadius;
-  board.appendChild(background);
 
-  // Create title text
+  // 2. Title text
   const titleText = penpot.createText(title);
   if (titleText) {
     titleText.name = 'Title';
@@ -56,10 +57,9 @@ export function createErrorDialog(config: ErrorDialogConfig): string {
     titleText.fontSize = '18';
     titleText.fontWeight = '700';
     titleText.fills = [{ fillColor: colors.text, fillOpacity: 1 }];
-    board.appendChild(titleText);
   }
 
-  // Create message text
+  // 3. Message text
   const messageText = penpot.createText(message);
   if (messageText) {
     messageText.name = 'Message';
@@ -70,10 +70,13 @@ export function createErrorDialog(config: ErrorDialogConfig): string {
     messageText.fontSize = '14';
     messageText.fontWeight = '400';
     messageText.fills = [{ fillColor: colors.text, fillOpacity: 1 }];
-    board.appendChild(messageText);
   }
 
-  // Create OK button if dismissible
+  // 4. Create button elements if dismissible
+  let buttonBg: Rectangle | null = null;
+  let buttonText: Text | null = null;
+  let closeButton: Text | null = null;
+
   if (dismissible) {
     const buttonWidth = 80;
     const buttonHeight = 36;
@@ -81,17 +84,16 @@ export function createErrorDialog(config: ErrorDialogConfig): string {
     const buttonX = dims.width - dims.padding - buttonWidth;
 
     // Button background
-    const buttonBg = penpot.createRectangle();
+    buttonBg = penpot.createRectangle();
     buttonBg.name = 'OK Button Background';
     buttonBg.x = buttonX;
     buttonBg.y = buttonY;
     buttonBg.resize(buttonWidth, buttonHeight);
     buttonBg.fills = [{ fillColor: colors.border, fillOpacity: 1 }];
     buttonBg.borderRadius = 4;
-    board.appendChild(buttonBg);
 
     // Button text
-    const buttonText = penpot.createText('OK');
+    buttonText = penpot.createText('OK');
     if (buttonText) {
       buttonText.name = 'OK Button Text';
       buttonText.x = buttonX;
@@ -103,14 +105,13 @@ export function createErrorDialog(config: ErrorDialogConfig): string {
       buttonText.fills = [{ fillColor: '#FFFFFF', fillOpacity: 1 }];
       buttonText.align = 'center';
       buttonText.verticalAlign = 'center';
-      board.appendChild(buttonText);
     }
 
-    // Create close X button
+    // Close X button
     const closeX = buttonX - 40;
     const closeY = dims.padding;
 
-    const closeButton = penpot.createText('✕');
+    closeButton = penpot.createText('✕');
     if (closeButton) {
       closeButton.name = 'Close Button';
       closeButton.x = closeX;
@@ -122,9 +123,23 @@ export function createErrorDialog(config: ErrorDialogConfig): string {
       closeButton.fills = [{ fillColor: colors.text, fillOpacity: 0.6 }];
       closeButton.align = 'center';
       closeButton.verticalAlign = 'center';
-      board.appendChild(closeButton);
     }
   }
+
+  // Append in REVERSE order (Penpot: first appended = on top)
+  // We want: background at back, then text, then buttons on top
+
+  // Append buttons first (so they're on top)
+  if (closeButton) board.appendChild(closeButton);
+  if (buttonText) board.appendChild(buttonText);
+  if (buttonBg) board.appendChild(buttonBg);
+
+  // Then message and title
+  if (messageText) board.appendChild(messageText);
+  if (titleText) board.appendChild(titleText);
+
+  // Background last (so it's at the back)
+  board.appendChild(background);
 
   // Center the dialog on the viewport
   const viewport = penpot.viewport;

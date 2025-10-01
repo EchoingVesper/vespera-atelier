@@ -7,6 +7,7 @@ import type {
   PluginToUIMessage,
   CreateErrorDialogMessage,
 } from '../shared/messages';
+import { isUIToPluginMessage } from '../shared/messages';
 import { createErrorDialog, validateErrorDialogConfig } from './templates/error-dialog';
 
 // Open the plugin UI
@@ -24,7 +25,13 @@ penpot.on('themechange', (theme) => {
 });
 
 // Handle messages from UI
-penpot.ui.onMessage<UIToPluginMessage>((message) => {
+penpot.ui.onMessage((message: unknown) => {
+  // Filter out non-UI messages (echoed messages, Penpot internals, etc.)
+  if (!isUIToPluginMessage(message)) {
+    // Silently ignore non-UI messages
+    return;
+  }
+
   switch (message.type) {
     case 'create-error-dialog':
       handleCreateErrorDialog(message);
@@ -47,6 +54,7 @@ penpot.ui.onMessage<UIToPluginMessage>((message) => {
       break;
 
     default:
+      // This should never happen if type guard is working correctly
       sendMessage({
         type: 'error',
         error: `Unknown message type: ${(message as { type: string }).type}`,

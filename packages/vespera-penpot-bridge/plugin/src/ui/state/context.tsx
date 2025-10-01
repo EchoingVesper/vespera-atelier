@@ -6,6 +6,7 @@ import React, { createContext, useContext, useReducer, useEffect, type ReactNode
 import type { PluginState, PluginAction } from './reducer';
 import { pluginReducer, initialState } from './reducer';
 import type { PluginToUIMessage } from '../../shared/messages';
+import { isPluginToUIMessage } from '../../shared/messages';
 
 /**
  * Context value shape
@@ -35,7 +36,13 @@ export function PluginProvider({ children }: PluginProviderProps) {
 
   // Listen for messages from the plugin backend
   useEffect(() => {
-    const handleMessage = (event: MessageEvent<PluginToUIMessage>) => {
+    const handleMessage = (event: MessageEvent) => {
+      // Filter out non-plugin messages (browser extensions, Penpot internals, etc.)
+      if (!isPluginToUIMessage(event.data)) {
+        // Silently ignore non-plugin messages
+        return;
+      }
+
       dispatch({ type: 'HANDLE_PLUGIN_MESSAGE', message: event.data });
     };
 
