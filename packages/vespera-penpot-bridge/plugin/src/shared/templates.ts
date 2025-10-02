@@ -82,8 +82,8 @@ export type MessageRole = 'user' | 'assistant' | 'system';
  * Configuration for message bubble template
  */
 export interface MessageBubbleConfig {
-  role: MessageRole;
-  content: string;
+  role?: MessageRole;
+  content?: string;
   timestamp?: string;
   avatarInitial?: string;
   width?: number;

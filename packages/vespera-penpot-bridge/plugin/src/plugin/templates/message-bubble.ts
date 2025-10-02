@@ -20,12 +20,15 @@ import { MESSAGE_BUBBLE_DIMENSIONS, MESSAGE_BUBBLE_COLORS } from '../../shared/t
  */
 export function createMessageBubble(config: MessageBubbleConfig): string {
   const {
-    role,
-    content,
+    role = 'assistant',
+    content = 'This is a sample message bubble. Replace this text with your actual content.',
     timestamp,
-    avatarInitial = role.charAt(0).toUpperCase(),
+    avatarInitial,
     width = MESSAGE_BUBBLE_DIMENSIONS.defaultWidth,
   } = config;
+
+  // Set avatar initial based on role if not explicitly provided
+  const initial = avatarInitial ?? role.charAt(0).toUpperCase();
 
   const dims = MESSAGE_BUBBLE_DIMENSIONS;
   const colors = MESSAGE_BUBBLE_COLORS[role];
@@ -58,7 +61,7 @@ export function createMessageBubble(config: MessageBubbleConfig): string {
   avatar.fills = [{ fillColor: colors.avatar, fillOpacity: 1 }];
 
   // 2. Avatar initial text
-  const avatarText = penpot.createText(avatarInitial);
+  const avatarText = penpot.createText(initial);
   if (avatarText) {
     avatarText.name = 'Avatar Initial';
     avatarText.x = dims.padding;
