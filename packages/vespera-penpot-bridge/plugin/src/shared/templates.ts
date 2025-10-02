@@ -5,7 +5,7 @@
 /**
  * Template categories
  */
-export type TemplateCategory = 'dialog' | 'button' | 'form' | 'card' | 'panel';
+export type TemplateCategory = 'dialog' | 'button' | 'form' | 'card' | 'panel' | 'chat';
 
 /**
  * Base template interface
@@ -74,6 +74,22 @@ export interface CardConfig {
 }
 
 /**
+ * Message bubble role variants
+ */
+export type MessageRole = 'user' | 'assistant' | 'system';
+
+/**
+ * Configuration for message bubble template
+ */
+export interface MessageBubbleConfig {
+  role: MessageRole;
+  content: string;
+  timestamp?: string;
+  avatarInitial?: string;
+  width?: number;
+}
+
+/**
  * Severity-based color mappings
  */
 export const SEVERITY_COLORS = {
@@ -126,6 +142,30 @@ export const BUTTON_COLORS = {
     background: 'transparent',
     text: '#3B82F6',
     border: 'transparent',
+  },
+} as const;
+
+/**
+ * Message bubble role colors
+ */
+export const MESSAGE_BUBBLE_COLORS = {
+  user: {
+    background: '#3B82F6',
+    text: '#FFFFFF',
+    avatar: '#2563EB',
+    timestamp: '#93C5FD',
+  },
+  assistant: {
+    background: '#F3F4F6',
+    text: '#111827',
+    avatar: '#6B7280',
+    timestamp: '#9CA3AF',
+  },
+  system: {
+    background: '#FEF3C7',
+    text: '#92400E',
+    avatar: '#F59E0B',
+    timestamp: '#D97706',
   },
 } as const;
 
@@ -185,6 +225,18 @@ export const CARD_DIMENSIONS = {
 } as const;
 
 /**
+ * Message bubble template dimensions
+ */
+export const MESSAGE_BUBBLE_DIMENSIONS = {
+  defaultWidth: 400,
+  avatarSize: 32,
+  padding: 12,
+  spacing: 8,
+  borderRadius: 12,
+  timestampHeight: 14,
+} as const;
+
+/**
  * Template registry
  */
 export const TEMPLATE_REGISTRY: Record<string, ComponentTemplate> = {
@@ -222,5 +274,12 @@ export const TEMPLATE_REGISTRY: Record<string, ComponentTemplate> = {
     category: 'card',
     description: 'A card with header, body, and optional footer',
     config: CARD_DIMENSIONS,
+  },
+  'message-bubble': {
+    id: 'message-bubble',
+    name: 'Message Bubble',
+    category: 'chat',
+    description: 'A chat message bubble with avatar, content, and timestamp',
+    config: MESSAGE_BUBBLE_DIMENSIONS,
   },
 };

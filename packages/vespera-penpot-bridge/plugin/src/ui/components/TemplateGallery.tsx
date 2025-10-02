@@ -125,7 +125,7 @@ export function TemplateGallery({ onClose, onSelectTemplate, theme }: TemplateGa
             <div key={category} className="template-category">
               <h3 className="category-title">{category.charAt(0).toUpperCase() + category.slice(1)}s</h3>
               <div className="template-list">
-                {categoryTemplates.map((template, idx) => {
+                {categoryTemplates.map((template) => {
                   const globalIndex = templates.findIndex((t) => t.id === template.id);
                   const isSelected = globalIndex === selectedIndex;
                   const numpadShortcut = globalIndex < 6 ? globalIndex + 1 : null;

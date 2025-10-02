@@ -291,7 +291,7 @@ create error dialog
 
 #### 1. Undo Granularity ⚠️
 **Issue**: Undo removes individual elements (background, text, buttons) instead of the entire component.
-- Creating a simple error dialog requires ~7-8 undo operations to fully remove
+- Creating a simple error dialog requires ~7-8 undo operations to fully remove *ED NOTE:* Actually, it's considerably more than 7-8, as there seem to be many repositioning steps involved; probably when making components children of the individual board and such.
 - Can hit undo limit before removing all elements
 
 **Impact**: High - affects accessibility goal of keyboard-driven workflow
