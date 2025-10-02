@@ -116,13 +116,13 @@ body {
 .template-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .template-card {
-  padding: 12px 16px;
+  padding: 8px 12px;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -155,11 +155,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .template-card h4 {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   margin: 0;
 }
@@ -179,9 +179,10 @@ body {
 }
 
 .template-description {
-  font-size: 14px;
+  font-size: 13px;
   color: #6b7280;
   margin: 0;
+  line-height: 1.4;
 }
 
 .template-gallery.dark .template-description {

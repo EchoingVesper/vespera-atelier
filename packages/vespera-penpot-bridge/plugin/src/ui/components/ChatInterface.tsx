@@ -14,18 +14,19 @@ import './ChatInterface.css';
 export function ChatInterface() {
   const { state, dispatch } = usePlugin();
 
-  // Handle Esc key to toggle gallery
+  // Handle Esc key to toggle gallery (only if gallery is not open)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && !state.isGalleryOpen) {
         e.preventDefault();
+        e.stopPropagation();
         dispatch({ type: 'TOGGLE_GALLERY' });
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [dispatch]);
+  }, [dispatch, state.isGalleryOpen]);
 
   const handleSendMessage = (message: string) => {
     // Add user message to chat

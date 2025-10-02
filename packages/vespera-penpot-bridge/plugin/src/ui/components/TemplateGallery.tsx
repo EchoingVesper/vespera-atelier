@@ -26,6 +26,15 @@ export function TemplateGallery({ onClose, onSelectTemplate, theme }: TemplateGa
   const templates = Object.values(TEMPLATE_REGISTRY);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const galleryRef = useRef<HTMLDivElement>(null);
+  const selectedCardRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll selected card into view
+  useEffect(() => {
+    selectedCardRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+    });
+  }, [selectedIndex]);
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -33,6 +42,7 @@ export function TemplateGallery({ onClose, onSelectTemplate, theme }: TemplateGa
       switch (e.key) {
         case 'Escape':
           e.preventDefault();
+          e.stopPropagation(); // Stop Penpot from receiving this
           onClose();
           break;
 
@@ -123,6 +133,7 @@ export function TemplateGallery({ onClose, onSelectTemplate, theme }: TemplateGa
                   return (
                     <div
                       key={template.id}
+                      ref={isSelected ? selectedCardRef : null}
                       className={`template-card ${isSelected ? 'selected' : ''}`}
                       onClick={() => {
                         onSelectTemplate(template.id);
