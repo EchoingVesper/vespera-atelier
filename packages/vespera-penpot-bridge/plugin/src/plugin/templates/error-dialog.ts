@@ -126,44 +126,13 @@ export function createErrorDialog(config: ErrorDialogConfig): string {
     }
   }
 
-  // Add shapes to board FIRST (in reverse z-order for correct stacking)
-  // Penpot: first appended = on top
-  const shapes = [];
-
-  // Add buttons first (so they're on top)
-  if (closeButton) {
-    board.appendChild(closeButton);
-    shapes.push(closeButton);
-  }
-  if (buttonText) {
-    board.appendChild(buttonText);
-    shapes.push(buttonText);
-  }
-  if (buttonBg) {
-    board.appendChild(buttonBg);
-    shapes.push(buttonBg);
-  }
-
-  // Then message and title
-  if (messageText) {
-    board.appendChild(messageText);
-    shapes.push(messageText);
-  }
-  if (titleText) {
-    board.appendChild(titleText);
-    shapes.push(titleText);
-  }
-
-  // Background last (so it's at the back)
+  // Add shapes to board (in reverse z-order for correct stacking)
   board.appendChild(background);
-  shapes.push(background);
-
-  // NOW group all shapes together (for single-undo support)
-  // Shapes must be in the document before grouping
-  const group = penpot.group(shapes);
-  if (group) {
-    group.name = 'Dialog Content';
-  }
+  if (titleText) board.appendChild(titleText);
+  if (messageText) board.appendChild(messageText);
+  if (buttonBg) board.appendChild(buttonBg);
+  if (buttonText) board.appendChild(buttonText);
+  if (closeButton) board.appendChild(closeButton);
 
   // Center the dialog on the viewport
   const viewport = penpot.viewport;

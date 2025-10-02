@@ -74,21 +74,9 @@ export function createButton(config: ButtonConfig): string {
     labelText.verticalAlign = 'center';
   }
 
-  // Add shapes to board FIRST (in reverse z-order for correct stacking)
-  const shapes = [];
-
-  if (labelText) {
-    board.appendChild(labelText);
-    shapes.push(labelText);
-  }
+  // Add shapes to board (in reverse z-order for correct stacking)
   board.appendChild(background);
-  shapes.push(background);
-
-  // NOW group all shapes together (for single-undo support)
-  const group = penpot.group(shapes);
-  if (group) {
-    group.name = 'Button Content';
-  }
+  if (labelText) board.appendChild(labelText);
 
   // Center the button on the viewport
   const viewport = penpot.viewport;
