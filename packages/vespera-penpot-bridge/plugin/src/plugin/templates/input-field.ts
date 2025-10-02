@@ -99,11 +99,11 @@ export function createInputField(config: InputFieldConfig): string {
     }
   }
 
-  // Add shapes to board (in reverse z-order for correct stacking)
-  if (labelText) board.appendChild(labelText);
-  board.appendChild(inputBg);
-  if (placeholderText) board.appendChild(placeholderText);
+  // Add shapes to board (first appended = on top in Penpot)
   if (errorText) board.appendChild(errorText);
+  if (placeholderText) board.appendChild(placeholderText);
+  board.appendChild(inputBg);
+  if (labelText) board.appendChild(labelText);
 
   // Center the input on the viewport
   const viewport = penpot.viewport;

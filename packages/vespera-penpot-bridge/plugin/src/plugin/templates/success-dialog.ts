@@ -142,14 +142,14 @@ export function createSuccessDialog(config: SuccessDialogConfig): string {
     }
   }
 
-  // Add shapes to board (in reverse z-order for correct stacking)
-  board.appendChild(background);
-  if (checkmark) board.appendChild(checkmark);
-  if (titleText) board.appendChild(titleText);
-  if (messageText) board.appendChild(messageText);
-  if (buttonBg) board.appendChild(buttonBg);
-  if (buttonText) board.appendChild(buttonText);
+  // Add shapes to board (first appended = on top in Penpot)
   if (closeButton) board.appendChild(closeButton);
+  if (buttonText) board.appendChild(buttonText);
+  if (buttonBg) board.appendChild(buttonBg);
+  if (messageText) board.appendChild(messageText);
+  if (titleText) board.appendChild(titleText);
+  if (checkmark) board.appendChild(checkmark);
+  board.appendChild(background);
 
   // Center the dialog on the viewport
   const viewport = penpot.viewport;

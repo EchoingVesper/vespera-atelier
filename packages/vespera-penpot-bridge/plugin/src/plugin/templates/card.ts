@@ -100,11 +100,11 @@ export function createCard(config: CardConfig): string {
     }
   }
 
-  // Add shapes to board (in reverse z-order for correct stacking)
-  board.appendChild(background);
-  if (headerText) board.appendChild(headerText);
-  if (bodyText) board.appendChild(bodyText);
+  // Add shapes to board (first appended = on top in Penpot)
   if (footerText) board.appendChild(footerText);
+  if (bodyText) board.appendChild(bodyText);
+  if (headerText) board.appendChild(headerText);
+  board.appendChild(background);
 
   // Center the card on the viewport
   const viewport = penpot.viewport;
