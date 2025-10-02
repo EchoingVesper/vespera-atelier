@@ -175,3 +175,8 @@ reference/
 .vscode-test/
 *.vsix
 *.vsix.bak
+
+# Research repositories (keep only documentation)
+research/*/penpot-plugin-starter-template/
+research/*/penpot-plugins-samples/
+research/*/plugin-examples/
