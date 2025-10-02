@@ -90,6 +90,26 @@ export interface MessageBubbleConfig {
 }
 
 /**
+ * Provider names for LLM provider selector
+ */
+export type ProviderName = 'claude' | 'gpt-4' | 'gemini' | 'custom';
+
+/**
+ * Connection status variants
+ */
+export type ConnectionStatus = 'connected' | 'disconnected' | 'error';
+
+/**
+ * Configuration for provider selector template
+ */
+export interface ProviderSelectorConfig {
+  provider?: ProviderName;
+  modelName?: string;
+  status?: ConnectionStatus;
+  width?: number;
+}
+
+/**
  * Severity-based color mappings
  */
 export const SEVERITY_COLORS = {
@@ -170,6 +190,37 @@ export const MESSAGE_BUBBLE_COLORS = {
 } as const;
 
 /**
+ * Connection status colors
+ */
+export const CONNECTION_STATUS_COLORS = {
+  connected: {
+    indicator: '#10B981',
+    background: '#D1FAE5',
+    text: '#065F46',
+  },
+  disconnected: {
+    indicator: '#F59E0B',
+    background: '#FEF3C7',
+    text: '#92400E',
+  },
+  error: {
+    indicator: '#EF4444',
+    background: '#FEE2E2',
+    text: '#991B1B',
+  },
+} as const;
+
+/**
+ * Provider brand colors
+ */
+export const PROVIDER_COLORS = {
+  claude: '#D97706',
+  'gpt-4': '#10B981',
+  gemini: '#3B82F6',
+  custom: '#6B7280',
+} as const;
+
+/**
  * Error dialog template dimensions
  */
 export const ERROR_DIALOG_DIMENSIONS = {
@@ -237,6 +288,19 @@ export const MESSAGE_BUBBLE_DIMENSIONS = {
 } as const;
 
 /**
+ * Provider selector template dimensions
+ */
+export const PROVIDER_SELECTOR_DIMENSIONS = {
+  defaultWidth: 280,
+  height: 60,
+  padding: 12,
+  spacing: 8,
+  borderRadius: 8,
+  indicatorSize: 8,
+  iconSize: 24,
+} as const;
+
+/**
  * Template registry
  */
 export const TEMPLATE_REGISTRY: Record<string, ComponentTemplate> = {
@@ -281,5 +345,12 @@ export const TEMPLATE_REGISTRY: Record<string, ComponentTemplate> = {
     category: 'chat',
     description: 'A chat message bubble with avatar, content, and timestamp',
     config: MESSAGE_BUBBLE_DIMENSIONS,
+  },
+  'provider-selector': {
+    id: 'provider-selector',
+    name: 'Provider Selector',
+    category: 'chat',
+    description: 'LLM provider selector with connection status indicator',
+    config: PROVIDER_SELECTOR_DIMENSIONS,
   },
 };

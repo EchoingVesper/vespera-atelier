@@ -10,6 +10,7 @@ import type {
   InputFieldConfig,
   CardConfig,
   MessageBubbleConfig,
+  ProviderSelectorConfig,
 } from '../../shared/templates';
 import { createErrorDialog } from './error-dialog';
 import { createSuccessDialog } from './success-dialog';
@@ -17,6 +18,7 @@ import { createButton } from './button';
 import { createInputField } from './input-field';
 import { createCard } from './card';
 import { createMessageBubble } from './message-bubble';
+import { createProviderSelector } from './provider-selector';
 
 /**
  * Create a component based on template ID and configuration
@@ -50,6 +52,9 @@ export function createComponent(templateId: string, config: unknown): string {
 
     case 'message-bubble':
       return createMessageBubble(config as MessageBubbleConfig);
+
+    case 'provider-selector':
+      return createProviderSelector(config as ProviderSelectorConfig);
 
     default:
       throw new Error(`Template not implemented: ${templateId}`);
