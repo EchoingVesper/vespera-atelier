@@ -34,9 +34,11 @@ export function createMessageBubble(config: MessageBubbleConfig): string {
   const colors = MESSAGE_BUBBLE_COLORS[role];
 
   // Calculate content height (estimate based on character count and width)
-  const charsPerLine = Math.floor((width - dims.avatarSize - dims.spacing * 3) / 8);
+  // Using 6 chars per line for 14px font (more conservative for wrapping)
+  const availableTextWidth = width - dims.avatarSize - dims.spacing - dims.padding * 3;
+  const charsPerLine = Math.floor(availableTextWidth / 6);
   const contentLines = Math.ceil(content.length / charsPerLine);
-  const contentHeight = Math.max(32, contentLines * 18);
+  const contentHeight = Math.max(40, contentLines * 20); // Increased line height
 
   // Calculate total height
   const hasTimestamp = !!timestamp;
@@ -90,10 +92,8 @@ export function createMessageBubble(config: MessageBubbleConfig): string {
     contentText.name = 'Content';
     contentText.x = dims.padding + dims.avatarSize + dims.spacing + dims.padding;
     contentText.y = dims.padding + dims.padding / 2;
-    contentText.resize(
-      width - dims.padding * 3 - dims.avatarSize - dims.spacing,
-      contentHeight - dims.padding
-    );
+    // Ensure text has enough width to wrap properly
+    contentText.resize(availableTextWidth - dims.padding, contentHeight - dims.padding);
     contentText.fontFamily = 'Inter';
     contentText.fontSize = '14';
     contentText.fontWeight = '400';
@@ -109,10 +109,7 @@ export function createMessageBubble(config: MessageBubbleConfig): string {
       timestampText.name = 'Timestamp';
       timestampText.x = dims.padding + dims.avatarSize + dims.spacing + dims.padding;
       timestampText.y = dims.padding + contentHeight - dims.padding / 2;
-      timestampText.resize(
-        width - dims.padding * 3 - dims.avatarSize - dims.spacing,
-        dims.timestampHeight
-      );
+      timestampText.resize(availableTextWidth - dims.padding, dims.timestampHeight);
       timestampText.fontFamily = 'Inter';
       timestampText.fontSize = '11';
       timestampText.fontWeight = '400';
