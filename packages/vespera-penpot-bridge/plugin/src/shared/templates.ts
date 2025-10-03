@@ -5,7 +5,7 @@
 /**
  * Template categories
  */
-export type TemplateCategory = 'dialog' | 'button' | 'form' | 'card' | 'panel' | 'chat';
+export type TemplateCategory = 'dialog' | 'button' | 'form' | 'card' | 'panel' | 'chat' | 'navigation';
 
 /**
  * Base template interface
@@ -120,6 +120,62 @@ export interface StatusIndicatorConfig {
 }
 
 /**
+ * Tree node states
+ */
+export type TreeNodeState = 'default' | 'selected' | 'hover' | 'active';
+
+/**
+ * Tree node expand/collapse states
+ */
+export type TreeNodeExpandState = 'expanded' | 'collapsed' | 'leaf';
+
+/**
+ * Configuration for tree node template
+ */
+export interface TreeNodeConfig {
+  label?: string;
+  icon?: string;
+  level?: number;
+  expandState?: TreeNodeExpandState;
+  state?: TreeNodeState;
+  hasChildren?: boolean;
+  width?: number;
+}
+
+/**
+ * Tag/Badge types
+ */
+export type TagType = 'status' | 'category' | 'priority' | 'custom';
+
+/**
+ * Tag/Badge sizes
+ */
+export type TagSize = 'small' | 'medium' | 'large';
+
+/**
+ * Configuration for tag/badge template
+ */
+export interface TagBadgeConfig {
+  label?: string;
+  type?: TagType;
+  size?: TagSize;
+  removable?: boolean;
+  color?: string; // Custom color for 'custom' type
+}
+
+/**
+ * Configuration for quick action card template
+ */
+export interface QuickActionCardConfig {
+  icon?: string;
+  title?: string;
+  description?: string;
+  shortcut?: string;
+  width?: number;
+  height?: number;
+}
+
+/**
  * Severity-based color mappings
  */
 export const SEVERITY_COLORS = {
@@ -231,6 +287,76 @@ export const PROVIDER_COLORS = {
 } as const;
 
 /**
+ * Tree node state colors
+ */
+export const TREE_NODE_COLORS = {
+  default: {
+    background: '#FFFFFF',
+    text: '#374151',
+    icon: '#6B7280',
+    border: '#E5E7EB',
+  },
+  selected: {
+    background: '#EBF5FF',
+    text: '#1E40AF',
+    icon: '#3B82F6',
+    border: '#3B82F6',
+  },
+  hover: {
+    background: '#F9FAFB',
+    text: '#374151',
+    icon: '#6B7280',
+    border: '#E5E7EB',
+  },
+  active: {
+    background: '#EFF6FF',
+    text: '#1D4ED8',
+    icon: '#2563EB',
+    border: '#3B82F6',
+  },
+} as const;
+
+/**
+ * Tag/Badge type colors
+ */
+export const TAG_BADGE_COLORS = {
+  status: {
+    background: '#F3F4F6',
+    text: '#374151',
+    border: '#D1D5DB',
+  },
+  category: {
+    background: '#EBF5FF',
+    text: '#1E40AF',
+    border: '#BFDBFE',
+  },
+  priority: {
+    background: '#FEF3C7',
+    text: '#92400E',
+    border: '#FCD34D',
+  },
+  custom: {
+    background: '#F3E8FF',
+    text: '#6B21A8',
+    border: '#E9D5FF',
+  },
+} as const;
+
+/**
+ * Quick action card colors
+ */
+export const QUICK_ACTION_CARD_COLORS = {
+  background: '#FFFFFF',
+  border: '#E5E7EB',
+  icon: '#6B7280',
+  title: '#111827',
+  description: '#6B7280',
+  shortcut: '#9CA3AF',
+  hoverBackground: '#F9FAFB',
+  activeBackground: '#F3F4F6',
+} as const;
+
+/**
  * Error dialog template dimensions
  */
 export const ERROR_DIALOG_DIMENSIONS = {
@@ -335,6 +461,68 @@ export const STATUS_INDICATOR_DIMENSIONS = {
 } as const;
 
 /**
+ * Tree node template dimensions
+ */
+export const TREE_NODE_DIMENSIONS = {
+  defaultWidth: 300,
+  height: 32,
+  padding: 8,
+  spacing: 6,
+  iconSize: 16,
+  fontSize: 14,
+  borderRadius: 4,
+  borderWidth: 1,
+  indentSize: 20,
+  chevronSize: 12,
+} as const;
+
+/**
+ * Tag/Badge template dimensions
+ */
+export const TAG_BADGE_DIMENSIONS = {
+  small: {
+    fontSize: 10,
+    padding: 4,
+    spacing: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    removeIconSize: 10,
+  },
+  medium: {
+    fontSize: 12,
+    padding: 6,
+    spacing: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    removeIconSize: 12,
+  },
+  large: {
+    fontSize: 14,
+    padding: 8,
+    spacing: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    removeIconSize: 14,
+  },
+} as const;
+
+/**
+ * Quick action card template dimensions
+ */
+export const QUICK_ACTION_CARD_DIMENSIONS = {
+  defaultWidth: 200,
+  defaultHeight: 120,
+  padding: 16,
+  spacing: 8,
+  iconSize: 32,
+  titleFontSize: 14,
+  descriptionFontSize: 12,
+  shortcutFontSize: 10,
+  borderRadius: 8,
+  borderWidth: 1,
+} as const;
+
+/**
  * Template registry
  */
 export const TEMPLATE_REGISTRY: Record<string, ComponentTemplate> = {
@@ -393,5 +581,26 @@ export const TEMPLATE_REGISTRY: Record<string, ComponentTemplate> = {
     category: 'chat',
     description: 'Connection status indicator with optional text label',
     config: STATUS_INDICATOR_DIMENSIONS,
+  },
+  'tree-node': {
+    id: 'tree-node',
+    name: 'Tree Node',
+    category: 'navigation',
+    description: 'Hierarchical tree node with icon, label, and expand/collapse indicator',
+    config: TREE_NODE_DIMENSIONS,
+  },
+  'tag-badge': {
+    id: 'tag-badge',
+    name: 'Tag/Badge',
+    category: 'navigation',
+    description: 'Rounded pill design with color variants and removable option',
+    config: TAG_BADGE_DIMENSIONS,
+  },
+  'quick-action-card': {
+    id: 'quick-action-card',
+    name: 'Quick Action Card',
+    category: 'navigation',
+    description: 'Icon + title + description layout with keyboard shortcut indicator',
+    config: QUICK_ACTION_CARD_DIMENSIONS,
   },
 };

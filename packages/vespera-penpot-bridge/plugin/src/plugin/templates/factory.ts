@@ -12,6 +12,9 @@ import type {
   MessageBubbleConfig,
   ProviderSelectorConfig,
   StatusIndicatorConfig,
+  TreeNodeConfig,
+  TagBadgeConfig,
+  QuickActionCardConfig,
 } from '../../shared/templates';
 import { createErrorDialog } from './error-dialog';
 import { createSuccessDialog } from './success-dialog';
@@ -21,6 +24,9 @@ import { createCard } from './card';
 import { createMessageBubble } from './message-bubble';
 import { createProviderSelector } from './provider-selector';
 import { createStatusIndicator } from './status-indicator';
+import { createTreeNode } from './tree-node';
+import { createTagBadge } from './tag-badge';
+import { createQuickActionCard } from './quick-action-card';
 
 /**
  * Create a component based on template ID and configuration
@@ -60,6 +66,15 @@ export function createComponent(templateId: string, config: unknown): string {
 
     case 'status-indicator':
       return createStatusIndicator(config as StatusIndicatorConfig);
+
+    case 'tree-node':
+      return createTreeNode(config as TreeNodeConfig);
+
+    case 'tag-badge':
+      return createTagBadge(config as TagBadgeConfig);
+
+    case 'quick-action-card':
+      return createQuickActionCard(config as QuickActionCardConfig);
 
     default:
       throw new Error(`Template not implemented: ${templateId}`);
