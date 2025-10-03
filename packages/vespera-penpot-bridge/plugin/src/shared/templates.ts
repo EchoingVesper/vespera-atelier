@@ -110,6 +110,16 @@ export interface ProviderSelectorConfig {
 }
 
 /**
+ * Configuration for status indicator template
+ */
+export interface StatusIndicatorConfig {
+  status?: ConnectionStatus;
+  size?: 'small' | 'medium' | 'large';
+  showText?: boolean;
+  label?: string;
+}
+
+/**
  * Severity-based color mappings
  */
 export const SEVERITY_COLORS = {
@@ -301,6 +311,30 @@ export const PROVIDER_SELECTOR_DIMENSIONS = {
 } as const;
 
 /**
+ * Status indicator template dimensions
+ */
+export const STATUS_INDICATOR_DIMENSIONS = {
+  small: {
+    indicatorSize: 8,
+    fontSize: 10,
+    height: 20,
+    spacing: 4,
+  },
+  medium: {
+    indicatorSize: 12,
+    fontSize: 12,
+    height: 24,
+    spacing: 6,
+  },
+  large: {
+    indicatorSize: 16,
+    fontSize: 14,
+    height: 32,
+    spacing: 8,
+  },
+} as const;
+
+/**
  * Template registry
  */
 export const TEMPLATE_REGISTRY: Record<string, ComponentTemplate> = {
@@ -352,5 +386,12 @@ export const TEMPLATE_REGISTRY: Record<string, ComponentTemplate> = {
     category: 'chat',
     description: 'LLM provider selector with connection status indicator',
     config: PROVIDER_SELECTOR_DIMENSIONS,
+  },
+  'status-indicator': {
+    id: 'status-indicator',
+    name: 'Status Indicator',
+    category: 'chat',
+    description: 'Connection status indicator with optional text label',
+    config: STATUS_INDICATOR_DIMENSIONS,
   },
 };

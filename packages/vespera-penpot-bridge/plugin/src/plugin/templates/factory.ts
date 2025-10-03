@@ -11,6 +11,7 @@ import type {
   CardConfig,
   MessageBubbleConfig,
   ProviderSelectorConfig,
+  StatusIndicatorConfig,
 } from '../../shared/templates';
 import { createErrorDialog } from './error-dialog';
 import { createSuccessDialog } from './success-dialog';
@@ -19,6 +20,7 @@ import { createInputField } from './input-field';
 import { createCard } from './card';
 import { createMessageBubble } from './message-bubble';
 import { createProviderSelector } from './provider-selector';
+import { createStatusIndicator } from './status-indicator';
 
 /**
  * Create a component based on template ID and configuration
@@ -55,6 +57,9 @@ export function createComponent(templateId: string, config: unknown): string {
 
     case 'provider-selector':
       return createProviderSelector(config as ProviderSelectorConfig);
+
+    case 'status-indicator':
+      return createStatusIndicator(config as StatusIndicatorConfig);
 
     default:
       throw new Error(`Template not implemented: ${templateId}`);

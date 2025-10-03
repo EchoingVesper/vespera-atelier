@@ -29,12 +29,14 @@ A Penpot plugin that generates UI component templates through a keyboard-driven 
 - Auto-scroll in gallery ✓
 - Message Bubble template (user/assistant/system variants) ✓
 - Text wrapping fixes for message bubbles ✓
+- Provider Selector template ✓
+- Status Indicator template ✓
 
 **🚧 In Progress:**
-- Phase 1: Chat UI Foundation (Week 1)
-  - [x] Message Bubble template
-  - [ ] Provider Selector template
-  - [ ] Status Indicator template
+- Phase 2: Navigation Components (Week 2)
+  - [ ] Tree Node template
+  - [ ] Tag/Badge template
+  - [ ] Quick Action Card template
 
 **📅 Upcoming Phases:**
 - Phase 2: Navigation Components (Week 2)
@@ -73,7 +75,7 @@ A Penpot plugin that generates UI component templates through a keyboard-driven 
 
 ### Template Development Plan
 
-**Phase 1: Chat UI Foundation** *(Current Focus)*
+**Phase 1: Chat UI Foundation** *(✅ COMPLETED)*
 
 1. **Message Bubble** ✓ (Completed)
    - Avatar circle with role initial
@@ -81,15 +83,17 @@ A Penpot plugin that generates UI component templates through a keyboard-driven 
    - Timestamp support
    - Role variants: user (blue), assistant (gray), system (amber)
 
-2. **Provider Selector** (Next)
-   - Dropdown with LLM provider icons (Claude, GPT-4, etc.)
+2. **Provider Selector** ✓ (Completed)
+   - Provider icon with letter initial
    - Connection status indicator
-   - Model selection display
-   - Quick switch affordance
+   - Model name display
+   - Dropdown chevron affordance
+   - Support for: claude, gpt-4, gemini, custom providers
 
-3. **Status Indicator**
+3. **Status Indicator** ✓ (Completed)
    - Connected/disconnected/error states
-   - Animated connection spinner
+   - Size variants: small (8px), medium (12px), large (16px)
+   - Optional text label with status
    - Color-coded status (green/yellow/red)
 
 **Phase 2: Navigation Components**
@@ -379,15 +383,19 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 **Working:**
 - Penpot plugin dev server on port 4402
-- Template gallery with 6 templates (dialogs, button, input, card, message bubble)
+- Template gallery with 7 templates (dialogs, button, input, card, message bubble, provider selector, status indicator)
 - Keyboard navigation (Esc, arrows, Enter, numpad)
 - Build system with TypeScript + Vite
+- Phase 1 Chat UI Foundation complete ✅
 
 **Next Steps:**
-1. Create Provider Selector template
-2. Create Status Indicator template
-3. Test message bubble text wrapping improvement
-4. Begin Phase 2 navigation components
+1. ✅ Create Provider Selector template (completed)
+2. ✅ Create Status Indicator template (completed)
+3. ✅ Test Phase 1 templates (completed)
+4. Create Tree Node template (Phase 2 start)
+5. Create Tag/Badge template
+6. Create Quick Action Card template
+7. Begin Phase 3 complex organisms (Message Thread, Config Panel, Navigation Pane)
 
 **Known Issues:**
 - Text wrapping estimation could be more precise (acceptable for now)
@@ -423,6 +431,49 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - [Penpot Plugin API](https://penpot-plugins-api-doc.pages.dev/)
 - [Penpot Plugin Examples](https://github.com/penpot/penpot-plugins-samples)
 - [React 19 Documentation](https://react.dev/)
+
+---
+
+---
+
+## 🎯 Phase 2 Developer Notes
+
+### Starting Phase 2: Navigation Components
+
+**Immediate Priority:** Begin with **Tree Node template** as it's foundational for the navigation hierarchy.
+
+**Template Pattern Followed:**
+1. Define config interface in `shared/templates.ts`
+2. Add dimensions constants
+3. Register in `TEMPLATE_REGISTRY`
+4. Create implementation file in `plugin/templates/`
+5. Import and register in `factory.ts`
+
+**Current File Structure:**
+```
+packages/vespera-penpot-bridge/plugin/src/
+├── plugin/templates/
+│   ├── factory.ts              # ✅ Update with new template
+│   ├── message-bubble.ts       # ✅ Reference pattern
+│   ├── provider-selector.ts    # ✅ Reference pattern
+│   └── status-indicator.ts     # ✅ Reference pattern (just created)
+└── shared/templates.ts         # ✅ Add interfaces/dimensions here
+```
+
+**Build System:** `npm run build` working, `npm run dev` on port 4402
+
+**Key Design System Values:**
+- Font: Inter (sizes as strings: '10', '12', '14')
+- Spacing: 4px grid system
+- Colors: Use existing constants from `templates.ts`
+- Z-order: First appended = top layer (reverse of DOM)
+
+**Phase 2 Templates to Create:**
+1. **Tree Node** - Icon + label + expand/collapse, indentation support
+2. **Tag/Badge** - Pill design, color variants, removable option
+3. **Quick Action Card** - Icon + title + description + shortcut
+
+**MCP Server:** Bindery backend running on port 3000 for task management reference
 
 ---
 
