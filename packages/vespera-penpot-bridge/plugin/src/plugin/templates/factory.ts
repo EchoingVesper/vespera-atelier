@@ -15,6 +15,9 @@ import type {
   TreeNodeConfig,
   TagBadgeConfig,
   QuickActionCardConfig,
+  MessageThreadConfig,
+  ConfigPanelConfig,
+  NavigationPaneConfig,
 } from '../../shared/templates';
 import { createErrorDialog } from './error-dialog';
 import { createSuccessDialog } from './success-dialog';
@@ -27,6 +30,9 @@ import { createStatusIndicator } from './status-indicator';
 import { createTreeNode } from './tree-node';
 import { createTagBadge } from './tag-badge';
 import { createQuickActionCard } from './quick-action-card';
+import { createMessageThread } from './message-thread';
+import { createConfigPanel } from './config-panel';
+import { createNavigationPane } from './navigation-pane';
 
 /**
  * Create a component based on template ID and configuration
@@ -75,6 +81,15 @@ export function createComponent(templateId: string, config: unknown): string {
 
     case 'quick-action-card':
       return createQuickActionCard(config as QuickActionCardConfig);
+
+    case 'message-thread':
+      return createMessageThread(config as MessageThreadConfig);
+
+    case 'config-panel':
+      return createConfigPanel(config as ConfigPanelConfig);
+
+    case 'navigation-pane':
+      return createNavigationPane(config as NavigationPaneConfig);
 
     default:
       throw new Error(`Template not implemented: ${templateId}`);

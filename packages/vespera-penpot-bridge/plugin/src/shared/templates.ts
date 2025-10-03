@@ -176,6 +176,91 @@ export interface QuickActionCardConfig {
 }
 
 /**
+ * Message entry for thread template
+ */
+export interface MessageEntry {
+  role: MessageRole;
+  content: string;
+  timestamp?: string;
+  avatarInitial?: string;
+}
+
+/**
+ * Configuration for message thread template
+ */
+export interface MessageThreadConfig {
+  messages?: MessageEntry[];
+  showDateSeparator?: boolean;
+  dateLabel?: string;
+  showTypingIndicator?: boolean;
+  showScrollButton?: boolean;
+  width?: number;
+  height?: number;
+}
+
+/**
+ * Form field configuration for config panel
+ */
+export interface ConfigField {
+  label: string;
+  type: 'text' | 'number' | 'select' | 'toggle' | 'textarea';
+  value?: string | number | boolean;
+  placeholder?: string;
+  required?: boolean;
+  error?: string;
+  options?: string[]; // For select type
+}
+
+/**
+ * Configuration section for config panel
+ */
+export interface ConfigSection {
+  title: string;
+  collapsed?: boolean;
+  fields: ConfigField[];
+}
+
+/**
+ * Configuration for config panel template
+ */
+export interface ConfigPanelConfig {
+  sections?: ConfigSection[];
+  showActionBar?: boolean;
+  saveLabel?: string;
+  cancelLabel?: string;
+  width?: number;
+  height?: number;
+}
+
+/**
+ * View mode types for navigation pane
+ */
+export type ViewMode = 'list' | 'grid' | 'tree';
+
+/**
+ * Tree item structure for navigation pane
+ */
+export interface TreeItem {
+  label: string;
+  level?: number;
+  expandState?: TreeNodeExpandState;
+  hasChildren?: boolean;
+  children?: TreeItem[];
+}
+
+/**
+ * Configuration for navigation pane template
+ */
+export interface NavigationPaneConfig {
+  title?: string;
+  viewMode?: ViewMode;
+  searchPlaceholder?: string;
+  items?: TreeItem[];
+  width?: number;
+  height?: number;
+}
+
+/**
  * Severity-based color mappings
  */
 export const SEVERITY_COLORS = {
@@ -357,6 +442,62 @@ export const QUICK_ACTION_CARD_COLORS = {
 } as const;
 
 /**
+ * Message thread colors
+ */
+export const MESSAGE_THREAD_COLORS = {
+  background: '#FFFFFF',
+  border: '#E5E7EB',
+  dateSeparator: '#6B7280',
+  dateBackground: '#F3F4F6',
+  typingIndicator: '#9CA3AF',
+  scrollButton: '#3B82F6',
+  scrollButtonHover: '#2563EB',
+} as const;
+
+/**
+ * Config panel colors
+ */
+export const CONFIG_PANEL_COLORS = {
+  background: '#FFFFFF',
+  border: '#E5E7EB',
+  sectionHeader: '#111827',
+  sectionBorder: '#E5E7EB',
+  fieldLabel: '#374151',
+  fieldBorder: '#D1D5DB',
+  fieldBorderError: '#EF4444',
+  fieldText: '#111827',
+  fieldPlaceholder: '#9CA3AF',
+  toggleBackground: '#D1D5DB',
+  toggleActive: '#3B82F6',
+  errorText: '#EF4444',
+  saveButton: '#3B82F6',
+  cancelButton: '#6B7280',
+  chevron: '#6B7280',
+} as const;
+
+/**
+ * Navigation pane colors
+ */
+export const NAVIGATION_PANE_COLORS = {
+  background: '#FFFFFF',
+  border: '#E5E7EB',
+  titleText: '#111827',
+  searchBackground: '#F9FAFB',
+  searchIcon: '#6B7280',
+  searchPlaceholder: '#9CA3AF',
+  toggleBackground: '#F3F4F6',
+  toggleActive: '#3B82F6',
+  toggleActiveText: '#FFFFFF',
+  toggleInactive: 'transparent',
+  toggleInactiveText: '#6B7280',
+  breadcrumbText: '#6B7280',
+  itemBackground: '#FFFFFF',
+  itemText: '#374151',
+  chevron: '#6B7280',
+  itemHoverBorder: '#E5E7EB',
+} as const;
+
+/**
  * Error dialog template dimensions
  */
 export const ERROR_DIALOG_DIMENSIONS = {
@@ -523,6 +664,75 @@ export const QUICK_ACTION_CARD_DIMENSIONS = {
 } as const;
 
 /**
+ * Message thread template dimensions
+ */
+export const MESSAGE_THREAD_DIMENSIONS = {
+  defaultWidth: 500,
+  defaultHeight: 600,
+  padding: 16,
+  spacing: 12,
+  messageSpacing: 8,
+  borderRadius: 8,
+  borderWidth: 1,
+  dateSeparatorHeight: 32,
+  typingIndicatorHeight: 40,
+  scrollButtonSize: 36,
+  scrollButtonMargin: 8,
+} as const;
+
+/**
+ * Config panel template dimensions
+ */
+export const CONFIG_PANEL_DIMENSIONS = {
+  defaultWidth: 500,
+  defaultHeight: 600,
+  padding: 20,
+  sectionSpacing: 24,
+  fieldSpacing: 16,
+  labelHeight: 20,
+  inputHeight: 40,
+  textareaHeight: 80,
+  sectionHeaderHeight: 48,
+  actionButtonHeight: 36,
+  actionButtonWidth: 80,
+  borderRadius: 8,
+  borderWidth: 1,
+  toggleSize: 20,
+  chevronSize: 16,
+} as const;
+
+/**
+ * Navigation pane template dimensions
+ */
+export const NAVIGATION_PANE_DIMENSIONS = {
+  defaultWidth: 320,
+  padding: 16,
+  borderRadius: 8,
+  borderWidth: 1,
+  titleHeight: 32,
+  titleFontSize: 18,
+  searchHeight: 36,
+  searchPadding: 12,
+  searchBorderRadius: 6,
+  searchIconSize: 16,
+  searchFontSize: 14,
+  viewToggleHeight: 32,
+  toggleBorderRadius: 4,
+  toggleFontSize: 12,
+  toggleSpacing: 4,
+  breadcrumbHeight: 20,
+  breadcrumbFontSize: 12,
+  itemHeight: 32,
+  itemPadding: 12,
+  itemSpacing: 6,
+  itemFontSize: 14,
+  itemBorderRadius: 4,
+  itemBorderWidth: 1,
+  chevronSize: 12,
+  indentSize: 20,
+} as const;
+
+/**
  * Template registry
  */
 export const TEMPLATE_REGISTRY: Record<string, ComponentTemplate> = {
@@ -602,5 +812,26 @@ export const TEMPLATE_REGISTRY: Record<string, ComponentTemplate> = {
     category: 'navigation',
     description: 'Icon + title + description layout with keyboard shortcut indicator',
     config: QUICK_ACTION_CARD_DIMENSIONS,
+  },
+  'message-thread': {
+    id: 'message-thread',
+    name: 'Message Thread',
+    category: 'chat',
+    description: 'Stack of message bubbles with date separator and typing indicator',
+    config: MESSAGE_THREAD_DIMENSIONS,
+  },
+  'config-panel': {
+    id: 'config-panel',
+    name: 'Config Panel',
+    category: 'form',
+    description: 'Grouped form fields with collapsible sections and validation states',
+    config: CONFIG_PANEL_DIMENSIONS,
+  },
+  'navigation-pane': {
+    id: 'navigation-pane',
+    name: 'Navigation Pane',
+    category: 'navigation',
+    description: 'Tree structure container with search bar and view mode toggle',
+    config: NAVIGATION_PANE_DIMENSIONS,
   },
 };
