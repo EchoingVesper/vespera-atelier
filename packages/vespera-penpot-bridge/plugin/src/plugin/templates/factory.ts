@@ -18,6 +18,9 @@ import type {
   MessageThreadConfig,
   ConfigPanelConfig,
   NavigationPaneConfig,
+  ThreePanelLayoutConfig,
+  ChatWindowLayoutConfig,
+  SplitViewLayoutConfig,
 } from '../../shared/templates';
 import { createErrorDialog } from './error-dialog';
 import { createSuccessDialog } from './success-dialog';
@@ -33,6 +36,9 @@ import { createQuickActionCard } from './quick-action-card';
 import { createMessageThread } from './message-thread';
 import { createConfigPanel } from './config-panel';
 import { createNavigationPane } from './navigation-pane';
+import { createThreePanelLayout } from './three-panel-layout';
+import { createChatWindowLayout } from './chat-window-layout';
+import { createSplitViewLayout } from './split-view-layout';
 
 /**
  * Create a component based on template ID and configuration
@@ -90,6 +96,15 @@ export function createComponent(templateId: string, config: unknown): string {
 
     case 'navigation-pane':
       return createNavigationPane(config as NavigationPaneConfig);
+
+    case 'three-panel-layout':
+      return createThreePanelLayout(config as ThreePanelLayoutConfig);
+
+    case 'chat-window-layout':
+      return createChatWindowLayout(config as ChatWindowLayoutConfig);
+
+    case 'split-view-layout':
+      return createSplitViewLayout(config as SplitViewLayoutConfig);
 
     default:
       throw new Error(`Template not implemented: ${templateId}`);

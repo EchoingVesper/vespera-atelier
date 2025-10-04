@@ -5,7 +5,7 @@
 /**
  * Template categories
  */
-export type TemplateCategory = 'dialog' | 'button' | 'form' | 'card' | 'panel' | 'chat' | 'navigation';
+export type TemplateCategory = 'dialog' | 'button' | 'form' | 'card' | 'panel' | 'chat' | 'navigation' | 'layout';
 
 /**
  * Base template interface
@@ -261,6 +261,67 @@ export interface NavigationPaneConfig {
 }
 
 /**
+ * Panel configuration for three-panel layout
+ */
+export interface PanelConfig {
+  width?: number;
+  minWidth?: number;
+  maxWidth?: number;
+  collapsible?: boolean;
+  collapsed?: boolean;
+  title?: string;
+}
+
+/**
+ * Three-panel layout configuration
+ */
+export interface ThreePanelLayoutConfig {
+  leftPanel?: PanelConfig;
+  centerPanel?: PanelConfig;
+  rightPanel?: PanelConfig;
+  totalWidth?: number;
+  totalHeight?: number;
+  showDividers?: boolean;
+  dividerWidth?: number;
+}
+
+/**
+ * Chat window layout configuration
+ */
+export interface ChatWindowLayoutConfig {
+  messageAreaHeight?: number;
+  inputAreaHeight?: number;
+  showProviderSelector?: boolean;
+  showSettingsPanel?: boolean;
+  totalWidth?: number;
+  totalHeight?: number;
+}
+
+/**
+ * Split pane configuration for split view layout
+ */
+export interface SplitPaneConfig {
+  width?: number;
+  minWidth?: number;
+  maxWidth?: number;
+  title?: string;
+  showScrollSync?: boolean;
+}
+
+/**
+ * Split view layout configuration
+ */
+export interface SplitViewLayoutConfig {
+  leftPane?: SplitPaneConfig;
+  rightPane?: SplitPaneConfig;
+  orientation?: 'horizontal' | 'vertical';
+  totalWidth?: number;
+  totalHeight?: number;
+  showDivider?: boolean;
+  dividerWidth?: number;
+}
+
+/**
  * Severity-based color mappings
  */
 export const SEVERITY_COLORS = {
@@ -495,6 +556,26 @@ export const NAVIGATION_PANE_COLORS = {
   itemText: '#374151',
   chevron: '#6B7280',
   itemHoverBorder: '#E5E7EB',
+} as const;
+
+/**
+ * Layout template colors
+ */
+export const LAYOUT_COLORS = {
+  background: '#F9FAFB',
+  panelBackground: '#FFFFFF',
+  panelBorder: '#E5E7EB',
+  divider: '#D1D5DB',
+  dividerHover: '#9CA3AF',
+  panelTitle: '#111827',
+  panelSubtitle: '#6B7280',
+  resizeHandle: '#9CA3AF',
+  resizeHandleHover: '#6B7280',
+  collapseButton: '#6B7280',
+  collapseButtonHover: '#374151',
+  focusRing: '#3B82F6',
+  syncIndicator: '#10B981',
+  scrollMarker: '#F59E0B',
 } as const;
 
 /**
@@ -733,6 +814,56 @@ export const NAVIGATION_PANE_DIMENSIONS = {
 } as const;
 
 /**
+ * Layout template dimensions
+ */
+export const LAYOUT_DIMENSIONS = {
+  threePanelDefault: {
+    totalWidth: 1200,
+    totalHeight: 800,
+    leftPanelWidth: 280,
+    centerPanelWidth: 640,
+    rightPanelWidth: 280,
+    dividerWidth: 1,
+    panelPadding: 16,
+    titleHeight: 40,
+    borderRadius: 8,
+    borderWidth: 1,
+    resizeHandleWidth: 4,
+    collapseButtonSize: 24,
+    minPanelWidth: 200,
+    maxPanelWidth: 400,
+  },
+  chatWindowDefault: {
+    totalWidth: 600,
+    totalHeight: 700,
+    messageAreaHeight: 500,
+    inputAreaHeight: 120,
+    providerSelectorHeight: 60,
+    settingsPanelWidth: 200,
+    panelPadding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    titleHeight: 40,
+    inputFieldHeight: 40,
+    sendButtonSize: 36,
+  },
+  splitViewDefault: {
+    totalWidth: 1000,
+    totalHeight: 700,
+    defaultPaneWidth: 500,
+    dividerWidth: 4,
+    panelPadding: 16,
+    titleHeight: 40,
+    borderRadius: 8,
+    borderWidth: 1,
+    minPaneWidth: 250,
+    maxPaneWidth: 750,
+    syncIndicatorSize: 16,
+    scrollMarkerWidth: 3,
+  },
+} as const;
+
+/**
  * Template registry
  */
 export const TEMPLATE_REGISTRY: Record<string, ComponentTemplate> = {
@@ -833,5 +964,26 @@ export const TEMPLATE_REGISTRY: Record<string, ComponentTemplate> = {
     category: 'navigation',
     description: 'Tree structure container with search bar and view mode toggle',
     config: NAVIGATION_PANE_DIMENSIONS,
+  },
+  'three-panel-layout': {
+    id: 'three-panel-layout',
+    name: 'Three-Panel Layout',
+    category: 'layout',
+    description: 'Resizable left/center/right panels with dividers and collapse functionality',
+    config: LAYOUT_DIMENSIONS.threePanelDefault,
+  },
+  'chat-window-layout': {
+    id: 'chat-window-layout',
+    name: 'Chat Window Layout',
+    category: 'layout',
+    description: 'Complete chat interface with message area, input field, and settings panel',
+    config: LAYOUT_DIMENSIONS.chatWindowDefault,
+  },
+  'split-view-layout': {
+    id: 'split-view-layout',
+    name: 'Split View Layout',
+    category: 'layout',
+    description: 'Two-pane layout with synchronized scrolling and relationship indicators',
+    config: LAYOUT_DIMENSIONS.splitViewDefault,
   },
 };
