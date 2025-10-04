@@ -32,17 +32,29 @@ A Penpot plugin that generates UI component templates through a keyboard-driven 
 - Provider Selector template ✓
 - Status Indicator template ✓
 
+**✅ Completed:**
+- Phase 1-3: Template gallery with Esc menu system ✓
+- Keyboard navigation (Arrow keys, Enter, Numpad 1-6) ✓
+- Auto-scroll in gallery ✓
+- Message Bubble template (user/assistant/system variants) ✓
+- Text wrapping fixes for message bubbles ✓
+- Provider Selector template ✓
+- Status Indicator template ✓
+- Phase 2: Navigation Components ✓
+  - Tree Node template ✓
+  - Tag/Badge template ✓
+  - Quick Action Card template ✓
+
+**✅ Phase 3 Complete:**
+- Phase 3: Complex Organisms ✓
+  - Message Thread template ✓
+  - Config Panel template ✓
+  - Navigation Pane template ✓
+
 **🚧 In Progress:**
-- Phase 2: Navigation Components (Week 2)
-  - [ ] Tree Node template
-  - [ ] Tag/Badge template
-  - [ ] Quick Action Card template
+- Phase 4: Layout Templates (Week 4)
 
 **📅 Upcoming Phases:**
-- Phase 2: Navigation Components (Week 2)
-  - Tree Node, Tag/Badge, Quick Action Card templates
-- Phase 3: Complex Organisms (Week 3)
-  - Message Thread, Config Panel, Navigation Pane templates
 - Phase 4: Layout Templates (Week 4)
   - Three-Panel Layout, Chat Window, Split View templates
 
@@ -96,25 +108,28 @@ A Penpot plugin that generates UI component templates through a keyboard-driven 
    - Optional text label with status
    - Color-coded status (green/yellow/red)
 
-**Phase 2: Navigation Components**
+**Phase 2: Navigation Components** *(✅ COMPLETED)*
 
-4. **Tree Node Template**
-   - Icon + label + expand/collapse indicator
-   - Indentation support for hierarchy
-   - Drag-drop visual states
-   - Selected/hover/active states
+4. **Tree Node Template** ✓ (Completed)
+   - Icon + label + expand/collapse indicator ✓
+   - Indentation support for hierarchy ✓
+   - Multiple states (default, selected, hover, active) ✓
+   - Configurable expand states (expanded, collapsed, leaf) ✓
+   - Dynamic chevron symbols and visual feedback ✓
 
-5. **Tag/Badge Template**
-   - Rounded pill design
-   - Color variants (status, category, priority)
-   - Removable variant (with X button)
-   - Size variants (small, medium, large)
+5. **Tag/Badge Template** ✓ (Completed)
+   - Rounded pill design ✓
+   - Color variants (status, category, priority, custom) ✓
+   - Removable variant (with X button) ✓
+   - Size variants (small, medium, large) ✓
+   - Dynamic width calculation based on content ✓
 
-6. **Quick Action Card Template**
-   - Icon + title + description layout
-   - Keyboard shortcut indicator
-   - Hover/active states
-   - Grid-friendly design
+6. **Quick Action Card Template** ✓ (Completed)
+   - Icon + title + description layout ✓
+   - Keyboard shortcut indicator ✓
+   - Grid-friendly design ✓
+   - Multi-line description support ✓
+   - Clean card styling with proper spacing ✓
 
 **Phase 3: Complex Organisms**
 
@@ -382,20 +397,23 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ## 📍 Current State Summary
 
 **Working:**
-- Penpot plugin dev server on port 4402
-- Template gallery with 7 templates (dialogs, button, input, card, message bubble, provider selector, status indicator)
-- Keyboard navigation (Esc, arrows, Enter, numpad)
-- Build system with TypeScript + Vite
+- Penpot plugin dev server on port 4402 ✓
+- Template gallery with 13 templates ✓
+- Keyboard navigation (Esc, arrows, Enter, numpad) ✓
+- Build system with TypeScript + Vite ✓
 - Phase 1 Chat UI Foundation complete ✅
+- Phase 2 Navigation Components complete ✅
+- Phase 3 Complex Organisms complete ✅
 
 **Next Steps:**
-1. ✅ Create Provider Selector template (completed)
-2. ✅ Create Status Indicator template (completed)
-3. ✅ Test Phase 1 templates (completed)
-4. Create Tree Node template (Phase 2 start)
-5. Create Tag/Badge template
-6. Create Quick Action Card template
-7. Begin Phase 3 complex organisms (Message Thread, Config Panel, Navigation Pane)
+1. ✅ Create Message Thread template (Phase 3 completed)
+2. ✅ Create Config Panel template (Phase 3 completed)
+3. ✅ Create Navigation Pane template (Phase 3 completed)
+4. Create Three-Panel Layout template (Phase 4 start)
+5. Create Chat Window Layout template
+6. Create Split View Layout template
+7. Test all Phase 4 templates
+8. Document template usage and best practices
 
 **Known Issues:**
 - Text wrapping estimation could be more precise (acceptable for now)
@@ -438,42 +456,52 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 ## 🎯 Phase 2 Developer Notes
 
-### Starting Phase 2: Navigation Components
+### Phase 2: Navigation Components - ✅ COMPLETED
 
-**Immediate Priority:** Begin with **Tree Node template** as it's foundational for the navigation hierarchy.
+**Phase 2 Summary:**
+Successfully implemented all three navigation component templates for the Penpot UI Template Library. Each template follows the established patterns and integrates seamlessly with the existing system.
 
-**Template Pattern Followed:**
-1. Define config interface in `shared/templates.ts`
-2. Add dimensions constants
-3. Register in `TEMPLATE_REGISTRY`
-4. Create implementation file in `plugin/templates/`
-5. Import and register in `factory.ts`
+**Templates Delivered:**
 
-**Current File Structure:**
-```
-packages/vespera-penpot-bridge/plugin/src/
-├── plugin/templates/
-│   ├── factory.ts              # ✅ Update with new template
-│   ├── message-bubble.ts       # ✅ Reference pattern
-│   ├── provider-selector.ts    # ✅ Reference pattern
-│   └── status-indicator.ts     # ✅ Reference pattern (just created)
-└── shared/templates.ts         # ✅ Add interfaces/dimensions here
-```
+1. **Tree Node Template** ✅
+   - File: `src/plugin/templates/tree-node.ts`
+   - Interface: `TreeNodeConfig` with state, expandState, level support
+   - Features: Hierarchy indentation, expand/collapse chevrons, multiple states
+   - Colors: `TREE_NODE_COLORS` for default/selected/hover/active states
 
-**Build System:** `npm run build` working, `npm run dev` on port 4402
+2. **Tag/Badge Template** ✅
+   - File: `src/plugin/templates/tag-badge.ts`
+   - Interface: `TagBadgeConfig` with type, size, removable options
+   - Features: Rounded pill design, X button for removal, dynamic sizing
+   - Colors: `TAG_BADGE_COLORS` for status/category/priority/custom types
 
-**Key Design System Values:**
-- Font: Inter (sizes as strings: '10', '12', '14')
-- Spacing: 4px grid system
-- Colors: Use existing constants from `templates.ts`
+3. **Quick Action Card Template** ✅
+   - File: `src/plugin/templates/quick-action-card.ts`
+   - Interface: `QuickActionCardConfig` with icon, title, description, shortcut
+   - Features: Card layout, keyboard shortcuts, grid-friendly design
+   - Colors: `QUICK_ACTION_CARD_COLORS` for consistent styling
+
+**Updated Template Registry:**
+- Total templates: 10 (7 existing + 3 new)
+- New category added: `navigation`
+- All templates registered in `TEMPLATE_REGISTRY` and `factory.ts`
+
+**Build System Status:**
+- ✅ `npm run build` - Successful compilation
+- ✅ `npm run dev` - Running on port 4402
+- ✅ TypeScript type checking - No errors
+- ✅ All templates included in production build
+
+**Technical Implementation:**
+- Consistent use of 4px grid spacing system
+- Inter font family with proper string sizing for Penpot API
 - Z-order: First appended = top layer (reverse of DOM)
+- Dynamic width calculation based on content
+- Viewport centering for user convenience
 
-**Phase 2 Templates to Create:**
-1. **Tree Node** - Icon + label + expand/collapse, indentation support
-2. **Tag/Badge** - Pill design, color variants, removable option
-3. **Quick Action Card** - Icon + title + description + shortcut
+**Dev Server:** Running on `http://localhost:4402/` with hot reload enabled
 
-**MCP Server:** Bindery backend running on port 3000 for task management reference
+**MCP Server:** Bindery backend available for task management (connection issues noted)
 
 ---
 
