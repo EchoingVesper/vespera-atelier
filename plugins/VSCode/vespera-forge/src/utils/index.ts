@@ -13,7 +13,8 @@ export function getConfig(): VesperaForgeConfig {
   const config = vscode.workspace.getConfiguration('vesperaForge');
   return {
     enableAutoStart: config.get('enableAutoStart', true),
-    rustBinderyPath: config.get('rustBinderyPath', '')
+    rustBinderyPath: config.get('rustBinderyPath', ''),
+    useNewFramework: config.get('ui.useNewFramework', false)
   };
 }
 

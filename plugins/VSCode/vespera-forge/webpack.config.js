@@ -30,7 +30,11 @@ const extensionConfig = {
       '@/commands': path.resolve(__dirname, 'src/commands'),
       '@/providers': path.resolve(__dirname, 'src/providers'),
       '@/types': path.resolve(__dirname, 'src/types'),
-      '@/utils': path.resolve(__dirname, 'src/utils')
+      '@/utils': path.resolve(__dirname, 'src/utils'),
+      '@/components': path.resolve(__dirname, 'src/components'),
+      '@/lib': path.resolve(__dirname, 'src/lib'),
+      '@/hooks': path.resolve(__dirname, 'src/hooks'),
+      '@/vespera-forge': path.resolve(__dirname, 'src/vespera-forge')
     }
   },
   module: {
@@ -72,4 +76,71 @@ const extensionConfig = {
   }
 };
 
-module.exports = [ extensionConfig ];
+/** @type WebpackConfig */
+const webviewConfig = {
+  target: 'web', // Webview runs in a browser-like context
+  mode: 'none',
+
+  entry: './src/webview/index.tsx',
+  output: {
+    path: path.resolve(__dirname, 'dist/webview'),
+    filename: 'index.js',
+    clean: false // Don't clean since extension config already cleans dist/
+  },
+  resolve: {
+    extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
+      '@/components': path.resolve(__dirname, 'src/components'),
+      '@/lib': path.resolve(__dirname, 'src/lib'),
+      '@/hooks': path.resolve(__dirname, 'src/hooks'),
+      '@/vespera-forge': path.resolve(__dirname, 'src/vespera-forge')
+    }
+  },
+  module: {
+    rules: [
+      {
+        test: /\.tsx?$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'ts-loader',
+          options: {
+            configFile: path.resolve(__dirname, 'tsconfig.json'),
+            compilerOptions: {
+              sourceMap: true
+            }
+          }
+        }
+      },
+      {
+        test: /\.css$/,
+        use: [
+          'style-loader',
+          'css-loader',
+          {
+            loader: 'postcss-loader',
+            options: {
+              postcssOptions: {
+                config: path.resolve(__dirname, 'postcss.config.js')
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  devtool: 'nosources-source-map',
+  infrastructureLogging: {
+    level: "log",
+  },
+  stats: {
+    warnings: false
+  },
+  optimization: {
+    minimize: false,
+    usedExports: true,
+    sideEffects: false
+  }
+};
+
+module.exports = [ extensionConfig, webviewConfig ];

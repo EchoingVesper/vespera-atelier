@@ -78,43 +78,67 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     // Initialize providers
     const { contentProvider } = initializeProviders(context);
-    
-    // Initialize views (task tree, dashboard, status bar)
-    const viewContext = initializeViews(context);
-    
-    // Register view context with memory-safe context manager
-    contextManager.setViewContext(context, viewContext);
-    
-    // Register view providers as disposable resources
-    if (viewContext.chatPanelProvider) {
-      contextManager.registerResource(
-        viewContext.chatPanelProvider,
-        'ChatPanelProvider',
-        'main-chat-panel'
-      );
-    }
-    
-    if (viewContext.taskDashboardProvider) {
-      contextManager.registerResource(
-        viewContext.taskDashboardProvider,
-        'TaskDashboardProvider',
-        'main-task-dashboard'
-      );
-    }
-    
-    if (viewContext.statusBarManager) {
-      contextManager.registerResource(
-        viewContext.statusBarManager,
-        'StatusBarManager',
-        'main-status-bar'
-      );
-    }
-    
-    if (viewContext.taskTreeProvider) {
-      contextManager.registerResource(
-        viewContext.taskTreeProvider,
-        'TaskTreeProvider',
-        'main-task-tree'
+
+    // Get configuration to check UI framework preference
+    const config = getConfig();
+    const USE_NEW_UI = config.useNewFramework;
+
+    // Initialize views conditionally based on UI framework preference
+    let viewContext: any = undefined;
+
+    if (!USE_NEW_UI) {
+      // Use legacy UI (current implementation)
+      logger.info('Using legacy UI framework');
+      viewContext = initializeViews(context);
+
+      // Register view context with memory-safe context manager
+      contextManager.setViewContext(context, viewContext);
+
+      // Register view providers as disposable resources
+      if (viewContext.chatPanelProvider) {
+        contextManager.registerResource(
+          viewContext.chatPanelProvider,
+          'ChatPanelProvider',
+          'main-chat-panel'
+        );
+      }
+
+      if (viewContext.taskDashboardProvider) {
+        contextManager.registerResource(
+          viewContext.taskDashboardProvider,
+          'TaskDashboardProvider',
+          'main-task-dashboard'
+        );
+      }
+
+      if (viewContext.statusBarManager) {
+        contextManager.registerResource(
+          viewContext.statusBarManager,
+          'StatusBarManager',
+          'main-status-bar'
+        );
+      }
+
+      if (viewContext.taskTreeProvider) {
+        contextManager.registerResource(
+          viewContext.taskTreeProvider,
+          'TaskTreeProvider',
+          'main-task-tree'
+        );
+      }
+    } else {
+      // Use new three-panel UI framework
+      logger.info('Using new three-panel UI framework');
+
+      // TODO: Initialize new Vespera Forge UI framework
+      // This will be implemented in Phase 3
+      logger.warn('New UI framework not yet implemented - will be added in Phase 3');
+
+      // For now, show a notification to the user
+      vscode.window.showInformationMessage(
+        'Vespera Forge: New UI framework is enabled but not yet implemented. ' +
+        'The extension will run with core services only. ' +
+        'Set "vesperaForge.ui.useNewFramework" to false to use the current UI.'
       );
     }
 
@@ -122,7 +146,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const vesperaContext: VesperaForgeContext = {
       extensionContext: context,
       contentProvider,
-      config: getConfig(),
+      config,
       isInitialized: false,
       coreServices
     };

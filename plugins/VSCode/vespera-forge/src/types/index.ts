@@ -250,6 +250,7 @@ export interface HealthCheckResult {
 export interface VesperaForgeConfig {
   enableAutoStart: boolean;
   rustBinderyPath: string;
+  useNewFramework: boolean;
 }
 
 /**
