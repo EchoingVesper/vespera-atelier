@@ -1,6 +1,6 @@
 ---
 name: template-registry-manager
-description: "Invoke this agent when you need to:\n- Register or validate new templates\n- Manage template versions and upgrades\n- Generate template documentation\n- Import/export template packages\n- Fix template discovery or loading issues"
+description: Invoke this agent when you need to:\n- Register or validate new templates\n- Manage template versions and upgrades\n- Generate template documentation\n- Import/export template packages\n- Fix template discovery or loading issues
 tools: Read, Write, MultiEdit, Glob, Grep, Bash, mcp__github__create_repository, mcp__github__push_files
 model: sonnet
 color: cyan

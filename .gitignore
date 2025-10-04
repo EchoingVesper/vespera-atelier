@@ -124,6 +124,7 @@ coverage/
 # Claude Code
 .claude/logs/
 .claude/temp/
+.claude/settings.local.json
 
 # Python (if any Python tooling)
 __pycache__/
