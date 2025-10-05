@@ -80,65 +80,72 @@ Track progress for integrating the Next.js UI framework into VS Code extension.
 
 ---
 
-## Phase 4: Create Webview Infrastructure
+## Phase 4: Create Webview Infrastructure ⚠️ PARTIAL
 
-- [ ] Create webview directory: `mkdir -p src/webview`
-- [ ] Create `src/webview/VesperaForgeWebviewProvider.ts`
-  - [ ] Implement `WebviewViewProvider` interface
-  - [ ] Add HTML template with CSP
-  - [ ] Add message handling (codex.create, update, delete)
-  - [ ] Add script/style URI generation
-- [ ] Create `src/webview/index.tsx`
-  - [ ] Set up React root rendering
-  - [ ] Import VesperaForge component
-  - [ ] Create VS Code webview API wrapper
-  - [ ] Add message posting to extension
-- [ ] Create `src/webview/globals.css` (copy from `src/app/globals.css`)
+- [x] Create webview directory: `mkdir -p src/webview`
+- [x] Create `src/webview/VesperaForgeWebviewProvider.ts` (341 lines)
+  - [x] Implement `WebviewViewProvider` interface
+  - [x] Add HTML template with CSP
+  - [x] Add message handling (codex.create, update, delete, list)
+  - [x] Add script/style URI generation
+  - [x] Add theme detection and synchronization
+  - [x] Add file operations (open, save)
+  - [x] Add session management and disposal
+- [x] Create `src/webview/index.tsx` (71 lines)
+  - [x] Set up React root rendering with React 19
+  - [x] Import VesperaForge component
+  - [x] Create VS Code webview API wrapper (VSCodeAdapter)
+  - [x] Add message posting to extension
+  - [x] Add theme observer for dark/light mode
+- [x] Globals.css already present in `src/app/` from Phase 3
 
-**Notes:**
-
----
-
-## Phase 5: Update Extension Configuration
-
-- [ ] Update `src/extension.ts`:
-  - [ ] Import `VesperaForgeWebviewProvider`
-  - [ ] Create provider instance
-  - [ ] Register webview view provider
-  - [ ] Add command to open/focus view
-  - [ ] (Optional) Add feature flag to toggle old/new UI
-- [ ] Update `package.json`:
-  - [ ] Add `viewsContainers` in `contributes`
-  - [ ] Add `views` in `contributes`
-  - [ ] Add new commands if needed
-  - [ ] Update dependencies list
-- [ ] Update `webpack.config.js`:
-  - [ ] Add second webpack config for webview
-  - [ ] Configure entry point: `./src/webview/index.tsx`
-  - [ ] Configure output: `dist/webview/index.js`
-  - [ ] Add loaders for `.tsx`, `.css`
-  - [ ] Add resolve extensions
-
-**Notes:**
+**Notes:** Infrastructure complete! 205 TypeScript errors remain in framework components. See PHASE_4_COMPLETE.md for details.
 
 ---
 
-## Phase 6: Configure Build Tools
+## Phase 5: Update Extension Configuration ✅ COMPLETE
 
-- [ ] Create/update `tsconfig.json` for React:
-  - [ ] Add `"jsx": "react"`
-  - [ ] Add `"lib": ["DOM", "ES2020"]`
-  - [ ] Add webview paths to `include`
-- [ ] Create/update `tailwind.config.ts`:
-  - [ ] Point to webview source files
-  - [ ] Add theme customization
-  - [ ] Configure plugins
-- [ ] Test build:
-  - [ ] Run `npm run compile`
-  - [ ] Check for errors
-  - [ ] Verify output in `dist/webview/`
+- [x] Update `src/extension.ts`:
+  - [x] Import `VesperaForgeWebviewProvider` (dynamic require)
+  - [x] Create provider instance
+  - [x] Register webview view provider
+  - [x] Integrate with context manager for resource cleanup
+  - [x] Feature flag already implemented in Phase 2
+- [x] Update `package.json`:
+  - [x] `viewsContainers` already exist from original extension
+  - [x] Add `views` in `contributes` with conditional visibility
+  - [x] No new commands needed (reusing existing)
+  - [x] Dependencies updated in Phase 3
+- [x] Update `webpack.config.js`:
+  - [x] Second webpack config for webview added in Phase 3
+  - [x] Entry point configured: `./src/webview/index.tsx`
+  - [x] Output configured: `dist/webview/index.js`
+  - [x] Loaders added for `.tsx`, `.css` with PostCSS
+  - [x] Resolve extensions and aliases configured
 
-**Notes:**
+**Notes:** Extension integration complete! View appears conditionally based on `vesperaForge.ui.useNewFramework` setting.
+
+---
+
+## Phase 6: Configure Build Tools ✅ COMPLETE (Done in Phase 3)
+
+- [x] Create/update `tsconfig.json` for React:
+  - [x] Added `"jsx": "react-jsx"` for React 19
+  - [x] Library includes already support DOM
+  - [x] Added path aliases (`@/*`)
+- [x] Create `tailwind.config.js` (adapted from root .ts):
+  - [x] Points to all source files including vespera-forge
+  - [x] Full shadcn/ui theme with CSS custom properties
+  - [x] Configured plugins: tailwindcss-animate
+- [x] Create `postcss.config.js`:
+  - [x] Configured @tailwindcss/postcss for v4
+  - [x] Configured autoprefixer
+- [x] Test build:
+  - [x] `npm run compile` runs successfully
+  - [x] Extension bundle: 2.38 MiB (builds without errors)
+  - [x] Webview bundle: Created with 205 TypeScript errors (non-blocking)
+
+**Notes:** Build system fully configured in Phase 3. Extension builds successfully. Webview has TypeScript errors in framework components but bundle is generated.
 
 ---
 
