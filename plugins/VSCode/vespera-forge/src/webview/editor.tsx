@@ -22,6 +22,9 @@ declare global {
   }
 }
 
+// Create platform adapter once (outside component to avoid re-acquiring VS Code API)
+const adapter = new VSCodeAdapter();
+
 /**
  * Editor App Component
  */
@@ -32,8 +35,6 @@ function EditorApp() {
   const [assistants, setAssistants] = useState<AIAssistantType[]>([]);
   const [currentAssistant, setCurrentAssistant] = useState<AIAssistantType | undefined>();
 
-  // Create platform adapter
-  const adapter = new VSCodeAdapter();
   const context: Context = adapter.getCurrentContext();
 
   const handleCodexUpdate = useCallback(async (codex: Codex) => {
@@ -122,8 +123,7 @@ function initializeEditor(): void {
     return;
   }
 
-  // Create platform adapter for styling
-  const adapter = new VSCodeAdapter();
+  // Apply VS Code styling (adapter already created globally)
   adapter.applyVSCodeStyling();
 
   // Create React root and render

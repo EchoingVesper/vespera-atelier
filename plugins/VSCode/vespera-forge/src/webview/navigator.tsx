@@ -20,6 +20,9 @@ declare global {
   }
 }
 
+// Create platform adapter once (outside component to avoid re-acquiring VS Code API)
+const adapter = new VSCodeAdapter();
+
 /**
  * Navigator App Component
  */
@@ -27,9 +30,6 @@ function NavigatorApp() {
   const [codices, setCodices] = useState<Codex[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedCodexId, setSelectedCodexId] = useState<string | undefined>();
-
-  // Create platform adapter
-  const adapter = new VSCodeAdapter();
 
   const handleCodexSelect = useCallback((codex: Codex) => {
     setSelectedCodexId(codex.id);
@@ -82,8 +82,7 @@ function initializeNavigator(): void {
     return;
   }
 
-  // Create platform adapter for styling
-  const adapter = new VSCodeAdapter();
+  // Apply VS Code styling (adapter already created globally)
   adapter.applyVSCodeStyling();
 
   // Create React root and render
