@@ -163,9 +163,9 @@
       ],
       "vespera-forge": [
         {
-          "id": "vesperaForge.mainView",
+          "id": "vesperaForge.navigatorView",
           "type": "webview",
-          "name": "Vespera Forge",
+          "name": "Navigator",
           "when": "vespera-forge:enabled && config.vesperaForge.ui.useNewFramework"
         },
         {

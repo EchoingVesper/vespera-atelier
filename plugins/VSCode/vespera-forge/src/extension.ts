@@ -127,37 +127,53 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         );
       }
     } else {
-      // Use new three-panel UI framework
-      logger.info('Using new three-panel UI framework');
+      // Use new three-panel UI framework (split layout)
+      logger.info('Using new split-panel UI framework');
 
-      // Import and initialize VesperaForgeWebviewProvider
-      const { VesperaForgeWebviewProvider } = require('./webview/VesperaForgeWebviewProvider');
+      // Import the split panel providers
+      const { NavigatorWebviewProvider } = require('./webview/NavigatorWebviewProvider');
+      const { EditorPanelProvider } = require('./webview/EditorPanelProvider');
 
-      const vesperaForgeProvider = new VesperaForgeWebviewProvider(context, logger);
-
-      // Register the webview view provider
-      const providerDisposable = vscode.window.registerWebviewViewProvider(
-        VesperaForgeWebviewProvider.viewType,
-        vesperaForgeProvider
+      // Create navigator provider with callback to open editor when codex is selected
+      const navigatorProvider = new NavigatorWebviewProvider(
+        context,
+        logger,
+        (codexId: string) => {
+          // When a codex is selected in navigator, open the editor panel
+          EditorPanelProvider.createOrShow(context, logger, codexId);
+        }
       );
 
-      context.subscriptions.push(providerDisposable);
+      // Register the navigator view provider in the sidebar
+      const navigatorDisposable = vscode.window.registerWebviewViewProvider(
+        NavigatorWebviewProvider.viewType,
+        navigatorProvider
+      );
 
-      // Register the provider as a resource with the context manager
+      context.subscriptions.push(navigatorDisposable);
+
+      // Register the navigator as a resource with the context manager
       contextManager.registerResource(
-        vesperaForgeProvider,
-        'VesperaForgeWebviewProvider',
-        'main-vespera-forge'
+        navigatorProvider,
+        'NavigatorWebviewProvider',
+        'navigator-sidebar'
       );
 
-      // Register command to open/focus the Vespera Forge view
-      const openCommand = vscode.commands.registerCommand('vespera-forge.open', () => {
-        vscode.commands.executeCommand('vesperaForge.mainView.focus');
+      // Register command to open the navigator in sidebar
+      const openNavigatorCommand = vscode.commands.registerCommand('vespera-forge.open', () => {
+        vscode.commands.executeCommand('vesperaForge.navigatorView.focus');
       });
 
-      context.subscriptions.push(openCommand);
+      context.subscriptions.push(openNavigatorCommand);
 
-      logger.info('Vespera Forge UI framework initialized successfully');
+      // Register command to open the editor panel
+      const openEditorCommand = vscode.commands.registerCommand('vespera-forge.openEditor', (codexId?: string) => {
+        EditorPanelProvider.createOrShow(context, logger, codexId);
+      });
+
+      context.subscriptions.push(openEditorCommand);
+
+      logger.info('Vespera Forge split-panel UI initialized successfully');
     }
 
     // Create enhanced Vespera Forge context with core services

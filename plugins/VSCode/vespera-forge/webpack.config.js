@@ -82,10 +82,14 @@ const webviewConfig = {
   target: 'web', // Webview runs in a browser-like context
   mode: 'none',
 
-  entry: './src/webview/index.tsx',
+  entry: {
+    index: './src/webview/index.tsx',
+    navigator: './src/webview/navigator.tsx',
+    editor: './src/webview/editor.tsx'
+  },
   output: {
     path: path.resolve(__dirname, 'dist/webview'),
-    filename: 'index.js',
+    filename: '[name].js',
     clean: false // Don't clean since extension config already cleans dist/
   },
   resolve: {
