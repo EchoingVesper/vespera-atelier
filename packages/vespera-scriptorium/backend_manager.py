@@ -150,6 +150,7 @@ class BinderyBackendManager:
                 ],
                 cwd=self.bindery_path,
                 env=env,
+                stdin=subprocess.DEVNULL,  # Prevent blocking on stdin
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True
