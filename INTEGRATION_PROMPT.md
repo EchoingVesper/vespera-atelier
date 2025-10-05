@@ -4,6 +4,263 @@
 **Target:** VS Code Extension (`plugins/VSCode/vespera-forge`)
 **Objective:** Wire in the Next.js-based UI framework as a replacement for the current webview UI
 
+**🔄 STATUS UPDATE (2025-10-05)**
+- **Phases 1-6**: ✅ Complete
+- **Current Blocker**: ⚠️ 205 TypeScript errors in framework components
+- **Next Steps**: Fix type errors, then proceed to Phase 7+
+
+---
+
+## ⚡ Quick Context for New Session
+
+### What's Been Done (Phases 1-6)
+
+✅ **Phase 1**: Assessment complete → `INTEGRATION_ASSESSMENT.md`
+✅ **Phase 2**: Feature flag implemented → `vesperaForge.ui.useNewFramework`
+✅ **Phase 3**: All dependencies installed (732 packages), build system configured
+✅ **Phase 4**: Webview infrastructure created:
+  - `VesperaForgeWebviewProvider.ts` (341 lines) - Full webview implementation
+  - `index.tsx` (71 lines) - React entry point with theme observer
+✅ **Phase 5**: Extension integrated with conditional registration
+✅ **Phase 6**: Build tools configured (Tailwind, PostCSS, webpack)
+
+### What's Blocked
+
+⚠️ **205 TypeScript errors** in framework components prevent functional testing:
+- ~50 errors in core components (VesperaForge, ThreePanelLayout, CodexNavigator, etc.)
+- ~100 errors in optional shadcn/ui components (calendar, chart, command, etc.)
+- ~40 errors in test files
+- ~15 errors in stub/utility files
+
+**Root Causes**: Import/export mismatches, React 19 type conflicts, missing type exports
+
+### Files Created
+
+```
+plugins/VSCode/vespera-forge/
+├── src/
+│   ├── webview/
+│   │   ├── VesperaForgeWebviewProvider.ts  ✅ Created
+│   │   └── index.tsx                        ✅ Created
+│   ├── vespera-forge/                       ✅ Copied (~280 KB)
+│   ├── components/ui/                       ✅ Copied (48 files)
+│   ├── lib/                                 ✅ Copied
+│   ├── hooks/                               ✅ Copied
+│   └── app/globals.css                      ✅ Copied
+├── tailwind.config.js                       ✅ Created
+├── postcss.config.js                        ✅ Created
+└── webpack.config.js                        ✅ Updated (dual build)
+```
+
+---
+
+## 🚀 Recommended Approach for Next Session
+
+### Strategy: Parallelize with Agents + Bindery Coordination
+
+**Why**: The remaining work can be split into independent tasks that can run in parallel, dramatically speeding up completion.
+
+**Coordination Layer**: Use the Bindery MCP server to:
+- Track task completion status
+- Coordinate dependencies between agents
+- Share context and results
+- Manage the task queue
+
+### Task Breakdown
+
+#### **Task 1: Fix Core Framework TypeScript Errors**
+**Priority**: CRITICAL (blocks all other work)
+**Agent**: `technical-debt-resolver` or `general-purpose`
+**Estimated Time**: 30-60 minutes
+
+Files to fix (in order):
+1. `src/vespera-forge/core/types/index.ts` - Fix/add missing type exports
+2. `src/vespera-forge/components/core/VesperaForge.tsx` - Fix import conflicts
+3. `src/vespera-forge/components/layout/ThreePanelLayout.tsx` - Fix ResizablePanel imports
+4. `src/vespera-forge/components/navigation/CodexNavigator.tsx` - Fix type mismatches
+5. `src/vespera-forge/components/editor/CodexEditor.tsx` - Fix type mismatches
+6. `src/vespera-forge/components/ai/AIAssistant.tsx` - Fix default export conflict
+
+**Bindery Task**:
+```typescript
+{
+  id: "fix-core-types",
+  title: "Fix TypeScript errors in core framework components",
+  status: "in_progress",
+  dependencies: [],
+  files: [...list above...],
+  successCriteria: "npm run compile shows 0 errors in vespera-forge/ directory"
+}
+```
+
+#### **Task 2: Fix Optional shadcn/ui Component Errors**
+**Priority**: MEDIUM (non-blocking for basic functionality)
+**Agent**: `technical-debt-resolver` or run in background
+**Estimated Time**: 20-30 minutes
+
+These are used by the framework but not critical:
+- `calendar.tsx`, `chart.tsx`, `carousel.tsx`, `command.tsx`
+- `context-menu.tsx`, `drawer.tsx`, `menubar.tsx`, etc.
+
+**Strategy**: Can be deferred if needed, or fixed in parallel with testing
+
+#### **Task 3: Test Webview Loading**
+**Priority**: HIGH (validates Phase 4 work)
+**Agent**: `vespera-ui-implementer` or manual testing
+**Dependencies**: Task 1 must complete first
+**Estimated Time**: 15-20 minutes
+
+Steps:
+1. Build extension: `npm run compile`
+2. Launch Extension Development Host (F5)
+3. Enable setting: `vesperaForge.ui.useNewFramework = true`
+4. Verify webview appears in sidebar
+5. Open webview developer tools, check console
+6. Verify React app renders (even if empty)
+7. Test theme switching (dark/light)
+
+#### **Task 4: Implement Codex CRUD Operations**
+**Priority**: HIGH (core functionality)
+**Agent**: `bindery-rust-integrator`
+**Dependencies**: Task 3 must validate webview works
+**Estimated Time**: 45-60 minutes
+
+Connect webview to Bindery backend:
+1. Implement `handleCodexCreate()` in VesperaForgeWebviewProvider
+2. Implement `handleCodexUpdate()`
+3. Implement `handleCodexDelete()`
+4. Implement `handleCodexList()`
+5. Wire to existing Bindery MCP calls
+6. Test full CRUD cycle
+
+#### **Task 5: Fix Test File Errors**
+**Priority**: LOW (deferred to later)
+**Agent**: `test-coverage-enhancer`
+**Dependencies**: None (can run in parallel)
+**Estimated Time**: 30 minutes
+
+Clean up test files:
+- `ChatSessionPersistence.test.ts`
+- `ChatStateValidation.test.ts`
+- `MemoryLeakDetection.test.ts`
+- etc.
+
+---
+
+## 📋 Execution Plan for Next Session
+
+### Phase 1: Setup Bindery Coordination
+
+**Create Master Task in Bindery** (if Bindery MCP is available):
+```bash
+# Use the mcp__vespera-scriptorium__create_task tool
+{
+  "title": "Vespera Forge UI Integration - TypeScript Error Resolution",
+  "description": "Coordinate parallel fixing of TypeScript errors across framework components",
+  "priority": "high",
+  "role": "architect"
+}
+```
+
+This master task will coordinate sub-tasks for each component.
+
+### Phase 2: Launch Parallel Agents
+
+**Sequential Order** (due to dependencies):
+
+1. **Launch Task 1 Agent** (CRITICAL PATH):
+   ```
+   Agent: technical-debt-resolver
+   Prompt: "Fix TypeScript errors in core Vespera Forge framework components.
+           Start with src/vespera-forge/core/types/index.ts to fix missing exports,
+           then proceed to VesperaForge.tsx, ThreePanelLayout.tsx, etc.
+           Success criteria: npm run compile shows 0 errors in vespera-forge/ directory."
+   ```
+
+2. **Wait for Task 1 completion**, then **Launch Task 3**:
+   ```
+   Agent: vespera-ui-implementer or manual
+   Prompt: "Test webview loading: Build extension, launch in dev mode,
+           enable vesperaForge.ui.useNewFramework setting, verify webview renders
+           and theme switching works. Document any runtime errors."
+   ```
+
+3. **In Parallel with Task 3, Launch Task 2** (optional):
+   ```
+   Agent: technical-debt-resolver
+   Prompt: "Fix TypeScript errors in optional shadcn/ui components
+           (calendar, chart, carousel, etc.). These are non-blocking
+           but should be cleaned up for production."
+   ```
+
+4. **After Task 3 validates webview, Launch Task 4**:
+   ```
+   Agent: bindery-rust-integrator
+   Prompt: "Implement Codex CRUD operations in VesperaForgeWebviewProvider.
+           Wire handleCodexCreate/Update/Delete/List to Bindery MCP backend.
+           Test full create-read-update-delete cycle."
+   ```
+
+5. **Optional: Launch Task 5 in background**:
+   ```
+   Agent: test-coverage-enhancer
+   Prompt: "Fix TypeScript errors in test files. Low priority,
+           can be deferred to later release."
+   ```
+
+### Phase 3: Validation & Handoff
+
+After all critical tasks complete:
+1. Run full build: `npm run compile`
+2. Verify 0 TypeScript errors in core components
+3. Test extension in Extension Development Host
+4. Document any remaining issues
+5. Update `INTEGRATION_CHECKLIST.md` with progress
+
+---
+
+## 🎯 Quick Start Commands for Next Session
+
+```bash
+# Navigate to worktree
+cd ~/Development/vespera-atelier-worktrees/feat-codex-ui-framework
+cd plugins/VSCode/vespera-forge
+
+# Check current error count
+npm run compile 2>&1 | grep -c "ERROR"
+
+# View first 20 errors
+npm run compile 2>&1 | grep "^\[tsl\] ERROR" | head -20
+
+# Focus on vespera-forge component errors
+npm run compile 2>&1 | grep -E "(vespera-forge/components)" | grep ERROR
+
+# After fixes, test build
+npm run compile
+
+# Launch extension for testing
+code --extensionDevelopmentPath=$(pwd)
+```
+
+---
+
+## 📊 Progress Tracking
+
+**Reference Documents**:
+- `INTEGRATION_ASSESSMENT.md` - Overall progress and architecture mapping
+- `INTEGRATION_CHECKLIST.md` - Detailed task-by-task tracking
+- `PHASE_4_COMPLETE.md` - Phase 4 infrastructure details
+- `plugins/VSCode/vespera-forge/package.json` - Dependencies and config
+
+**Current Commit**: `d7eea74` (Phase 4 webview infrastructure)
+
+**Key Metrics**:
+- Files created: 3 (VesperaForgeWebviewProvider, index.tsx, PHASE_4_COMPLETE.md)
+- Files modified: 3 (extension.ts, package.json, webpack.config.js)
+- Total packages: 732
+- Extension bundle size: 2.38 MiB
+- TypeScript errors: 205 → Target: 0 for core components
+
 ---
 
 ## Context
