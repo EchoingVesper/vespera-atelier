@@ -169,6 +169,12 @@
           "when": "vespera-forge:enabled && config.vesperaForge.ui.useNewFramework"
         },
         {
+          "id": "vesperaForge.aiAssistantView",
+          "type": "webview",
+          "name": "AI Assistant",
+          "when": "vespera-forge:enabled && config.vesperaForge.ui.useNewFramework"
+        },
+        {
           "id": "vesperaForgeTaskTree",
           "name": "Task Tree",
           "when": "vespera-forge:enabled && !config.vesperaForge.ui.useNewFramework"

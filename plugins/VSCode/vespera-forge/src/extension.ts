@@ -132,15 +132,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
       // Import the split panel providers
       const { NavigatorWebviewProvider } = require('./webview/NavigatorWebviewProvider');
+      const { AIAssistantWebviewProvider } = require('./webview/AIAssistantWebviewProvider');
       const { EditorPanelProvider } = require('./webview/EditorPanelProvider');
+
+      // Create AI assistant provider
+      const aiAssistantProvider = new AIAssistantWebviewProvider(context, logger);
 
       // Create navigator provider with callback to open editor when codex is selected
       const navigatorProvider = new NavigatorWebviewProvider(
         context,
         logger,
         (codexId: string) => {
-          // When a codex is selected in navigator, open the editor panel
+          // When a codex is selected in navigator, open the editor panel and notify AI assistant
           EditorPanelProvider.createOrShow(context, logger, codexId);
+          aiAssistantProvider.setActiveCodex(codexId);
         }
       );
 
@@ -149,28 +154,40 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         NavigatorWebviewProvider.viewType,
         navigatorProvider
       );
-
       context.subscriptions.push(navigatorDisposable);
 
-      // Register the navigator as a resource with the context manager
+      // Register the AI assistant view provider in the sidebar
+      const aiAssistantDisposable = vscode.window.registerWebviewViewProvider(
+        AIAssistantWebviewProvider.viewType,
+        aiAssistantProvider
+      );
+      context.subscriptions.push(aiAssistantDisposable);
+
+      // Register the providers as resources with the context manager
       contextManager.registerResource(
         navigatorProvider,
         'NavigatorWebviewProvider',
         'navigator-sidebar'
       );
 
+      contextManager.registerResource(
+        aiAssistantProvider,
+        'AIAssistantWebviewProvider',
+        'ai-assistant-sidebar'
+      );
+
       // Register command to open the navigator in sidebar
       const openNavigatorCommand = vscode.commands.registerCommand('vespera-forge.open', () => {
+        // Focus both navigator and AI assistant views
         vscode.commands.executeCommand('vesperaForge.navigatorView.focus');
+        vscode.commands.executeCommand('vesperaForge.aiAssistantView.focus');
       });
-
       context.subscriptions.push(openNavigatorCommand);
 
       // Register command to open the editor panel
       const openEditorCommand = vscode.commands.registerCommand('vespera-forge.openEditor', (codexId?: string) => {
         EditorPanelProvider.createOrShow(context, logger, codexId);
       });
-
       context.subscriptions.push(openEditorCommand);
 
       logger.info('Vespera Forge split-panel UI initialized successfully');

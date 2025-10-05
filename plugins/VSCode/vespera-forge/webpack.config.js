@@ -85,7 +85,8 @@ const webviewConfig = {
   entry: {
     index: './src/webview/index.tsx',
     navigator: './src/webview/navigator.tsx',
-    editor: './src/webview/editor.tsx'
+    editor: './src/webview/editor.tsx',
+    'ai-assistant': './src/webview/ai-assistant.tsx'
   },
   output: {
     path: path.resolve(__dirname, 'dist/webview'),

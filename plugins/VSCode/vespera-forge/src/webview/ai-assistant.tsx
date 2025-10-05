@@ -1,12 +1,12 @@
 /**
- * React Editor Entry Point
- * Renders the Editor + AI Assistant in a two-panel layout
+ * React AI Assistant Entry Point
+ * Renders only the AI Assistant for the right sidebar view
  */
 import React, { useState, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { VSCodeAdapter } from '@/vespera-forge/core/adapters/vscode-adapter';
-import { CodexEditor } from '@/vespera-forge/components/editor/CodexEditor';
-import { Codex, Template, Context } from '@/vespera-forge/core/types';
+import { AIAssistant } from '@/vespera-forge/components/ai/AIAssistant';
+import { AIAssistant as AIAssistantType, Codex, Template, Context } from '@/vespera-forge/core/types';
 import '@/app/globals.css';
 
 // Declare VS Code API type
@@ -23,11 +23,36 @@ declare global {
 // Create platform adapter once (outside component to avoid re-acquiring VS Code API)
 const adapter = new VSCodeAdapter();
 
+// Default assistants
+function getDefaultAssistants(): AIAssistantType[] {
+  return [
+    {
+      id: 'general-assistant',
+      name: 'Vespera Assistant',
+      personality: {
+        tone: 'friendly',
+        expertise: 'expert',
+        communicationStyle: 'detailed'
+      },
+      expertise: ['content creation', 'organization', 'productivity'],
+      templateIds: [],
+      contexts: ['creation', 'review', 'planning'],
+      config: {
+        model: 'gpt-4',
+        temperature: 0.7,
+        maxTokens: 1000,
+        systemPrompt: 'You are a helpful assistant for content creation and organization.'
+      }
+    }
+  ];
+}
+
 /**
- * Editor App Component
- * Shows only the CodexEditor (AI Assistant is in a separate sidebar panel)
+ * AI Assistant App Component
  */
-function EditorApp() {
+function AIAssistantApp() {
+  const [assistants] = useState<AIAssistantType[]>(getDefaultAssistants());
+  const [currentAssistant, setCurrentAssistant] = useState<AIAssistantType>(assistants[0]);
   const [activeCodex, setActiveCodex] = useState<Codex | undefined>();
   const [activeTemplate, setActiveTemplate] = useState<Template | undefined>();
 
@@ -54,31 +79,47 @@ function EditorApp() {
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  const handleCodexUpdate = useCallback(async (codex: Codex) => {
-    setActiveCodex(codex);
-    adapter.sendMessage({
-      type: 'codex.update',
-      payload: codex
+  const handleAIMessage = useCallback(async (message: string, assistant: AIAssistantType, aiContext: any) => {
+    return new Promise<string>((resolve) => {
+      const messageId = Date.now().toString();
+
+      const handleResponse = (event: MessageEvent) => {
+        const data = event.data;
+        if (data.type === 'ai.response' && data.id === messageId) {
+          window.removeEventListener('message', handleResponse);
+          resolve(data.payload.response);
+        }
+      };
+
+      window.addEventListener('message', handleResponse);
+
+      adapter.sendMessage({
+        type: 'ai.message',
+        id: messageId,
+        payload: { message, assistant, context: aiContext }
+      });
     });
   }, []);
 
   return (
-    <div className="h-screen w-full overflow-hidden bg-background text-foreground">
-      <CodexEditor
-        codex={activeCodex}
-        template={activeTemplate}
+    <div className="h-full w-full">
+      <AIAssistant
+        assistants={assistants}
+        currentAssistant={currentAssistant}
+        activeCodex={activeCodex}
+        activeTemplate={activeTemplate}
         context={context}
-        onCodexUpdate={handleCodexUpdate}
-        platformAdapter={adapter}
+        onAssistantChange={setCurrentAssistant}
+        onSendMessage={handleAIMessage}
       />
     </div>
   );
 }
 
 /**
- * Initialize the Editor
+ * Initialize the AI Assistant
  */
-function initializeEditor(): void {
+function initializeAIAssistant(): void {
   const rootElement = document.getElementById('root');
   if (!rootElement) {
     console.error('Root element not found');
@@ -92,11 +133,11 @@ function initializeEditor(): void {
   const root = createRoot(rootElement);
   root.render(
     <React.StrictMode>
-      <EditorApp />
+      <AIAssistantApp />
     </React.StrictMode>
   );
 
-  // Notify extension that editor is ready
+  // Notify extension that AI assistant is ready
   adapter.sendMessage({ type: 'ready' });
 
   // Handle theme changes
@@ -119,12 +160,12 @@ function initializeEditor(): void {
     attributeFilter: ['class']
   });
 
-  console.log('Editor initialized successfully');
+  console.log('AI Assistant initialized successfully');
 }
 
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeEditor);
+  document.addEventListener('DOMContentLoaded', initializeAIAssistant);
 } else {
-  initializeEditor();
+  initializeAIAssistant();
 }
