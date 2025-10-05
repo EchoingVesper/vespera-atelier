@@ -101,6 +101,11 @@
         "category": "Vespera Forge"
       },
       {
+        "command": "vespera-forge.openAIAssistant",
+        "title": "Open AI Assistant",
+        "category": "Vespera Forge"
+      },
+      {
         "command": "vespera-forge.configureChatProviders",
         "title": "Configure Chat Providers",
         "category": "Vespera Forge"
@@ -165,31 +170,16 @@
         {
           "id": "vesperaForge.navigatorView",
           "type": "webview",
-          "name": "Navigator",
-          "when": "vespera-forge:enabled && config.vesperaForge.ui.useNewFramework"
-        },
+          "name": "Codex Navigator",
+          "when": "vespera-forge:enabled"
+        }
+      ],
+      "vespera-forge-assistant": [
         {
-          "id": "vesperaForge.aiAssistantView",
+          "id": "vespera-forge.aiAssistant",
           "type": "webview",
           "name": "AI Assistant",
-          "when": "vespera-forge:enabled && config.vesperaForge.ui.useNewFramework"
-        },
-        {
-          "id": "vesperaForgeTaskTree",
-          "name": "Task Tree",
-          "when": "vespera-forge:enabled && !config.vesperaForge.ui.useNewFramework"
-        },
-        {
-          "id": "vespera-forge.taskDashboard",
-          "type": "webview",
-          "name": "Task Dashboard",
-          "when": "vespera-forge:enabled && !config.vesperaForge.ui.useNewFramework"
-        },
-        {
-          "id": "vespera-forge.chatPanel",
-          "type": "webview",
-          "name": "Chat Assistant",
-          "when": "vespera-forge:enabled && !config.vesperaForge.ui.useNewFramework"
+          "when": "vespera-forge:enabled"
         }
       ]
     },
@@ -199,6 +189,11 @@
           "id": "vespera-forge",
           "title": "Vespera Forge",
           "icon": "$(symbol-namespace)"
+        },
+        {
+          "id": "vespera-forge-assistant",
+          "title": "Vespera AI",
+          "icon": "$(comment-discussion)"
         }
       ]
     },

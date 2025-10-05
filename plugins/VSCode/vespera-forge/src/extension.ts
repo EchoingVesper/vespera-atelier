@@ -9,7 +9,7 @@ import * as vscode from 'vscode';
 import { VesperaForgeContext } from '@/types';
 import { registerCommands } from '@/commands';
 import { initializeProviders } from '@/providers';
-import { initializeViews } from '@/views';
+import { initializeViews, VesperaViewContext } from '@/views';
 import { getConfig, isDevelopment } from '@/utils';
 import { 
   VesperaCoreServices, 
@@ -79,118 +79,31 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // Initialize providers
     const { contentProvider } = initializeProviders(context);
 
-    // Get configuration to check UI framework preference
+    // Get configuration
     const config = getConfig();
-    const USE_NEW_UI = config.useNewFramework;
 
-    // Initialize views conditionally based on UI framework preference
-    let viewContext: any = undefined;
+    // Initialize views using the new view system
+    logger.info('Initializing view providers');
+    const viewContext: VesperaViewContext = initializeViews(context);
 
-    if (!USE_NEW_UI) {
-      // Use legacy UI (current implementation)
-      logger.info('Using legacy UI framework');
-      viewContext = initializeViews(context);
+    // Register view context with memory-safe context manager
+    contextManager.setViewContext(context, viewContext);
 
-      // Register view context with memory-safe context manager
-      contextManager.setViewContext(context, viewContext);
-
-      // Register view providers as disposable resources
-      if (viewContext.chatPanelProvider) {
-        contextManager.registerResource(
-          viewContext.chatPanelProvider,
-          'ChatPanelProvider',
-          'main-chat-panel'
-        );
-      }
-
-      if (viewContext.taskDashboardProvider) {
-        contextManager.registerResource(
-          viewContext.taskDashboardProvider,
-          'TaskDashboardProvider',
-          'main-task-dashboard'
-        );
-      }
-
-      if (viewContext.statusBarManager) {
-        contextManager.registerResource(
-          viewContext.statusBarManager,
-          'StatusBarManager',
-          'main-status-bar'
-        );
-      }
-
-      if (viewContext.taskTreeProvider) {
-        contextManager.registerResource(
-          viewContext.taskTreeProvider,
-          'TaskTreeProvider',
-          'main-task-tree'
-        );
-      }
-    } else {
-      // Use new three-panel UI framework (split layout)
-      logger.info('Using new split-panel UI framework');
-
-      // Import the split panel providers
-      const { NavigatorWebviewProvider } = require('./webview/NavigatorWebviewProvider');
-      const { AIAssistantWebviewProvider } = require('./webview/AIAssistantWebviewProvider');
-      const { EditorPanelProvider } = require('./webview/EditorPanelProvider');
-
-      // Create AI assistant provider
-      const aiAssistantProvider = new AIAssistantWebviewProvider(context, logger);
-
-      // Create navigator provider with callback to open editor when codex is selected
-      const navigatorProvider = new NavigatorWebviewProvider(
-        context,
-        logger,
-        (codexId: string) => {
-          // When a codex is selected in navigator, open the editor panel and notify AI assistant
-          EditorPanelProvider.createOrShow(context, logger, codexId);
-          aiAssistantProvider.setActiveCodex(codexId);
-        }
-      );
-
-      // Register the navigator view provider in the sidebar
-      const navigatorDisposable = vscode.window.registerWebviewViewProvider(
-        NavigatorWebviewProvider.viewType,
-        navigatorProvider
-      );
-      context.subscriptions.push(navigatorDisposable);
-
-      // Register the AI assistant view provider in the sidebar
-      const aiAssistantDisposable = vscode.window.registerWebviewViewProvider(
-        AIAssistantWebviewProvider.viewType,
-        aiAssistantProvider
-      );
-      context.subscriptions.push(aiAssistantDisposable);
-
-      // Register the providers as resources with the context manager
+    // Register view providers as disposable resources
+    if (viewContext.navigatorProvider) {
       contextManager.registerResource(
-        navigatorProvider,
-        'NavigatorWebviewProvider',
-        'navigator-sidebar'
+        viewContext.navigatorProvider,
+        'NavigatorProvider',
+        'main-navigator'
       );
+    }
 
+    if (viewContext.aiAssistantProvider) {
       contextManager.registerResource(
-        aiAssistantProvider,
-        'AIAssistantWebviewProvider',
-        'ai-assistant-sidebar'
+        viewContext.aiAssistantProvider,
+        'AIAssistantProvider',
+        'main-ai-assistant'
       );
-
-      // Register command to open the navigator in sidebar
-      const openNavigatorCommand = vscode.commands.registerCommand('vespera-forge.open', () => {
-        // Focus both navigator and AI assistant views
-        vscode.commands.executeCommand('vesperaForge.navigatorView.focus');
-        vscode.commands.executeCommand('vesperaForge.aiAssistantView.focus');
-      });
-      context.subscriptions.push(openNavigatorCommand);
-
-      // Register command to open the editor panel
-      const openEditorCommand = vscode.commands.registerCommand('vespera-forge.openEditor', (codexId?: string) => {
-        EditorPanelProvider.createOrShow(context, logger, codexId);
-      });
-      context.subscriptions.push(openEditorCommand);
-
-      logger.info('Vespera Forge split-panel UI initialized successfully');
     }
 
     // Create enhanced Vespera Forge context with core services
