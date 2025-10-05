@@ -130,16 +130,27 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       // Use new three-panel UI framework
       logger.info('Using new three-panel UI framework');
 
-      // TODO: Initialize new Vespera Forge UI framework
-      // This will be implemented in Phase 3
-      logger.warn('New UI framework not yet implemented - will be added in Phase 3');
+      // Import and initialize VesperaForgeWebviewProvider
+      const { VesperaForgeWebviewProvider } = require('./webview/VesperaForgeWebviewProvider');
 
-      // For now, show a notification to the user
-      vscode.window.showInformationMessage(
-        'Vespera Forge: New UI framework is enabled but not yet implemented. ' +
-        'The extension will run with core services only. ' +
-        'Set "vesperaForge.ui.useNewFramework" to false to use the current UI.'
+      const vesperaForgeProvider = new VesperaForgeWebviewProvider(context, logger);
+
+      // Register the webview view provider
+      const providerDisposable = vscode.window.registerWebviewViewProvider(
+        VesperaForgeWebviewProvider.viewType,
+        vesperaForgeProvider
       );
+
+      context.subscriptions.push(providerDisposable);
+
+      // Register the provider as a resource with the context manager
+      contextManager.registerResource(
+        vesperaForgeProvider,
+        'VesperaForgeWebviewProvider',
+        'main-vespera-forge'
+      );
+
+      logger.info('Vespera Forge UI framework initialized successfully');
     }
 
     // Create enhanced Vespera Forge context with core services
