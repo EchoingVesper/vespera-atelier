@@ -12,10 +12,14 @@ import { VesperaMemoryError, VesperaErrorCode } from '../error-handling/VesperaE
 import { VesperaErrorHandler } from '../error-handling/VesperaErrorHandler';
 
 export interface ViewContextEntry {
+  // Legacy providers (for backwards compatibility)
   chatPanelProvider?: any; // Using any to avoid circular dependencies
   taskDashboardProvider?: any;
   statusBarManager?: any;
   taskTreeProvider?: any;
+  // New Codex Navigator framework providers
+  navigatorProvider?: any;
+  aiAssistantProvider?: any;
   createdAt: number;
   lastAccessedAt: number;
 }

@@ -109,7 +109,8 @@ export class BinderyService extends EventEmitter {
       maxProcessMemoryMB: 256,
       maxExecutionTimeMs: 30000,
       allowedBinderyPaths: [
-        '/home/aya/dev/monorepo/vespera-atelier/packages/vespera-utilities/vespera-bindery'
+        '/home/aya/Development/vespera-atelier/packages/vespera-utilities/vespera-bindery',
+        '/home/aya/dev/monorepo/vespera-atelier/packages/vespera-utilities/vespera-bindery' // Legacy path
       ],
       blockedBinderyPaths: [
         '/etc', '/sys', '/proc', '/root'
@@ -832,13 +833,17 @@ export class BinderyService extends EventEmitter {
 
   private async findBinderyExecutable(): Promise<string | null> {
     this.log(`Workspace root: ${this.config.workspaceRoot}`);
-    
+
     // Priority order for finding Bindery executable
     const searchPaths = [
       this.config.binderyPath,
+      // Try from current workspace (works if in main repo)
       path.join(this.config.workspaceRoot || '', '../../../packages/vespera-utilities/vespera-bindery/target/debug/bindery-server'),
       path.join(this.config.workspaceRoot || '', '../../../packages/vespera-utilities/vespera-bindery/target/release/bindery-server'),
-      // Also try from the monorepo root directly
+      // Direct paths to main monorepo (works from worktrees)
+      '/home/aya/Development/vespera-atelier/packages/vespera-utilities/vespera-bindery/target/debug/bindery-server',
+      '/home/aya/Development/vespera-atelier/packages/vespera-utilities/vespera-bindery/target/release/bindery-server',
+      // Legacy path (kept for compatibility)
       '/home/aya/dev/monorepo/vespera-atelier/packages/vespera-utilities/vespera-bindery/target/debug/bindery-server',
       'bindery-server' // PATH lookup
     ].filter(Boolean);

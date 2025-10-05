@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 import { NavigatorWebviewProvider } from './NavigatorWebviewProvider';
 import { EditorPanelProvider } from './EditorPanelProvider';
 import { AIAssistantWebviewProvider } from './ai-assistant';
+import { getBinderyService } from '../services/bindery';
 
 // Export view providers
 export { NavigatorWebviewProvider } from './NavigatorWebviewProvider';
@@ -26,12 +27,16 @@ export interface VesperaViewContext {
 export function initializeViews(context: vscode.ExtensionContext): VesperaViewContext {
   console.log('[Vespera] Initializing Codex Navigator framework...');
 
+  // Get the global Bindery service instance
+  const binderyService = getBinderyService();
+
   // Create AI assistant provider first
   const aiAssistantProvider = new AIAssistantWebviewProvider(context.extensionUri, context);
 
   // Create navigator provider with callback to open editor when codex is selected
   const navigatorProvider = new NavigatorWebviewProvider(
     context,
+    binderyService,
     undefined, // logger (optional)
     (codexId: string) => {
       // When a codex is selected in navigator, open the editor panel

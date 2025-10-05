@@ -4,6 +4,7 @@
  */
 import * as vscode from 'vscode';
 import { VesperaLogger } from '../core/logging/VesperaLogger';
+import { BinderyService } from '../services/bindery';
 
 export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'vesperaForge.navigatorView';
@@ -14,6 +15,7 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
 
   constructor(
     private readonly context: vscode.ExtensionContext,
+    private readonly binderyService: BinderyService,
     private readonly logger?: VesperaLogger,
     private readonly onCodexSelected?: (codexId: string) => void
   ) {
@@ -148,42 +150,120 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
   private async sendInitialState(): Promise<void> {
     if (!this._view) return;
 
-    // TODO: Load actual codices from storage
-    const mockCodexData = {
-      codices: [],
-      templates: []
-    };
+    try {
+      // Check if Bindery is connected
+      if (!this.binderyService.isConnected()) {
+        this.logger?.warn('Bindery not connected, attempting to initialize...');
+        const initResult = await this.binderyService.initialize();
+        if (!initResult.success) {
+          this.logger?.error('Failed to initialize Bindery', initResult.error);
+          // Send empty state
+          this._view.webview.postMessage({
+            type: 'initialState',
+            payload: { codices: [], templates: [] }
+          });
+          return;
+        }
+      }
 
-    this._view.webview.postMessage({
-      type: 'initialState',
-      payload: mockCodexData
-    });
-  }
+      // Load codices from Bindery
+      const codicesResult = await this.binderyService.listCodeices();
 
-  private async handleCodexCreate(messageId: string, payload: any): Promise<void> {
-    // TODO: Implement codex creation
-    this.logger?.debug('Create codex', payload);
+      const codexData = {
+        codices: codicesResult.success ? codicesResult.data : [],
+        templates: [] // TODO: Load templates when supported
+      };
 
-    if (this._view) {
       this._view.webview.postMessage({
-        type: 'response',
-        id: messageId,
-        success: true,
-        result: { id: Date.now().toString(), ...payload }
+        type: 'initialState',
+        payload: codexData
+      });
+    } catch (error) {
+      this.logger?.error('Error loading initial state', error);
+      this._view.webview.postMessage({
+        type: 'initialState',
+        payload: { codices: [], templates: [] }
       });
     }
   }
 
+  private async handleCodexCreate(messageId: string, payload: any): Promise<void> {
+    this.logger?.debug('Create codex', payload);
+
+    try {
+      const result = await this.binderyService.createCodex(
+        payload.title,
+        payload.templateId || 'default'
+      );
+
+      if (this._view) {
+        if (result.success) {
+          this._view.webview.postMessage({
+            type: 'response',
+            id: messageId,
+            success: true,
+            result: { id: result.data, ...payload }
+          });
+
+          // Refresh the navigator to show the new codex
+          await this.sendInitialState();
+        } else {
+          this._view.webview.postMessage({
+            type: 'response',
+            id: messageId,
+            success: false,
+            error: result.error.message
+          });
+        }
+      }
+    } catch (error) {
+      this.logger?.error('Error creating codex', error);
+      if (this._view) {
+        this._view.webview.postMessage({
+          type: 'response',
+          id: messageId,
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    }
+  }
+
   private async handleCodexDelete(messageId: string, payload: any): Promise<void> {
-    // TODO: Implement codex deletion
     this.logger?.debug('Delete codex', payload);
 
-    if (this._view) {
-      this._view.webview.postMessage({
-        type: 'response',
-        id: messageId,
-        success: true
-      });
+    try {
+      const result = await this.binderyService.deleteCodex(payload.codexId);
+
+      if (this._view) {
+        if (result.success) {
+          this._view.webview.postMessage({
+            type: 'response',
+            id: messageId,
+            success: true
+          });
+
+          // Refresh the navigator to reflect the deletion
+          await this.sendInitialState();
+        } else {
+          this._view.webview.postMessage({
+            type: 'response',
+            id: messageId,
+            success: false,
+            error: result.error.message
+          });
+        }
+      }
+    } catch (error) {
+      this.logger?.error('Error deleting codex', error);
+      if (this._view) {
+        this._view.webview.postMessage({
+          type: 'response',
+          id: messageId,
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
     }
   }
 
