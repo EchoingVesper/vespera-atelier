@@ -92,6 +92,20 @@ export const ThreePanelLayout: React.FC<ThreePanelLayoutProps> = ({
 
   // Responsive layout configuration
   const getLayoutConfig = useCallback(() => {
+    // In VS Code, always show desktop layout with all three panels
+    // The platformAdapter type check ensures we're not hiding panels in VS Code context
+    if (platformAdapter.type === 'vscode') {
+      return {
+        direction: 'horizontal' as const,
+        showLeft: state.showLeftPanel,
+        showRight: state.showRightPanel,
+        leftSize: state.showLeftPanel ? 25 : 0,
+        centerSize: 50,
+        rightSize: state.showRightPanel ? 25 : 0
+      };
+    }
+
+    // For other platforms (like Obsidian), use responsive behavior
     if (isMobile) {
       return {
         direction: 'vertical' as const,
@@ -118,11 +132,11 @@ export const ThreePanelLayout: React.FC<ThreePanelLayoutProps> = ({
       direction: 'horizontal' as const,
       showLeft: state.showLeftPanel,
       showRight: state.showRightPanel,
-      leftSize: state.showLeftPanel ? (state.leftPanelWidth / window.innerWidth) * 100 : 0,
-      centerSize: 100 - (state.showLeftPanel ? (state.leftPanelWidth / window.innerWidth) * 100 : 0) - (state.showRightPanel ? (state.rightPanelWidth / window.innerWidth) * 100 : 0),
-      rightSize: state.showRightPanel ? (state.rightPanelWidth / window.innerWidth) * 100 : 0
+      leftSize: state.showLeftPanel ? 25 : 0,
+      centerSize: 50,
+      rightSize: state.showRightPanel ? 25 : 0
     };
-  }, [isMobile, isTablet, state]);
+  }, [isMobile, isTablet, state, platformAdapter]);
 
   const layoutConfig = getLayoutConfig();
 
@@ -162,7 +176,7 @@ export const ThreePanelLayout: React.FC<ThreePanelLayoutProps> = ({
               maxSize={40}
               className="min-w-0"
             >
-              <div className="h-full overflow-hidden border-r border-border bg-background">
+              <div className="h-full overflow-auto border-r border-border bg-background">
                 {leftPanel}
               </div>
             </Panel>
@@ -176,7 +190,7 @@ export const ThreePanelLayout: React.FC<ThreePanelLayoutProps> = ({
           minSize={30}
           className="min-w-0"
         >
-          <div className="h-full overflow-hidden bg-background">
+          <div className="h-full overflow-auto bg-background">
             {centerPanel}
           </div>
         </Panel>
@@ -191,7 +205,7 @@ export const ThreePanelLayout: React.FC<ThreePanelLayoutProps> = ({
               maxSize={50}
               className="min-w-0"
             >
-              <div className="h-full overflow-hidden border-l border-border bg-background">
+              <div className="h-full overflow-auto border-l border-border bg-background">
                 {rightPanel}
               </div>
             </Panel>

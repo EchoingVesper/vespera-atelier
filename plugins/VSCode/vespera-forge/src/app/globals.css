@@ -78,6 +78,27 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+/* VS Code webview theme integration */
+.vscode-webview {
+  --background: var(--vscode-editor-background, oklch(1 0 0));
+  --foreground: var(--vscode-editor-foreground, oklch(0.145 0 0));
+  --card: var(--vscode-sideBar-background, oklch(1 0 0));
+  --card-foreground: var(--vscode-sideBar-foreground, oklch(0.145 0 0));
+  --popover: var(--vscode-quickInput-background, oklch(1 0 0));
+  --popover-foreground: var(--vscode-quickInput-foreground, oklch(0.145 0 0));
+  --primary: var(--vscode-button-background, oklch(0.205 0 0));
+  --primary-foreground: var(--vscode-button-foreground, oklch(0.985 0 0));
+  --secondary: var(--vscode-button-secondaryBackground, oklch(0.97 0 0));
+  --secondary-foreground: var(--vscode-button-secondaryForeground, oklch(0.205 0 0));
+  --muted: var(--vscode-input-background, oklch(0.97 0 0));
+  --muted-foreground: var(--vscode-descriptionForeground, oklch(0.556 0 0));
+  --accent: var(--vscode-list-hoverBackground, oklch(0.97 0 0));
+  --accent-foreground: var(--vscode-list-hoverForeground, oklch(0.205 0 0));
+  --border: var(--vscode-panel-border, oklch(0.922 0 0));
+  --input: var(--vscode-input-border, oklch(0.922 0 0));
+  --ring: var(--vscode-focusBorder, oklch(0.708 0 0));
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
