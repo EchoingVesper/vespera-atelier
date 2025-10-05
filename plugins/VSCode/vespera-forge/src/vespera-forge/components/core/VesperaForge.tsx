@@ -5,12 +5,17 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { PlatformAdapter, Codex, Template, AIAssistant, Context, UIState, UserRole, WorkflowStage, CollaborationMode, DeviceType } from '../../core/types';
-import { VSCodeAdapter } from '../../core/adapters/vscode-adapter';
-import { ObsidianAdapter } from '../../core/adapters/obsidian-adapter';
+import {
+  PlatformAdapter,
+  Codex,
+  Template,
+  AIAssistant as AIAssistantType,
+  Context,
+  UIState
+} from '../../core/types';
 import ThreePanelLayout from '../layout/ThreePanelLayout';
 import CodexNavigator from '../navigation/CodexNavigator';
-import AIAssistant from '../ai/AIAssistant';
+import { AIAssistant as AIAssistantComponent } from '../ai/AIAssistant';
 import { CodexEditor } from '../editor/CodexEditor';
 import { cn } from '@/lib/utils';
 
@@ -19,14 +24,14 @@ interface VesperaForgeProps {
   initialData?: {
     codices?: Codex[];
     templates?: Template[];
-    assistants?: AIAssistant[];
+    assistants?: AIAssistantType[];
   };
   onCodexCreate?: (codex: Omit<Codex, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Codex>;
   onCodexUpdate?: (codex: Codex) => Promise<Codex>;
   onCodexDelete?: (codexId: string) => Promise<void>;
   onTemplateCreate?: (template: Omit<Template, 'id'>) => Promise<Template>;
   onTemplateUpdate?: (template: Template) => Promise<Template>;
-  onAIMessage?: (message: string, assistant: AIAssistant, context: any) => Promise<string>;
+  onAIMessage?: (message: string, assistant: AIAssistantType, context: any) => Promise<string>;
   className?: string;
 }
 
@@ -36,18 +41,15 @@ export const VesperaForge: React.FC<VesperaForgeProps> = ({
   onCodexCreate,
   onCodexUpdate,
   onCodexDelete,
-  onTemplateCreate,
-  onTemplateUpdate,
-  onAIMessage,
   className
 }) => {
   // State management
   const [codices, setCodices] = useState<Codex[]>(initialData?.codices || []);
   const [templates, setTemplates] = useState<Template[]>(initialData?.templates || getDefaultTemplates());
-  const [assistants, setAssistants] = useState<AIAssistant[]>(initialData?.assistants || getDefaultAssistants());
+  const [assistants, setAssistants] = useState<AIAssistantType[]>(initialData?.assistants || getDefaultAssistants());
   const [activeCodex, setActiveCodex] = useState<Codex | undefined>();
   const [activeTemplate, setActiveTemplate] = useState<Template | undefined>();
-  const [currentAssistant, setCurrentAssistant] = useState<AIAssistant>(assistants[0]);
+  const [currentAssistant, setCurrentAssistant] = useState<AIAssistantType>(assistants[0] || getDefaultAssistants()[0]);
   const [context, setContext] = useState<Context>(platformAdapter.getCurrentContext());
   const [uiState, setUiState] = useState<UIState>({
     currentViewMode: 'default',
@@ -65,8 +67,9 @@ export const VesperaForge: React.FC<VesperaForgeProps> = ({
       setTemplates(getDefaultTemplates());
     }
     if (assistants.length === 0) {
-      setAssistants(getDefaultAssistants());
-      setCurrentAssistant(getDefaultAssistants()[0]);
+      const defaultAssistants = getDefaultAssistants();
+      setAssistants(defaultAssistants);
+      setCurrentAssistant(defaultAssistants[0]);
     }
   }, [templates.length, assistants.length]);
 
@@ -110,7 +113,7 @@ export const VesperaForge: React.FC<VesperaForgeProps> = ({
     setActiveCodex(codex);
     const template = templates.find(t => t.id === codex.templateId);
     setActiveTemplate(template);
-    
+
     // Notify platform
     platformAdapter.sendMessage({
       type: 'codexSelected',
@@ -147,11 +150,11 @@ export const VesperaForge: React.FC<VesperaForgeProps> = ({
           updatedAt: new Date()
         };
       }
-      
+
       setCodices(prev => [...prev, createdCodex]);
       setActiveCodex(createdCodex);
       setActiveTemplate(template);
-      
+
       platformAdapter.showNotification(`${template.name} created successfully`, 'info');
     } catch (error) {
       platformAdapter.showNotification('Failed to create codex', 'error');
@@ -167,12 +170,12 @@ export const VesperaForge: React.FC<VesperaForgeProps> = ({
       } else {
         savedCodex = { ...updatedCodex, updatedAt: new Date() };
       }
-      
+
       setCodices(prev => prev.map(c => c.id === savedCodex.id ? savedCodex : c));
       if (activeCodex?.id === savedCodex.id) {
         setActiveCodex(savedCodex);
       }
-      
+
       platformAdapter.showNotification('Codex updated successfully', 'info');
     } catch (error) {
       platformAdapter.showNotification('Failed to update codex', 'error');
@@ -185,13 +188,13 @@ export const VesperaForge: React.FC<VesperaForgeProps> = ({
       if (onCodexDelete) {
         await onCodexDelete(codexId);
       }
-      
+
       setCodices(prev => prev.filter(c => c.id !== codexId));
       if (activeCodex?.id === codexId) {
         setActiveCodex(undefined);
         setActiveTemplate(undefined);
       }
-      
+
       platformAdapter.showNotification('Codex deleted successfully', 'info');
     } catch (error) {
       platformAdapter.showNotification('Failed to delete codex', 'error');
@@ -200,12 +203,8 @@ export const VesperaForge: React.FC<VesperaForgeProps> = ({
   }, [activeCodex, onCodexDelete, platformAdapter]);
 
   // AI operations
-  const handleAIMessage = useCallback(async (message: string, assistant: AIAssistant, aiContext: any) => {
+  const handleAIMessage = useCallback(async (message: string, assistant: AIAssistantType, aiContext: any) => {
     try {
-      if (onAIMessage) {
-        return await onAIMessage(message, assistant, aiContext);
-      }
-      
       // Default AI response logic
       const responses = [
         "I understand you're working on that. Let me help you think through it.",
@@ -213,24 +212,24 @@ export const VesperaForge: React.FC<VesperaForgeProps> = ({
         "Based on the template structure, I suggest focusing on...",
         "Let me provide some guidance on this topic."
       ];
-      
+
       return responses[Math.floor(Math.random() * responses.length)];
     } catch (error) {
       console.error('AI message failed:', error);
       return 'I apologize, but I encountered an error processing your request.';
     }
-  }, [onAIMessage]);
+  }, []);
 
-  const handleAssistantChange = useCallback((assistant: AIAssistant) => {
+  const handleAssistantChange = useCallback((assistant: AIAssistantType) => {
     setCurrentAssistant(assistant);
   }, []);
 
   // UI state management
   const handleUIStateChange = useCallback((newState: UIState) => {
     setUiState(newState);
-    
+
     // Persist state to platform if available
-    if (platformAdapter.setState) {
+    if ('setState' in platformAdapter && typeof platformAdapter.setState === 'function') {
       platformAdapter.setState({ vesperaForgeUIState: newState });
     }
   }, [platformAdapter]);
@@ -259,7 +258,7 @@ export const VesperaForge: React.FC<VesperaForgeProps> = ({
   ), [activeCodex, activeTemplate, context, handleCodexUpdate, platformAdapter]);
 
   const rightPanel = useMemo(() => (
-    <AIAssistant
+    <AIAssistantComponent
       assistants={assistants}
       currentAssistant={currentAssistant}
       activeCodex={activeCodex}
@@ -370,7 +369,7 @@ function getDefaultTemplates(): Template[] {
   ];
 }
 
-function getDefaultAssistants(): AIAssistant[] {
+function getDefaultAssistants(): AIAssistantType[] {
   return [
     {
       id: 'character-expert',

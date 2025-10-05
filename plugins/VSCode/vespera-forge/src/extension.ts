@@ -150,6 +150,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         'main-vespera-forge'
       );
 
+      // Register command to open/focus the Vespera Forge view
+      const openCommand = vscode.commands.registerCommand('vespera-forge.open', () => {
+        vscode.commands.executeCommand('vesperaForge.mainView.focus');
+      });
+
+      context.subscriptions.push(openCommand);
+
       logger.info('Vespera Forge UI framework initialized successfully');
     }
 

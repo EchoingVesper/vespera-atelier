@@ -47,3 +47,11 @@ test
 prompt
 
 server.log
+
+# Vespera Scriptorium databases
+.vespera/
+.vespera_v2/
+
+# Rust build artifacts
+**/target/
+Cargo.lock

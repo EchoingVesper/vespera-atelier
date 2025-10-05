@@ -56,11 +56,11 @@ plugins/VSCode/vespera-forge/
 
 ## 🚀 Recommended Approach for Next Session
 
-### Strategy: Parallelize with Agents + Bindery Coordination
+### Strategy: Parallelize with Agents + Scriptorium Coordination
 
 **Why**: The remaining work can be split into independent tasks that can run in parallel, dramatically speeding up completion.
 
-**Coordination Layer**: Use the Bindery MCP server to:
+**Coordination Layer**: Use the Vespera Scriptorium MCP server (with Bindery backend) to:
 - Track task completion status
 - Coordinate dependencies between agents
 - Share context and results
@@ -81,7 +81,7 @@ Files to fix (in order):
 5. `src/vespera-forge/components/editor/CodexEditor.tsx` - Fix type mismatches
 6. `src/vespera-forge/components/ai/AIAssistant.tsx` - Fix default export conflict
 
-**Bindery Task**:
+**Scriptorium Task**:
 ```typescript
 {
   id: "fix-core-types",
@@ -130,7 +130,7 @@ Connect webview to Bindery backend:
 2. Implement `handleCodexUpdate()`
 3. Implement `handleCodexDelete()`
 4. Implement `handleCodexList()`
-5. Wire to existing Bindery MCP calls
+5. Wire to existing Scriptorium MCP calls
 6. Test full CRUD cycle
 
 #### **Task 5: Fix Test File Errors**
@@ -149,9 +149,9 @@ Clean up test files:
 
 ## 📋 Execution Plan for Next Session
 
-### Phase 1: Setup Bindery Coordination
+### Phase 1: Setup Scriptorium Coordination
 
-**Create Master Task in Bindery** (if Bindery MCP is available):
+**Create Master Task in Scriptorium** (IMPORTANT: If Vespera Scriptorium MCP is not available, report to user for further instructions.):
 ```bash
 # Use the mcp__vespera-scriptorium__create_task tool
 {
@@ -197,7 +197,7 @@ This master task will coordinate sub-tasks for each component.
    ```
    Agent: bindery-rust-integrator
    Prompt: "Implement Codex CRUD operations in VesperaForgeWebviewProvider.
-           Wire handleCodexCreate/Update/Delete/List to Bindery MCP backend.
+           Wire handleCodexCreate/Update/Delete/List to Scriptorium MCP backend.
            Test full create-read-update-delete cycle."
    ```
 
@@ -685,7 +685,7 @@ module.exports = [
 ### Integration Points
 
 1. **Bindery Integration**
-   - Connect UI to existing Bindery MCP server
+   - Connect UI to existing Scriptorium MCP server
    - Wire codex CRUD operations to Bindery backend
    - Sync task state between UI and Bindery
 

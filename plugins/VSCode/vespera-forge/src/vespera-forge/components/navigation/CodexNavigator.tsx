@@ -111,7 +111,7 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
     }
   }, [codices, templates, searchQuery, filters, viewMode]);
 
-  const buildProjectTree = (codices: Codex[]): TreeNode[] => {
+  function buildProjectTree(codices: Codex[]): TreeNode[] {
     const projects = new Map<string, TreeNode>();
     const root: TreeNode[] = [];
 
@@ -148,7 +148,7 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
     return root;
   };
 
-  const buildTemplateTree = (codices: Codex[], templates: Template[]): TreeNode[] => {
+  function buildTemplateTree(codices: Codex[], templates: Template[]): TreeNode[] {
     const templateGroups = new Map<string, TreeNode>();
     const root: TreeNode[] = [];
 
@@ -182,7 +182,7 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
     return root;
   };
 
-  const buildStatusTree = (codices: Codex[]): TreeNode[] => {
+  function buildStatusTree(codices: Codex[]): TreeNode[] {
     const statusGroups = new Map<string, TreeNode>();
     const root: TreeNode[] = [];
 
@@ -217,7 +217,7 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
     return root;
   };
 
-  const buildTagTree = (codices: Codex[]): TreeNode[] => {
+  function buildTagTree(codices: Codex[]): TreeNode[] {
     const tagGroups = new Map<string, TreeNode>();
     const root: TreeNode[] = [];
 
@@ -252,7 +252,7 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
     return root;
   };
 
-  const buildRelationshipTree = (codices: Codex[]): TreeNode[] => {
+  function buildRelationshipTree(codices: Codex[]): TreeNode[] {
     const relationshipGroups = new Map<string, TreeNode>();
     const root: TreeNode[] = [];
 

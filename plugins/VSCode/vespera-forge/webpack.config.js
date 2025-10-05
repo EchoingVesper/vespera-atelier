@@ -3,6 +3,7 @@
 'use strict';
 
 const path = require('path');
+const webpack = require('webpack');
 
 //@ts-check
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
@@ -95,6 +96,22 @@ const webviewConfig = {
       '@/lib': path.resolve(__dirname, 'src/lib'),
       '@/hooks': path.resolve(__dirname, 'src/hooks'),
       '@/vespera-forge': path.resolve(__dirname, 'src/vespera-forge')
+    },
+    fallback: {
+      // Provide polyfills for Node.js modules not available in browser
+      "path": false,
+      "fs": false,
+      "crypto": false,
+      "stream": false,
+      "buffer": false,
+      "util": false,
+      "assert": false,
+      "http": false,
+      "https": false,
+      "os": false,
+      "url": false,
+      "zlib": false,
+      "process": false
     }
   },
   module: {
@@ -140,7 +157,16 @@ const webviewConfig = {
     minimize: false,
     usedExports: true,
     sideEffects: false
-  }
+  },
+  plugins: [
+    // Define global variables for the browser context
+    new webpack.DefinePlugin({
+      'process.env.NODE_ENV': JSON.stringify('development'),
+      'process.env': JSON.stringify({}),
+      'process.platform': JSON.stringify('browser'),
+      'process.version': JSON.stringify(''),
+    })
+  ]
 };
 
 module.exports = [ extensionConfig, webviewConfig ];

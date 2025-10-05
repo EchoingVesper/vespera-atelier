@@ -46,6 +46,11 @@
         "category": "Vespera Forge"
       },
       {
+        "command": "vespera-forge.open",
+        "title": "Open Vespera Forge",
+        "category": "Vespera Forge"
+      },
+      {
         "command": "vespera-forge.createContent",
         "title": "Create Content",
         "category": "Vespera Forge"

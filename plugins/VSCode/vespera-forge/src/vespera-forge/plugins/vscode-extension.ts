@@ -5,7 +5,6 @@
 
 import * as vscode from 'vscode';
 import { VSCodeAdapter } from '../core/adapters/vscode-adapter';
-import VesperaForge from '../components/core/VesperaForge';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Vespera Forge extension is now active!');
@@ -25,7 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
         const panel = VesperaForgePanel.currentPanel;
         if (panel) {
             // Send message to webview to create new codex
-            panel._panel.webview.postMessage({
+            panel.postMessage({
                 type: 'createCodex'
             });
         } else {
@@ -37,7 +36,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Register view container
     vscode.window.registerTreeDataProvider('vespera-forge-explorer', new VesperaForgeTreeDataProvider());
-    
+
     vscode.commands.registerCommand('vespera-forge.refreshExplorer', () => {
         VesperaForgeTreeDataProvider.instance?.refresh();
     });
@@ -90,7 +89,7 @@ class VesperaForgePanel {
         VesperaForgePanel.currentPanel = new VesperaForgePanel(panel, extensionUri, adapter);
     }
 
-    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, private adapter: VSCodeAdapter) {
+    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, adapter: VSCodeAdapter) {
         this._panel = panel;
         this._extensionUri = extensionUri;
 
@@ -118,10 +117,11 @@ class VesperaForgePanel {
                                 success: true
                             });
                         } catch (error) {
+                            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
                             this._panel.webview.postMessage({
                                 id: message.id,
                                 success: false,
-                                error: error.message
+                                error: errorMessage
                             });
                         }
                         break;
@@ -160,6 +160,10 @@ class VesperaForgePanel {
             undefined,
             this._disposables
         );
+    }
+
+    public postMessage(message: any) {
+        this._panel.webview.postMessage(message);
     }
 
     private _update() {
@@ -241,20 +245,19 @@ class VesperaForgeTreeDataProvider implements vscode.TreeDataProvider<vscode.Tre
     getChildren(element?: vscode.TreeItem): Thenable<vscode.TreeItem[]> {
         if (!element) {
             // Root level
-            return Promise.resolve([
-                new vscode.TreeItem('Open Vespera Forge', vscode.TreeItemCollapsibleState.None) {
-                    command = {
-                        command: 'vespera-forge.open',
-                        title: 'Open Vespera Forge'
-                    };
-                },
-                new vscode.TreeItem('Create New Codex', vscode.TreeItemCollapsibleState.None) {
-                    command = {
-                        command: 'vespera-forge.createCodex',
-                        title: 'Create New Codex'
-                    };
-                }
-            ]);
+            const openItem = new vscode.TreeItem('Open Vespera Forge', vscode.TreeItemCollapsibleState.None);
+            openItem.command = {
+                command: 'vespera-forge.open',
+                title: 'Open Vespera Forge'
+            };
+
+            const createItem = new vscode.TreeItem('Create New Codex', vscode.TreeItemCollapsibleState.None);
+            createItem.command = {
+                command: 'vespera-forge.createCodex',
+                title: 'Create New Codex'
+            };
+
+            return Promise.resolve([openItem, createItem]);
         }
         return Promise.resolve([]);
     }

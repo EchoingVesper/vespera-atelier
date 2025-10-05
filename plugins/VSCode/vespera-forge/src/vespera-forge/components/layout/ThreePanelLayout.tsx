@@ -5,8 +5,8 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { PlatformAdapter, UIState, Context, DeviceType } from '../../core/types';
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from 'react-resizable-panels';
+import { PlatformAdapter, UIState } from '../../core/types';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { cn } from '@/lib/utils';
 
 interface ThreePanelLayoutProps {
@@ -74,16 +74,20 @@ export const ThreePanelLayout: React.FC<ThreePanelLayoutProps> = ({
 
   // Handle panel resize
   const handlePanelResize = useCallback((panel: 'left' | 'right', size: number) => {
-    updateState({
-      [`${panel}PanelWidth`]: size
-    });
+    if (panel === 'left') {
+      updateState({ leftPanelWidth: size });
+    } else {
+      updateState({ rightPanelWidth: size });
+    }
   }, [updateState]);
 
   // Toggle panel visibility
   const togglePanel = useCallback((panel: 'left' | 'right') => {
-    updateState({
-      [`show${panel.charAt(0).toUpperCase() + panel.slice(1)}Panel`]: !state[`show${panel.charAt(0).toUpperCase() + panel.slice(1)}Panel`]
-    });
+    if (panel === 'left') {
+      updateState({ showLeftPanel: !state.showLeftPanel });
+    } else {
+      updateState({ showRightPanel: !state.showRightPanel });
+    }
   }, [state, updateState]);
 
   // Responsive layout configuration
@@ -135,7 +139,7 @@ export const ThreePanelLayout: React.FC<ThreePanelLayoutProps> = ({
   );
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className={cn(
         'h-full w-full overflow-hidden',
@@ -145,30 +149,29 @@ export const ThreePanelLayout: React.FC<ThreePanelLayoutProps> = ({
       data-device-type={isMobile ? 'mobile' : isTablet ? 'tablet' : 'desktop'}
       data-platform={platformAdapter.type}
     >
-      <ResizablePanelGroup
+      <PanelGroup
         direction={layoutConfig.direction}
         className="h-full"
       >
         {/* Left Panel */}
         {layoutConfig.showLeft && (
           <>
-            <ResizablePanel
+            <Panel
               defaultSize={layoutConfig.leftSize}
               minSize={15}
               maxSize={40}
-              onResize={(size) => handlePanelResize('left', size)}
               className="min-w-0"
             >
               <div className="h-full overflow-hidden border-r border-border bg-background">
                 {leftPanel}
               </div>
-            </ResizablePanel>
-            <ResizableHandle withHandle />
+            </Panel>
+            <PanelResizeHandle className="w-1 bg-border hover:bg-primary transition-colors" />
           </>
         )}
 
         {/* Center Panel */}
-        <ResizablePanel
+        <Panel
           defaultSize={layoutConfig.centerSize}
           minSize={30}
           className="min-w-0"
@@ -176,26 +179,25 @@ export const ThreePanelLayout: React.FC<ThreePanelLayoutProps> = ({
           <div className="h-full overflow-hidden bg-background">
             {centerPanel}
           </div>
-        </ResizablePanel>
+        </Panel>
 
         {/* Right Panel */}
         {layoutConfig.showRight && (
           <>
-            <ResizableHandle withHandle />
-            <ResizablePanel
+            <PanelResizeHandle className="w-1 bg-border hover:bg-primary transition-colors" />
+            <Panel
               defaultSize={layoutConfig.rightSize}
               minSize={20}
               maxSize={50}
-              onResize={(size) => handlePanelResize('right', size)}
               className="min-w-0"
             >
               <div className="h-full overflow-hidden border-l border-border bg-background">
                 {rightPanel}
               </div>
-            </ResizablePanel>
+            </Panel>
           </>
         )}
-      </ResizablePanelGroup>
+      </PanelGroup>
 
       {/* Mobile Navigation */}
       {isMobile && (
@@ -213,7 +215,7 @@ export const ThreePanelLayout: React.FC<ThreePanelLayoutProps> = ({
               </svg>
               <span className="text-xs mt-1">Nav</span>
             </button>
-            
+
             <button
               className="flex flex-col items-center p-2 rounded-md text-muted-foreground hover:text-foreground transition-colors"
             >
@@ -222,7 +224,7 @@ export const ThreePanelLayout: React.FC<ThreePanelLayoutProps> = ({
               </svg>
               <span className="text-xs mt-1">Content</span>
             </button>
-            
+
             <button
               onClick={() => togglePanel('right')}
               className={cn(
@@ -238,31 +240,6 @@ export const ThreePanelLayout: React.FC<ThreePanelLayoutProps> = ({
           </div>
         </div>
       )}
-
-      {/* Custom CSS for platform-specific styling */}
-      <style jsx>{`
-        .platform-vscode {
-          --background: var(--vscode-editor-background);
-          --foreground: var(--vscode-editor-foreground);
-          --border: var(--vscode-panel-border);
-          --muted: var(--vscode-editor-lineHighlightBackground);
-        }
-
-        .platform-obsidian {
-          --background: var(--background-primary);
-          --foreground: var(--text-normal);
-          --border: var(--background-modifier-border);
-          --muted: var(--background-secondary);
-        }
-
-        .mobile-layout .resizable-handle {
-          display: none;
-        }
-
-        .tablet-layout .resizable-handle {
-          width: 1px;
-        }
-      `}</style>
     </div>
   );
 };
