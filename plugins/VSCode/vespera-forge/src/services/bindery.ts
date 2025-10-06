@@ -107,7 +107,7 @@ export class BinderyService extends EventEmitter {
       enableJsonRpcValidation: true,
       enableContentProtection: true,
       maxProcessMemoryMB: 256,
-      maxExecutionTimeMs: 30000,
+      maxExecutionTimeMs: 300000, // 5 minutes for development (was 30000)
       allowedBinderyPaths: [
         '/home/aya/Development/vespera-atelier/packages/vespera-utilities/vespera-bindery',
         '/home/aya/dev/monorepo/vespera-atelier/packages/vespera-utilities/vespera-bindery' // Legacy path

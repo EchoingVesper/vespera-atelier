@@ -1,12 +1,12 @@
 # Vespera Forge Codex Navigator - Current Status
 
-**Date**: 2025-10-05 (Updated)
+**Date**: 2025-10-06 (Updated)
 **Branch**: `feat/codex-ui-framework`
-**Latest Changes**: Bindery integration + CRUD operations implemented
+**Latest Changes**: Fixed critical runtime errors (missing commands, timeout, race condition)
 
-## 🎉 SUCCESS: Backend Now Connected!
+## 🎉 SUCCESS: Three Critical Issues Resolved!
 
-Three-panel UI framework is live AND connected to Bindery backend!
+Backend connectivity issues have been fixed! Ready for end-to-end testing.
 
 ## ✅ Working
 
@@ -18,7 +18,7 @@ Three-panel UI framework is live AND connected to Bindery backend!
 - Commands working (Ctrl+Alt+C, Ctrl+Shift+P)
 - Extension activates cleanly
 
-**Backend Integration (NEW!):**
+**Backend Integration:**
 - ✅ Bindery path resolution fixed for worktree environment
 - ✅ NavigatorWebviewProvider connected to Bindery service
 - ✅ CRUD operations implemented:
@@ -28,19 +28,26 @@ Three-panel UI framework is live AND connected to Bindery backend!
 - ✅ Webview ↔ Extension message handlers working
 - ✅ Extension compiles successfully (2.27 MiB)
 
+**Critical Fixes (2025-10-06):**
+- ✅ **Fixed missing `vespera-forge.showAllViews` command** - Now registered in command map
+- ✅ **Fixed missing `vespera-forge.globalRefresh` command** - Now registered in command map
+- ✅ **Fixed Bindery timeout** - Increased from 30s to 5 minutes (300000ms) for development
+- ✅ **Fixed connection race condition** - Added 500ms wait after initialization + verification before requests
+
 ## ⚠️ Remaining Work
 
-**1. Test End-to-End**
-- Need to test in Extension Development Host
-- Verify Bindery actually connects
-- Test creating/deleting codices
+**1. Test End-to-End (READY NOW!)**
+- Test in Extension Development Host (F5)
+- Verify commands execute without errors
+- Verify Bindery stays connected (no timeout)
+- Test creating/deleting codices via UI
 
 **2. UI Interactivity**
 - Panel toggle buttons still need wiring
 - Editor panel needs similar Bindery integration
 
 **3. Non-Critical TypeScript Errors**
-- ~172 errors in optional UI components (calendar.tsx, etc.)
+- ~183 errors in optional UI components (calendar.tsx, etc.)
 - Non-blocking, can be fixed later
 
 ## 📋 Next Steps

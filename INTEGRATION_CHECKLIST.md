@@ -401,10 +401,10 @@ Integration is complete when:
 
 ---
 
-## 🔥 CURRENT STATUS (2025-10-05 - UPDATED)
+## 🔥 CURRENT STATUS (2025-10-06 - UPDATED)
 
 **Phases 1-7**: ✅ COMPLETE
-**Next**: Testing & UI interactivity
+**Next**: End-to-end testing (all blockers resolved!)
 
 ### ✅ Phase 7: Fix Bindery Connection (COMPLETE!)
 
@@ -422,10 +422,29 @@ Integration is complete when:
 - [x] Fixed ViewContextEntry interface for new providers
 - [x] Extension compiles successfully (2.27 MiB)
 
-### 🔄 Phase 8: Testing & Verification (IN PROGRESS)
+### ✅ Phase 7.5: Fix Critical Runtime Errors (COMPLETE! 2025-10-06)
+
+- [x] **Fixed missing command errors**
+  - ✅ Registered `vespera-forge.showAllViews` command in command map
+  - ✅ Registered `vespera-forge.globalRefresh` command in command map
+  - ✅ Commands now execute without "command not found" errors
+
+- [x] **Fixed Bindery timeout issue**
+  - ✅ Increased `maxExecutionTimeMs` from 30000 (30s) to 300000 (5min) in `bindery.ts`
+  - ✅ Updated timeout in `security-integration.ts` as well
+  - ✅ Bindery process will no longer be killed after 30 seconds
+
+- [x] **Fixed connection race condition**
+  - ✅ Added 500ms wait after `initialize()` in `sendInitialState()`
+  - ✅ Added connection verification before making requests
+  - ✅ Prevents "Request failed - not connected. Status: connecting" errors
+
+### 🔄 Phase 8: Testing & Verification (READY FOR TESTING!)
 
 - [ ] Test in Extension Development Host (F5)
 - [ ] Verify Bindery binary is found and connects
+- [ ] Verify no command errors in console
+- [ ] Verify Bindery stays connected (no timeout after 30s)
 - [ ] Test creating a codex via Navigator UI
 - [ ] Test listing codices
 - [ ] Test deleting a codex

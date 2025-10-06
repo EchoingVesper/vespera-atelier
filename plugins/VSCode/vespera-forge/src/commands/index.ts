@@ -491,6 +491,17 @@ const getCommandsMap = (vesperaContext: VesperaForgeContext) => ({
   'vespera-forge.showChatStats': async () => {
     log('[Command] Show Chat Statistics command executed');
     await showChatStatsCommand(vesperaContext);
+  },
+  'vespera-forge.showAllViews': async () => {
+    log('[Command] Show All Views command executed');
+    // Focus on the navigator view to make sidebar visible
+    await vscode.commands.executeCommand('vesperaForge.navigatorView.focus');
+  },
+  'vespera-forge.globalRefresh': async () => {
+    log('[Command] Global Refresh command executed');
+    // Refresh all views
+    vscode.commands.executeCommand('vespera-forge.refreshTaskTree');
+    vscode.commands.executeCommand('vespera-forge.refreshTaskDashboard');
   }
 });
 

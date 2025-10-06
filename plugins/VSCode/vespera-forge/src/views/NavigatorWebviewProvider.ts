@@ -164,6 +164,18 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
           });
           return;
         }
+        // Wait a bit for connection to fully establish after initialization
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      // Verify connection is ready before making requests
+      if (!this.binderyService.isConnected()) {
+        this.logger?.warn('Connection not ready yet, sending empty state');
+        this._view.webview.postMessage({
+          type: 'initialState',
+          payload: { codices: [], templates: [] }
+        });
+        return;
       }
 
       // Load codices from Bindery

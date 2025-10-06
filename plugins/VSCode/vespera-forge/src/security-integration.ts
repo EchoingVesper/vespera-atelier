@@ -307,7 +307,7 @@ export class SecurityIntegrationManager implements EnhancedDisposable {
             enableJsonRpcValidation: true,
             enableContentProtection: true,
             maxProcessMemoryMB: vscode.workspace.getConfiguration('vesperaForge').get('security.maxProcessMemoryMB', 256),
-            maxExecutionTimeMs: 30000,
+            maxExecutionTimeMs: 300000, // 5 minutes for development (was 30000)
             allowedBinderyPaths: [],
             blockedBinderyPaths: [],
             requireSandbox: this.config.securityLevel === 'strict',
