@@ -207,10 +207,29 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
         );
         const codexResults = await Promise.all(codexPromises);
 
-        // Extract successful results
+        // Extract successful results and transform to UI format
         codices = codexResults
           .filter(result => result.success)
-          .map(result => result.data);
+          .map(result => {
+            const data = result.data as any;
+            // Transform flat Bindery response to UI's expected structure
+            return {
+              id: data.id,
+              name: data.title,
+              templateId: data.template_id,
+              metadata: {
+                id: data.id,
+                title: data.title,
+                template_id: data.template_id,
+                created_at: data.created_at,
+                updated_at: data.updated_at,
+                projectId: data.project_id || data.metadata?.projectId,
+                tags: data.tags || [],
+                references: data.references || []
+              },
+              content: data.content || { fields: {} }
+            };
+          });
 
         this.logger?.info('Loaded full codex objects', {
           count: codices.length

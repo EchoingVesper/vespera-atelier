@@ -58,8 +58,10 @@ Navigator "New" button now functional with template selection! Bindery won't tim
   - Ready for inline editing when UI supports it (TODO marker added)
 - ✅ **Fixed Navigator crash on codex display** - Type mismatch between Bindery API and UI expectations
   - Problem: `list_codices` returns `CodexId[]` (string array), UI expects `Codex[]` (objects with metadata)
-  - NavigatorWebviewProvider.ts:195-218 - Now fetches full codex objects after getting IDs
+  - NavigatorWebviewProvider.ts:195-237 - Now fetches full codex objects after getting IDs
   - Uses `getCodex(id)` for each ID to retrieve complete Codex objects
+  - **Transform flat Bindery response to nested UI structure** - Bindery returns flat `{id, title, template_id}`, UI expects `{metadata: {...}, content: {...}}`
+  - NavigatorWebviewProvider.ts:210-232 - Transforms Bindery response format to match UI expectations
   - Prevents `TypeError: Cannot read properties of undefined (reading 'projectId')` in buildProjectTree
 
 ## ⚠️ Remaining Work
