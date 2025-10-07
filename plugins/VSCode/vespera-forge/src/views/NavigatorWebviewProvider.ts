@@ -5,6 +5,7 @@
 import * as vscode from 'vscode';
 import { VesperaLogger } from '../core/logging/VesperaLogger';
 import { BinderyService } from '../services/bindery';
+import { TemplateInitializer } from '../services/template-initializer';
 
 export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'vesperaForge.navigatorView';
@@ -12,6 +13,7 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
   private _disposables: vscode.Disposable[] = [];
   private _sessionId: string;
+  private _templateInitializer: TemplateInitializer;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -20,6 +22,7 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
     private readonly onCodexSelected?: (codexId: string) => void
   ) {
     this._sessionId = `vespera_navigator_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    this._templateInitializer = new TemplateInitializer(logger);
   }
 
   public async resolveWebviewView(
@@ -176,6 +179,17 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
           payload: { codices: [], templates: [] }
         });
         return;
+      }
+
+      // Initialize templates if this is the first time
+      const workspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri;
+      if (workspaceUri) {
+        const templatesInitialized = await this._templateInitializer.areTemplatesInitialized(workspaceUri);
+        if (!templatesInitialized) {
+          this.logger?.info('Initializing default templates...');
+          await this._templateInitializer.initializeTemplates(workspaceUri);
+          this.logger?.info('Templates initialized successfully');
+        }
       }
 
       // Load codices from Bindery

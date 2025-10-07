@@ -39,11 +39,20 @@ Navigator "New" button now functional with template selection! Bindery won't tim
   - Previous: 5 minute timeout was still terminating the server
   - Now: Process lifetime timeout disabled entirely (per-request timeouts can be added later)
   - NavigatorWebviewProvider.ts:186 - Default templates until Bindery has template management
+- ✅ **Fixed template directory path** - Changed from `.vscode/vespera-templates` to `.vespera/templates`
+  - TemplateRegistry.ts:47 - Now looks in `.vespera/templates` (Bindery convention)
+  - ConfigurationManager.ts:404 - File watchers updated to monitor correct directory
+- ✅ **Implemented automatic template creation** - Templates created on first Bindery initialization
+  - services/template-initializer.ts - New TemplateInitializer class
+  - NavigatorWebviewProvider.ts:185-193 - Initializes templates when sending initial state
+  - Creates 6 default template files: note.json5, task.json5, project.json5, character.json5, scene.json5, location.json5
 
 ## ⚠️ Remaining Work
 
 **1. Test End-to-End (READY NOW!)**
 - Test in Extension Development Host (F5)
+- Verify `.vespera/templates/` directory is created
+- Verify 6 template files are created (note.json5, task.json5, etc.)
 - Verify "New" button shows 6 template options
 - Test creating a codex via template selection
 - Verify Bindery stays connected (no timeout)
