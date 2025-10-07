@@ -192,8 +192,30 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
         }
       }
 
-      // Load codices from Bindery
-      const codicesResult = await this.binderyService.listCodeices();
+      // Load codices from Bindery - first get IDs, then fetch full objects
+      const codicesIdsResult = await this.binderyService.listCodeices();
+
+      let codices: any[] = [];
+      if (codicesIdsResult.success && codicesIdsResult.data.length > 0) {
+        this.logger?.info('Fetching full codex objects', {
+          idCount: codicesIdsResult.data.length
+        });
+
+        // Fetch full codex objects for each ID
+        const codexPromises = codicesIdsResult.data.map(id =>
+          this.binderyService.getCodex(id)
+        );
+        const codexResults = await Promise.all(codexPromises);
+
+        // Extract successful results
+        codices = codexResults
+          .filter(result => result.success)
+          .map(result => result.data);
+
+        this.logger?.info('Loaded full codex objects', {
+          count: codices.length
+        });
+      }
 
       // Load templates from .vespera/templates directory
       let templates: Array<{ id: string; name: string; description: string }> = [];
@@ -219,7 +241,7 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
       }
 
       const codexData = {
-        codices: codicesResult.success ? codicesResult.data : [],
+        codices,
         templates
       };
 

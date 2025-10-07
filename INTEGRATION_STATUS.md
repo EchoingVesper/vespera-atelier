@@ -48,14 +48,19 @@ Navigator "New" button now functional with template selection! Bindery won't tim
   - Creates 6 default template files: note.json5, task.json5, project.json5, character.json5, scene.json5, location.json5
 - ✅ **Implemented template loading from files** - Templates now loaded from .vespera/templates/ directory
   - TemplateInitializer.loadTemplates() method reads and parses template files
-  - NavigatorWebviewProvider.ts:198-224 - Loads templates from files and sends to webview
+  - NavigatorWebviewProvider.ts:220-241 - Loads templates from files and sends to webview
   - navigator.tsx:35-58 - Added message listener to receive initialState from extension
   - Templates now properly populate the "New" button dropdown
 - ✅ **Fixed codex creation with automatic title generation** - Creates codices with "New [TemplateName]" titles
-  - NavigatorWebviewProvider.ts:243-258 - Generates default title based on template name
+  - NavigatorWebviewProvider.ts:260-275 - Generates default title based on template name
   - Auto-selects newly created codex in Navigator (navigator.tsx:46-51)
   - Backend stores codices by ID (title is for display only)
   - Ready for inline editing when UI supports it (TODO marker added)
+- ✅ **Fixed Navigator crash on codex display** - Type mismatch between Bindery API and UI expectations
+  - Problem: `list_codices` returns `CodexId[]` (string array), UI expects `Codex[]` (objects with metadata)
+  - NavigatorWebviewProvider.ts:195-218 - Now fetches full codex objects after getting IDs
+  - Uses `getCodex(id)` for each ID to retrieve complete Codex objects
+  - Prevents `TypeError: Cannot read properties of undefined (reading 'projectId')` in buildProjectTree
 
 ## ⚠️ Remaining Work
 
