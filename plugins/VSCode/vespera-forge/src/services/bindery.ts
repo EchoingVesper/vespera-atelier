@@ -1063,15 +1063,19 @@ export class BinderyService extends EventEmitter {
         }
 
         // Check execution time limits
+        // NOTE: Disabled for long-running Bindery server process
+        // TODO: Implement per-request timeout instead of process lifetime timeout
+        /*
         const executionTime = Date.now() - this.processStartTime;
         if (executionTime > (this.config.security?.maxExecutionTimeMs || 30000)) {
           this.securityMetrics.processes.timeoutViolations++;
           this.log(`Process execution time limit exceeded: ${executionTime}ms`);
-          
+
           if (this.config.security?.requireSandbox) {
             this.terminateProcessForSecurity('timeout_exceeded');
           }
         }
+        */
 
       } catch (error) {
         this.log('Process monitoring error:', error);

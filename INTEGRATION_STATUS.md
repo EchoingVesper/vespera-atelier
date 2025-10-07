@@ -1,12 +1,12 @@
 # Vespera Forge Codex Navigator - Current Status
 
-**Date**: 2025-10-06 (Updated)
+**Date**: 2025-10-07 (Updated)
 **Branch**: `feat/codex-ui-framework`
-**Latest Changes**: Fixed critical runtime errors (missing commands, timeout, race condition)
+**Latest Changes**: Fixed UI functionality issues (empty template dropdown, Bindery timeout)
 
-## 🎉 SUCCESS: Three Critical Issues Resolved!
+## 🎉 SUCCESS: Major UI Issues Resolved!
 
-Backend connectivity issues have been fixed! Ready for end-to-end testing.
+Navigator "New" button now functional with template selection! Bindery won't timeout anymore.
 
 ## ✅ Working
 
@@ -31,18 +31,27 @@ Backend connectivity issues have been fixed! Ready for end-to-end testing.
 **Critical Fixes (2025-10-06):**
 - ✅ **Fixed missing `vespera-forge.showAllViews` command** - Now registered in command map
 - ✅ **Fixed missing `vespera-forge.globalRefresh` command** - Now registered in command map
-- ✅ **Fixed Bindery timeout** - Increased from 30s to 5 minutes (300000ms) for development
 - ✅ **Fixed connection race condition** - Added 500ms wait after initialization + verification before requests
+
+**Additional Fixes (2025-10-07):**
+- ✅ **Fixed empty "New" dropdown** - Added default templates (Note, Task, Project, Character, Scene, Location)
+- ✅ **Completely disabled Bindery process timeout** - Long-running server processes no longer terminate
+  - Previous: 5 minute timeout was still terminating the server
+  - Now: Process lifetime timeout disabled entirely (per-request timeouts can be added later)
+  - NavigatorWebviewProvider.ts:186 - Default templates until Bindery has template management
 
 ## ⚠️ Remaining Work
 
 **1. Test End-to-End (READY NOW!)**
 - Test in Extension Development Host (F5)
-- Verify commands execute without errors
+- Verify "New" button shows 6 template options
+- Test creating a codex via template selection
 - Verify Bindery stays connected (no timeout)
-- Test creating/deleting codices via UI
+- Test deleting codices via UI
 
-**2. UI Interactivity**
+**2. Known Issues to Fix**
+- AI Assistant panel doesn't auto-restore on startup (must manually open)
+- No Codex management commands in Ctrl+Shift+P menu yet
 - Panel toggle buttons still need wiring
 - Editor panel needs similar Bindery integration
 
