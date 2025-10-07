@@ -31,6 +31,32 @@ function NavigatorApp() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedCodexId, setSelectedCodexId] = useState<string | undefined>();
 
+  // Listen for messages from the extension
+  React.useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const message = event.data;
+
+      switch (message.type) {
+        case 'initialState':
+          console.log('[Navigator] Received initialState:', message.payload);
+          setCodices(message.payload.codices || []);
+          setTemplates(message.payload.templates || []);
+          break;
+
+        case 'response':
+          // Handle response from extension
+          console.log('[Navigator] Received response:', message);
+          break;
+
+        default:
+          console.log('[Navigator] Unknown message type:', message.type);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
   const handleCodexSelect = useCallback((codex: Codex) => {
     setSelectedCodexId(codex.id);
     // Notify extension to open editor panel with this codex
@@ -38,7 +64,7 @@ function NavigatorApp() {
       type: 'codex.selected',
       payload: { codexId: codex.id }
     });
-  }, [adapter]);
+  }, []);
 
   const handleCodexCreate = useCallback(async (templateId: string) => {
     adapter.sendMessage({

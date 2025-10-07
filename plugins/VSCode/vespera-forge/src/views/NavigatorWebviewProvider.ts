@@ -195,19 +195,32 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
       // Load codices from Bindery
       const codicesResult = await this.binderyService.listCodeices();
 
-      // Default templates until Bindery supports template management
-      const defaultTemplates = [
-        { id: 'note', name: 'Note', description: 'Simple note or document' },
-        { id: 'task', name: 'Task', description: 'Task or todo item' },
-        { id: 'project', name: 'Project', description: 'Project container' },
-        { id: 'character', name: 'Character', description: 'Character profile' },
-        { id: 'scene', name: 'Scene', description: 'Scene or chapter' },
-        { id: 'location', name: 'Location', description: 'Place or setting' }
-      ];
+      // Load templates from .vespera/templates directory
+      let templates: Array<{ id: string; name: string; description: string }> = [];
+      if (workspaceUri) {
+        templates = await this._templateInitializer.loadTemplates(workspaceUri);
+        this.logger?.info('Loaded templates for Navigator', {
+          count: templates.length,
+          templateIds: templates.map(t => t.id)
+        });
+      }
+
+      // Fallback to default templates if none loaded
+      if (templates.length === 0) {
+        this.logger?.warn('No templates loaded, using defaults');
+        templates = [
+          { id: 'note', name: 'Note', description: 'Simple note or document' },
+          { id: 'task', name: 'Task', description: 'Task or todo item' },
+          { id: 'project', name: 'Project', description: 'Project container' },
+          { id: 'character', name: 'Character', description: 'Character profile' },
+          { id: 'scene', name: 'Scene', description: 'Scene or chapter' },
+          { id: 'location', name: 'Location', description: 'Place or setting' }
+        ];
+      }
 
       const codexData = {
         codices: codicesResult.success ? codicesResult.data : [],
-        templates: defaultTemplates
+        templates
       };
 
       this._view.webview.postMessage({

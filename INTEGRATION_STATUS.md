@@ -46,6 +46,11 @@ Navigator "New" button now functional with template selection! Bindery won't tim
   - services/template-initializer.ts - New TemplateInitializer class
   - NavigatorWebviewProvider.ts:185-193 - Initializes templates when sending initial state
   - Creates 6 default template files: note.json5, task.json5, project.json5, character.json5, scene.json5, location.json5
+- ✅ **Implemented template loading from files** - Templates now loaded from .vespera/templates/ directory
+  - TemplateInitializer.loadTemplates() method reads and parses template files
+  - NavigatorWebviewProvider.ts:198-224 - Loads templates from files and sends to webview
+  - navigator.tsx:35-58 - Added message listener to receive initialState from extension
+  - Templates now properly populate the "New" button dropdown
 
 ## ⚠️ Remaining Work
 

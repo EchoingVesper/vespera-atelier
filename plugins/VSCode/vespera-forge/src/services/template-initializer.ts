@@ -258,4 +258,48 @@ export class TemplateInitializer {
       return false;
     }
   }
+
+  /**
+   * Load all templates from .vespera/templates directory
+   */
+  public async loadTemplates(workspaceUri: vscode.Uri): Promise<Array<{ id: string; name: string; description: string }>> {
+    try {
+      const templatesDir = vscode.Uri.joinPath(workspaceUri, '.vespera', 'templates');
+      const entries = await vscode.workspace.fs.readDirectory(templatesDir);
+
+      const templates: Array<{ id: string; name: string; description: string }> = [];
+
+      for (const [filename, type] of entries) {
+        if (type === vscode.FileType.File && filename.endsWith('.json5')) {
+          try {
+            const templateUri = vscode.Uri.joinPath(templatesDir, filename);
+            const content = await vscode.workspace.fs.readFile(templateUri);
+            const templateData = JSON.parse(Buffer.from(content).toString('utf8'));
+
+            // Extract template metadata
+            templates.push({
+              id: templateData.template_id || filename.replace('.json5', ''),
+              name: templateData.name || templateData.template_id || filename.replace('.json5', ''),
+              description: templateData.description || ''
+            });
+          } catch (error) {
+            this.logger?.warn('Failed to load template file', {
+              filename,
+              error: error instanceof Error ? error.message : String(error)
+            });
+          }
+        }
+      }
+
+      this.logger?.info('Loaded templates', {
+        count: templates.length,
+        templates: templates.map(t => t.id)
+      });
+
+      return templates;
+    } catch (error) {
+      this.logger?.error('Failed to load templates', error);
+      return [];
+    }
+  }
 }
