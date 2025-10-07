@@ -240,8 +240,27 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
     this.logger?.debug('Create codex', payload);
 
     try {
+      // Generate default title if not provided: "New [TemplateName]"
+      let title = payload.title;
+      if (!title && payload.templateId) {
+        // Find template name from loaded templates
+        const workspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri;
+        if (workspaceUri) {
+          const templates = await this._templateInitializer.loadTemplates(workspaceUri);
+          const template = templates.find(t => t.id === payload.templateId);
+          const templateName = template?.name || payload.templateId;
+          title = `New ${templateName}`;
+        } else {
+          // Fallback to capitalizing template ID
+          const templateName = payload.templateId.charAt(0).toUpperCase() + payload.templateId.slice(1);
+          title = `New ${templateName}`;
+        }
+      }
+
+      this.logger?.info('Creating codex', { title, templateId: payload.templateId });
+
       const result = await this.binderyService.createCodex(
-        payload.title,
+        title,
         payload.templateId || 'default'
       );
 
@@ -251,11 +270,22 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
             type: 'response',
             id: messageId,
             success: true,
-            result: { id: result.data, ...payload }
+            result: { id: result.data, title, templateId: payload.templateId }
           });
 
           // Refresh the navigator to show the new codex
           await this.sendInitialState();
+
+          // Send message to select and edit the new codex
+          this._view.webview.postMessage({
+            type: 'codex.created',
+            payload: {
+              id: result.data,
+              title,
+              templateId: payload.templateId,
+              editMode: true // Signal to enter edit mode
+            }
+          });
         } else {
           this._view.webview.postMessage({
             type: 'response',

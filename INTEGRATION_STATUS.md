@@ -51,6 +51,11 @@ Navigator "New" button now functional with template selection! Bindery won't tim
   - NavigatorWebviewProvider.ts:198-224 - Loads templates from files and sends to webview
   - navigator.tsx:35-58 - Added message listener to receive initialState from extension
   - Templates now properly populate the "New" button dropdown
+- ✅ **Fixed codex creation with automatic title generation** - Creates codices with "New [TemplateName]" titles
+  - NavigatorWebviewProvider.ts:243-258 - Generates default title based on template name
+  - Auto-selects newly created codex in Navigator (navigator.tsx:46-51)
+  - Backend stores codices by ID (title is for display only)
+  - Ready for inline editing when UI supports it (TODO marker added)
 
 ## ⚠️ Remaining Work
 

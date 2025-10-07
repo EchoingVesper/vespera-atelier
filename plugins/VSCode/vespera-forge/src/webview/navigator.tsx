@@ -43,6 +43,13 @@ function NavigatorApp() {
           setTemplates(message.payload.templates || []);
           break;
 
+        case 'codex.created':
+          console.log('[Navigator] Codex created:', message.payload);
+          // Select the newly created codex
+          setSelectedCodexId(message.payload.id);
+          // TODO: Enter edit mode when UI supports it
+          break;
+
         case 'response':
           // Handle response from extension
           console.log('[Navigator] Received response:', message);
