@@ -62,7 +62,9 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
   // Initialize form data when codex changes
   useEffect(() => {
     if (codex) {
-      setFormData({ ...codex.content, ...codex.metadata });
+      // Codex content is stored in content.fields, not directly in content
+      const contentFields = codex.content?.fields || {};
+      setFormData({ ...contentFields, ...codex.metadata });
     } else {
       setFormData({});
     }
@@ -89,11 +91,17 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
 
     setIsSaving(true);
     try {
+      // Build field values from formData
+      const fieldValues = Object.fromEntries(
+        template.fields.map(field => [field.id, formData[field.id] || ''])
+      );
+
       const updatedCodex: Codex = {
         ...codex,
-        content: Object.fromEntries(
-          template.fields.map(field => [field.id, formData[field.id]])
-        ),
+        content: {
+          ...codex.content,
+          fields: fieldValues
+        },
         metadata: {
           ...codex.metadata,
           ...Object.fromEntries(
@@ -131,7 +139,7 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
         return (
           <div key={field.id} className="space-y-2">
             <Label htmlFor={field.id}>
-              {field.name}
+              {field.label || field.name}
               {field.required && <span className="text-red-500 ml-1">*</span>}
             </Label>
             <Input
@@ -139,7 +147,7 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
               value={value}
               onChange={(e) => handleFieldChange(field.id, e.target.value)}
               disabled={!isEditing}
-              placeholder={`Enter ${field.name.toLowerCase()}`}
+              placeholder={`Enter ${(field.label || field.name).toLowerCase()}`}
             />
           </div>
         );
@@ -148,7 +156,7 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
         return (
           <div key={field.id} className="space-y-2">
             <Label htmlFor={field.id}>
-              {field.name}
+              {field.label || field.name}
               {field.required && <span className="text-red-500 ml-1">*</span>}
             </Label>
             <Textarea
@@ -156,7 +164,7 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
               value={value}
               onChange={(e) => handleFieldChange(field.id, e.target.value)}
               disabled={!isEditing}
-              placeholder={`Enter ${field.name.toLowerCase()}`}
+              placeholder={`Enter ${(field.label || field.name).toLowerCase()}`}
               rows={6}
               className="min-h-[150px]"
             />
@@ -167,7 +175,7 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
         return (
           <div key={field.id} className="space-y-2">
             <Label htmlFor={field.id}>
-              {field.name}
+              {field.label || field.name}
               {field.required && <span className="text-red-500 ml-1">*</span>}
             </Label>
             <Input
@@ -176,32 +184,54 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
               value={value}
               onChange={(e) => handleFieldChange(field.id, Number(e.target.value))}
               disabled={!isEditing}
-              placeholder={`Enter ${field.name.toLowerCase()}`}
+              placeholder={`Enter ${(field.label || field.name).toLowerCase()}`}
             />
           </div>
         );
 
       case FieldType.SELECT:
+        // Skip select fields without options to prevent crash
+        if (!field.options || field.options.length === 0) {
+          return (
+            <div key={field.id} className="space-y-2">
+              <Label htmlFor={field.id}>
+                {field.label || field.name}
+                {field.required && <span className="text-red-500 ml-1">*</span>}
+              </Label>
+              <Input
+                id={field.id}
+                value={value}
+                onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                disabled={!isEditing}
+                placeholder={`Enter ${(field.label || field.name).toLowerCase()}`}
+              />
+              <p className="text-xs text-muted-foreground">
+                Select field options not configured, using text input
+              </p>
+            </div>
+          );
+        }
+
         return (
           <div key={field.id} className="space-y-2">
             <Label htmlFor={field.id}>
-              {field.name}
+              {field.label || field.name}
               {field.required && <span className="text-red-500 ml-1">*</span>}
             </Label>
             <Select
-              value={value}
+              value={value || ''}
               onValueChange={(newValue) => handleFieldChange(field.id, newValue)}
               disabled={!isEditing}
             >
               <SelectTrigger>
-                <SelectValue placeholder={`Select ${field.name.toLowerCase()}`} />
+                <SelectValue placeholder={`Select ${(field.label || field.name).toLowerCase()}`} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
-                {/* This would be populated from template field options */}
-                <SelectItem value="option1">Option 1</SelectItem>
-                <SelectItem value="option2">Option 2</SelectItem>
-                <SelectItem value="option3">Option 3</SelectItem>
+                {field.options.map(option => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -217,7 +247,7 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
               disabled={!isEditing}
             />
             <Label htmlFor={field.id} className="text-sm font-medium">
-              {field.name}
+              {field.label || field.name}
             </Label>
           </div>
         );
@@ -226,7 +256,7 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
         return (
           <div key={field.id} className="space-y-2">
             <Label htmlFor={field.id}>
-              {field.name}
+              {field.label || field.name}
               {field.required && <span className="text-red-500 ml-1">*</span>}
             </Label>
             <Input
@@ -243,7 +273,7 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
         return (
           <div key={field.id} className="space-y-2">
             <Label htmlFor={field.id}>
-              {field.name}
+              {field.label || field.name}
               {field.required && <span className="text-red-500 ml-1">*</span>}
             </Label>
             <Input
@@ -251,7 +281,7 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
               value={value}
               onChange={(e) => handleFieldChange(field.id, e.target.value)}
               disabled={!isEditing}
-              placeholder={`Enter ${field.name.toLowerCase()}`}
+              placeholder={`Enter ${(field.label || field.name).toLowerCase()}`}
             />
             <p className="text-xs text-muted-foreground">
               Field type '{field.type}' not fully implemented
@@ -285,7 +315,7 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
                 {codex?.metadata.status && (
                   <Badge variant="secondary">{codex.metadata.status}</Badge>
                 )}
-                {codex?.tags.map(tag => (
+                {codex?.metadata.tags?.map(tag => (
                   <Badge key={tag} variant="outline" className="text-xs">
                     {tag}
                   </Badge>
@@ -352,7 +382,7 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
               {template.fields.map(field => renderField(field))}
               
               {/* Relationships */}
-              {codex && codex.relationships.length > 0 && (
+              {codex && codex.metadata?.references && codex.metadata.references.length > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -362,7 +392,7 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {codex.relationships.map(rel => (
+                      {codex.metadata.references.map(rel => (
                         <div key={rel.id} className="flex items-center justify-between p-2 border rounded">
                           <span className="text-sm">{rel.type}</span>
                           <Badge variant="outline">{rel.targetId}</Badge>

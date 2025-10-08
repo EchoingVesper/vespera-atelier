@@ -70,6 +70,19 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<FilterConfig[]>([]);
 
+  const getTemplateIcon = (templateId: string): React.ReactNode => {
+    // Return appropriate icon based on template type
+    const iconMap: Record<string, React.ReactNode> = {
+      'character': <Users className="w-4 h-4" />,
+      'task': <Settings className="w-4 h-4" />,
+      'scene': <File className="w-4 h-4" />,
+      'music': <File className="w-4 h-4" />,
+      'playlist': <File className="w-4 h-4" />
+    };
+
+    return iconMap[templateId] || <File className="w-4 h-4" />;
+  };
+
   // Build tree structure based on view mode
   const treeData = useMemo(() => {
     const filteredCodices = codices.filter(codex => {
@@ -288,19 +301,6 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
     });
 
     return root;
-  };
-
-  const getTemplateIcon = (templateId: string): React.ReactNode => {
-    // Return appropriate icon based on template type
-    const iconMap: Record<string, React.ReactNode> = {
-      'character': <Users className="w-4 h-4" />,
-      'task': <Settings className="w-4 h-4" />,
-      'scene': <File className="w-4 h-4" />,
-      'music': <File className="w-4 h-4" />,
-      'playlist': <File className="w-4 h-4" />
-    };
-    
-    return iconMap[templateId] || <File className="w-4 h-4" />;
   };
 
   const toggleNodeExpansion = useCallback((nodeId: string) => {

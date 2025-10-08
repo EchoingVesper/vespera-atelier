@@ -30,6 +30,7 @@ const adapter = new VSCodeAdapter();
 function EditorApp() {
   const [activeCodex, setActiveCodex] = useState<Codex | undefined>();
   const [activeTemplate, setActiveTemplate] = useState<Template | undefined>();
+  const [templates, setTemplates] = useState<Template[]>([]);
 
   const context: Context = adapter.getCurrentContext();
 
@@ -40,19 +41,62 @@ function EditorApp() {
 
       switch (message.type) {
         case 'setActiveCodex':
-          // TODO: Load actual codex data
-          console.log('Active codex changed:', message.payload.codexId);
+          console.log('[Editor] Received setActiveCodex message:', JSON.stringify(message, null, 2));
+          console.log('[Editor] Current templates state:', templates);
+          console.log('[Editor] Payload templates:', message.payload.templates);
+
+          if (message.payload.codex) {
+            console.log('[Editor] Setting active codex:', message.payload.codex);
+            setActiveCodex(message.payload.codex);
+
+            // Update templates if provided in this message
+            const templatesToUse = message.payload.templates || templates;
+            if (message.payload.templates) {
+              console.log('[Editor] Updating templates from payload:', message.payload.templates);
+              setTemplates(message.payload.templates);
+            }
+
+            // Load template
+            if (templatesToUse.length > 0 && message.payload.codex.templateId) {
+              console.log('[Editor] Looking for template with ID:', message.payload.codex.templateId);
+              console.log('[Editor] Available templates:', templatesToUse.map((t: any) => ({ id: t.id, name: t.name })));
+              const template = templatesToUse.find((t: any) => t.id === message.payload.codex.templateId);
+              if (template) {
+                console.log('[Editor] Found matching template:', template.name);
+                setActiveTemplate(template);
+              } else {
+                console.warn('[Editor] No matching template found for ID:', message.payload.codex.templateId);
+              }
+            } else {
+              console.warn('[Editor] Cannot load template - templates:', templatesToUse.length, 'templateId:', message.payload.codex.templateId);
+            }
+          }
           break;
         case 'initialState':
-          // TODO: Load initial state
-          console.log('Initial state received:', message.payload);
+          console.log('[Editor] Initial state received:', message.payload);
+          if (message.payload.templates) {
+            setTemplates(message.payload.templates);
+          }
+          if (message.payload.codex) {
+            setActiveCodex(message.payload.codex);
+            // Load template
+            if (message.payload.templates && message.payload.codex.templateId) {
+              const template = message.payload.templates.find((t: Template) => t.id === message.payload.codex.templateId);
+              if (template) {
+                setActiveTemplate(template);
+              }
+            }
+          }
+          break;
+        case 'error':
+          console.error('[Editor] Error from extension:', message.error);
           break;
       }
     };
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, []);
+  }, [templates]);
 
   const handleCodexUpdate = useCallback(async (codex: Codex) => {
     setActiveCodex(codex);

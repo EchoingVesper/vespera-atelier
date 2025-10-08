@@ -98,7 +98,8 @@ export class TemplateInitializer {
         content: this.createTemplateContent('Scene', 'scene', {
           icon: '🎬',
           fields: ['title', 'description', 'location', 'characters', 'mood', 'content'],
-          defaultTags: ['scene', 'creative-writing']
+          defaultTags: ['scene', 'creative-writing'],
+          moodOptions: ['peaceful', 'tense', 'mysterious', 'action', 'romantic', 'sad', 'joyful', 'suspenseful']
         })
       },
       {
@@ -126,9 +127,10 @@ export class TemplateInitializer {
       defaultTags?: string[];
       statusOptions?: string[];
       priorityOptions?: string[];
+      moodOptions?: string[];
     }
   ): string {
-    const { icon = '📄', fields = ['content'], defaultTags = [], statusOptions, priorityOptions } = options;
+    const { icon = '📄', fields = ['content'], defaultTags = [], statusOptions, priorityOptions, moodOptions } = options;
 
     // Build template metadata
     const metadata = {
@@ -154,6 +156,10 @@ export class TemplateInitializer {
 
       if (field === 'priority' && priorityOptions) {
         def.options = priorityOptions;
+      }
+
+      if (field === 'mood' && moodOptions) {
+        def.options = moodOptions;
       }
 
       return def;
@@ -299,6 +305,75 @@ export class TemplateInitializer {
       return templates;
     } catch (error) {
       this.logger?.error('Failed to load templates', error);
+      return [];
+    }
+  }
+
+  /**
+   * Load full template objects (for UI consumption)
+   */
+  public async loadFullTemplates(workspaceUri: vscode.Uri): Promise<any[]> {
+    try {
+      const templatesDir = vscode.Uri.joinPath(workspaceUri, '.vespera', 'templates');
+      const entries = await vscode.workspace.fs.readDirectory(templatesDir);
+
+      const templates: any[] = [];
+
+      for (const [filename, type] of entries) {
+        if (type === vscode.FileType.File && filename.endsWith('.json5')) {
+          try {
+            const templateUri = vscode.Uri.joinPath(templatesDir, filename);
+            const content = await vscode.workspace.fs.readFile(templateUri);
+            const templateData = JSON.parse(Buffer.from(content).toString('utf8'));
+
+            // Transform to full Template object for UI
+            const template = {
+              id: templateData.template_id || filename.replace('.json5', ''),
+              name: templateData.name || templateData.template_id || filename.replace('.json5', ''),
+              description: templateData.description || '',
+              version: templateData.metadata?.version || '1.0.0',
+              baseTemplate: undefined,
+              mixins: [],
+              fields: (templateData.fields || []).map((field: any) => ({
+                ...field,
+                id: field.id || field.name, // Ensure id exists, fallback to name
+                label: field.label || field.name.charAt(0).toUpperCase() + field.name.slice(1)
+              })),
+              viewModes: [{
+                id: 'default',
+                name: 'Default View',
+                description: 'Default view for this template',
+                layout: 'vertical',
+                sections: [],
+                contexts: ['all']
+              }],
+              workflowStates: [],
+              actions: [],
+              styling: {
+                theme: 'default',
+                customCSS: undefined,
+                componentStyles: {}
+              }
+            };
+
+            templates.push(template);
+          } catch (error) {
+            this.logger?.warn('Failed to load full template', {
+              filename,
+              error: error instanceof Error ? error.message : String(error)
+            });
+          }
+        }
+      }
+
+      this.logger?.info('Loaded full templates', {
+        count: templates.length,
+        templates: templates.map(t => t.id)
+      });
+
+      return templates;
+    } catch (error) {
+      this.logger?.error('Failed to load full templates', error);
       return [];
     }
   }

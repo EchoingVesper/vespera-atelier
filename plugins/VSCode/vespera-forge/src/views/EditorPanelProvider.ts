@@ -4,18 +4,23 @@
  */
 import * as vscode from 'vscode';
 import { VesperaLogger } from '../core/logging/VesperaLogger';
+import { BinderyService } from '../services/bindery';
+import { TemplateInitializer } from '../services/template-initializer';
 
 export class EditorPanelProvider {
   private static currentPanel: EditorPanelProvider | undefined;
   private readonly _panel: vscode.WebviewPanel;
   private _disposables: vscode.Disposable[] = [];
   private _activeCodexId?: string;
+  private _templateInitializer: TemplateInitializer;
 
   private constructor(
     panel: vscode.WebviewPanel,
     private readonly context: vscode.ExtensionContext,
+    private readonly binderyService: BinderyService,
     private readonly logger?: VesperaLogger
   ) {
+    this._templateInitializer = new TemplateInitializer(logger);
     this._panel = panel;
 
     // Set HTML content
@@ -43,6 +48,7 @@ export class EditorPanelProvider {
 
   public static createOrShow(
     context: vscode.ExtensionContext,
+    binderyService: BinderyService,
     logger?: VesperaLogger,
     codexId?: string
   ): EditorPanelProvider {
@@ -72,7 +78,7 @@ export class EditorPanelProvider {
       }
     );
 
-    EditorPanelProvider.currentPanel = new EditorPanelProvider(panel, context, logger);
+    EditorPanelProvider.currentPanel = new EditorPanelProvider(panel, context, binderyService, logger);
 
     if (codexId) {
       EditorPanelProvider.currentPanel.setActiveCodex(codexId);
@@ -81,12 +87,66 @@ export class EditorPanelProvider {
     return EditorPanelProvider.currentPanel;
   }
 
-  public setActiveCodex(codexId: string): void {
+  public async setActiveCodex(codexId: string): Promise<void> {
     this._activeCodexId = codexId;
-    this._panel.webview.postMessage({
-      type: 'setActiveCodex',
-      payload: { codexId }
-    });
+
+    // Fetch the actual codex data from Bindery
+    try {
+      const result = await this.binderyService.getCodex(codexId);
+      console.log('[EditorPanelProvider] getCodex result:', JSON.stringify(result, null, 2));
+
+      if (result.success) {
+        const data = result.data as any;
+        console.log('[EditorPanelProvider] Codex data from Bindery:', JSON.stringify(data, null, 2));
+
+        // Transform to UI format (same as Navigator)
+        const codex = {
+          id: data.id,
+          name: data.title,
+          templateId: data.template_id,
+          metadata: {
+            id: data.id,
+            title: data.title,
+            template_id: data.template_id,
+            created_at: data.created_at,
+            updated_at: data.updated_at,
+            projectId: data.project_id || data.metadata?.projectId,
+            tags: data.tags || [],
+            references: data.references || []
+          },
+          content: data.content || { fields: {} }
+        };
+
+        // Load full templates
+        const workspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri;
+        let templates: any[] = [];
+        if (workspaceUri) {
+          templates = await this._templateInitializer.loadFullTemplates(workspaceUri);
+          console.log('[EditorPanelProvider] Loaded templates:', templates.map(t => ({ id: t.id, name: t.name })));
+        }
+
+        const message = {
+          type: 'setActiveCodex',
+          payload: { codex, templates }
+        };
+        console.log('[EditorPanelProvider] Sending message to webview:', JSON.stringify(message, null, 2));
+        this._panel.webview.postMessage(message);
+
+        this.logger?.info('Set active codex in editor', { codexId });
+      } else {
+        this.logger?.error('Failed to fetch codex for editor', result.error);
+        this._panel.webview.postMessage({
+          type: 'error',
+          error: 'Failed to load codex: ' + result.error.message
+        });
+      }
+    } catch (error) {
+      this.logger?.error('Error fetching codex for editor', error);
+      this._panel.webview.postMessage({
+        type: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error loading codex'
+      });
+    }
   }
 
   private getHtmlContent(webview: vscode.Webview): string {
@@ -180,29 +240,68 @@ export class EditorPanelProvider {
   }
 
   private async sendInitialState(): Promise<void> {
-    // TODO: Load actual data from storage
-    const mockData = {
-      codexId: this._activeCodexId,
-      templates: [],
-      assistants: []
-    };
+    // Load templates first
+    const workspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri;
+    let templates: Array<{ id: string; name: string; description: string }> = [];
+    if (workspaceUri) {
+      templates = await this._templateInitializer.loadTemplates(workspaceUri);
+    }
 
-    this._panel.webview.postMessage({
-      type: 'initialState',
-      payload: mockData
-    });
+    // If we have an active codex, load it
+    if (this._activeCodexId) {
+      await this.setActiveCodex(this._activeCodexId);
+    } else {
+      // Send empty state with templates
+      this._panel.webview.postMessage({
+        type: 'initialState',
+        payload: {
+          codex: undefined,
+          templates,
+          assistants: []
+        }
+      });
+    }
   }
 
   private async handleCodexUpdate(messageId: string, payload: any): Promise<void> {
-    // TODO: Implement codex update
-    this.logger?.debug('Update codex', payload);
+    this.logger?.debug('Updating codex', { id: payload.id });
 
-    this._panel.webview.postMessage({
-      type: 'response',
-      id: messageId,
-      success: true,
-      result: payload
-    });
+    try {
+      // Transform UI format to Bindery format
+      const binderyPayload = {
+        title: payload.name || payload.metadata?.title,
+        content: payload.content,
+        template_id: payload.templateId || payload.metadata?.template_id,
+        tags: payload.metadata?.tags || [],
+        references: payload.metadata?.references || []
+      };
+
+      // Update codex via Bindery
+      const result = await this.binderyService.updateCodex(payload.id, binderyPayload);
+
+      if (result.success) {
+        this.logger?.info('Codex updated successfully', { id: payload.id });
+
+        this._panel.webview.postMessage({
+          type: 'response',
+          id: messageId,
+          success: true,
+          result: result.data
+        });
+      } else {
+        const errorMsg = typeof result.error === 'string' ? result.error : result.error?.message || 'Update failed';
+        throw new Error(errorMsg);
+      }
+    } catch (error) {
+      this.logger?.error('Failed to update codex', error);
+
+      this._panel.webview.postMessage({
+        type: 'response',
+        id: messageId,
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
   }
 
   private async handleAIMessage(messageId: string, payload: any): Promise<void> {

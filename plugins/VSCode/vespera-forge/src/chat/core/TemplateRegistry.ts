@@ -41,10 +41,11 @@ export class ChatTemplateRegistry {
   }
   
   async loadUserTemplates(): Promise<void> {
-    // Load user-defined templates from workspace .vespera folder (Bindery convention)
+    // Load user-defined chat provider templates from workspace .vespera/chat-templates folder
+    // Note: Codex templates are in .vespera/templates and are loaded separately by TemplateInitializer
     if (vscode.workspace.workspaceFolders) {
       for (const folder of vscode.workspace.workspaceFolders) {
-        const userTemplatesPath = vscode.Uri.joinPath(folder.uri, '.vespera', 'templates');
+        const userTemplatesPath = vscode.Uri.joinPath(folder.uri, '.vespera', 'chat-templates');
         try {
           const userTemplates = await vscode.workspace.fs.readDirectory(userTemplatesPath);
           for (const [filename] of userTemplates) {
@@ -53,7 +54,7 @@ export class ChatTemplateRegistry {
             }
           }
         } catch {
-          // User templates directory doesn't exist, skip
+          // User chat templates directory doesn't exist, skip
         }
       }
     }

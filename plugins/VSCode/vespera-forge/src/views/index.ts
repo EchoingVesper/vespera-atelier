@@ -40,7 +40,7 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
     undefined, // logger (optional)
     (codexId: string) => {
       // When a codex is selected in navigator, open the editor panel
-      EditorPanelProvider.createOrShow(context, undefined, codexId);
+      EditorPanelProvider.createOrShow(context, binderyService, undefined, codexId);
       // Optionally notify AI assistant about the selected codex
       console.log('[Vespera] Codex selected:', codexId);
     }
@@ -68,7 +68,7 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
   const openEditorCommand = vscode.commands.registerCommand(
     'vespera-forge.openEditor',
     (codexId?: string) => {
-      EditorPanelProvider.createOrShow(context, undefined, codexId);
+      EditorPanelProvider.createOrShow(context, binderyService, undefined, codexId);
     }
   );
   context.subscriptions.push(openEditorCommand);

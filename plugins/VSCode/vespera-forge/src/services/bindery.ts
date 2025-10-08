@@ -731,6 +731,25 @@ export class BinderyService extends EventEmitter {
   }
 
   /**
+   * Update Codex
+   */
+  public async updateCodex(
+    codexId: CodexId,
+    updates: {
+      title?: string;
+      content?: any;
+      template_id?: string;
+      tags?: string[];
+      references?: any[];
+    }
+  ): Promise<BinderyResult<Codex>> {
+    return this.sendRequest('update_codex', {
+      codex_id: codexId,
+      ...updates
+    });
+  }
+
+  /**
    * List all Codices
    */
   public async listCodeices(): Promise<BinderyResult<CodexId[]>> {

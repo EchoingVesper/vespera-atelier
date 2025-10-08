@@ -1,12 +1,12 @@
 # Vespera Forge Codex Navigator - Current Status
 
-**Date**: 2025-10-07 (Updated)
+**Date**: 2025-10-07 (Updated - Evening Session)
 **Branch**: `feat/codex-ui-framework`
-**Latest Changes**: Fixed UI functionality issues (empty template dropdown, Bindery timeout)
+**Latest Changes**: Editor fully functional with field editing and session persistence!
 
-## 🎉 SUCCESS: Major UI Issues Resolved!
+## 🎉 MAJOR MILESTONE: Editor Fully Functional!
 
-Navigator "New" button now functional with template selection! Bindery won't timeout anymore.
+All critical UI bugs resolved! Codices can now be created, edited, and persist within a session.
 
 ## ✅ Working
 
@@ -24,81 +24,165 @@ Navigator "New" button now functional with template selection! Bindery won't tim
 - ✅ CRUD operations implemented:
   - `codex.create` → `binderyService.createCodex()`
   - `codex.delete` → `binderyService.deleteCodex()`
+  - `codex.update` → `binderyService.updateCodex()` **NEW!**
   - `codex.list` → `binderyService.listCodeices()`
 - ✅ Webview ↔ Extension message handlers working
-- ✅ Extension compiles successfully (2.27 MiB)
+- ✅ Extension compiles successfully (2.29 MiB)
 
 **Critical Fixes (2025-10-06):**
 - ✅ **Fixed missing `vespera-forge.showAllViews` command** - Now registered in command map
 - ✅ **Fixed missing `vespera-forge.globalRefresh` command** - Now registered in command map
 - ✅ **Fixed connection race condition** - Added 500ms wait after initialization + verification before requests
 
-**Additional Fixes (2025-10-07):**
+**Additional Fixes (2025-10-07 Morning):**
 - ✅ **Fixed empty "New" dropdown** - Added default templates (Note, Task, Project, Character, Scene, Location)
 - ✅ **Completely disabled Bindery process timeout** - Long-running server processes no longer terminate
-  - Previous: 5 minute timeout was still terminating the server
-  - Now: Process lifetime timeout disabled entirely (per-request timeouts can be added later)
-  - NavigatorWebviewProvider.ts:186 - Default templates until Bindery has template management
 - ✅ **Fixed template directory path** - Changed from `.vscode/vespera-templates` to `.vespera/templates`
-  - TemplateRegistry.ts:47 - Now looks in `.vespera/templates` (Bindery convention)
-  - ConfigurationManager.ts:404 - File watchers updated to monitor correct directory
 - ✅ **Implemented automatic template creation** - Templates created on first Bindery initialization
-  - services/template-initializer.ts - New TemplateInitializer class
-  - NavigatorWebviewProvider.ts:185-193 - Initializes templates when sending initial state
-  - Creates 6 default template files: note.json5, task.json5, project.json5, character.json5, scene.json5, location.json5
 - ✅ **Implemented template loading from files** - Templates now loaded from .vespera/templates/ directory
-  - TemplateInitializer.loadTemplates() method reads and parses template files
-  - NavigatorWebviewProvider.ts:220-241 - Loads templates from files and sends to webview
-  - navigator.tsx:35-58 - Added message listener to receive initialState from extension
-  - Templates now properly populate the "New" button dropdown
 - ✅ **Fixed codex creation with automatic title generation** - Creates codices with "New [TemplateName]" titles
-  - NavigatorWebviewProvider.ts:260-275 - Generates default title based on template name
-  - Auto-selects newly created codex in Navigator (navigator.tsx:46-51)
-  - Backend stores codices by ID (title is for display only)
-  - Ready for inline editing when UI supports it (TODO marker added)
 - ✅ **Fixed Navigator crash on codex display** - Type mismatch between Bindery API and UI expectations
-  - Problem: `list_codices` returns `CodexId[]` (string array), UI expects `Codex[]` (objects with metadata)
-  - NavigatorWebviewProvider.ts:195-237 - Now fetches full codex objects after getting IDs
-  - Uses `getCodex(id)` for each ID to retrieve complete Codex objects
-  - **Transform flat Bindery response to nested UI structure** - Bindery returns flat `{id, title, template_id}`, UI expects `{metadata: {...}, content: {...}}`
-  - NavigatorWebviewProvider.ts:210-232 - Transforms Bindery response format to match UI expectations
-  - Prevents `TypeError: Cannot read properties of undefined (reading 'projectId')` in buildProjectTree
+- ✅ **Fixed JavaScript temporal dead zone error** - Function hoisting issue resolved
+- ✅ **Wired Editor panel to Bindery backend** - Editor now fetches and displays selected codex
+- ✅ **Implemented template loading for Editor panel** - Editor receives template data to render codex
+
+**Critical Fixes (2025-10-07 Evening):**
+
+1. ✅ **Fixed Editor Display Bug** - Editor now properly renders codex content
+   - **Issue**: Property access mismatch - `codex.tags` vs `codex.metadata.tags`
+   - **Fix**: CodexEditor.tsx:288,355-365 - Changed to access nested metadata structure
+   - **Result**: Editor successfully displays Character, Location, and Scene codices
+
+2. ✅ **Fixed Scene Template Crash** - Scene codex no longer crashes Editor
+   - **Issue**: "mood" field type "select" had no options array, causing Radix UI Select crash
+   - **Error**: `Uncaught Error: A <Select.Item /> must have a value prop that is not an empty string`
+   - **Fix**: template-initializer.ts:102 - Added `moodOptions: ['peaceful', 'tense', 'mysterious', 'action', 'romantic', 'sad', 'joyful', 'suspenseful']`
+   - **Additional**: Updated `createTemplateContent` to handle moodOptions parameter
+   - **Fallback**: CodexEditor.tsx:192-213 - Added graceful fallback to text input if select has no options
+
+3. ✅ **Fixed Shared Input State Bug** - Fields no longer share the same value
+   - **Issue**: All fields updated simultaneously when typing in any field
+   - **Root Cause**: `codex.content` was spread directly instead of `codex.content.fields`
+   - **Fix**: CodexEditor.tsx:63-71 - Changed to `setFormData({ ...codex.content?.fields || {}, ...codex.metadata })`
+   - **Save Fix**: CodexEditor.tsx:89-126 - Updated save handler to structure data in `content.fields`
+
+4. ✅ **Capitalized Field Labels** - Fields now display with proper capitalization
+   - **Issue**: Labels showed "name", "age" instead of "Name", "Age"
+   - **Fix**: template-initializer.ts:337-341 - Auto-generate capitalized labels during template load
+   - **Fix**: CodexEditor.tsx - All field rendering updated to use `field.label || field.name`
+
+5. ✅ **Implemented Field Value Persistence** - Edits now persist within session
+   - **Backend**: bindery.ts:733-750 - Added `updateCodex` method to BinderyService
+   - **Backend**: vespera-bindery/src/bin/server.rs:562,794-846 - Implemented `handle_update_codex` JSON-RPC handler
+   - **Provider**: EditorPanelProvider.ts:266-304 - Implemented `handleCodexUpdate` to call Bindery backend
+   - **UI**: CodexEditor.tsx:89-126 - Save handler properly structures data and calls backend
+   - **Result**: Field changes persist when switching between codices during session
+
+6. ✅ **Fixed ChatTemplateRegistry Namespace Collision** - Chat template errors eliminated
+   - **Issue**: AI Chat system tried to load Codex templates expecting `provider_config` and `authentication`
+   - **Error**: `Invalid template: provider_config is required, authentication is required`
+   - **Fix**: TemplateRegistry.ts:48 - Changed path from `.vespera/templates` to `.vespera/chat-templates`
+   - **Result**: No more chat template errors in console
 
 ## ⚠️ Remaining Work
 
-**1. Test End-to-End (READY NOW!)**
-- Test in Extension Development Host (F5)
-- Verify `.vespera/templates/` directory is created
-- Verify 6 template files are created (note.json5, task.json5, etc.)
-- Verify "New" button shows 6 template options
-- Test creating a codex via template selection
-- Verify Bindery stays connected (no timeout)
-- Test deleting codices via UI
+**1. Database Persistence (CRITICAL - NEXT PRIORITY)**
+- ⚠️ **Codices only persist in RAM, not database**
+  - Symptom: Only `tasks.db-shm` file updated (Oct 7 18:47), main database from Oct 6
+  - Symptom: Codices lost when closing Extension Development Host window
+  - Root Cause: Bindery stores codices in `state.codices` (RwLock HashMap in memory)
+  - Investigation: vespera-bindery/src/bin/server.rs:773-774,786-790,800-804 - In-memory storage only
+  - **Current State**: Session persistence works (edits persist when switching codices)
+  - **Missing**: SQLite database writes (codices don't survive extension restart)
+  - **Next Step**: Implement database persistence in Bindery backend
+    - Add SQLite INSERT/UPDATE for codices table
+    - Checkpoint WAL file to main database
+    - Load codices from database on startup
 
-**2. Known Issues to Fix**
+**2. Database Schema Design**
+- Need to design codices table schema:
+  - Primary key: codex_id (UUID string)
+  - Fields: title, template_id, created_at, updated_at, project_id
+  - JSON fields: content, tags, references
+  - Consider indexing: template_id, project_id, created_at for queries
+
+**3. Test End-to-End (MOSTLY TESTED)**
+- ✅ Test in Extension Development Host (F5)
+- ✅ Verify `.vespera/templates/` directory is created
+- ✅ Verify 6 template files are created (note.json5, task.json5, etc.)
+- ✅ Verify "New" button shows 6 template options
+- ✅ Test creating codices via template selection (works for all 6 templates)
+- ✅ Verify Bindery stays connected (no timeout - confirmed working)
+- ✅ Test editing codex fields (works - all field types functional)
+- ✅ Test switching between codices (works - edits persist in session)
+- ⏳ Test deleting codices via UI (not tested yet)
+- ⏳ Test codex persistence after restart (currently fails - in-memory only)
+
+**4. Known Issues to Fix**
 - AI Assistant panel doesn't auto-restore on startup (must manually open)
 - No Codex management commands in Ctrl+Shift+P menu yet
 - Panel toggle buttons still need wiring
-- Editor panel needs similar Bindery integration
-
-**3. Non-Critical TypeScript Errors**
-- ~183 errors in optional UI components (calendar.tsx, etc.)
-- Non-blocking, can be fixed later
+- ~207 non-blocking TypeScript errors in optional UI components
 
 ## 📋 Next Steps
 
-1. Test in Extension Development Host (F5)
-2. Verify Bindery connection logs
-3. Test creating a codex via UI
-4. Wire up Editor panel similarly
-5. Implement panel toggle handlers
+### Immediate Priority: Database Persistence
 
-## 📁 Key Files
+1. **Design Database Schema** (30 min)
+   - Create `codices` table with proper fields
+   - Add migration for schema creation
+   - Plan indexing strategy
 
-- `src/views/NavigatorWebviewProvider.ts`
-- `src/views/EditorPanelProvider.ts`
-- `src/views/ai-assistant.ts`
-- `src/views/index.ts`
-- `src/webview/{navigator,editor,ai-assistant}.tsx`
-- `package.json`
+2. **Implement Database Write Operations** (2 hours)
+   - Add INSERT in `handle_create_codex`
+   - Add UPDATE in `handle_update_codex`
+   - Add DELETE in `handle_delete_codex`
+   - Test with SQLite directly
 
+3. **Implement Database Read Operations** (1 hour)
+   - Load codices from database on server startup
+   - Populate `state.codices` from database
+   - Add `handle_list_codices` database query
+
+4. **Test Full Persistence** (30 min)
+   - Create codices, edit fields, close extension
+   - Restart extension, verify codices loaded
+   - Verify database files updated
+
+### Secondary Priorities
+
+5. Wire up Editor save button (currently auto-saves on edit mode end)
+6. Implement panel toggle handlers
+7. Add Codex management commands to command palette
+8. Fix AI Assistant panel auto-restore
+
+## 📁 Key Files Modified (This Session)
+
+**Frontend:**
+- `plugins/VSCode/vespera-forge/src/vespera-forge/components/editor/CodexEditor.tsx`
+- `plugins/VSCode/vespera-forge/src/services/template-initializer.ts`
+- `plugins/VSCode/vespera-forge/src/services/bindery.ts`
+- `plugins/VSCode/vespera-forge/src/views/EditorPanelProvider.ts`
+- `plugins/VSCode/vespera-forge/src/chat/core/TemplateRegistry.ts`
+
+**Backend:**
+- `/home/aya/Development/vespera-atelier/packages/vespera-utilities/vespera-bindery/src/bin/server.rs`
+
+## 🎯 Success Metrics Achieved
+
+- ✅ Create codices via Navigator
+- ✅ Display codices in Navigator tree
+- ✅ Select codex and display in Editor
+- ✅ Edit codex fields with proper field types
+- ✅ Field changes persist when switching codices (session)
+- ✅ All 6 template types render without crashes
+- ✅ Field labels properly capitalized
+- ⏳ Codices persist after extension restart (NEXT GOAL)
+
+## 🎯 Success Metrics Remaining
+
+- ⏳ Full database persistence (codices survive restart)
+- ⏳ Delete codices via Navigator
+- ⏳ Real-time codex updates across panels
+- ⏳ Template field validation
+- ⏳ Relationship/reference management
