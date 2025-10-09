@@ -681,14 +681,35 @@ impl Database {
                 due_date TEXT,
                 FOREIGN KEY(parent_id) REFERENCES tasks(id) ON DELETE CASCADE
             );
-            
+
             CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
             CREATE INDEX IF NOT EXISTS idx_tasks_priority ON tasks(priority);
             CREATE INDEX IF NOT EXISTS idx_tasks_parent ON tasks(parent_id);
             CREATE INDEX IF NOT EXISTS idx_tasks_created ON tasks(created_at);
+
+            CREATE TABLE IF NOT EXISTS codices (
+                id TEXT PRIMARY KEY,
+                template_id TEXT NOT NULL,
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
+                metadata TEXT NOT NULL,
+                crdt_state TEXT,
+                version INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                created_by TEXT,
+                project_id TEXT,
+                parent_id TEXT,
+                FOREIGN KEY(parent_id) REFERENCES codices(id) ON DELETE SET NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_codices_template ON codices(template_id);
+            CREATE INDEX IF NOT EXISTS idx_codices_created ON codices(created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_codices_updated ON codices(updated_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_codices_project ON codices(project_id);
             "#
         ).execute(&self.pool).await?;
-        
+
         Ok(())
     }
     
