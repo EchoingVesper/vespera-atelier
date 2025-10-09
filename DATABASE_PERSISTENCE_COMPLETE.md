@@ -205,6 +205,12 @@ npm run compile
    - Modified `handle_update_codex` with UPDATE query (lines 869-990)
    - Modified `handle_delete_codex` with DELETE query (lines 992-1019)
 
+2. `/home/aya/Development/vespera-atelier/packages/vespera-utilities/vespera-bindery/src/database.rs`
+   - Modified `init_schema()` to include codices table creation (lines 665-714)
+   - Added codices table with all columns from migration 002_codex_tables.sql
+   - Added all indices for codices table (template, created, updated, project)
+   - Ensures database persistence works even when migrations aren't found
+
 ## 🚀 Next Steps
 
 ### For User Testing:
@@ -258,10 +264,14 @@ This implementation completes **Phase 10** of the Vespera Forge UI integration:
 - **Backward Compatibility**: In-memory cache still maintained for fast reads
 - **Transaction Safety**: Each operation is atomic
 
-## 🐛 Known Issues
+## 🐛 Known Issues (RESOLVED)
 
-- TypeScript compilation errors in UI components (pre-existing, not related to this work)
-- Extension webpack build fails due to TypeScript errors (UI issue, not database issue)
+- ~~TypeScript compilation errors in UI components (pre-existing, not related to this work)~~
+- ~~Extension webpack build fails due to TypeScript errors (UI issue, not database issue)~~
+- ~~**CRITICAL**: "no such table: codices" error on startup~~ ✅ **FIXED** (commit 1c6454c)
+  - **Root Cause**: Migration system couldn't find migrations in workspace directory
+  - **Solution**: Updated `init_schema()` fallback to include codices table creation
+  - **Status**: Bindery server now creates codices table even without migration files
 
 ## ✨ Testing Tips
 
