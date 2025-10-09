@@ -19,6 +19,7 @@ use axum::{
 use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use sqlx::Row;
 use tokio::net::TcpListener;
 use tokio::sync::RwLock;
 use tower::ServiceBuilder;
@@ -149,6 +150,15 @@ struct AppState {
 }
 
 impl AppState {
+    /// Force a WAL checkpoint to persist changes to disk
+    async fn checkpoint_database(&self) -> Result<(), String> {
+        sqlx::query("PRAGMA wal_checkpoint(PASSIVE)")
+            .execute(self.database.get_pool())
+            .await
+            .map_err(|e| format!("WAL checkpoint error: {}", e))?;
+        Ok(())
+    }
+
     async fn new(workspace_root: PathBuf) -> Result<Self> {
         // Create .vespera folder for data storage
         let vespera_dir = workspace_root.join(".vespera");
@@ -191,10 +201,49 @@ impl AppState {
             capabilities: vec!["design".to_string(), "ui".to_string(), "mockup".to_string()],
         });
 
+        // Load codices from database into memory
+        eprintln!("Debug: Loading codices from database...");
+        let mut codices_map = HashMap::new();
+
+        let rows = sqlx::query("SELECT id, title, template_id, content, metadata, version, created_at, updated_at FROM codices")
+            .fetch_all(database.get_pool())
+            .await?;
+
+        for row in rows {
+            let id: String = row.try_get("id")?;
+            let title: String = row.try_get("title")?;
+            let template_id: String = row.try_get("template_id")?;
+            let content_str: String = row.try_get("content")?;
+            let metadata_str: String = row.try_get("metadata")?;
+            let version: i32 = row.try_get("version")?;
+            let created_at: String = row.try_get("created_at")?;
+            let updated_at: String = row.try_get("updated_at")?;
+
+            let content: Value = serde_json::from_str(&content_str)
+                .unwrap_or_else(|_| json!({"fields": {}}));
+            let metadata: Value = serde_json::from_str(&metadata_str)
+                .unwrap_or_else(|_| json!({"tags": [], "references": []}));
+
+            let codex = json!({
+                "id": id,
+                "title": title,
+                "template_id": template_id,
+                "content": content,
+                "metadata": metadata,
+                "version": version,
+                "created_at": created_at,
+                "updated_at": updated_at
+            });
+
+            codices_map.insert(id, codex);
+        }
+
+        eprintln!("Debug: Loaded {} codices from database", codices_map.len());
+
         Ok(Self {
             database: Arc::new(database),
             roles: Arc::new(RwLock::new(roles)),
-            codices: Arc::new(RwLock::new(HashMap::new())),
+            codices: Arc::new(RwLock::new(codices_map)),
         })
     }
 }
@@ -559,6 +608,7 @@ async fn handle_json_rpc_method(state: &AppState, request: &JsonRpcRequest) -> J
         "list_codices" => handle_list_codices(state).await,
         "create_codex" => handle_create_codex(state, &request.params).await,
         "get_codex" => handle_get_codex(state, &request.params).await,
+        "update_codex" => handle_update_codex(state, &request.params).await,
         "delete_codex" => handle_delete_codex(state, &request.params).await,
         _ => Err(format!("Method '{}' not found", request.method)),
     };
@@ -752,27 +802,58 @@ async fn handle_create_codex(state: &AppState, params: &Option<Value>) -> Result
         .and_then(|p| p.get("title"))
         .and_then(|v| v.as_str())
         .ok_or("Missing title parameter")?;
-    
+
     let template_id = params
         .as_ref()
         .and_then(|p| p.get("template_id"))
         .and_then(|v| v.as_str())
         .unwrap_or("default");
-    
+
     let codex_id = Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
-    
+
+    // Default content structure
+    let content = json!({"fields": {}});
+    let metadata = json!({"tags": [], "references": []});
+
     let codex = json!({
         "id": codex_id,
         "title": title,
         "template_id": template_id,
+        "content": content,
+        "metadata": metadata,
         "created_at": now,
-        "updated_at": now
+        "updated_at": now,
+        "version": 1
     });
-    
+
+    // Insert into database
+    let content_str = serde_json::to_string(&content).map_err(|e| format!("Failed to serialize content: {}", e))?;
+    let metadata_str = serde_json::to_string(&metadata).map_err(|e| format!("Failed to serialize metadata: {}", e))?;
+
+    sqlx::query(
+        "INSERT INTO codices (id, title, template_id, content, metadata, version, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    )
+    .bind(&codex_id)
+    .bind(title)
+    .bind(template_id)
+    .bind(&content_str)
+    .bind(&metadata_str)
+    .bind(1)
+    .bind(&now)
+    .bind(&now)
+    .execute(state.database.get_pool())
+    .await
+    .map_err(|e| format!("Database error: {}", e))?;
+
+    // Force WAL checkpoint to ensure persistence
+    let _ = state.checkpoint_database().await;
+
+    // Also update in-memory cache
     let mut codices = state.codices.write().await;
     codices.insert(codex_id.clone(), codex);
-    
+
     Ok(json!(codex_id))
 }
 
@@ -782,12 +863,131 @@ async fn handle_get_codex(state: &AppState, params: &Option<Value>) -> Result<Va
         .and_then(|p| p.get("codex_id"))
         .and_then(|v| v.as_str())
         .ok_or("Missing codex_id parameter")?;
-    
+
     let codices = state.codices.read().await;
     match codices.get(codex_id) {
         Some(codex) => Ok(codex.clone()),
         None => Err("Codex not found".to_string()),
     }
+}
+
+async fn handle_update_codex(state: &AppState, params: &Option<Value>) -> Result<Value, String> {
+    let codex_id = params
+        .as_ref()
+        .and_then(|p| p.get("codex_id"))
+        .and_then(|v| v.as_str())
+        .ok_or("Missing codex_id parameter")?;
+
+    let mut codices = state.codices.write().await;
+
+    // Get existing codex or return error
+    let mut codex = codices.get(codex_id)
+        .ok_or("Codex not found")?
+        .clone();
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let mut needs_db_update = false;
+
+    // Update fields if provided
+    if let Some(params_obj) = params.as_ref().and_then(|p| p.as_object()) {
+        let codex_obj = codex.as_object_mut().ok_or("Invalid codex format")?;
+
+        // Update title if provided
+        if let Some(title) = params_obj.get("title") {
+            codex_obj.insert("title".to_string(), title.clone());
+            needs_db_update = true;
+        }
+
+        // Update content if provided
+        if let Some(content) = params_obj.get("content") {
+            codex_obj.insert("content".to_string(), content.clone());
+            needs_db_update = true;
+        }
+
+        // Update template_id if provided
+        if let Some(template_id) = params_obj.get("template_id") {
+            codex_obj.insert("template_id".to_string(), template_id.clone());
+            needs_db_update = true;
+        }
+
+        // Update metadata (which includes tags and references)
+        if let Some(metadata) = params_obj.get("metadata") {
+            codex_obj.insert("metadata".to_string(), metadata.clone());
+            needs_db_update = true;
+        } else {
+            // Handle legacy tags/references fields
+            if let Some(tags) = params_obj.get("tags") {
+                let metadata = codex_obj.entry("metadata".to_string())
+                    .or_insert(json!({}));
+                if let Some(metadata_obj) = metadata.as_object_mut() {
+                    metadata_obj.insert("tags".to_string(), tags.clone());
+                }
+                needs_db_update = true;
+            }
+            if let Some(references) = params_obj.get("references") {
+                let metadata = codex_obj.entry("metadata".to_string())
+                    .or_insert(json!({}));
+                if let Some(metadata_obj) = metadata.as_object_mut() {
+                    metadata_obj.insert("references".to_string(), references.clone());
+                }
+                needs_db_update = true;
+            }
+        }
+
+        // Update the updated_at timestamp
+        codex_obj.insert("updated_at".to_string(), json!(now));
+    }
+
+    // Update database if any fields changed
+    if needs_db_update {
+        let title = codex.get("title").and_then(|v| v.as_str());
+        let template_id = codex.get("template_id").and_then(|v| v.as_str());
+        let content = codex.get("content");
+        let metadata = codex.get("metadata");
+
+        // Build dynamic UPDATE query
+        let mut query_parts = vec!["UPDATE codices SET updated_at = ?"];
+        let mut bind_values: Vec<String> = vec![now.clone()];
+
+        if let Some(title) = title {
+            query_parts.push("title = ?");
+            bind_values.push(title.to_string());
+        }
+        if let Some(template_id) = template_id {
+            query_parts.push("template_id = ?");
+            bind_values.push(template_id.to_string());
+        }
+        if let Some(content) = content {
+            query_parts.push("content = ?");
+            bind_values.push(serde_json::to_string(&content).map_err(|e| format!("Failed to serialize content: {}", e))?);
+        }
+        if let Some(metadata) = metadata {
+            query_parts.push("metadata = ?");
+            bind_values.push(serde_json::to_string(&metadata).map_err(|e| format!("Failed to serialize metadata: {}", e))?);
+        }
+
+        query_parts.push("WHERE id = ?");
+        bind_values.push(codex_id.to_string());
+
+        let query_str = query_parts.join(", ").replace(", WHERE", " WHERE");
+
+        let mut query = sqlx::query(&query_str);
+        for value in &bind_values {
+            query = query.bind(value);
+        }
+
+        query.execute(state.database.get_pool())
+            .await
+            .map_err(|e| format!("Database error: {}", e))?;
+
+        // Force WAL checkpoint to ensure persistence
+        let _ = state.checkpoint_database().await;
+    }
+
+    // Store updated codex in memory
+    codices.insert(codex_id.to_string(), codex.clone());
+
+    Ok(codex)
 }
 
 async fn handle_delete_codex(state: &AppState, params: &Option<Value>) -> Result<Value, String> {
@@ -797,11 +997,26 @@ async fn handle_delete_codex(state: &AppState, params: &Option<Value>) -> Result
         .and_then(|v| v.as_str())
         .ok_or("Missing codex_id parameter")?;
 
-    let mut codices = state.codices.write().await;
-    match codices.remove(codex_id) {
-        Some(_) => Ok(json!(true)),
-        None => Err("Codex not found".to_string()),
+    // Delete from database first
+    let result = sqlx::query("DELETE FROM codices WHERE id = ?")
+        .bind(codex_id)
+        .execute(state.database.get_pool())
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
+
+    // Check if anything was deleted
+    if result.rows_affected() == 0 {
+        return Err("Codex not found".to_string());
     }
+
+    // Force WAL checkpoint to ensure persistence
+    let _ = state.checkpoint_database().await;
+
+    // Remove from in-memory cache
+    let mut codices = state.codices.write().await;
+    codices.remove(codex_id);
+
+    Ok(json!(true))
 }
 
 // REST API handlers for MCP server integration
