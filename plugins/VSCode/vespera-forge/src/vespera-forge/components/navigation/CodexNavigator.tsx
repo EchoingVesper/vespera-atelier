@@ -70,6 +70,14 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<FilterConfig[]>([]);
 
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    codex: Codex | null;
+  }>({ visible: false, x: 0, y: 0, codex: null });
+
   // Handle keyboard Delete key for selected codex
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -93,6 +101,18 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [selectedCodexId, codices, onCodexDelete]);
+
+  // Close context menu on click outside
+  React.useEffect(() => {
+    const handleClickOutside = () => {
+      if (contextMenu.visible) {
+        setContextMenu({ visible: false, x: 0, y: 0, codex: null });
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [contextMenu.visible]);
 
   const getTemplateIcon = (templateId: string): React.ReactNode => {
     // Return appropriate icon based on template type
@@ -406,6 +426,18 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
               toggleNodeExpansion(node.id);
             }
           }}
+          onContextMenu={(e) => {
+            // Show context menu for codex nodes
+            if (node.type === 'codex' && node.data) {
+              e.preventDefault();
+              setContextMenu({
+                visible: true,
+                x: e.clientX,
+                y: e.clientY,
+                codex: node.data
+              });
+            }
+          }}
         >
           {hasChildren && (
             <button
@@ -552,6 +584,38 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
           )}
         </div>
       </ScrollArea>
+
+      {/* Custom Context Menu */}
+      {contextMenu.visible && contextMenu.codex && (
+        <div
+          className="fixed bg-popover text-popover-foreground border border-border rounded-md shadow-md py-1 min-w-[160px] z-50"
+          style={{
+            left: `${contextMenu.x}px`,
+            top: `${contextMenu.y}px`
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            className="px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground"
+            onClick={() => {
+              onCodexSelect(contextMenu.codex!);
+              setContextMenu({ visible: false, x: 0, y: 0, codex: null });
+            }}
+          >
+            Open
+          </div>
+          <div className="h-px bg-border my-1" />
+          <div
+            className="px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground text-destructive"
+            onClick={() => {
+              onCodexDelete(contextMenu.codex!.id);
+              setContextMenu({ visible: false, x: 0, y: 0, codex: null });
+            }}
+          >
+            Delete
+          </div>
+        </div>
+      )}
     </div>
   );
 };
