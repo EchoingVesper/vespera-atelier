@@ -73,7 +73,11 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
   // Handle keyboard Delete key for selected codex
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Check if Delete key is pressed and a codex is selected
       if (event.key === 'Delete' && selectedCodexId) {
+        // Prevent default behavior (if any)
+        event.preventDefault();
+
         // Find the selected codex
         const selectedCodex = codices.find(c => c.id === selectedCodexId);
         if (selectedCodex) {
@@ -85,8 +89,9 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    // Attach to document to ensure it captures events in VS Code webview
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [selectedCodexId, codices, onCodexDelete]);
 
   const getTemplateIcon = (templateId: string): React.ReactNode => {
