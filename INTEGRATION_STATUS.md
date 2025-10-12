@@ -1,12 +1,12 @@
 # Vespera Forge Codex Navigator - Current Status
 
-**Date**: 2025-10-07 (Updated - Evening Session)
+**Date**: 2025-10-12 (Updated)
 **Branch**: `feat/codex-ui-framework`
-**Latest Changes**: Editor fully functional with field editing and session persistence!
+**Latest Changes**: Database persistence working! Codices now survive extension restarts!
 
-## 🎉 MAJOR MILESTONE: Editor Fully Functional!
+## 🎉 MAJOR MILESTONE: Database Persistence Complete!
 
-All critical UI bugs resolved! Codices can now be created, edited, and persist within a session.
+All critical functionality working! Codices can now be created, edited, and **persist across extension restarts**.
 
 ## ✅ Working
 
@@ -24,10 +24,15 @@ All critical UI bugs resolved! Codices can now be created, edited, and persist w
 - ✅ CRUD operations implemented:
   - `codex.create` → `binderyService.createCodex()`
   - `codex.delete` → `binderyService.deleteCodex()`
-  - `codex.update` → `binderyService.updateCodex()` **NEW!**
+  - `codex.update` → `binderyService.updateCodex()`
   - `codex.list` → `binderyService.listCodeices()`
 - ✅ Webview ↔ Extension message handlers working
 - ✅ Extension compiles successfully (2.29 MiB)
+- ✅ **Database persistence implemented and tested!**
+  - Codices table created via init_schema() fallback
+  - INSERT/UPDATE/DELETE operations working
+  - Codices loaded from database on startup
+  - **Codices survive extension restarts** ✅
 
 **Critical Fixes (2025-10-06):**
 - ✅ **Fixed missing `vespera-forge.showAllViews` command** - Now registered in command map
@@ -84,29 +89,28 @@ All critical UI bugs resolved! Codices can now be created, edited, and persist w
    - **Fix**: TemplateRegistry.ts:48 - Changed path from `.vespera/templates` to `.vespera/chat-templates`
    - **Result**: No more chat template errors in console
 
+## ✅ Database Persistence (COMPLETE!)
+
+**Fixed "no such table: codices" error** ✅
+- Issue: Migration system not finding migrations, falling back to init_schema() which only created tasks table
+- Fix: Updated database.rs init_schema() to include codices table creation with full schema
+- Result: Codices table now created automatically with all columns and indices
+
+**Full Database Persistence Working** ✅
+- INSERT operations on codex creation
+- UPDATE operations on codex editing
+- Codices loaded from database on server startup
+- Database files updating correctly
+- **User-tested and verified**: Created codices, edited them, restarted EDH, codices loaded successfully!
+
 ## ⚠️ Remaining Work
 
-**1. Database Persistence (CRITICAL - NEXT PRIORITY)**
-- ⚠️ **Codices only persist in RAM, not database**
-  - Symptom: Only `tasks.db-shm` file updated (Oct 7 18:47), main database from Oct 6
-  - Symptom: Codices lost when closing Extension Development Host window
-  - Root Cause: Bindery stores codices in `state.codices` (RwLock HashMap in memory)
-  - Investigation: vespera-bindery/src/bin/server.rs:773-774,786-790,800-804 - In-memory storage only
-  - **Current State**: Session persistence works (edits persist when switching codices)
-  - **Missing**: SQLite database writes (codices don't survive extension restart)
-  - **Next Step**: Implement database persistence in Bindery backend
-    - Add SQLite INSERT/UPDATE for codices table
-    - Checkpoint WAL file to main database
-    - Load codices from database on startup
+**1. Additional UI Testing**
+- ⏳ Test codex deletion via UI (backend method exists, UI not yet tested)
+- ⏳ Test panel toggle button functionality
+- ⏳ Connect AI Assistant panel to backend
 
-**2. Database Schema Design**
-- Need to design codices table schema:
-  - Primary key: codex_id (UUID string)
-  - Fields: title, template_id, created_at, updated_at, project_id
-  - JSON fields: content, tags, references
-  - Consider indexing: template_id, project_id, created_at for queries
-
-**3. Test End-to-End (MOSTLY TESTED)**
+**2. Test End-to-End (MOSTLY COMPLETE)**
 - ✅ Test in Extension Development Host (F5)
 - ✅ Verify `.vespera/templates/` directory is created
 - ✅ Verify 6 template files are created (note.json5, task.json5, etc.)
@@ -115,10 +119,10 @@ All critical UI bugs resolved! Codices can now be created, edited, and persist w
 - ✅ Verify Bindery stays connected (no timeout - confirmed working)
 - ✅ Test editing codex fields (works - all field types functional)
 - ✅ Test switching between codices (works - edits persist in session)
+- ✅ **Test codex persistence after restart** (WORKS! Database persistence verified)
 - ⏳ Test deleting codices via UI (not tested yet)
-- ⏳ Test codex persistence after restart (currently fails - in-memory only)
 
-**4. Known Issues to Fix**
+**3. Known Issues to Fix**
 - AI Assistant panel doesn't auto-restore on startup (must manually open)
 - No Codex management commands in Ctrl+Shift+P menu yet
 - Panel toggle buttons still need wiring
@@ -126,35 +130,35 @@ All critical UI bugs resolved! Codices can now be created, edited, and persist w
 
 ## 📋 Next Steps
 
-### Immediate Priority: Database Persistence
+### ✅ Database Persistence - COMPLETE!
 
-1. **Design Database Schema** (30 min)
-   - Create `codices` table with proper fields
-   - Add migration for schema creation
-   - Plan indexing strategy
+All database persistence work is complete and tested! Codices now survive extension restarts.
 
-2. **Implement Database Write Operations** (2 hours)
-   - Add INSERT in `handle_create_codex`
-   - Add UPDATE in `handle_update_codex`
-   - Add DELETE in `handle_delete_codex`
-   - Test with SQLite directly
+### Current Priorities
 
-3. **Implement Database Read Operations** (1 hour)
-   - Load codices from database on server startup
-   - Populate `state.codices` from database
-   - Add `handle_list_codices` database query
+1. **Testing & Verification** (30 min - 1 hour)
+   - Test codex deletion via UI
+   - Test panel toggle buttons
+   - Verify all CRUD operations in various scenarios
+   - Check error handling edge cases
 
-4. **Test Full Persistence** (30 min)
-   - Create codices, edit fields, close extension
-   - Restart extension, verify codices loaded
-   - Verify database files updated
+2. **UI Polish** (1-2 hours)
+   - Wire up panel toggle handlers
+   - Add Codex management commands to command palette
+   - Fix AI Assistant panel auto-restore
+   - Improve loading states and error messages
 
-### Secondary Priorities
+3. **Code Quality** (1-2 hours)
+   - Address TypeScript errors (many are implementation placeholders)
+   - Clean up console.log statements
+   - Add proper error handling
+   - Improve code documentation
 
-5. Wire up Editor save button (currently auto-saves on edit mode end)
-6. Implement panel toggle handlers
-7. Add Codex management commands to command palette
-8. Fix AI Assistant panel auto-restore
+4. **Documentation Cleanup** (30 min)
+   - Organize scattered .md files in base folder
+   - Move documentation to intelligible locations
+   - Update README if needed
+   - Archive obsolete documentation
 
 ## 📁 Key Files Modified (This Session)
 
@@ -177,12 +181,75 @@ All critical UI bugs resolved! Codices can now be created, edited, and persist w
 - ✅ Field changes persist when switching codices (session)
 - ✅ All 6 template types render without crashes
 - ✅ Field labels properly capitalized
-- ⏳ Codices persist after extension restart (NEXT GOAL)
+- ✅ **Codices persist after extension restart** 🎉
 
 ## 🎯 Success Metrics Remaining
 
-- ⏳ Full database persistence (codices survive restart)
-- ⏳ Delete codices via Navigator
+- ⏳ Delete codices via Navigator UI (backend exists, UI not tested)
 - ⏳ Real-time codex updates across panels
 - ⏳ Template field validation
 - ⏳ Relationship/reference management
+- ⏳ Panel toggle button functionality
+
+---
+
+## 🎉 Phase 10 Complete: Database Persistence (2025-10-12)
+
+**Status**: ✅ TESTED AND VERIFIED
+
+### What Was Fixed
+
+1. **"no such table: codices" Error**
+   - **Issue**: Migration system looking in wrong directory, falling back to init_schema() which only created tasks table
+   - **Fix**: Updated `packages/vespera-utilities/vespera-bindery/src/database.rs` init_schema() to include complete codices table creation
+   - **Schema Added**:
+     ```sql
+     CREATE TABLE IF NOT EXISTS codices (
+         id TEXT PRIMARY KEY,
+         template_id TEXT NOT NULL,
+         title TEXT NOT NULL,
+         content TEXT NOT NULL,
+         metadata TEXT NOT NULL,
+         crdt_state TEXT,
+         version INTEGER NOT NULL DEFAULT 1,
+         created_at TEXT NOT NULL,
+         updated_at TEXT NOT NULL,
+         created_by TEXT,
+         project_id TEXT,
+         parent_id TEXT,
+         FOREIGN KEY(parent_id) REFERENCES codices(id) ON DELETE SET NULL
+     );
+     -- Plus 4 performance indices
+     ```
+
+2. **Binary Path Issue**
+   - **Issue**: Extension was finding old binary from main repo instead of updated binary from worktree
+   - **Fix**: Copied updated binary from worktree to main repo location
+   - **Result**: Extension now uses correct binary with database fix
+
+### User Testing Results
+
+✅ **Created test codices** - Multiple codices with different templates
+✅ **Edited fields** - Modified codex content
+✅ **Closed Extension Development Host** - Completely shut down extension
+✅ **Restarted Extension Development Host** - Launched again
+✅ **Codices loaded successfully!** - All 3 test codices appeared in Navigator
+✅ **Server logs confirmed**: "Debug: Loaded 3 codices from database"
+
+### Files Modified
+
+**Backend**:
+- `packages/vespera-utilities/vespera-bindery/src/database.rs:665-714` - Added codices table to init_schema()
+
+**Documentation**:
+- `DATABASE_FIX_SUMMARY.md` - Complete fix documentation
+- `DATABASE_PERSISTENCE_COMPLETE.md` - Implementation guide
+- `INTEGRATION_STATUS.md` - This file
+- `INTEGRATION_ASSESSMENT.md` - Overall progress tracking
+- `INTEGRATION_CHECKLIST.md` - Phase completion tracking
+
+### Commits
+
+- `1c6454c` - fix(vespera-bindery): Add codices table to init_schema fallback
+- `960e336` - docs: Update DATABASE_PERSISTENCE_COMPLETE.md with init_schema fix
+- `1165db4` - docs: Add DATABASE_FIX_SUMMARY.md for quick reference
