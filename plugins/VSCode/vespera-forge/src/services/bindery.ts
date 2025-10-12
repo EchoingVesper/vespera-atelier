@@ -127,7 +127,7 @@ export class BinderyService extends EventEmitter {
     this.config = {
       binderyPath: config.binderyPath || undefined,
       workspaceRoot: config.workspaceRoot || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd(),
-      enableLogging: config.enableLogging ?? true,
+      enableLogging: config.enableLogging ?? false, // Changed default to false to reduce console spam
       connectionTimeout: config.connectionTimeout ?? 5000,
       maxRetries: config.maxRetries ?? 3,
       retryDelay: config.retryDelay ?? 1000,
@@ -940,7 +940,10 @@ export class BinderyService extends EventEmitter {
 
       // Handle stderr (logging)
       this.process.stderr!.on('data', (data) => {
-        this.log('Bindery stderr:', data.toString());
+        const message = data.toString();
+        // Only log first line to avoid console spam
+        const firstLine = message.split('\n')[0];
+        this.log('Bindery stderr:', firstLine, message.length > firstLine.length ? '...' : '');
       });
 
       // Give process time to start
@@ -978,8 +981,8 @@ export class BinderyService extends EventEmitter {
   }
 
   private async handleResponse(response: BinderyResponse): Promise<void> {
-    this.log('Received response:', JSON.stringify(response));
-    
+    this.log('Received response for request ID:', response.id);
+
     const request = this.pendingRequests.get(response.id);
     if (!request) {
       this.log('Received response for unknown request ID:', response.id);
@@ -1007,10 +1010,10 @@ export class BinderyService extends EventEmitter {
       const sanitizedResponse = responseValidation.sanitizedResponse || response;
 
       if (sanitizedResponse.error) {
-        this.log('Response contains error:', sanitizedResponse.error);
+        this.log('Response contains error for request', response.id);
         request.reject(sanitizedResponse.error);
       } else {
-        this.log('Response successful, result:', sanitizedResponse.result);
+        this.log('Response successful for request', response.id);
         request.resolve(sanitizedResponse.result);
       }
 
@@ -1202,7 +1205,7 @@ export class BinderyService extends EventEmitter {
 
       try {
         const requestJson = JSON.stringify(request);
-        this.log('Writing to Bindery stdin:', requestJson);
+        this.log('Sending request to Bindery:', method, 'ID:', requestId);
         this.process!.stdin!.write(requestJson + '\n');
       } catch (error) {
         this.pendingRequests.delete(requestId);
