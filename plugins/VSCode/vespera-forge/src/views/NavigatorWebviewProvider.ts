@@ -217,6 +217,10 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
               id: data.id,
               name: data.title,
               templateId: data.template_id,
+              tags: data.tags || [],
+              relationships: data.relationships || [],
+              createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+              updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
               metadata: {
                 id: data.id,
                 title: data.title,
@@ -224,8 +228,9 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
                 created_at: data.created_at,
                 updated_at: data.updated_at,
                 projectId: data.project_id || data.metadata?.projectId,
-                tags: data.tags || [],
-                references: data.references || []
+                status: data.metadata?.status,
+                priority: data.metadata?.priority,
+                assignedTo: data.metadata?.assignedTo
               },
               content: data.content || { fields: {} }
             };

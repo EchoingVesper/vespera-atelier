@@ -70,6 +70,25 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<FilterConfig[]>([]);
 
+  // Handle keyboard Delete key for selected codex
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Delete' && selectedCodexId) {
+        // Find the selected codex
+        const selectedCodex = codices.find(c => c.id === selectedCodexId);
+        if (selectedCodex) {
+          // Confirm deletion
+          if (confirm(`Are you sure you want to delete "${selectedCodex.name}"?`)) {
+            onCodexDelete(selectedCodexId);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedCodexId, codices, onCodexDelete]);
+
   const getTemplateIcon = (templateId: string): React.ReactNode => {
     // Return appropriate icon based on template type
     const iconMap: Record<string, React.ReactNode> = {
@@ -235,6 +254,35 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
     const root: TreeNode[] = [];
 
     codices.forEach(codex => {
+      // Safety check: ensure tags array exists
+      if (!codex.tags || !Array.isArray(codex.tags) || codex.tags.length === 0) {
+        // Add to "Untagged" group
+        if (!tagGroups.has('untagged')) {
+          const untaggedNode: TreeNode = {
+            id: 'tag-untagged',
+            name: 'Untagged',
+            type: 'folder',
+            children: [],
+            icon: <Tag className="w-4 h-4 opacity-50" />
+          };
+          tagGroups.set('untagged', untaggedNode);
+          root.push(untaggedNode);
+        }
+
+        const untaggedNode = tagGroups.get('untagged')!;
+        const template = templates.find(t => t.id === codex.templateId);
+
+        untaggedNode.children.push({
+          id: codex.id,
+          name: codex.name,
+          type: 'codex',
+          children: [],
+          data: codex,
+          icon: template ? getTemplateIcon(template.id) : <File className="w-4 h-4" />
+        });
+        return;
+      }
+
       codex.tags.forEach(tag => {
         if (!tagGroups.has(tag)) {
           const tagNode: TreeNode = {
@@ -250,7 +298,7 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
 
         const tagNode = tagGroups.get(tag)!;
         const template = templates.find(t => t.id === codex.templateId);
-        
+
         tagNode.children.push({
           id: codex.id,
           name: codex.name,
@@ -270,13 +318,18 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
     const root: TreeNode[] = [];
 
     codices.forEach(codex => {
+      // Safety check: ensure relationships array exists
+      if (!codex.relationships || !Array.isArray(codex.relationships)) {
+        return;
+      }
+
       codex.relationships.forEach(relationship => {
         const relationshipType = relationship.type;
-        
+
         if (!relationshipGroups.has(relationshipType)) {
           const relNode: TreeNode = {
             id: `rel-${relationshipType}`,
-            name: relationshipType.replace('_', ' ').charAt(0).toUpperCase() + 
+            name: relationshipType.replace('_', ' ').charAt(0).toUpperCase() +
                   relationshipType.replace('_', ' ').slice(1),
             type: 'folder',
             children: [],
@@ -288,7 +341,7 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
 
         const relNode = relationshipGroups.get(relationshipType)!;
         const template = templates.find(t => t.id === codex.templateId);
-        
+
         relNode.children.push({
           id: codex.id,
           name: codex.name,
@@ -299,6 +352,17 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
         });
       });
     });
+
+    // If no relationships found, show a message
+    if (root.length === 0) {
+      root.push({
+        id: 'no-relationships',
+        name: 'No relationships yet',
+        type: 'folder',
+        children: [],
+        icon: <Users className="w-4 h-4 opacity-50" />
+      });
+    }
 
     return root;
   };
@@ -324,7 +388,7 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
       <div key={node.id}>
         <div
           className={cn(
-            'flex items-center gap-2 px-2 py-1 rounded-sm cursor-pointer transition-colors',
+            'group flex items-center gap-2 px-2 py-1 rounded-sm cursor-pointer transition-colors',
             'hover:bg-accent hover:text-accent-foreground',
             isSelected && 'bg-primary text-primary-foreground',
             depth > 0 && 'ml-4'
@@ -353,40 +417,53 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
               )}
             </button>
           )}
-          
+
           {node.icon}
-          
+
           <span className="flex-1 text-sm truncate">{node.name}</span>
-          
+
           {node.badge && (
             <Badge variant="secondary" className="text-xs">
               {node.badge}
             </Badge>
           )}
-          
+
           {node.type === 'codex' && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 w-6 p-0 opacity-0 hover:opacity-100 group-hover:opacity-100"
+                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <MoreHorizontal className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => node.data && onCodexUpdate(node.data)}>
-                  Edit
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (node.data) onCodexSelect(node.data);
+                  }}
+                >
+                  Open
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => node.data && onCodexDelete(node.data.id)}>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (node.data) onCodexDelete(node.data.id);
+                  }}
+                >
                   Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
         </div>
-        
+
         {hasChildren && isExpanded && (
           <div>
             {node.children.map(child => renderTreeNode(child, depth + 1))}
