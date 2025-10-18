@@ -81,14 +81,20 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
   // Handle keyboard Delete key for selected codex
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      console.log('[Navigator] Key pressed:', event.key, 'selectedCodexId:', selectedCodexId);
+
       // Check if Delete key is pressed and a codex is selected
       if (event.key === 'Delete' && selectedCodexId) {
         // Prevent default behavior (if any)
         event.preventDefault();
+        event.stopPropagation();
+
+        console.log('[Navigator] Delete key detected for codex:', selectedCodexId);
 
         // Find the selected codex
         const selectedCodex = codices.find(c => c.id === selectedCodexId);
         if (selectedCodex) {
+          console.log('[Navigator] Found codex to delete:', selectedCodex.name);
           // Confirm deletion
           if (confirm(`Are you sure you want to delete "${selectedCodex.name}"?`)) {
             onCodexDelete(selectedCodexId);
@@ -97,9 +103,14 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
       }
     };
 
-    // Attach to document to ensure it captures events in VS Code webview
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    // Attach to both document and window to ensure it captures events in VS Code webview
+    document.addEventListener('keydown', handleKeyDown, true); // Use capture phase
+    window.addEventListener('keydown', handleKeyDown, true);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, true);
+      window.removeEventListener('keydown', handleKeyDown, true);
+    };
   }, [selectedCodexId, codices, onCodexDelete]);
 
   // Close context menu on click outside
