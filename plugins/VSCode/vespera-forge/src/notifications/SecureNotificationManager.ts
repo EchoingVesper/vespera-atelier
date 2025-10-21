@@ -181,19 +181,6 @@ export class SecureNotificationManager implements vscode.Disposable {
       this.initialized = true;
       this.logger.info('SecureNotificationManager initialized successfully');
 
-      // Log initialization event for security audit
-      await this.coreServices.securityAuditLogger.logSecurityEvent(
-        'security_breach' as any, // Using as generic event
-        {
-          timestamp: Date.now(),
-          metadata: { 
-            action: 'notification_manager_initialized',
-            osToastEnabled: this.config.osToastEnabled,
-            privacyEnabled: this.config.privacy.enabled
-          }
-        }
-      );
-
     } catch (error) {
       this.logger.error('Failed to initialize SecureNotificationManager', error);
       throw error;
@@ -633,24 +620,13 @@ export class SecureNotificationManager implements vscode.Disposable {
     request: NotificationRequest,
     deliveryMethods: string[]
   ): Promise<void> {
-    try {
-      await this.coreServices.securityAuditLogger.logSecurityEvent(
-        'security_breach' as any, // Using as generic event
-        {
-          timestamp: Date.now(),
-          metadata: {
-            action: 'notification_delivered',
-            notificationId: id,
-            type: request.type,
-            level: request.level,
-            deliveryMethods,
-            title: this.sanitizeForLogging(request.title)
-          }
-        }
-      );
-    } catch (error) {
-      this.logger.warn('Failed to log notification event', { error });
-    }
+    // Normal notification delivery logging - not a security event
+    this.logger.debug('Notification delivered', {
+      notificationId: id,
+      type: request.type,
+      level: request.level,
+      deliveryMethods
+    });
   }
 
   /**

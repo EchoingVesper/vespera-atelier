@@ -32,21 +32,25 @@ export const initializeCommand: CommandHandler = async (context: VesperaForgeCon
     
     if (result.success) {
       log('Bindery service connected:', result.data);
-      
+
       // Set context as initialized
       await vscode.commands.executeCommand('setContext', 'vespera-forge:enabled', true);
       context.isInitialized = true;
-      
+
       // Show all views
       vscode.commands.executeCommand('vespera-forge.showAllViews');
-      
+
       await showInfo(`Vespera Forge initialized successfully! Connected to Bindery v${result.data?.version || 'unknown'}.`);
-      
+
       // Refresh all views
       vscode.commands.executeCommand('vespera-forge.globalRefresh');
     } else {
-      await showError(`Failed to connect to Bindery: ${result.error.message}`);
-      
+      // Don't show error toast for NoWorkspace - Navigator already displays this
+      const isNoWorkspace = result.error.message?.includes('No workspace folder open');
+      if (!isNoWorkspace) {
+        await showError(`Failed to connect to Bindery: ${result.error.message}`);
+      }
+
       // Still set as initialized to allow configuration
       await vscode.commands.executeCommand('setContext', 'vespera-forge:enabled', true);
       context.isInitialized = true;

@@ -31,26 +31,17 @@ export async function logSecurityEvent(
   source: string
 ): Promise<void> {
   try {
-    if (coreServices.securityAuditLogger) {
-      await coreServices.securityAuditLogger.logSecurityEvent(
-        'security_breach' as any, // Using as generic event type
-        {
-          timestamp: eventData.timestamp,
-          metadata: {
-            action: eventData.type,
-            category: eventData.category,
-            severity: eventData.severity,
-            source: eventData.source,
-            message: eventData.message,
-            details: eventData.details,
-            ...metadata
-          }
-        }
-      );
-    }
+    // Use regular logging instead of security audit for non-security events
+    coreServices.logger.info('Event logged', {
+      type: eventData.type,
+      category: eventData.category,
+      severity: eventData.severity,
+      source: eventData.source,
+      message: eventData.message
+    });
   } catch (error) {
-    // Fallback to logger if security audit fails
-    coreServices.logger.warn('Failed to log security event', { 
+    // Fallback to logger if logging fails
+    coreServices.logger.warn('Failed to log event', {
       error,
       eventType: eventData.type,
       source 
