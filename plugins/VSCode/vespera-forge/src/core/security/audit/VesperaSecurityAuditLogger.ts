@@ -425,15 +425,30 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
   private determineSeverity(event: VesperaSecurityEvent, context: SecurityEventContext): 'low' | 'medium' | 'high' | 'critical' {
     // Base severity by event type
     const baseSeverity: Record<VesperaSecurityEvent, 'low' | 'medium' | 'high' | 'critical'> = {
+      // Security threats and violations
       [VesperaSecurityEvent.RATE_LIMIT_EXCEEDED]: 'low',
-      [VesperaSecurityEvent.CONSENT_GRANTED]: 'low',
-      [VesperaSecurityEvent.CONSENT_WITHDRAWN]: 'medium',
       [VesperaSecurityEvent.THREAT_DETECTED]: 'high',
       [VesperaSecurityEvent.CSP_VIOLATION]: 'medium',
-      [VesperaSecurityEvent.SANITIZATION_APPLIED]: 'low',
       [VesperaSecurityEvent.SECURITY_BREACH]: 'critical',
+
+      // System lifecycle events (informational, not security threats)
+      [VesperaSecurityEvent.SYSTEM_INITIALIZED]: 'low',
+      [VesperaSecurityEvent.SYSTEM_SHUTDOWN]: 'low',
+      [VesperaSecurityEvent.COMPONENT_INITIALIZED]: 'low',
+      [VesperaSecurityEvent.INITIALIZATION_FAILED]: 'medium',
+
+      // User consent and privacy
+      [VesperaSecurityEvent.CONSENT_GRANTED]: 'low',
+      [VesperaSecurityEvent.CONSENT_WITHDRAWN]: 'medium',
+
+      // Data protection
+      [VesperaSecurityEvent.SANITIZATION_APPLIED]: 'low',
+
+      // Circuit breaker and resilience
       [VesperaSecurityEvent.CIRCUIT_BREAKER_OPENED]: 'medium',
       [VesperaSecurityEvent.CIRCUIT_BREAKER_CLOSED]: 'low',
+
+      // API and external access
       [VesperaSecurityEvent.API_ACCESS]: 'low',
       [VesperaSecurityEvent.API_ERROR]: 'medium'
     };

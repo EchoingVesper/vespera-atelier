@@ -171,9 +171,9 @@ export class SecurityIntegrationManager implements EnhancedDisposable {
       await this.performHealthCheck();
 
       console.log(`Security integration completed in ${this.status.performanceMetrics.initializationTime.toFixed(2)}ms`);
-      
+
       // Log successful initialization
-      await this.logSecurityEvent(VesperaSecurityEvent.SECURITY_BREACH, {
+      await this.logSecurityEvent(VesperaSecurityEvent.SYSTEM_INITIALIZED, {
         timestamp: Date.now(),
         metadata: {
           action: 'security_integration_initialized',
@@ -187,10 +187,10 @@ export class SecurityIntegrationManager implements EnhancedDisposable {
     } catch (error) {
       this.status.performanceMetrics.initializationTime = performance.now() - startTime;
       this.status.healthStatus.overall = 'failed';
-      
+
       console.error('Security integration initialization failed:', error);
-      
-      await this.logSecurityEvent(VesperaSecurityEvent.SECURITY_BREACH, {
+
+      await this.logSecurityEvent(VesperaSecurityEvent.INITIALIZATION_FAILED, {
         timestamp: Date.now(),
         metadata: {
           action: 'security_integration_failed',
