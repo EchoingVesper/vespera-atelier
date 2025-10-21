@@ -30,6 +30,7 @@ function NavigatorApp() {
   const [codices, setCodices] = useState<Codex[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedCodexId, setSelectedCodexId] = useState<string | undefined>();
+  const [noWorkspace, setNoWorkspace] = useState<{ message: string; action: string } | null>(null);
 
   // Listen for messages from the extension
   React.useEffect(() => {
@@ -41,6 +42,12 @@ function NavigatorApp() {
           console.log('[Navigator] Received initialState:', message.payload);
           setCodices(message.payload.codices || []);
           setTemplates(message.payload.templates || []);
+          setNoWorkspace(null); // Clear no-workspace state
+          break;
+
+        case 'noWorkspace':
+          console.log('[Navigator] No workspace folder open:', message.payload);
+          setNoWorkspace(message.payload);
           break;
 
         case 'codex.created':
@@ -91,6 +98,36 @@ function NavigatorApp() {
   const handleCodexUpdate = useCallback(async (codex: Codex) => {
     setCodices(prev => prev.map(c => c.id === codex.id ? codex : c));
   }, []);
+
+  const handleOpenFolder = useCallback(() => {
+    adapter.sendMessage({
+      type: 'command',
+      payload: { command: 'workbench.action.files.openFolder' }
+    });
+  }, []);
+
+  // Show "Open Folder" prompt if no workspace
+  if (noWorkspace) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+        <div className="w-16 h-16 mb-4 text-muted-foreground">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </div>
+        <h3 className="text-lg font-semibold mb-2">No Folder Open</h3>
+        <p className="text-sm text-muted-foreground mb-4 max-w-xs">
+          {noWorkspace.message}
+        </p>
+        <button
+          onClick={handleOpenFolder}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
+        >
+          Open Folder
+        </button>
+      </div>
+    );
+  }
 
   return (
     <CodexNavigator

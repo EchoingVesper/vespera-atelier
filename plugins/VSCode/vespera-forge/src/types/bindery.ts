@@ -291,7 +291,8 @@ export enum BinderyConnectionStatus {
   Disconnected = 'disconnected',
   Connecting = 'connecting',
   Connected = 'connected',
-  Error = 'error'
+  Error = 'error',
+  NoWorkspace = 'no_workspace'
 }
 
 export interface BinderyConnectionInfo {

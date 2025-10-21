@@ -124,9 +124,31 @@ export class BinderyService extends EventEmitter {
       }
     };
 
+    // Check if workspace folder is available
+    const workspaceRoot = config.workspaceRoot || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+
+    // Set NoWorkspace status if no workspace is open
+    if (!workspaceRoot) {
+      this.log('No workspace folder open - Bindery service will not initialize');
+      this.config = {
+        binderyPath: config.binderyPath || undefined,
+        workspaceRoot: undefined,
+        enableLogging: config.enableLogging ?? false,
+        connectionTimeout: config.connectionTimeout ?? 5000,
+        maxRetries: config.maxRetries ?? 3,
+        retryDelay: config.retryDelay ?? 1000,
+        security: { ...defaultSecurity, ...config.security }
+      };
+      this.connectionInfo = {
+        status: BinderyConnectionStatus.NoWorkspace,
+        last_error: 'No workspace folder open. Please open a folder to use Vespera Forge.'
+      };
+      return; // Don't initialize further
+    }
+
     this.config = {
       binderyPath: config.binderyPath || undefined,
-      workspaceRoot: config.workspaceRoot || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd(),
+      workspaceRoot: workspaceRoot,
       enableLogging: config.enableLogging ?? false, // Changed default to false to reduce console spam
       connectionTimeout: config.connectionTimeout ?? 5000,
       maxRetries: config.maxRetries ?? 3,
@@ -459,6 +481,17 @@ export class BinderyService extends EventEmitter {
    * Initialize connection to Bindery backend
    */
   public async initialize(): Promise<BinderyResult<VersionInfo>> {
+    // Check if workspace is available
+    if (this.connectionInfo.status === BinderyConnectionStatus.NoWorkspace) {
+      return {
+        success: false,
+        error: {
+          code: -1,
+          message: this.connectionInfo.last_error || 'No workspace folder open. Please open a folder to use Vespera Forge.'
+        }
+      };
+    }
+
     if (this.isConnecting) {
       return { success: false, error: { code: -1, message: 'Already connecting' } };
     }

@@ -5,6 +5,7 @@
 import * as vscode from 'vscode';
 import { VesperaLogger } from '../core/logging/VesperaLogger';
 import { BinderyService } from '../services/bindery';
+import { BinderyConnectionStatus } from '../types/bindery';
 import { TemplateInitializer } from '../services/template-initializer';
 
 export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
@@ -154,6 +155,20 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
     if (!this._view) return;
 
     try {
+      // Check if workspace folder is open
+      const connectionInfo = this.binderyService.getConnectionInfo();
+      if (connectionInfo.status === BinderyConnectionStatus.NoWorkspace) {
+        this.logger?.info('No workspace folder open, prompting user');
+        this._view.webview.postMessage({
+          type: 'noWorkspace',
+          payload: {
+            message: connectionInfo.last_error || 'Please open a folder to use Vespera Forge',
+            action: 'openFolder'
+          }
+        });
+        return;
+      }
+
       // Check if Bindery is connected
       if (!this.binderyService.isConnected()) {
         this.logger?.warn('Bindery not connected, attempting to initialize...');
