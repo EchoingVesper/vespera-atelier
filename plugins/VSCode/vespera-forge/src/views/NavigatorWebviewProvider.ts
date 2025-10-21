@@ -146,6 +146,13 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
         await this.handleCodexDelete(message.id, message.payload);
         break;
 
+      case 'command':
+        // Execute VS Code command
+        if (message.payload?.command) {
+          await vscode.commands.executeCommand(message.payload.command);
+        }
+        break;
+
       default:
         this.logger?.debug('Unhandled navigator message', { type: message.type });
     }
