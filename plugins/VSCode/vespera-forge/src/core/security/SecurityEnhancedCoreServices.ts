@@ -256,12 +256,12 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
         }
       });
 
-      // Log initial security event
+      // Log component initialization event
       await this.securityAuditLogger.logSecurityEvent(
-        VesperaSecurityEvent.SECURITY_BREACH, // Using as generic security event
+        VesperaSecurityEvent.COMPONENT_INITIALIZED,
         {
           timestamp: Date.now(),
-          metadata: { 
+          metadata: {
             action: 'security_services_initialized',
             servicesCount: this.getInitializedServiceNames().length
           }
