@@ -129,7 +129,6 @@ export class BinderyService extends EventEmitter {
 
     // Set NoWorkspace status if no workspace is open
     if (!workspaceRoot) {
-      this.log('No workspace folder open - Bindery service will not initialize');
       this.config = {
         binderyPath: config.binderyPath || undefined,
         workspaceRoot: undefined,
@@ -139,6 +138,7 @@ export class BinderyService extends EventEmitter {
         retryDelay: config.retryDelay ?? 1000,
         security: { ...defaultSecurity, ...config.security }
       };
+      this.log('No workspace folder open - Bindery service will not initialize');
       this.connectionInfo = {
         status: BinderyConnectionStatus.NoWorkspace,
         last_error: 'No workspace folder open. Please open a folder to use Vespera Forge.'
@@ -1315,10 +1315,15 @@ let binderyServiceInstance: BinderyService | null = null;
 
 /**
  * Get or create the global Bindery service instance
+ *
+ * Note: This follows the singleton pattern. If an instance already exists,
+ * the config parameter will be ignored and a warning will be logged.
  */
 export function getBinderyService(config?: Partial<BinderyServiceConfig>): BinderyService {
   if (!binderyServiceInstance) {
     binderyServiceInstance = new BinderyService(config);
+  } else if (config) {
+    console.warn('[BinderyService] Singleton instance already exists. Config parameter ignored. Use disposeBinderyService() first if you need to reinitialize with new config.');
   }
   return binderyServiceInstance;
 }

@@ -17,7 +17,7 @@ import { FileOperationsSecurityManager, FileSecurityPolicy } from './security/fi
 import { RustFileOpsSecurityWrapper } from './rust-file-ops/security-wrapper';
 import { McpSecureFileTools } from './mcp/secure-file-tools';
 import { McpMessageValidator } from './security/mcp-validation';
-import { BinderyService } from './services/bindery';
+import { BinderyService, getBinderyService } from './services/bindery';
 import { 
   SecurityConfiguration,
   VesperaSecurityErrorCode,
@@ -300,7 +300,7 @@ export class SecurityIntegrationManager implements EnhancedDisposable {
     // Bindery Service with Security
     if (this.config.enableProcessIsolation) {
       try {
-        this.binderyService = new BinderyService({
+        this.binderyService = getBinderyService({
           enableLogging: true,
           security: {
             enableProcessIsolation: true,
