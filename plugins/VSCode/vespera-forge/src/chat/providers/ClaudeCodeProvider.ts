@@ -1,6 +1,7 @@
 /**
  * Claude Code Provider for Vespera Forge chat system
- * Uses the official Claude Code TypeScript SDK with file context integration
+ * Uses the official Claude Code TypeScript SDK to spawn Claude Code processes
+ * This allows users to leverage their Claude Max subscription instead of direct API calls
  */
 import { ChatProvider } from './BaseProvider';
 import { ProviderTemplate, ProviderConfig, ProviderStatus } from '../types/provider';
@@ -68,6 +69,42 @@ export class ClaudeCodeProvider extends ChatProvider {
 
   async connect(): Promise<void> {
     try {
+      // Ensure PATH is set for spawning Claude Code processes
+      // VS Code extension host may have incomplete environment variables
+      if (!process.env['PATH']) {
+        console.warn('[ClaudeCodeProvider] PATH not set in environment, attempting to set defaults');
+        // Set common PATH locations for Unix-like systems
+        process.env['PATH'] = '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin';
+
+        // Add npm global bin paths
+        if (process.env['HOME']) {
+          process.env['PATH'] += `:${process.env['HOME']}/.local/bin:${process.env['HOME']}/bin`;
+          process.env['PATH'] += `:${process.env['HOME']}/.npm/bin`;
+          process.env['PATH'] += `:${process.env['HOME']}/.nvm/versions/node/*/bin`;
+        }
+
+        // Add common Node.js paths
+        process.env['PATH'] += ':/usr/local/lib/node_modules/.bin';
+        process.env['PATH'] += ':/usr/lib/node_modules/.bin';
+      }
+
+      console.log('[ClaudeCodeProvider] Environment check:', {
+        PATH: process.env['PATH']?.substring(0, 150) + '...',
+        NODE_ENV: process.env['NODE_ENV'],
+        HOME: process.env['HOME']
+      });
+
+      // Test if Claude CLI is available
+      try {
+        const { execSync } = require('child_process');
+        execSync('which claude', { stdio: 'pipe' });
+        console.log('[ClaudeCodeProvider] Claude CLI found in PATH');
+      } catch (whichError) {
+        console.warn('[ClaudeCodeProvider] Claude CLI not found in PATH. Please install with: npm install -g @anthropic-ai/claude-code');
+        console.warn('[ClaudeCodeProvider] Then run: claude login');
+        // Continue anyway - the SDK will provide a better error message when used
+      }
+
       // Claude Code SDK doesn't need explicit connection setup
       // Just validate that we can import the SDK and set status
       this.connectionStatus = ProviderStatus.Connected;
@@ -275,8 +312,24 @@ export class ClaudeCodeProvider extends ChatProvider {
 
     } catch (error) {
       console.error('[ClaudeCodeProvider] Streaming failed:', error);
+
+      // Check if it's a spawn error and provide helpful message
+      const errorMessage = String(error);
+      let userFriendlyMessage = `Streaming failed: ${error}`;
+
+      if (errorMessage.includes('spawn') && errorMessage.includes('ENOENT')) {
+        userFriendlyMessage = `❌ Claude Code CLI not found or not accessible.
+
+**To fix this:**
+1. Install Claude CLI globally: \`npm install -g @anthropic-ai/claude-code\`
+2. Log in to Claude: \`claude login\`
+3. Restart VS Code
+
+**Technical details:** ${error}`;
+      }
+
       yield {
-        content: `Streaming failed: ${error}`,
+        content: userFriendlyMessage,
         done: true,
         metadata: {
           provider: 'claude-code',
@@ -626,8 +679,24 @@ export class ClaudeCodeProvider extends ChatProvider {
 
     } catch (error) {
       console.error('[ClaudeCodeProvider] Contextual streaming failed:', error);
+
+      // Check if it's a spawn error and provide helpful message
+      const errorMessage = String(error);
+      let userFriendlyMessage = `Contextual streaming failed: ${error}`;
+
+      if (errorMessage.includes('spawn') && errorMessage.includes('ENOENT')) {
+        userFriendlyMessage = `❌ Claude Code CLI not found or not accessible.
+
+**To fix this:**
+1. Install Claude CLI globally: \`npm install -g @anthropic-ai/claude-code\`
+2. Log in to Claude: \`claude login\`
+3. Restart VS Code
+
+**Technical details:** ${error}`;
+      }
+
       yield {
-        content: `Contextual streaming failed: ${error}`,
+        content: userFriendlyMessage,
         done: true,
         metadata: {
           provider: 'claude-code',

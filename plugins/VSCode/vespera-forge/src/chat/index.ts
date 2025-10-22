@@ -43,6 +43,13 @@ import { ChatEventRouter } from './events/ChatEventRouter';
 import { ChatWebViewProvider } from './ui/webview/ChatWebViewProvider';
 import { ChatMessage, ChatSession, SessionSummary } from './types/chat';
 
+export interface VesperaChatSystemOptions {
+  /** Skip webview registration (useful when embedding in another webview) */
+  skipWebviewRegistration?: boolean;
+  /** Skip command registration (useful when commands are registered elsewhere) */
+  skipCommandRegistration?: boolean;
+}
+
 export class VesperaChatSystem {
   private templateRegistry: ChatTemplateRegistry;
   private configurationManager: ChatConfigurationManager;
@@ -53,8 +60,11 @@ export class VesperaChatSystem {
   private disposables: vscode.Disposable[] = [];
   private activeProvider?: any;
   private providers: Map<string, any> = new Map();
+  private options: VesperaChatSystemOptions;
 
-  constructor(_extensionUri: vscode.Uri, private _context: vscode.ExtensionContext) {
+  constructor(_extensionUri: vscode.Uri, private _context: vscode.ExtensionContext, options?: VesperaChatSystemOptions) {
+    this.options = options || {};
+
     // Initialize core components in dependency order
     this.eventRouter = new ChatEventRouter();
     this.templateRegistry = new ChatTemplateRegistry(this._context.extensionUri, this.eventRouter);
@@ -68,30 +78,38 @@ export class VesperaChatSystem {
    * Initialize the chat system
    */
   async initialize(): Promise<void> {
-    console.log('[VesperaChatSystem] Initializing chat system...');
+    console.log('[VesperaChatSystem] Initializing chat system...', { options: this.options });
 
     try {
       // Initialize template registry first
       await this.templateRegistry.initialize();
       console.log('[VesperaChatSystem] Template registry initialized');
 
-      // Register WebView provider
-      this.disposables.push(
-        vscode.window.registerWebviewViewProvider(
-          ChatWebViewProvider.viewType,
-          this.webViewProvider,
-          {
-            webviewOptions: {
-              retainContextWhenHidden: true
+      // Register WebView provider only if not skipped
+      if (!this.options.skipWebviewRegistration) {
+        this.disposables.push(
+          vscode.window.registerWebviewViewProvider(
+            ChatWebViewProvider.viewType,
+            this.webViewProvider,
+            {
+              webviewOptions: {
+                retainContextWhenHidden: true
+              }
             }
-          }
-        )
-      );
-      console.log('[VesperaChatSystem] WebView provider registered');
+          )
+        );
+        console.log('[VesperaChatSystem] WebView provider registered');
+      } else {
+        console.log('[VesperaChatSystem] Skipped WebView provider registration (embedded mode)');
+      }
 
-      // Register commands
-      this.registerCommands();
-      console.log('[VesperaChatSystem] Commands registered');
+      // Register commands only if not skipped
+      if (!this.options.skipCommandRegistration) {
+        this.registerCommands();
+        console.log('[VesperaChatSystem] Commands registered');
+      } else {
+        console.log('[VesperaChatSystem] Skipped command registration');
+      }
 
       console.log('[VesperaChatSystem] Chat system initialized successfully');
     } catch (error) {

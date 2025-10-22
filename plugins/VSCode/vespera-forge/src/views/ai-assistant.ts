@@ -69,7 +69,11 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
 
   private async initializeChatSystem() {
     try {
-      this._chatSystem = new VesperaChatSystem(this._extensionUri, this._context);
+      // Initialize chat system in embedded mode (skip webview registration since we're already a webview)
+      this._chatSystem = new VesperaChatSystem(this._extensionUri, this._context, {
+        skipWebviewRegistration: true,
+        skipCommandRegistration: true  // Commands are registered by extension.ts
+      });
       await this._chatSystem.initialize();
 
       const configManager = this._chatSystem.getConfigurationManager();
@@ -97,6 +101,17 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
     switch (message.command) {
       case 'sendMessage':
         await this.handleSendMessage(message.text);
+        break;
+      case 'requestClearHistory':
+        // Show confirmation dialog on extension side (not in webview sandbox)
+        const confirmed = await vscode.window.showWarningMessage(
+          'Clear chat history?',
+          { modal: true },
+          'Clear'
+        );
+        if (confirmed === 'Clear') {
+          await this.clearHistory();
+        }
         break;
       case 'clearHistory':
         await this.clearHistory();
@@ -492,16 +507,8 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
             }
 
             function clearHistory() {
-                if (confirm('Clear chat history?')) {
-                    vscode.postMessage({ command: 'clearHistory' });
-                    messagesContainer.innerHTML = \`
-                        <div class="empty-state">
-                            <div class="empty-icon">💬</div>
-                            <h3>AI Assistant</h3>
-                            <p>Ask me anything!</p>
-                        </div>
-                    \`;
-                }
+                // Request confirmation from extension host (confirm() is blocked in webview sandbox)
+                vscode.postMessage({ command: 'requestClearHistory' });
             }
 
             window.addEventListener('message', event => {
