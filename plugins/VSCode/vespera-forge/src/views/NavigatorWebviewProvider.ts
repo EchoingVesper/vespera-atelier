@@ -53,6 +53,16 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
       this.dispose();
     }, null, this._disposables);
 
+    // Handle view state changes to send focus commands
+    webviewView.onDidChangeVisibility(() => {
+      if (webviewView.visible && this._view) {
+        // Send focus command when view becomes visible
+        this._view.webview.postMessage({
+          type: 'focus'
+        });
+      }
+    }, null, this._disposables);
+
     this.logger?.info('Navigator WebView resolved successfully', {
       sessionId: this._sessionId
     });
@@ -89,7 +99,7 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
   <!-- Styles will be injected by webpack style-loader -->
 </head>
 <body>
-  <div id="root"></div>
+  <div id="root" tabindex="0" style="outline: none;"></div>
 
   <!-- React app bundle -->
   <script nonce="${nonce}" src="${scriptUri}"></script>
@@ -158,7 +168,7 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
     }
   }
 
-  private async sendInitialState(): Promise<void> {
+  public async sendInitialState(): Promise<void> {
     if (!this._view) return;
 
     try {
@@ -264,7 +274,7 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
       }
 
       // Load templates from .vespera/templates directory
-      let templates: Array<{ id: string; name: string; description: string }> = [];
+      let templates: Array<{ id: string; name: string; description: string; icon?: string }> = [];
       if (workspaceUri) {
         templates = await this._templateInitializer.loadTemplates(workspaceUri);
         this.logger?.info('Loaded templates for Navigator', {
@@ -277,12 +287,12 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
       if (templates.length === 0) {
         this.logger?.warn('No templates loaded, using defaults');
         templates = [
-          { id: 'note', name: 'Note', description: 'Simple note or document' },
-          { id: 'task', name: 'Task', description: 'Task or todo item' },
-          { id: 'project', name: 'Project', description: 'Project container' },
-          { id: 'character', name: 'Character', description: 'Character profile' },
-          { id: 'scene', name: 'Scene', description: 'Scene or chapter' },
-          { id: 'location', name: 'Location', description: 'Place or setting' }
+          { id: 'note', name: 'Note', description: 'Simple note or document', icon: '📝' },
+          { id: 'task', name: 'Task', description: 'Task or todo item', icon: '✓' },
+          { id: 'project', name: 'Project', description: 'Project container', icon: '📁' },
+          { id: 'character', name: 'Character', description: 'Character profile', icon: '👤' },
+          { id: 'scene', name: 'Scene', description: 'Scene or chapter', icon: '🎬' },
+          { id: 'location', name: 'Location', description: 'Place or setting', icon: '🗺️' }
         ];
       }
 

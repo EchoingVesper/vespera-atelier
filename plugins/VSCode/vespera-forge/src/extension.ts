@@ -86,6 +86,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     logger.info('Initializing view providers');
     const viewContext: VesperaViewContext = initializeViews(context);
 
+    // Store navigator provider globally for command access (similar to chat panel pattern)
+    (global as any).vesperaNavigatorProvider = viewContext.navigatorProvider;
+
     // Register view context with memory-safe context manager
     contextManager.setViewContext(context, viewContext);
 

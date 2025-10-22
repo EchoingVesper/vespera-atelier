@@ -424,6 +424,274 @@ ${Object.entries(sessionStats.providerDistribution).map(([provider, count]) => `
 };
 
 /**
+ * Codex management command handlers
+ */
+
+// Open Codex Navigator
+export const openCodexNavigatorCommand: CommandHandler = async (_context: VesperaForgeContext) => {
+  try {
+    await vscode.commands.executeCommand('vesperaForge.navigatorView.focus');
+    log('Opened Codex Navigator');
+  } catch (error) {
+    await showError('Failed to open Codex Navigator', error as Error);
+  }
+};
+
+// Create New Codex
+export const createCodexCommand: CommandHandler = async (_context: VesperaForgeContext) => {
+  try {
+    const binderyService = getBinderyService();
+
+    // Show template picker
+    const templates = [
+      { label: '📝 Note', description: 'Simple note or document', templateId: 'note' },
+      { label: '✓ Task', description: 'Task or todo item', templateId: 'task' },
+      { label: '📁 Project', description: 'Project container', templateId: 'project' },
+      { label: '👤 Character', description: 'Character profile for creative writing', templateId: 'character' },
+      { label: '🎬 Scene', description: 'Scene or chapter for creative writing', templateId: 'scene' },
+      { label: '🗺️ Location', description: 'Place or setting for creative writing', templateId: 'location' }
+    ];
+
+    const selectedTemplate = await vscode.window.showQuickPick(templates, {
+      placeHolder: 'Select a template for the new codex'
+    });
+
+    if (!selectedTemplate) {
+      return;
+    }
+
+    // Get title from user
+    const title = await vscode.window.showInputBox({
+      prompt: `Enter a name for your new ${selectedTemplate.description.toLowerCase()}`,
+      placeHolder: `My ${selectedTemplate.label.replace(/[^\w\s]/g, '').trim()}`
+    });
+
+    if (!title?.trim()) {
+      return;
+    }
+
+    // Create the codex with title
+    const result = await binderyService.createCodex(title.trim(), selectedTemplate.templateId);
+
+    if (result.success) {
+      const codexId = result.data;
+      log(`Created codex with ID: ${codexId}, title: ${title.trim()}`);
+
+      // Small delay to ensure Bindery has persisted the data
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Trigger Navigator refresh
+      const navigatorProvider = (global as any).vesperaNavigatorProvider;
+      if (navigatorProvider && typeof navigatorProvider.sendInitialState === 'function') {
+        log('Triggering Navigator refresh after creation');
+        await navigatorProvider.sendInitialState();
+      } else {
+        log('Warning: Navigator provider not available for refresh');
+      }
+
+      await showInfo(`Created ${selectedTemplate.label}: ${title.trim()}`);
+
+      // Focus navigator
+      await vscode.commands.executeCommand('vesperaForge.navigatorView.focus');
+    } else {
+      await showError(`Failed to create codex: ${result.error.message}`);
+    }
+  } catch (error) {
+    await showError('Failed to create codex', error as Error);
+  }
+};
+
+// Search Codices
+export const searchCodexCommand: CommandHandler = async (_context: VesperaForgeContext) => {
+  try {
+    const binderyService = getBinderyService();
+    const result = await binderyService.listCodeices();
+
+    if (!result.success || !result.data || result.data.length === 0) {
+      await showInfo('No codices found. Create one first!');
+      return;
+    }
+
+    // Template name mapping
+    const templateNames: Record<string, string> = {
+      'note': '📝 Note',
+      'task': '✓ Task',
+      'project': '📁 Project',
+      'character': '👤 Character',
+      'scene': '🎬 Scene',
+      'location': '🗺️ Location'
+    };
+
+    // Create quick pick items from codex list
+    const codexItems = await Promise.all(
+      result.data.map(async (codexId: string) => {
+        const codexResult = await binderyService.getCodex(codexId);
+        if (codexResult.success && codexResult.data) {
+          const codex = codexResult.data as any; // Bindery returns flat structure
+          const templateName = templateNames[codex.template_id] || codex.template_id;
+          const title = codex.title || '(Untitled)';
+          const tags = codex.tags || [];
+
+          return {
+            label: `${title}`,
+            description: templateName,
+            detail: tags.length > 0 ? `Tags: ${tags.join(', ')}` : 'No tags',
+            codexId: codexId
+          };
+        }
+        return null;
+      })
+    );
+
+    const validItems = codexItems.filter(item => item !== null);
+
+    if (validItems.length === 0) {
+      await showInfo('No codices available.');
+      return;
+    }
+
+    const selected = await vscode.window.showQuickPick(validItems as any[], {
+      placeHolder: 'Search and select a codex to open',
+      matchOnDescription: true,
+      matchOnDetail: true
+    });
+
+    if (selected) {
+      await showInfo(`Selected: ${selected.label} (${selected.description})`);
+      // Focus navigator and let it handle selection
+      await vscode.commands.executeCommand('vesperaForge.navigatorView.focus');
+      log(`Codex selected: ${selected.codexId}`);
+      // TODO: Send message to Navigator to select this codex
+    }
+  } catch (error) {
+    await showError('Failed to search codices', error as Error);
+  }
+};
+
+// Delete Active Codex
+export const deleteCodexCommand: CommandHandler = async (_context: VesperaForgeContext) => {
+  try {
+    const binderyService = getBinderyService();
+    const result = await binderyService.listCodeices();
+
+    if (!result.success || !result.data || result.data.length === 0) {
+      await showInfo('No codices to delete.');
+      return;
+    }
+
+    // Template name mapping
+    const templateNames: Record<string, string> = {
+      'note': '📝 Note',
+      'task': '✓ Task',
+      'project': '📁 Project',
+      'character': '👤 Character',
+      'scene': '🎬 Scene',
+      'location': '🗺️ Location'
+    };
+
+    // Create quick pick items from codex list
+    const codexItems = await Promise.all(
+      result.data.map(async (codexId: string) => {
+        const codexResult = await binderyService.getCodex(codexId);
+        if (codexResult.success && codexResult.data) {
+          const codex = codexResult.data as any; // Bindery returns flat structure
+          const templateName = templateNames[codex.template_id] || codex.template_id;
+          const title = codex.title || '(Untitled)';
+          const tags = codex.tags || [];
+
+          return {
+            label: `${title}`,
+            description: templateName,
+            detail: tags.length > 0 ? `Tags: ${tags.join(', ')}` : 'No tags',
+            codexId: codexId
+          };
+        }
+        return null;
+      })
+    );
+
+    const validItems = codexItems.filter(item => item !== null);
+
+    if (validItems.length === 0) {
+      await showInfo('No codices available to delete.');
+      return;
+    }
+
+    const selected = await vscode.window.showQuickPick(validItems as any[], {
+      placeHolder: 'Select a codex to delete'
+    });
+
+    if (!selected) {
+      return;
+    }
+
+    // Confirm deletion
+    const confirmation = await vscode.window.showWarningMessage(
+      `Delete "${selected.label}"?`,
+      { modal: true, detail: 'This action cannot be undone. All content in this codex will be permanently removed.' },
+      'Delete',
+      'Cancel'
+    );
+
+    if (confirmation !== 'Delete') {
+      return;
+    }
+
+    // Delete the codex
+    const deleteResult = await binderyService.deleteCodex(selected.codexId);
+
+    if (deleteResult.success) {
+      log(`Deleted codex with ID: ${selected.codexId}`);
+
+      // Small delay to ensure Bindery has persisted the deletion
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Trigger Navigator refresh
+      const navigatorProvider = (global as any).vesperaNavigatorProvider;
+      if (navigatorProvider && typeof navigatorProvider.sendInitialState === 'function') {
+        log('Triggering Navigator refresh after deletion');
+        await navigatorProvider.sendInitialState();
+      } else {
+        log('Warning: Navigator provider not available for refresh');
+      }
+
+      await showInfo(`Deleted ${selected.description}: ${selected.label}`);
+
+      // Focus navigator
+      await vscode.commands.executeCommand('vesperaForge.navigatorView.focus');
+    } else {
+      await showError(`Failed to delete codex: ${deleteResult.error.message}`);
+    }
+  } catch (error) {
+    await showError('Failed to delete codex', error as Error);
+  }
+};
+
+// Refresh Codex List
+export const refreshCodexListCommand: CommandHandler = async (_context: VesperaForgeContext) => {
+  try {
+    // Trigger Navigator refresh
+    const navigatorProvider = (global as any).vesperaNavigatorProvider;
+    if (navigatorProvider && typeof navigatorProvider.sendInitialState === 'function') {
+      await navigatorProvider.sendInitialState();
+    }
+
+    // Focus the view
+    await vscode.commands.executeCommand('vesperaForge.navigatorView.focus');
+    log('Refreshed Codex Navigator');
+
+    // Get count to show in confirmation
+    const binderyService = getBinderyService();
+    const result = await binderyService.listCodeices();
+    const count = result.success ? result.data?.length || 0 : 0;
+
+    await showInfo(`Codex Navigator refreshed (${count} ${count === 1 ? 'codex' : 'codices'})`);
+  } catch (error) {
+    await showError('Failed to refresh codex list', error as Error);
+  }
+};
+
+/**
  * Get the commands map following Roo Code pattern
  */
 const getCommandsMap = (vesperaContext: VesperaForgeContext) => ({
@@ -506,6 +774,27 @@ const getCommandsMap = (vesperaContext: VesperaForgeContext) => ({
     // Refresh all views
     vscode.commands.executeCommand('vespera-forge.refreshTaskTree');
     vscode.commands.executeCommand('vespera-forge.refreshTaskDashboard');
+  },
+  // Codex management commands
+  'vespera-forge.openCodexNavigator': async () => {
+    log('[Command] Open Codex Navigator command executed');
+    await openCodexNavigatorCommand(vesperaContext);
+  },
+  'vespera-forge.createCodex': async () => {
+    log('[Command] Create Codex command executed');
+    await createCodexCommand(vesperaContext);
+  },
+  'vespera-forge.searchCodex': async () => {
+    log('[Command] Search Codex command executed');
+    await searchCodexCommand(vesperaContext);
+  },
+  'vespera-forge.deleteCodex': async () => {
+    log('[Command] Delete Codex command executed');
+    await deleteCodexCommand(vesperaContext);
+  },
+  'vespera-forge.refreshCodexList': async () => {
+    log('[Command] Refresh Codex List command executed');
+    await refreshCodexListCommand(vesperaContext);
   }
 });
 

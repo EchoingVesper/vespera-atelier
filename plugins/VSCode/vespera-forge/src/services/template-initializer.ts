@@ -268,12 +268,12 @@ export class TemplateInitializer {
   /**
    * Load all templates from .vespera/templates directory
    */
-  public async loadTemplates(workspaceUri: vscode.Uri): Promise<Array<{ id: string; name: string; description: string }>> {
+  public async loadTemplates(workspaceUri: vscode.Uri): Promise<Array<{ id: string; name: string; description: string; icon?: string }>> {
     try {
       const templatesDir = vscode.Uri.joinPath(workspaceUri, '.vespera', 'templates');
       const entries = await vscode.workspace.fs.readDirectory(templatesDir);
 
-      const templates: Array<{ id: string; name: string; description: string }> = [];
+      const templates: Array<{ id: string; name: string; description: string; icon?: string }> = [];
 
       for (const [filename, type] of entries) {
         if (type === vscode.FileType.File && filename.endsWith('.json5')) {
@@ -282,11 +282,12 @@ export class TemplateInitializer {
             const content = await vscode.workspace.fs.readFile(templateUri);
             const templateData = JSON.parse(Buffer.from(content).toString('utf8'));
 
-            // Extract template metadata
+            // Extract template metadata including icon
             templates.push({
               id: templateData.template_id || filename.replace('.json5', ''),
               name: templateData.name || templateData.template_id || filename.replace('.json5', ''),
-              description: templateData.description || ''
+              description: templateData.description || '',
+              icon: templateData.metadata?.icon || undefined
             });
           } catch (error) {
             this.logger?.warn('Failed to load template file', {

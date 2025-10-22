@@ -22,13 +22,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 
 interface CodexNavigatorProps {
@@ -78,6 +88,53 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
     codex: Codex | null;
   }>({ visible: false, x: 0, y: 0, codex: null });
 
+  // Delete confirmation state
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    codex: Codex | null;
+  }>({ isOpen: false, codex: null });
+
+  // Helper function to show delete confirmation
+  const showDeleteConfirmation = useCallback((codex: Codex) => {
+    setDeleteConfirmation({ isOpen: true, codex });
+  }, []);
+
+  // Helper function to handle confirmed deletion
+  const handleConfirmedDelete = useCallback(() => {
+    if (deleteConfirmation.codex) {
+      onCodexDelete(deleteConfirmation.codex.id);
+    }
+    setDeleteConfirmation({ isOpen: false, codex: null });
+  }, [deleteConfirmation.codex, onCodexDelete]);
+
+  // Helper function to cancel deletion
+  const handleCancelDelete = useCallback(() => {
+    setDeleteConfirmation({ isOpen: false, codex: null });
+  }, []);
+
+  // Handle VS Code extension focus messages and auto-focus on mount
+  React.useEffect(() => {
+    const root = document.getElementById('root');
+
+    // Auto-focus root element on mount
+    if (root) {
+      root.focus();
+      console.log('[Navigator] Auto-focused root element on mount');
+    }
+
+    // Listen for focus commands from VS Code extension
+    const handleVSCodeMessage = (event: MessageEvent) => {
+      const message = event.data;
+      if (message.type === 'focus') {
+        root?.focus();
+        console.log('[Navigator] Focused root element from extension command');
+      }
+    };
+
+    window.addEventListener('message', handleVSCodeMessage);
+    return () => window.removeEventListener('message', handleVSCodeMessage);
+  }, []); // Only run on mount
+
   // Handle keyboard Delete key for selected codex
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -95,23 +152,19 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
         const selectedCodex = codices.find(c => c.id === selectedCodexId);
         if (selectedCodex) {
           console.log('[Navigator] Found codex to delete:', selectedCodex.name);
-          // Confirm deletion
-          if (confirm(`Are you sure you want to delete "${selectedCodex.name}"?`)) {
-            onCodexDelete(selectedCodexId);
-          }
+          // Show confirmation dialog
+          showDeleteConfirmation(selectedCodex);
         }
       }
     };
 
-    // Attach to both document and window to ensure it captures events in VS Code webview
+    // Attach to document to handle keyboard events in the webview
     document.addEventListener('keydown', handleKeyDown, true); // Use capture phase
-    window.addEventListener('keydown', handleKeyDown, true);
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown, true);
-      window.removeEventListener('keydown', handleKeyDown, true);
     };
-  }, [selectedCodexId, codices, onCodexDelete]);
+  }, [selectedCodexId, codices, showDeleteConfirmation]);
 
   // Close context menu on click outside
   React.useEffect(() => {
@@ -126,16 +179,14 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
   }, [contextMenu.visible]);
 
   const getTemplateIcon = (templateId: string): React.ReactNode => {
-    // Return appropriate icon based on template type
-    const iconMap: Record<string, React.ReactNode> = {
-      'character': <Users className="w-4 h-4" />,
-      'task': <Settings className="w-4 h-4" />,
-      'scene': <File className="w-4 h-4" />,
-      'music': <File className="w-4 h-4" />,
-      'playlist': <File className="w-4 h-4" />
-    };
+    // Find template and use its icon if available
+    const template = templates.find(t => t.id === templateId);
+    if (template?.icon) {
+      return <span className="text-sm">{template.icon}</span>;
+    }
 
-    return iconMap[templateId] || <File className="w-4 h-4" />;
+    // Fallback to generic file icon
+    return <File className="w-4 h-4" />;
   };
 
   // Build tree structure based on view mode
@@ -502,7 +553,7 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
                   className="text-destructive"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (node.data) onCodexDelete(node.data.id);
+                    if (node.data) showDeleteConfirmation(node.data);
                   }}
                 >
                   Delete
@@ -619,7 +670,9 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
           <div
             className="px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground text-destructive"
             onClick={() => {
-              onCodexDelete(contextMenu.codex!.id);
+              if (contextMenu.codex) {
+                showDeleteConfirmation(contextMenu.codex);
+              }
               setContextMenu({ visible: false, x: 0, y: 0, codex: null });
             }}
           >
@@ -627,6 +680,30 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmation.isOpen} onOpenChange={(open) => {
+        if (!open) handleCancelDelete();
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Codex?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deleteConfirmation.codex?.name}"?
+              This action cannot be undone. All content in this codex will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelDelete}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmedDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

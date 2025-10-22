@@ -139,6 +139,31 @@
         "command": "vespera-forge.showChatStats",
         "title": "Show Chat Statistics",
         "category": "Vespera Forge Chat"
+      },
+      {
+        "command": "vespera-forge.openCodexNavigator",
+        "title": "Open Codex Navigator",
+        "category": "Vespera Forge Codex"
+      },
+      {
+        "command": "vespera-forge.createCodex",
+        "title": "Create New Codex",
+        "category": "Vespera Forge Codex"
+      },
+      {
+        "command": "vespera-forge.searchCodex",
+        "title": "Search Codices",
+        "category": "Vespera Forge Codex"
+      },
+      {
+        "command": "vespera-forge.deleteCodex",
+        "title": "Delete Active Codex",
+        "category": "Vespera Forge Codex"
+      },
+      {
+        "command": "vespera-forge.refreshCodexList",
+        "title": "Refresh Codex List",
+        "category": "Vespera Forge Codex"
       }
     ],
     "keybindings": [
@@ -155,6 +180,11 @@
       {
         "command": "vespera-forge.openChatPanel",
         "key": "ctrl+alt+c",
+        "when": "vespera-forge:enabled"
+      },
+      {
+        "command": "vespera-forge.openCodexNavigator",
+        "key": "ctrl+alt+n",
         "when": "vespera-forge:enabled"
       }
     ],
