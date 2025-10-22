@@ -545,10 +545,49 @@ Integration is complete when:
 
 **Issue Resolved**: Database persistence fully working! Codices now survive extension restarts.
 
-### Phase 11: Additional Integration Work (PENDING)
+### Phase 11: Workspace Validation & UX Fixes ✅ COMPLETE (2025-10-21)
 
-- [ ] Implement panel toggle button handlers
+- [x] **Fixed workspace folder validation**
+  - [x] Constructor crash - moved log() call after config initialization
+  - [x] Removed `process.cwd()` fallback that bypassed validation
+  - [x] Fixed singleton pattern - security-integration.ts now uses getBinderyService()
+  - [x] BinderyService properly enforces single instance with warning
+
+- [x] **Implemented NoWorkspace detection**
+  - [x] Added `NoWorkspace` status to BinderyConnectionStatus enum
+  - [x] Modified BinderyService constructor to check workspace availability
+  - [x] Updated initialize() to handle NoWorkspace status
+  - [x] NavigatorWebviewProvider detects and sends noWorkspace message
+
+- [x] **Created "Open Folder" UI**
+  - [x] Implemented empty state in navigator.tsx with folder icon
+  - [x] Added handleOpenFolder callback to execute VS Code command
+  - [x] Wired command message handler in NavigatorWebviewProvider
+  - [x] Button successfully triggers workbench.action.files.openFolder
+
+- [x] **Fixed false security alerts**
+  - [x] Removed NoWorkspace error toast (Navigator already displays UI)
+  - [x] Expanded VesperaSecurityEvent enum with lifecycle events
+  - [x] Added SYSTEM_INITIALIZED, COMPONENT_INITIALIZED, INITIALIZATION_FAILED
+  - [x] Replaced all misused SECURITY_BREACH with proper event types
+  - [x] No more "Critical Security Event" toasts on startup
+
+- [x] **Tested codex deletion**
+  - [x] Verified deletion works via right-click menu
+  - [x] Verified deletion works via "..." button menu
+  - [x] Identified need for confirmation modal (no undo feature)
+
+**Notes**: All workspace validation complete! Extension now properly handles no-folder-open state.
+
+### Phase 12: Polish & Production Readiness (IN PROGRESS)
+
+- [ ] **Add deletion confirmation modal** (HIGH PRIORITY)
+  - [ ] Create confirmation dialog component
+  - [ ] Wire to delete action in Navigator
+  - [ ] Prevent accidental data loss
+
 - [ ] Connect AI Assistant panel to backend
 - [ ] Test full three-panel workflow
-- [ ] Test codex deletion via UI
+- [ ] Add Codex management commands to command palette
+- [ ] Fix AI Assistant panel auto-restore on startup
 

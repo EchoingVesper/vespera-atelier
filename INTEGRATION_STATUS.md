@@ -106,11 +106,11 @@ All critical functionality working! Codices can now be created, edited, and **pe
 ## ⚠️ Remaining Work
 
 **1. Additional UI Testing**
-- ⏳ Test codex deletion via UI (backend method exists, UI not yet tested)
-- ⏳ Test panel toggle button functionality
+- ✅ **Test codex deletion via UI** - WORKS! Tested via right-click menu and "..." button
+  - ⚠️ **Improvement needed**: Add "Are you sure?" confirmation modal before deletion (no undo currently)
 - ⏳ Connect AI Assistant panel to backend
 
-**2. Test End-to-End (MOSTLY COMPLETE)**
+**2. Test End-to-End (COMPLETE!)**
 - ✅ Test in Extension Development Host (F5)
 - ✅ Verify `.vespera/templates/` directory is created
 - ✅ Verify 6 template files are created (note.json5, task.json5, etc.)
@@ -120,12 +120,20 @@ All critical functionality working! Codices can now be created, edited, and **pe
 - ✅ Test editing codex fields (works - all field types functional)
 - ✅ Test switching between codices (works - edits persist in session)
 - ✅ **Test codex persistence after restart** (WORKS! Database persistence verified)
-- ⏳ Test deleting codices via UI (not tested yet)
+- ✅ **Test deleting codices via UI** (WORKS! Deletion functional via context menu)
 
-**3. Known Issues to Fix**
+**3. Workspace Validation (NEW - COMPLETE!)**
+- ✅ **No workspace folder detection** - Extension properly detects when no folder is open
+- ✅ **"Open Folder" UI** - Navigator displays friendly prompt with folder icon
+- ✅ **Open Folder button** - Button successfully triggers VS Code folder picker
+- ✅ **No false security alerts** - Fixed all "Critical Security Event" toasts
+- ✅ **Proper event categorization** - Expanded VesperaSecurityEvent enum with lifecycle events
+- ✅ **Singleton pattern enforcement** - BinderyService properly enforces single instance
+
+**4. Known Issues to Fix**
 - AI Assistant panel doesn't auto-restore on startup (must manually open)
 - No Codex management commands in Ctrl+Shift+P menu yet
-- Panel toggle buttons still need wiring
+- Delete confirmation modal needed (no undo currently)
 - ~207 non-blocking TypeScript errors in optional UI components
 
 ## 📋 Next Steps
@@ -134,27 +142,48 @@ All critical functionality working! Codices can now be created, edited, and **pe
 
 All database persistence work is complete and tested! Codices now survive extension restarts.
 
-### Current Priorities
+### ✅ Workspace Validation - COMPLETE! (2025-10-21)
 
-1. **Testing & Verification** (30 min - 1 hour)
-   - Test codex deletion via UI
-   - Test panel toggle buttons
-   - Verify all CRUD operations in various scenarios
-   - Check error handling edge cases
+All workspace validation features implemented and tested!
 
-2. **UI Polish** (1-2 hours)
-   - Wire up panel toggle handlers
-   - Add Codex management commands to command palette
-   - Fix AI Assistant panel auto-restore
-   - Improve loading states and error messages
+**What Was Fixed**:
+1. ✅ NoWorkspace detection when no folder open
+2. ✅ Proper workspace validation (no `process.cwd()` fallbacks)
+3. ✅ Singleton pattern enforcement for BinderyService
+4. ✅ "Open Folder" UI in Navigator
+5. ✅ Open Folder button wired to VS Code command
+6. ✅ Removed all false "Critical Security Event" alerts
+7. ✅ Expanded VesperaSecurityEvent enum with proper lifecycle events
 
-3. **Code Quality** (1-2 hours)
+### Current Priorities (Phase 11 - Polish & Production Readiness)
+
+1. **Critical UX Improvements** (HIGH PRIORITY)
+   - ⚠️ **Add deletion confirmation modal** - Prevent accidental data loss
+   - Add "Are you sure?" dialog before deleting codices
+   - No undo feature currently exists
+
+2. **AI Assistant Integration** (1-2 hours)
+   - Connect AI Assistant panel to backend
+   - Fix AI Assistant panel auto-restore on startup
+   - Test AI chat functionality with codices
+
+3. **Command Palette Integration** (1 hour)
+   - Add Codex management commands to Ctrl+Shift+P
+   - Register commands for create, edit, delete, search codices
+   - Add keyboard shortcuts for common operations
+
+4. **UI Polish** (1-2 hours)
+   - Improve loading states
+   - Better error messages
+   - Consistent styling across panels
+
+5. **Code Quality** (1-2 hours)
    - Address TypeScript errors (many are implementation placeholders)
    - Clean up console.log statements
    - Add proper error handling
    - Improve code documentation
 
-4. **Documentation Cleanup** (30 min)
+6. **Documentation Cleanup** (30 min)
    - Organize scattered .md files in base folder
    - Move documentation to intelligible locations
    - Update README if needed
@@ -182,14 +211,18 @@ All database persistence work is complete and tested! Codices now survive extens
 - ✅ All 6 template types render without crashes
 - ✅ Field labels properly capitalized
 - ✅ **Codices persist after extension restart** 🎉
+- ✅ **Delete codices via Navigator UI** (right-click menu & ... button)
+- ✅ **Workspace folder validation** (Open Folder button functional)
+- ✅ **No false security alerts** (proper event categorization)
 
 ## 🎯 Success Metrics Remaining
 
-- ⏳ Delete codices via Navigator UI (backend exists, UI not tested)
+- ⚠️ Deletion confirmation modal (prevent accidental deletions)
 - ⏳ Real-time codex updates across panels
 - ⏳ Template field validation
 - ⏳ Relationship/reference management
-- ⏳ Panel toggle button functionality
+- ⏳ AI Assistant backend connection
+- ⏳ Command palette integration
 
 ---
 
