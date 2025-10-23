@@ -276,6 +276,14 @@ export class ChatChannelListProvider implements vscode.TreeDataProvider<ChatChan
   getAllChannels(): ChatChannel[] {
     return [...this.channels];
   }
+
+  /**
+   * Dispose of the provider (required by VS Code)
+   */
+  dispose(): void {
+    // Clean up any resources if needed
+    this.channels = [];
+  }
 }
 
 export class ChatChannelTreeItem extends vscode.TreeItem {
