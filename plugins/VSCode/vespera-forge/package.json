@@ -235,6 +235,10 @@
       ],
       "vespera-forge": [
         {
+          "id": "vesperaForge.welcomeView",
+          "name": "Welcome"
+        },
+        {
           "id": "vesperaForge.navigatorView",
           "type": "webview",
           "name": "Codex Navigator"

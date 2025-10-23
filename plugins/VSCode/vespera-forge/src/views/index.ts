@@ -7,6 +7,7 @@ import { NavigatorWebviewProvider } from './NavigatorWebviewProvider';
 import { EditorPanelProvider } from './EditorPanelProvider';
 import { AIAssistantWebviewProvider } from './ai-assistant';
 import { ChatChannelListProvider } from './ChatChannelListProvider';
+import { WelcomeViewProvider } from './WelcomeViewProvider';
 import { getBinderyService } from '../services/bindery';
 
 // Export view providers
@@ -14,11 +15,13 @@ export { NavigatorWebviewProvider } from './NavigatorWebviewProvider';
 export { EditorPanelProvider } from './EditorPanelProvider';
 export { AIAssistantWebviewProvider } from './ai-assistant';
 export { ChatChannelListProvider } from './ChatChannelListProvider';
+export { WelcomeViewProvider } from './WelcomeViewProvider';
 
 /**
  * View context containing all initialized providers
  */
 export interface VesperaViewContext {
+  welcomeProvider: WelcomeViewProvider;
   navigatorProvider: NavigatorWebviewProvider;
   aiAssistantProvider: AIAssistantWebviewProvider;
   chatChannelProvider: ChatChannelListProvider;
@@ -32,6 +35,9 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
 
   // Get the global Bindery service instance
   const binderyService = getBinderyService();
+
+  // Create welcome view provider
+  const welcomeProvider = new WelcomeViewProvider();
 
   // Create AI assistant provider first
   const aiAssistantProvider = new AIAssistantWebviewProvider(context.extensionUri, context);
@@ -54,6 +60,15 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
       console.log('[Vespera] Codex selected:', codexId);
     }
   );
+
+  // Register the welcome tree view provider in the vespera-forge sidebar
+  console.log('[Vespera] Registering Welcome view provider');
+  const welcomeTreeView = vscode.window.createTreeView('vesperaForge.welcomeView', {
+    treeDataProvider: welcomeProvider,
+    showCollapseAll: false
+  });
+  context.subscriptions.push(welcomeTreeView);
+  console.log('[Vespera] Welcome view provider registered successfully');
 
   // Register the navigator view provider in the vespera-forge sidebar
   console.log('[Vespera] Registering Navigator view provider with ID:', NavigatorWebviewProvider.viewType);
@@ -123,7 +138,7 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
   context.subscriptions.push(openAIAssistantCommand);
 
   // Add providers to disposables
-  context.subscriptions.push(navigatorProvider, aiAssistantProvider, chatChannelProvider);
+  context.subscriptions.push(welcomeProvider, navigatorProvider, aiAssistantProvider, chatChannelProvider);
 
   console.log('[Vespera] Codex Navigator framework initialized successfully');
 
@@ -150,6 +165,7 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
   }
 
   return {
+    welcomeProvider,
     navigatorProvider,
     aiAssistantProvider,
     chatChannelProvider
