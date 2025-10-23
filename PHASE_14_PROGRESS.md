@@ -3,7 +3,7 @@
 **Phase**: Codex-Based AI Chat Architecture
 **Branch**: `feat/codex-ui-framework`
 **Started**: 2025-10-22
-**Current Status**: Phase 14b Complete ✅
+**Current Status**: Phase 14c In Progress 🚧
 
 ---
 
@@ -148,29 +148,79 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls", "stream"] }
 
 ---
 
-## Phase 14c: Extension Cleanup ⏳ PENDING
+## Phase 14c: Extension Cleanup 🚧 IN PROGRESS
 
-### Components to Build
+### Part 1: Provider Removal ✅ COMPLETE
 
-1. **Channel List UI** (NEW)
-   - `src/views/chat-channel-list.ts`
+**Git Commit**: `6299161` - "refactor(vespera-forge): Remove legacy provider system"
+
+**Files Removed** (7 providers + 2 test files):
+- `src/chat/providers/ClaudeCodeProvider.ts` (26KB, 753 lines)
+- `src/chat/providers/ProviderFactory.ts` (3.4KB, 98 lines)
+- `src/chat/providers/AnthropicProvider.ts` (11KB, 320 lines)
+- `src/chat/providers/OpenAIProvider.ts` (11.5KB, 333 lines)
+- `src/chat/providers/LMStudioProvider.ts` (15KB, 432 lines)
+- `src/chat/providers/BaseProvider.ts` (7.9KB, 227 lines)
+- `src/chat/providers/SecureChatProviderClient.ts` (20KB, 574 lines)
+- `src/chat/test-claude-code-provider.ts` (deleted)
+- `src/chat/test-secure-providers.ts` (deleted)
+
+**Total Lines Removed**: ~2,945 lines of legacy code
+
+**Files Modified**:
+- `src/chat/providers/index.ts`: Migration notice pointing to Bindery
+- `src/chat/index.ts`: Deprecated 6 VesperaChatSystem methods with TODO comments
+
+**Methods Deprecated**:
+1. `createAndRegisterProvider()` - Returns stub, TODO for Bindery
+2. `setActiveProvider()` - Simplified, TODO for Bindery
+3. `streamMessage()` - Returns migration notice
+4. `updateConfiguration()` - Stubbed
+5. `testConnection()` - Returns false
+6. `showProviderConfigurationDialog()` - Shows info message
+
+### Part 1.5: Console Spam Fix ✅ COMPLETE
+
+**Git Commit**: `2c37db5` - "fix(vespera-forge): Eliminate console spam"
+
+**Problem 1: Bindery stdout spam** (~95% reduction)
+- Hundreds of "Received response for unknown request ID: undefined"
+- Root cause: Bindery logs sent to stdout instead of stderr
+- **Fix**: Filter non-JSON-RPC messages (check for `jsonrpc` field)
+- Location: `src/services/bindery.ts:1007-1013`
+
+**Problem 2: Object logging spam**
+- Messages printing "[object Object]"
+- **Fixed 3 locations**:
+  - `src/config/tool-management.ts:113` - Commented out policy log
+  - `src/security/file-operations-security.ts:103` - Commented out policy log
+  - `src/core/telemetry/VesperaTelemetryService.ts:51` - Commented out event log
+
+**Impact**:
+- Console log reduced from ~400 lines to ~70 lines (82% reduction)
+- Actual errors and warnings now visible
+- Debugging significantly easier
+
+### Part 2: Chat Channel List UI ⏳ NEXT
+
+**Components to Build**:
+1. `src/views/chat-channel-list.ts`
    - Tree view with folders: "User Chats", "Agent Tasks"
    - Activity indicators: active/idle/archived
    - User can monitor/interrupt spawned agents
 
-2. **Simplify AI Assistant**
-   - Remove legacy `ClaudeCodeProvider.ts`
-   - Remove `ProviderFactory.ts`
-   - Wire to Bindery Codex system
-   - Use Codex templates instead of provider classes
-
-3. **Commands to Add**
+2. **Commands to Add**:
    - `vespera-forge.configureProviderKey` - Store API keys in vault
    - `vespera-forge.checkClaudeCodeAuth` - Verify `claude login` status
 
+3. **Wire AI Assistant to Bindery**:
+   - Connect to Bindery LLM module
+   - Use Codex templates for configuration
+   - Stream responses from Bindery backend
+
 ### Components to Keep
 
-- `ConfigurationManager` - UI/settings only (remove provider logic)
+- `ConfigurationManager` - UI/settings only (provider logic removed)
 - Hotkeys, theme, layout settings
 - Session persistence
 
@@ -277,10 +327,19 @@ These will be implemented after core functionality works:
 - `.vespera/prompts/code-writer-specialist.md` - Code writer specialist
 - `.vespera/prompts/docs-writer-specialist.md` - Documentation writer specialist
 
+**Extension Cleanup** (Phase 14c):
+- Deleted 9 files (~2,945 lines): 7 provider implementations, 2 test files
+- `plugins/VSCode/vespera-forge/src/chat/providers/index.ts` - Migration notice
+- `plugins/VSCode/vespera-forge/src/chat/index.ts` - Deprecated provider methods
+- `plugins/VSCode/vespera-forge/src/services/bindery.ts` - JSON-RPC filter
+- `plugins/VSCode/vespera-forge/src/config/tool-management.ts` - Removed log spam
+- `plugins/VSCode/vespera-forge/src/security/file-operations-security.ts` - Removed log spam
+- `plugins/VSCode/vespera-forge/src/core/telemetry/VesperaTelemetryService.ts` - Removed log spam
+
 **Documentation**:
 - `PHASE_14_LLM_ARCHITECTURE.md` - Architecture design
 - `PHASE_14_DECISION_POINT.md` - Decision rationale
-- `BINDERY_STDOUT_FIX.md` - Future fix documentation
+- `BINDERY_STDOUT_FIX.md` - Future fix documentation (implemented in Phase 14c)
 - `INTEGRATION_STATUS.md` - Progress tracking
 - `PHASE_14_PROGRESS.md` (this file)
 

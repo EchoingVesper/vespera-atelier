@@ -2,28 +2,40 @@
 
 **Date**: 2025-10-22 (Updated)
 **Branch**: `feat/codex-ui-framework`
-**Latest Changes**: Phase 14a complete! Rust LLM provider module implemented!
+**Latest Changes**: Phase 14c in progress - Legacy providers removed, console spam eliminated!
 
 ## 🚀 ACTIVE WORK: Phase 14 - Codex-Based AI Chat Architecture
 
-**Phase 14a Complete** ✅:
-- Rust LLM provider module (`src/llm/`) fully implemented and compiling
-- Claude Code CLI provider (uses Claude Max subscription via `claude` CLI)
-- Ollama provider (local LLMs, cost-free)
-- Secret vault system for API key storage (Base64 encoded, TODO: encryption)
-- Codex integration via `ProviderType::from_codex()` - parses template fields
-- Dependencies added: `which`, `async-trait`, `base64`, `reqwest` (streaming)
+**Phase 14a Complete** ✅ (Rust LLM Module):
+- 7 Rust files implementing LLM providers (Claude Code CLI, Ollama, vault)
+- Compiles successfully with streaming support
+- See PHASE_14_PROGRESS.md for details
 
-**Files Created**:
-- `packages/vespera-utilities/vespera-bindery/src/llm/mod.rs`
-- `packages/vespera-utilities/vespera-bindery/src/llm/types.rs`
-- `packages/vespera-utilities/vespera-bindery/src/llm/streaming.rs`
-- `packages/vespera-utilities/vespera-bindery/src/llm/provider.rs`
-- `packages/vespera-utilities/vespera-bindery/src/llm/claude_code.rs`
-- `packages/vespera-utilities/vespera-bindery/src/llm/ollama.rs`
-- `packages/vespera-utilities/vespera-bindery/src/llm/vault.rs`
+**Phase 14b Complete** ✅ (Codex Templates):
+- 4 Codex templates: llm-provider, ai-chat, task-orchestrator, task-code-writer
+- 4 System prompts: default-assistant, orchestrator-agent, code-writer, docs-writer
+- Templates in `.vespera/templates/` and `.vespera/prompts/` (temporary location)
 
-**Next**: Phase 14b - Create Codex templates and system prompt files
+**Phase 14c In Progress** 🚧 (Extension Cleanup):
+
+**Part 1 Complete** ✅ - Provider Removal (Commit: `6299161`):
+- **Deleted 9 files, ~2,945 lines** of legacy provider code
+- Removed: ClaudeCodeProvider, ProviderFactory, AnthropicProvider, OpenAIProvider, LMStudioProvider, BaseProvider, SecureChatProviderClient
+- Deprecated 6 VesperaChatSystem methods with migration TODOs
+- Migration notices point to Bindery/Codex architecture
+
+**Part 1.5 Complete** ✅ - Console Spam Fix (Commit: `2c37db5`):
+- **82% console log reduction** (~400 lines → ~70 lines)
+- Fixed Bindery stdout spam: Filter non-JSON-RPC messages (check `jsonrpc` field)
+- Fixed Object logging: Commented out 3 noisy object logs
+- See BINDERY_STDOUT_FIX.md for technical details
+
+**Part 2 Next** ⏳:
+- Create ChatChannelListProvider tree view (Slack/Discord-style)
+- Add vault commands: configureProviderKey, checkClaudeCodeAuth
+- Wire AI Assistant to Bindery backend
+
+**Next**: Continue Phase 14c Part 2 or compact context
 
 ## 🎉 Phase 13 AI Assistant Chat Fix Complete!
 
