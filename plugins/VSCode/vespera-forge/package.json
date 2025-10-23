@@ -318,6 +318,16 @@
           "default": true,
           "description": "Automatically start Vespera Forge when a workspace is opened"
         },
+        "vesperaForge.views.autoOpenNavigator": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically open the Codex Navigator view when extension activates (if false, VS Code will restore previous state)"
+        },
+        "vesperaForge.views.autoOpenAIAssistant": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically open the AI Assistant view when extension activates (if false, VS Code will restore previous state)"
+        },
         "vesperaForge.ui.useNewFramework": {
           "type": "boolean",
           "default": false,

@@ -127,6 +127,28 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
 
   console.log('[Vespera] Codex Navigator framework initialized successfully');
 
+  // Handle auto-opening views based on settings
+  const config = vscode.workspace.getConfiguration('vesperaForge');
+  const autoOpenNavigator = config.get<boolean>('views.autoOpenNavigator', false);
+  const autoOpenAIAssistant = config.get<boolean>('views.autoOpenAIAssistant', false);
+
+  // Auto-open views if configured (otherwise VS Code will restore previous state)
+  if (autoOpenNavigator) {
+    console.log('[Vespera] Auto-opening Navigator view (configured by user)');
+    vscode.commands.executeCommand('vesperaForge.navigatorView.focus').then(
+      undefined,
+      (err: any) => console.warn('[Vespera] Failed to auto-open Navigator:', err)
+    );
+  }
+
+  if (autoOpenAIAssistant) {
+    console.log('[Vespera] Auto-opening AI Assistant view (configured by user)');
+    vscode.commands.executeCommand('vespera-forge.aiAssistant.focus').then(
+      undefined,
+      (err: any) => console.warn('[Vespera] Failed to auto-open AI Assistant:', err)
+    );
+  }
+
   return {
     navigatorProvider,
     aiAssistantProvider,
