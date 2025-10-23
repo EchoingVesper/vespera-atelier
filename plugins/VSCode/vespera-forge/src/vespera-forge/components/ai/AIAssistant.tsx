@@ -5,20 +5,26 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Bot, User, Sparkles, Settings, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
-import { AIAssistant, Codex, Template, Context } from '../../core/types';
+import { AIAssistant as AIAssistantType, Codex, Template, Context } from '../../core/types';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 interface Message {
@@ -31,13 +37,13 @@ interface Message {
 }
 
 interface AIAssistantProps {
-  assistants: AIAssistant[];
-  currentAssistant: AIAssistant;
+  assistants: AIAssistantType[];
+  currentAssistant: AIAssistantType;
   activeCodex?: Codex;
   activeTemplate?: Template;
   context: Context;
-  onAssistantChange: (assistant: AIAssistant) => void;
-  onSendMessage: (message: string, assistant: AIAssistant, context: any) => Promise<string>;
+  onAssistantChange: (assistant: AIAssistantType) => void;
+  onSendMessage: (message: string, assistant: AIAssistantType, context: any) => Promise<string>;
   className?: string;
 }
 
@@ -56,8 +62,15 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [agentMode, setAgentMode] = useState<string>('default');
+  // TODO: Load available agents from .vespera/templates/agents dynamically
+  const availableAgents = [
+    { id: 'default', name: 'General Assistant', description: 'Helpful general-purpose assistant' },
+    { id: 'task-orchestrator', name: 'Task Orchestrator', description: 'Coordinates complex multi-step tasks' },
+    { id: 'task-code-writer', name: 'Code Writer', description: 'Specialist in writing and refactoring code' }
+  ];
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -78,21 +91,21 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     }
   }, [currentAssistant, activeCodex, activeTemplate, context]);
 
-  const getWelcomeMessage = (assistant: AIAssistant, codex?: Codex, template?: Template, ctx?: Context): string => {
+  const getWelcomeMessage = (assistant: AIAssistantType, codex?: Codex, template?: Template, _ctx?: Context): string => {
     const baseGreeting = getGreetingByPersonality(assistant.personality);
-    
+
     if (codex && template) {
       return `${baseGreeting} I'm here to help you with your ${template.name.toLowerCase()} "${codex.name}". What would you like to work on?`;
     }
-    
+
     if (template) {
       return `${baseGreeting} I'm your ${template.name.toLowerCase()} specialist. How can I assist you today?`;
     }
-    
+
     return `${baseGreeting} I'm your AI assistant. I can help you with content creation, template management, and workflow optimization. What would you like to explore?`;
   };
 
-  const getGreetingByPersonality = (personality: AIAssistant['personality']): string => {
+  const getGreetingByPersonality = (personality: AIAssistantType['personality']): string => {
     switch (personality.tone) {
       case 'professional':
         return 'Good day. ';
@@ -156,7 +169,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     }
   }, [inputMessage, isLoading, currentAssistant, activeCodex, activeTemplate, context, messages, onSendMessage]);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Send on Enter, new line on Shift+Enter
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -369,9 +383,38 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         </div>
       </ScrollArea>
 
-      {/* Input */}
-      <div className="p-4 border-t border-border">
-        <div className="flex gap-2">
+      {/* Input Area */}
+      <div className="p-4 border-t border-border space-y-2">
+        {/* Full-width textarea input */}
+        <Textarea
+          ref={inputRef}
+          value={inputMessage}
+          onChange={(e) => setInputMessage(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Ask me anything about your content... (Shift+Enter for new line)"
+          disabled={isLoading}
+          className="w-full min-h-[80px] resize-none"
+          rows={3}
+        />
+
+        {/* Controls row: Agent Mode, Voice, Send */}
+        <div className="flex gap-2 items-center">
+          <Select value={agentMode} onValueChange={setAgentMode}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Select agent mode" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableAgents.map(agent => (
+                <SelectItem key={agent.id} value={agent.id}>
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium">{agent.name}</span>
+                    <span className="text-xs text-muted-foreground">{agent.description}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <Button
             variant="outline"
             size="sm"
@@ -384,24 +427,15 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           >
             {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
           </Button>
-          
-          <Input
-            ref={inputRef}
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Ask me anything about your content..."
-            disabled={isLoading}
-            className="flex-1"
-          />
-          
+
           <Button
             onClick={handleSendMessage}
             disabled={!inputMessage.trim() || isLoading}
             size="sm"
-            className="shrink-0"
+            className="ml-auto px-6"
           >
-            <Send className="w-4 h-4" />
+            <Send className="w-4 h-4 mr-2" />
+            Send
           </Button>
         </div>
       </div>
