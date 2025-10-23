@@ -2,9 +2,30 @@
 
 **Date**: 2025-10-22 (Updated)
 **Branch**: `feat/codex-ui-framework`
-**Latest Changes**: Phase 13 complete! AI Assistant chat window architectural fix implemented!
+**Latest Changes**: Phase 14a complete! Rust LLM provider module implemented!
 
-## 🎉 MAJOR MILESTONE: Phase 13 AI Assistant Chat Fix Complete!
+## 🚀 ACTIVE WORK: Phase 14 - Codex-Based AI Chat Architecture
+
+**Phase 14a Complete** ✅:
+- Rust LLM provider module (`src/llm/`) fully implemented and compiling
+- Claude Code CLI provider (uses Claude Max subscription via `claude` CLI)
+- Ollama provider (local LLMs, cost-free)
+- Secret vault system for API key storage (Base64 encoded, TODO: encryption)
+- Codex integration via `ProviderType::from_codex()` - parses template fields
+- Dependencies added: `which`, `async-trait`, `base64`, `reqwest` (streaming)
+
+**Files Created**:
+- `packages/vespera-utilities/vespera-bindery/src/llm/mod.rs`
+- `packages/vespera-utilities/vespera-bindery/src/llm/types.rs`
+- `packages/vespera-utilities/vespera-bindery/src/llm/streaming.rs`
+- `packages/vespera-utilities/vespera-bindery/src/llm/provider.rs`
+- `packages/vespera-utilities/vespera-bindery/src/llm/claude_code.rs`
+- `packages/vespera-utilities/vespera-bindery/src/llm/ollama.rs`
+- `packages/vespera-utilities/vespera-bindery/src/llm/vault.rs`
+
+**Next**: Phase 14b - Create Codex templates and system prompt files
+
+## 🎉 Phase 13 AI Assistant Chat Fix Complete!
 
 All Phase 1-13 functionality implemented! The system now includes:
 - Full CRUD operations with database persistence
