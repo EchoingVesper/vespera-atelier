@@ -100,6 +100,9 @@ pub mod database;
 // RAG (Retrieval-Augmented Generation) module
 pub mod rag;
 
+// LLM provider integrations
+pub mod llm;
+
 // Conditional binding modules
 #[cfg(feature = "nodejs")]
 pub mod bindings;
