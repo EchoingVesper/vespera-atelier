@@ -237,21 +237,18 @@
         {
           "id": "vesperaForge.navigatorView",
           "type": "webview",
-          "name": "Codex Navigator",
-          "when": "vespera-forge:enabled"
+          "name": "Codex Navigator"
         }
       ],
       "vespera-forge-assistant": [
         {
           "id": "vesperaForge.chatChannelList",
-          "name": "Chat Channels",
-          "when": "vespera-forge:enabled"
+          "name": "Chat Channels"
         },
         {
           "id": "vespera-forge.aiAssistant",
           "type": "webview",
-          "name": "AI Chat",
-          "when": "vespera-forge:enabled"
+          "name": "AI Chat"
         }
       ]
     },
