@@ -82,6 +82,17 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
   context.subscriptions.push(chatChannelTreeView);
   console.log('[Vespera] Chat Channel List view provider registered successfully');
 
+  // Store tree view reference in provider for visibility-based loading
+  (chatChannelProvider as any).treeView = chatChannelTreeView;
+
+  // Set up visibility handler to load channels when view is first shown
+  chatChannelTreeView.onDidChangeVisibility((e) => {
+    if (e.visible) {
+      console.log('[Vespera] Chat channel list became visible - triggering refresh');
+      chatChannelProvider.refresh();
+    }
+  });
+
   // Register command to open the editor panel
   const openEditorCommand = vscode.commands.registerCommand(
     'vespera-forge.openEditor',

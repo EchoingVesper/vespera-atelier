@@ -25,10 +25,8 @@ export class ChatChannelListProvider implements vscode.TreeDataProvider<ChatChan
   constructor(
     private binderyService: BinderyService
   ) {
-    // Load channels asynchronously and refresh view when done
-    this.loadChannels().then(() => {
-      this._onDidChangeTreeData.fire();
-    });
+    // Don't auto-load in constructor - channels will load when view becomes visible
+    // This prevents firing change events before VS Code has created the tree view
   }
 
   refresh(): void {
