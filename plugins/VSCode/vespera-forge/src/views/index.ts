@@ -6,12 +6,14 @@ import * as vscode from 'vscode';
 import { NavigatorWebviewProvider } from './NavigatorWebviewProvider';
 import { EditorPanelProvider } from './EditorPanelProvider';
 import { AIAssistantWebviewProvider } from './ai-assistant';
+import { ChatChannelListProvider } from './ChatChannelListProvider';
 import { getBinderyService } from '../services/bindery';
 
 // Export view providers
 export { NavigatorWebviewProvider } from './NavigatorWebviewProvider';
 export { EditorPanelProvider } from './EditorPanelProvider';
 export { AIAssistantWebviewProvider } from './ai-assistant';
+export { ChatChannelListProvider } from './ChatChannelListProvider';
 
 /**
  * View context containing all initialized providers
@@ -19,6 +21,7 @@ export { AIAssistantWebviewProvider } from './ai-assistant';
 export interface VesperaViewContext {
   navigatorProvider: NavigatorWebviewProvider;
   aiAssistantProvider: AIAssistantWebviewProvider;
+  chatChannelProvider: ChatChannelListProvider;
 }
 
 /**
@@ -32,6 +35,12 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
 
   // Create AI assistant provider first
   const aiAssistantProvider = new AIAssistantWebviewProvider(context.extensionUri, context);
+
+  // Create chat channel list provider
+  const chatChannelProvider = new ChatChannelListProvider(binderyService, context);
+
+  // Store chat channel provider globally for commands
+  (global as any).vesperaChatChannelProvider = chatChannelProvider;
 
   // Create navigator provider with callback to open editor when codex is selected
   const navigatorProvider = new NavigatorWebviewProvider(
@@ -64,6 +73,15 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
   context.subscriptions.push(aiAssistantDisposable);
   console.log('[Vespera] AI Assistant view provider registered successfully');
 
+  // Register the chat channel list tree view provider
+  console.log('[Vespera] Registering Chat Channel List view provider');
+  const chatChannelTreeView = vscode.window.createTreeView('vesperaForge.chatChannelList', {
+    treeDataProvider: chatChannelProvider,
+    showCollapseAll: true
+  });
+  context.subscriptions.push(chatChannelTreeView);
+  console.log('[Vespera] Chat Channel List view provider registered successfully');
+
   // Register command to open the editor panel
   const openEditorCommand = vscode.commands.registerCommand(
     'vespera-forge.openEditor',
@@ -94,12 +112,13 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
   context.subscriptions.push(openAIAssistantCommand);
 
   // Add providers to disposables
-  context.subscriptions.push(navigatorProvider, aiAssistantProvider);
+  context.subscriptions.push(navigatorProvider, aiAssistantProvider, chatChannelProvider);
 
   console.log('[Vespera] Codex Navigator framework initialized successfully');
 
   return {
     navigatorProvider,
-    aiAssistantProvider
+    aiAssistantProvider,
+    chatChannelProvider
   };
 }

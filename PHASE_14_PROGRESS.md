@@ -201,22 +201,48 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls", "stream"] }
 - Actual errors and warnings now visible
 - Debugging significantly easier
 
-### Part 2: Chat Channel List UI ⏳ NEXT
+### Part 2: Chat Channel List UI ✅ COMPLETE
 
-**Components to Build**:
-1. `src/views/chat-channel-list.ts`
+**Git Status**: Ready for commit
+
+**Files Created**:
+1. `src/views/ChatChannelListProvider.ts` (263 lines)
    - Tree view with folders: "User Chats", "Agent Tasks"
-   - Activity indicators: active/idle/archived
-   - User can monitor/interrupt spawned agents
+   - Activity indicators: 🟢 active / 🟡 idle / ⚪ archived
+   - Channel info: message count, last activity time
+   - Loads ai-chat Codices from Bindery
+   - CRUD operations: create, delete, archive channels
 
-2. **Commands to Add**:
-   - `vespera-forge.configureProviderKey` - Store API keys in vault
-   - `vespera-forge.checkClaudeCodeAuth` - Verify `claude login` status
+**Files Modified**:
+2. `src/commands/index.ts` - Added 7 command handlers:
+   - `createChatChannelCommand` - Create new chat channel
+   - `selectChatChannelCommand` - Switch AI Assistant to channel
+   - `deleteChatChannelCommand` - Delete channel with confirmation
+   - `archiveChatChannelCommand` - Archive inactive channels
+   - `refreshChatChannelsCommand` - Refresh channel list
+   - `configureProviderKeyCommand` - Store API keys in vault (stub)
+   - `checkClaudeCodeAuthCommand` - Verify `claude login` status (stub)
 
-3. **Wire AI Assistant to Bindery**:
-   - Connect to Bindery LLM module
-   - Use Codex templates for configuration
-   - Stream responses from Bindery backend
+3. `src/views/ai-assistant.ts` - Channel switching support:
+   - `switchChannel()` method - Switch between channels
+   - Channel header - Shows active channel name with status
+   - Global provider storage for command access
+   - TODO: Load/save messages to Codex content
+
+4. `src/views/index.ts` - View registration:
+   - Registered `ChatChannelListProvider` tree view
+   - Exported in `VesperaViewContext`
+   - Global provider storage for commands
+
+5. `package.json` - UI integration:
+   - New view: `vesperaForge.chatChannelList` in assistant sidebar
+   - 8 new commands registered
+   - View title menus: + and refresh buttons
+   - Context menus: Archive option for channels
+
+**Bug Fixes**:
+- Fixed `codices.filter is not a function` - Unwrap service result object
+- Fixed `claudeProvider.connect is not a function` - Removed deprecated provider init
 
 ### Components to Keep
 

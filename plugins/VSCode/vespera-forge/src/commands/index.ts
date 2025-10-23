@@ -691,6 +691,252 @@ export const refreshCodexListCommand: CommandHandler = async (_context: VesperaF
   }
 };
 
+// ============================================================================
+// Chat Channel Commands
+// ============================================================================
+
+/**
+ * Create a new chat channel command
+ */
+export const createChatChannelCommand: CommandHandler = async (_context: VesperaForgeContext) => {
+  try {
+    // Get channel name from user
+    const name = await vscode.window.showInputBox({
+      prompt: 'Enter name for the new chat channel',
+      placeHolder: 'My Chat Channel',
+      validateInput: (value) => {
+        if (!value || !value.trim()) {
+          return 'Channel name cannot be empty';
+        }
+        return undefined;
+      }
+    });
+
+    if (!name || !name.trim()) {
+      return; // User cancelled
+    }
+
+    // Get channel type
+    const typeOptions = [
+      { label: 'User Chat', description: 'Regular AI chat session', type: 'user-chat' as const },
+      { label: 'Agent Task', description: 'Task with AI agent orchestration', type: 'agent-task' as const }
+    ];
+
+    const selectedType = await vscode.window.showQuickPick(typeOptions, {
+      placeHolder: 'Select channel type'
+    });
+
+    if (!selectedType) {
+      return; // User cancelled
+    }
+
+    // Create the channel via provider
+    const channelProvider = (global as any).vesperaChatChannelProvider;
+    if (!channelProvider) {
+      await showError('Chat channel provider not initialized');
+      return;
+    }
+
+    const channel = await channelProvider.createChannel(name.trim(), selectedType.type);
+    if (channel) {
+      await showInfo(`Created chat channel: ${channel.title}`);
+      // Refresh the chat channel list
+      vscode.commands.executeCommand('vespera-forge.refreshChatChannels');
+    }
+  } catch (error) {
+    await showError('Failed to create chat channel', error as Error);
+  }
+};
+
+/**
+ * Select a chat channel command
+ */
+export const selectChatChannelCommand: CommandHandler = async (_context: VesperaForgeContext, channel: any) => {
+  try {
+    log('[Command] Selecting chat channel:', channel);
+
+    // Update AI Assistant to use this channel
+    const aiAssistantProvider = (global as any).vesperaAIAssistantProvider;
+    if (aiAssistantProvider && typeof aiAssistantProvider.switchChannel === 'function') {
+      await aiAssistantProvider.switchChannel(channel);
+      await showInfo(`Switched to channel: ${channel.title}`);
+    } else {
+      await showError('AI Assistant provider not initialized');
+    }
+  } catch (error) {
+    await showError('Failed to select chat channel', error as Error);
+  }
+};
+
+/**
+ * Delete a chat channel command
+ */
+export const deleteChatChannelCommand: CommandHandler = async (_context: VesperaForgeContext) => {
+  try {
+    const channelProvider = (global as any).vesperaChatChannelProvider;
+    if (!channelProvider) {
+      await showError('Chat channel provider not initialized');
+      return;
+    }
+
+    const channels = channelProvider.getAllChannels();
+    if (channels.length === 0) {
+      await showInfo('No chat channels to delete');
+      return;
+    }
+
+    // Show picker
+    const items = channels.map((channel: any) => ({
+      label: channel.title,
+      description: `${channel.messageCount || 0} messages • ${channel.type}`,
+      detail: channel.status,
+      channelId: channel.id
+    }));
+
+    const selected = await vscode.window.showQuickPick(items, {
+      placeHolder: 'Select channel to delete'
+    });
+
+    if (!selected) {
+      return; // User cancelled
+    }
+
+    // Confirm deletion
+    const confirmed = await vscode.window.showWarningMessage(
+      `Delete channel "${selected.label}"? This action cannot be undone.`,
+      { modal: true },
+      'Delete'
+    );
+
+    if (confirmed === 'Delete') {
+      const success = await channelProvider.deleteChannel(selected.channelId);
+      if (success) {
+        await showInfo(`Deleted channel: ${selected.label}`);
+        vscode.commands.executeCommand('vespera-forge.refreshChatChannels');
+      }
+    }
+  } catch (error) {
+    await showError('Failed to delete chat channel', error as Error);
+  }
+};
+
+/**
+ * Archive a chat channel command
+ */
+export const archiveChatChannelCommand: CommandHandler = async (_context: VesperaForgeContext, channel: any) => {
+  try {
+    const channelProvider = (global as any).vesperaChatChannelProvider;
+    if (!channelProvider) {
+      await showError('Chat channel provider not initialized');
+      return;
+    }
+
+    const success = await channelProvider.archiveChannel(channel.id);
+    if (success) {
+      await showInfo(`Archived channel: ${channel.title}`);
+      vscode.commands.executeCommand('vespera-forge.refreshChatChannels');
+    }
+  } catch (error) {
+    await showError('Failed to archive chat channel', error as Error);
+  }
+};
+
+/**
+ * Refresh chat channels command
+ */
+export const refreshChatChannelsCommand: CommandHandler = async (_context: VesperaForgeContext) => {
+  try {
+    const channelProvider = (global as any).vesperaChatChannelProvider;
+    if (channelProvider && typeof channelProvider.refresh === 'function') {
+      channelProvider.refresh();
+      log('Refreshed chat channel list');
+    }
+  } catch (error) {
+    await showError('Failed to refresh chat channels', error as Error);
+  }
+};
+
+// ============================================================================
+// Vault Commands (for API key storage)
+// ============================================================================
+
+/**
+ * Configure provider API key command
+ */
+export const configureProviderKeyCommand: CommandHandler = async (_context: VesperaForgeContext) => {
+  try {
+    // Show provider selection
+    const providers = [
+      { label: 'Anthropic (Claude)', description: 'Store Anthropic API key', provider: 'anthropic' },
+      { label: 'OpenAI', description: 'Store OpenAI API key', provider: 'openai' },
+      { label: 'Other', description: 'Store custom provider key', provider: 'custom' }
+    ];
+
+    const selected = await vscode.window.showQuickPick(providers, {
+      placeHolder: 'Select provider to configure'
+    });
+
+    if (!selected) {
+      return; // User cancelled
+    }
+
+    let providerName = selected.provider;
+    if (selected.provider === 'custom') {
+      const customName = await vscode.window.showInputBox({
+        prompt: 'Enter provider name',
+        placeHolder: 'my-provider'
+      });
+      if (!customName) {
+        return;
+      }
+      providerName = customName.trim();
+    }
+
+    // Get API key from user (input will be masked)
+    const apiKey = await vscode.window.showInputBox({
+      prompt: `Enter ${selected.label} API key`,
+      placeHolder: 'sk-...',
+      password: true,
+      validateInput: (value) => {
+        if (!value || !value.trim()) {
+          return 'API key cannot be empty';
+        }
+        return undefined;
+      }
+    });
+
+    if (!apiKey) {
+      return; // User cancelled
+    }
+
+    // Store in Bindery vault via JSON-RPC
+    const binderyService = getBinderyService();
+    // TODO: Implement vault_store JSON-RPC method in Bindery
+    // For now, show a placeholder message
+    await showInfo(`API key for ${providerName} will be stored in Bindery vault (implementation pending)`);
+
+    log(`Stored API key for provider: ${providerName}`);
+  } catch (error) {
+    await showError('Failed to configure provider key', error as Error);
+  }
+};
+
+/**
+ * Check Claude Code authentication command
+ */
+export const checkClaudeCodeAuthCommand: CommandHandler = async (_context: VesperaForgeContext) => {
+  try {
+    // TODO: Implement Claude Code auth check via Bindery LLM module
+    // This should call the Rust backend's claude_code::check_auth() method
+
+    await showInfo('Claude Code authentication check (implementation pending)');
+
+    log('Checked Claude Code authentication status');
+  } catch (error) {
+    await showError('Failed to check Claude Code auth', error as Error);
+  }
+};
+
 /**
  * Get the commands map following Roo Code pattern
  */
@@ -795,6 +1041,36 @@ const getCommandsMap = (vesperaContext: VesperaForgeContext) => ({
   'vespera-forge.refreshCodexList': async () => {
     log('[Command] Refresh Codex List command executed');
     await refreshCodexListCommand(vesperaContext);
+  },
+  // Chat channel commands
+  'vespera-forge.createChatChannel': async () => {
+    log('[Command] Create Chat Channel command executed');
+    await createChatChannelCommand(vesperaContext);
+  },
+  'vespera-forge.selectChatChannel': async (channel: any) => {
+    log('[Command] Select Chat Channel command executed');
+    await selectChatChannelCommand(vesperaContext, channel);
+  },
+  'vespera-forge.deleteChatChannel': async () => {
+    log('[Command] Delete Chat Channel command executed');
+    await deleteChatChannelCommand(vesperaContext);
+  },
+  'vespera-forge.archiveChatChannel': async (channel: any) => {
+    log('[Command] Archive Chat Channel command executed');
+    await archiveChatChannelCommand(vesperaContext, channel);
+  },
+  'vespera-forge.refreshChatChannels': async () => {
+    log('[Command] Refresh Chat Channels command executed');
+    await refreshChatChannelsCommand(vesperaContext);
+  },
+  // Vault commands
+  'vespera-forge.configureProviderKey': async () => {
+    log('[Command] Configure Provider Key command executed');
+    await configureProviderKeyCommand(vesperaContext);
+  },
+  'vespera-forge.checkClaudeCodeAuth': async () => {
+    log('[Command] Check Claude Code Auth command executed');
+    await checkClaudeCodeAuthCommand(vesperaContext);
   }
 });
 

@@ -13,11 +13,15 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
 
   private _view?: vscode.WebviewView;
   private _chatSystem?: VesperaChatSystem;
+  private _activeChannel?: any; // Current active channel
 
   constructor(
     private readonly _extensionUri: vscode.Uri,
     private readonly _context: vscode.ExtensionContext
-  ) {}
+  ) {
+    // Store reference globally for commands
+    (global as any).vesperaAIAssistantProvider = this;
+  }
 
   public resolveWebviewView(
     webviewView: vscode.WebviewView,
@@ -76,21 +80,9 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
       });
       await this._chatSystem.initialize();
 
-      const configManager = this._chatSystem.getConfigurationManager();
-      const savedProviderEntry = configManager.getConfiguration().providers['claude-code'];
-
-      let providerConfig: ProviderConfig;
-      if (savedProviderEntry && savedProviderEntry.config) {
-        providerConfig = savedProviderEntry.config;
-      } else {
-        providerConfig = createDefaultConfig(CLAUDE_CODE_TEMPLATE);
-      }
-
-      const claudeProvider = await this._chatSystem.createAndRegisterProvider('claude-code', CLAUDE_CODE_TEMPLATE, providerConfig);
-      await claudeProvider.connect();
-      await this._chatSystem.setActiveProvider('claude-code', claudeProvider);
-
-      console.log('[AIAssistant] Chat system initialized');
+      // Note: Provider initialization is now handled by Bindery backend
+      // The chat system will use the default Claude Code provider
+      console.log('[AIAssistant] Chat system initialized (providers managed by Bindery)');
     } catch (error) {
       console.error('[AIAssistant] Failed to initialize chat system:', error);
       vscode.window.showErrorMessage(`Failed to initialize AI Assistant: ${error}`);
@@ -227,7 +219,43 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
     this._view.webview.html = this.getChatInterfaceHtml();
   }
 
+  /**
+   * Switch to a different chat channel
+   */
+  public async switchChannel(channel: any): Promise<void> {
+    this._activeChannel = channel;
+    console.log('[AIAssistant] Switched to channel:', channel.title);
+
+    // Clear current chat history UI
+    this.sendMessageToWebview({
+      command: 'clearHistory'
+    });
+
+    // Update header with channel name
+    this.sendMessageToWebview({
+      command: 'updateChannelInfo',
+      channelName: channel.title,
+      channelStatus: channel.status
+    });
+
+    // TODO: Load messages from channel Codex
+    // const messages = await this.loadChannelMessages(channel.id);
+    // for (const msg of messages) {
+    //   this.sendMessageToWebview({ command: 'addMessage', message: msg });
+    // }
+  }
+
+  /**
+   * Get the active channel
+   */
+  public getActiveChannel(): any | undefined {
+    return this._activeChannel;
+  }
+
   private getChatInterfaceHtml(): string {
+    const channelName = this._activeChannel?.title || 'AI Assistant';
+    const channelStatus = this._activeChannel?.status || '';
+
     return `<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -402,7 +430,7 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
     </head>
     <body>
         <div class="chat-header">
-            <div class="chat-title">🤖 AI Assistant</div>
+            <div class="chat-title" id="channelTitle">🤖 ${channelName}</div>
             <button class="action-btn" onclick="clearHistory()">Clear</button>
         </div>
 
@@ -511,6 +539,16 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
                 vscode.postMessage({ command: 'requestClearHistory' });
             }
 
+            function updateChannelInfo(channelName, channelStatus) {
+                const titleEl = document.getElementById('channelTitle');
+                if (titleEl) {
+                    const statusIcon = channelStatus === 'active' ? '🟢' :
+                                     channelStatus === 'idle' ? '🟡' :
+                                     channelStatus === 'archived' ? '⚪' : '';
+                    titleEl.textContent = \`\${statusIcon} \${channelName}\`;
+                }
+            }
+
             window.addEventListener('message', event => {
                 const message = event.data;
                 switch (message.command) {
@@ -528,6 +566,9 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
                                 <p>Ask me anything!</p>
                             </div>
                         \`;
+                        break;
+                    case 'updateChannelInfo':
+                        updateChannelInfo(message.channelName, message.channelStatus);
                         break;
                 }
             });

@@ -164,6 +164,43 @@
         "command": "vespera-forge.refreshCodexList",
         "title": "Refresh Codex List",
         "category": "Vespera Forge Codex"
+      },
+      {
+        "command": "vespera-forge.createChatChannel",
+        "title": "Create New Chat Channel",
+        "category": "Vespera Forge Chat",
+        "icon": "$(add)"
+      },
+      {
+        "command": "vespera-forge.selectChatChannel",
+        "title": "Select Chat Channel",
+        "category": "Vespera Forge Chat"
+      },
+      {
+        "command": "vespera-forge.deleteChatChannel",
+        "title": "Delete Chat Channel",
+        "category": "Vespera Forge Chat"
+      },
+      {
+        "command": "vespera-forge.archiveChatChannel",
+        "title": "Archive Chat Channel",
+        "category": "Vespera Forge Chat"
+      },
+      {
+        "command": "vespera-forge.refreshChatChannels",
+        "title": "Refresh Chat Channels",
+        "category": "Vespera Forge Chat",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "vespera-forge.configureProviderKey",
+        "title": "Configure API Key",
+        "category": "Vespera Forge Settings"
+      },
+      {
+        "command": "vespera-forge.checkClaudeCodeAuth",
+        "title": "Check Claude Code Authentication",
+        "category": "Vespera Forge Settings"
       }
     ],
     "keybindings": [
@@ -206,9 +243,14 @@
       ],
       "vespera-forge-assistant": [
         {
+          "id": "vesperaForge.chatChannelList",
+          "name": "Chat Channels",
+          "when": "vespera-forge:enabled"
+        },
+        {
           "id": "vespera-forge.aiAssistant",
           "type": "webview",
-          "name": "AI Assistant",
+          "name": "AI Chat",
           "when": "vespera-forge:enabled"
         }
       ]
@@ -233,6 +275,16 @@
           "command": "vespera-forge.refreshTaskTree",
           "when": "view == vesperaForgeTaskTree",
           "group": "navigation"
+        },
+        {
+          "command": "vespera-forge.createChatChannel",
+          "when": "view == vesperaForge.chatChannelList",
+          "group": "navigation"
+        },
+        {
+          "command": "vespera-forge.refreshChatChannels",
+          "when": "view == vesperaForge.chatChannelList",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
@@ -250,6 +302,11 @@
           "command": "vespera-forge.deleteTask",
           "when": "view == vesperaForgeTaskTree && viewItem =~ /task/",
           "group": "2_destructive"
+        },
+        {
+          "command": "vespera-forge.archiveChatChannel",
+          "when": "view == vesperaForge.chatChannelList && viewItem == channel",
+          "group": "1_actions"
         }
       ]
     },
