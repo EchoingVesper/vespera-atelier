@@ -5,8 +5,6 @@
 
 import * as vscode from 'vscode';
 import { VesperaChatSystem } from '../chat';
-import { CLAUDE_CODE_TEMPLATE, createDefaultConfig } from '../chat/templates/providers/index';
-import { ProviderConfig } from '../chat/types/provider';
 
 export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'vespera-forge.aiAssistant';
@@ -254,7 +252,6 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
 
   private getChatInterfaceHtml(): string {
     const channelName = this._activeChannel?.title || 'AI Assistant';
-    const channelStatus = this._activeChannel?.status || '';
 
     return `<!DOCTYPE html>
     <html lang="en">

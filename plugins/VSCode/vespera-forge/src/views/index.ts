@@ -37,7 +37,7 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
   const aiAssistantProvider = new AIAssistantWebviewProvider(context.extensionUri, context);
 
   // Create chat channel list provider
-  const chatChannelProvider = new ChatChannelListProvider(binderyService, context);
+  const chatChannelProvider = new ChatChannelListProvider(binderyService);
 
   // Store chat channel provider globally for commands
   (global as any).vesperaChatChannelProvider = chatChannelProvider;

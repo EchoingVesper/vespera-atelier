@@ -23,8 +23,7 @@ export class ChatChannelListProvider implements vscode.TreeDataProvider<ChatChan
   private channels: ChatChannel[] = [];
 
   constructor(
-    private binderyService: BinderyService,
-    private context: vscode.ExtensionContext
+    private binderyService: BinderyService
   ) {
     this.loadChannels();
   }
@@ -40,8 +39,15 @@ export class ChatChannelListProvider implements vscode.TreeDataProvider<ChatChan
       const result = await this.binderyService.listCodeices();
 
       // Check if the request was successful
-      if (!result.success || !result.data) {
-        console.warn('[ChatChannelList] Failed to load codices from Bindery:', result.error?.message || 'Unknown error');
+      if (!result.success) {
+        const error = 'error' in result ? result.error : { message: 'Unknown error' };
+        console.warn('[ChatChannelList] Failed to load codices from Bindery:', error.message);
+        this.channels = [];
+        return;
+      }
+
+      if (!result.data) {
+        console.warn('[ChatChannelList] No data returned from Bindery');
         this.channels = [];
         return;
       }
@@ -197,25 +203,34 @@ export class ChatChannelListProvider implements vscode.TreeDataProvider<ChatChan
     try {
       const templateId = type === 'user-chat' ? 'ai-chat' : 'task-orchestrator';
 
-      // Create new Codex for this channel
-      const codex = await this.binderyService.createCodex({
-        template_id: templateId,
-        title: name,
+      // Create new Codex for this channel (returns just the codex ID)
+      const result = await this.binderyService.createCodex(name, templateId);
+
+      if (!result.success) {
+        const error = 'error' in result ? result.error : { message: 'Unknown error' };
+        throw new Error(error.message);
+      }
+
+      const codexId = result.data;
+
+      // Update the codex with initial content
+      const updateResult = await this.binderyService.updateCodex(codexId, {
         content: {
           messages: [],
           summary: '',
           channel_name: name,
           channel_type: type,
           status: 'active'
-        },
-        metadata: {
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
         }
       });
 
+      if (!updateResult.success) {
+        const error = 'error' in updateResult ? updateResult.error : { message: 'Unknown error' };
+        throw new Error(error.message);
+      }
+
       const channel: ChatChannel = {
-        id: codex.id,
+        id: codexId,
         title: name,
         templateId,
         type,
@@ -237,7 +252,13 @@ export class ChatChannelListProvider implements vscode.TreeDataProvider<ChatChan
 
   async deleteChannel(channelId: string): Promise<boolean> {
     try {
-      await this.binderyService.deleteCodex(channelId);
+      const result = await this.binderyService.deleteCodex(channelId);
+
+      if (!result.success) {
+        const error = 'error' in result ? result.error : { message: 'Unknown error' };
+        throw new Error(error.message);
+      }
+
       this.channels = this.channels.filter(ch => ch.id !== channelId);
       this.refresh();
       return true;
@@ -253,11 +274,16 @@ export class ChatChannelListProvider implements vscode.TreeDataProvider<ChatChan
       const channel = this.channels.find(ch => ch.id === channelId);
       if (!channel) return false;
 
-      await this.binderyService.updateCodex(channelId, {
+      const result = await this.binderyService.updateCodex(channelId, {
         content: {
           status: 'archived'
         }
       });
+
+      if (!result.success) {
+        const error = 'error' in result ? result.error : { message: 'Unknown error' };
+        throw new Error(error.message);
+      }
 
       channel.status = 'archived';
       this.refresh();
@@ -288,9 +314,9 @@ export class ChatChannelListProvider implements vscode.TreeDataProvider<ChatChan
 
 export class ChatChannelTreeItem extends vscode.TreeItem {
   constructor(
-    public readonly label: string,
-    public readonly contextValue: 'folder' | 'channel' | 'empty',
-    public readonly collapsibleState: vscode.TreeItemCollapsibleState,
+    public override readonly label: string,
+    public override readonly contextValue: 'folder' | 'channel' | 'empty',
+    public override readonly collapsibleState: vscode.TreeItemCollapsibleState,
     public readonly channel?: ChatChannel
   ) {
     super(label, collapsibleState);

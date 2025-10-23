@@ -1063,51 +1063,13 @@ export class ChatWebViewProvider implements vscode.WebviewViewProvider {
 
   /**
    * Test connection to a provider
+   * @deprecated Providers are now managed by Bindery backend
    */
   private async testProviderConnection(providerId: string, config: any): Promise<boolean> {
     try {
-      // Get provider template for this provider
-      const template = await this.templateRegistry.getTemplate(providerId);
-      if (!template) {
-        this.logger?.warn(`No template found for provider: ${providerId}`);
-        return false;
-      }
-
-      // Dynamically import ProviderFactory to avoid circular dependencies
-      const { ProviderFactory } = await import('../../providers/ProviderFactory');
-      
-      // Create provider instance
-      const provider = ProviderFactory.createProvider(template, config, this.configManager);
-      
-      // Attempt to connect
-      await provider.connect();
-      
-      // Test with a simple ping message if supported
-      const testMessage: ChatMessage = {
-        id: `test_${Date.now()}`,
-        content: "ping",
-        role: "user" as const,
-        timestamp: new Date(),
-        threadId: `test_thread_${Date.now()}`,
-        sessionId: this._sessionId,
-        metadata: {
-          provider: providerId
-        }
-      };
-      
-      // Try sending a test message with timeout
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Connection test timeout')), 10000);
-      });
-      
-      const testPromise = provider.sendMessage(testMessage);
-      
-      await Promise.race([testPromise, timeoutPromise]);
-      
-      // Clean up
-      await provider.disconnect();
-      
-      return true;
+      // TODO: Implement provider connection test via Bindery
+      this.logger?.warn('[ChatWebViewProvider] testProviderConnection is deprecated - use Bindery backend');
+      return false;
     } catch (error) {
       this.logger?.error(`Provider connection test failed for ${providerId}`, error);
       return false;
