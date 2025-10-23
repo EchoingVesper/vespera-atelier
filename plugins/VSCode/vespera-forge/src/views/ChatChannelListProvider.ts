@@ -35,31 +35,52 @@ export class ChatChannelListProvider implements vscode.TreeDataProvider<ChatChan
 
   private async loadChannels(): Promise<void> {
     try {
-      // Load all codices from Bindery
-      const result = await this.binderyService.listCodeices();
+      // Load all codex IDs from Bindery
+      const listResult = await this.binderyService.listCodeices();
 
       // Check if the request was successful
-      if (!result.success) {
-        const error = 'error' in result ? result.error : { message: 'Unknown error' };
-        console.warn('[ChatChannelList] Failed to load codices from Bindery:', error.message);
+      if (!listResult.success) {
+        const error = 'error' in listResult ? listResult.error : { message: 'Unknown error' };
+        console.warn('[ChatChannelList] Failed to load codex IDs from Bindery:', error.message);
         this.channels = [];
         return;
       }
 
-      if (!result.data) {
-        console.warn('[ChatChannelList] No data returned from Bindery');
+      if (!listResult.data) {
+        console.warn('[ChatChannelList] No codex IDs returned from Bindery');
         this.channels = [];
         return;
       }
 
-      const codices = result.data;
+      const codexIds = listResult.data;
+      console.log('[ChatChannelList] Retrieved', codexIds.length, 'codex IDs');
+
+      // Fetch full codex objects for each ID
+      const codexPromises = codexIds.map(id => this.binderyService.getCodex(id));
+      const codexResults = await Promise.all(codexPromises);
+
+      // Extract successful results
+      const codices = codexResults
+        .filter((result): result is { success: true; data: any } => result.success)
+        .map(result => result.data);
+
+      console.log('[ChatChannelList] Fetched', codices.length, 'full codex objects');
+
+      // DEBUG: Log first codex structure
+      if (codices.length > 0) {
+        console.log('[ChatChannelList] First codex structure:', JSON.stringify(codices[0], null, 2));
+      }
 
       // Filter for chat channels (ai-chat template) and agent tasks
       this.channels = codices
         .filter((codex: any) => {
-          return codex.template_id === 'ai-chat' ||
-                 codex.template_id === 'task-orchestrator' ||
-                 codex.template_id === 'task-code-writer';
+          const matches = codex.template_id === 'ai-chat' ||
+                         codex.template_id === 'task-orchestrator' ||
+                         codex.template_id === 'task-code-writer';
+          if (!matches && codex.template_id) {
+            console.log('[ChatChannelList] Codex filtered out - template_id:', codex.template_id, 'title:', codex.title);
+          }
+          return matches;
         })
         .map((codex: any) => {
           const isChat = codex.template_id === 'ai-chat';
