@@ -100,7 +100,7 @@ export class FileOperationsSecurityManager {
       // Get security services
       manager.securityServices = SecurityEnhancedVesperaCoreServices.getInstance();
       
-      console.log('FileOperationsSecurityManager initialized with policy:', finalPolicy);
+      // console.log('FileOperationsSecurityManager initialized with policy:', JSON.stringify(finalPolicy));
     } catch (error) {
       console.warn('FileOperationsSecurityManager initialized with reduced security:', error);
     }

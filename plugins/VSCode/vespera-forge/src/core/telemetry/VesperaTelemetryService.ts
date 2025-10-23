@@ -48,7 +48,7 @@ export class VesperaTelemetryService {
       return;
     }
 
-    console.debug('[VesperaTelemetry] Event tracked:', event);
+    // console.debug('[VesperaTelemetry] Event tracked:', event.name, '-', event.duration ? `${event.duration}ms` : 'no duration');
   }
 
   /**

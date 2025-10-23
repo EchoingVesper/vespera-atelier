@@ -994,31 +994,45 @@ export class BinderyService extends EventEmitter {
 
   private handleProcessData(data: Buffer): void {
     this.buffer += data.toString();
-    
+
     // Process complete JSON lines
     const lines = this.buffer.split('\n');
     this.buffer = lines.pop() || ''; // Keep incomplete line in buffer
-    
+
     for (const line of lines) {
       if (line.trim()) {
         try {
-          const response: BinderyResponse = JSON.parse(line);
+          const parsed = JSON.parse(line);
+
+          // Filter out non-JSON-RPC messages (Bindery log messages sent to stdout)
+          // Valid JSON-RPC responses must have a 'jsonrpc' field
+          if (!parsed.jsonrpc) {
+            // This is a log message, not a JSON-RPC response - ignore it
+            // (Bindery should send logs to stderr, but sometimes they go to stdout)
+            continue;
+          }
+
+          const response: BinderyResponse = parsed;
           this.handleResponse(response).catch(error => {
             this.log('Failed to handle Bindery response:', error);
           });
         } catch (error) {
-          this.log('Failed to parse Bindery response:', line, error);
+          // Not valid JSON - this might be a partial message or non-JSON log
+          // Don't spam the console with every parse error
+          // this.log('Failed to parse Bindery response:', line, error);
         }
       }
     }
   }
 
   private async handleResponse(response: BinderyResponse): Promise<void> {
-    this.log('Received response for request ID:', response.id);
+    // Don't log every response - too spammy
+    // this.log('Received response for request ID:', response.id);
 
     const request = this.pendingRequests.get(response.id);
     if (!request) {
-      this.log('Received response for unknown request ID:', response.id);
+      // Don't log unknown request IDs - these are filtered out now
+      // this.log('Received response for unknown request ID:', response.id);
       return;
     }
 
