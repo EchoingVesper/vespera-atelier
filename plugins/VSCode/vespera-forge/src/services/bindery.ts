@@ -936,10 +936,13 @@ export class BinderyService extends EventEmitter {
     // Priority order for finding Bindery executable
     const searchPaths = [
       this.config.binderyPath,
+      // Try worktrees first (for feature branch development)
+      '/home/aya/Development/vespera-atelier-worktrees/feat-codex-ui-framework/packages/vespera-utilities/vespera-bindery/target/debug/bindery-server',
+      '/home/aya/Development/vespera-atelier-worktrees/feat-codex-ui-framework/packages/vespera-utilities/vespera-bindery/target/release/bindery-server',
       // Try from current workspace (works if in main repo)
       path.join(this.config.workspaceRoot || '', '../../../packages/vespera-utilities/vespera-bindery/target/debug/bindery-server'),
       path.join(this.config.workspaceRoot || '', '../../../packages/vespera-utilities/vespera-bindery/target/release/bindery-server'),
-      // Direct paths to main monorepo (works from worktrees)
+      // Direct paths to main monorepo (fallback)
       '/home/aya/Development/vespera-atelier/packages/vespera-utilities/vespera-bindery/target/debug/bindery-server',
       '/home/aya/Development/vespera-atelier/packages/vespera-utilities/vespera-bindery/target/release/bindery-server',
       // Legacy path (kept for compatibility)
