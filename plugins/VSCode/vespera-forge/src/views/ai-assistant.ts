@@ -6,6 +6,7 @@
 import * as vscode from 'vscode';
 import { VesperaChatSystem } from '../chat';
 import { BinderyService } from '../services/bindery';
+import { TemplateInitializer } from '../services/template-initializer';
 
 interface ChatChannel {
   id: string;
@@ -144,6 +145,14 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
 
   private async initializeChatSystem() {
     try {
+      // Ensure directory structure exists BEFORE initializing chat system
+      // This prevents ENOENT errors when ChatTemplateRegistry tries to load templates
+      const workspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri;
+      if (workspaceUri) {
+        const templateInitializer = new TemplateInitializer();
+        await templateInitializer.ensureDirectoryStructure(workspaceUri);
+      }
+
       // Initialize chat system in embedded mode (skip webview registration since we're already a webview)
       this._chatSystem = new VesperaChatSystem(this._extensionUri, this._context, {
         skipWebviewRegistration: true,

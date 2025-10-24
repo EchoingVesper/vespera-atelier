@@ -252,9 +252,13 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
         return;
       }
 
-      // Initialize templates if this is the first time
+      // Always ensure directory structure exists first
       const workspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri;
       if (workspaceUri) {
+        this.logger?.info('Ensuring .vespera directory structure...');
+        await this._templateInitializer.ensureDirectoryStructure(workspaceUri);
+
+        // Then initialize templates if this is the first time
         const templatesInitialized = await this._templateInitializer.areTemplatesInitialized(workspaceUri);
         if (!templatesInitialized) {
           this.logger?.info('Initializing default templates...');

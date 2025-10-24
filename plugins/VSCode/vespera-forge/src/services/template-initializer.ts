@@ -8,7 +8,8 @@
  *   │   ├── providers/   (LLM provider configurations)
  *   │   ├── chat/        (Chat session templates)
  *   │   └── agents/      (Agent task templates)
- *   └── prompts/         (System prompts for agents and assistants)
+ *   ├── prompts/         (System prompts for agents and assistants)
+ *   └── chat-templates/  (User-customizable chat provider templates)
  */
 import * as vscode from 'vscode';
 import * as path from 'path';
@@ -26,14 +27,50 @@ export class TemplateInitializer {
   constructor(private readonly logger?: VesperaLogger) {}
 
   /**
+   * Ensure all required directory structure exists
+   * This runs ALWAYS, regardless of template initialization status
+   */
+  public async ensureDirectoryStructure(workspaceUri: vscode.Uri): Promise<void> {
+    try {
+      const vesperaDir = vscode.Uri.joinPath(workspaceUri, '.vespera');
+
+      // Ensure base .vespera directory exists
+      await this.ensureDirectoryExists(vesperaDir);
+
+      // Create all expected subdirectories upfront to prevent ENOENT errors
+      const requiredDirectories = [
+        'templates',
+        'templates/providers',
+        'templates/chat',
+        'templates/agents',
+        'prompts',
+        'chat-templates'  // For ChatTemplateRegistry user templates
+      ];
+
+      for (const subdir of requiredDirectories) {
+        const dirUri = vscode.Uri.joinPath(vesperaDir, subdir);
+        await this.ensureDirectoryExists(dirUri);
+      }
+
+      this.logger?.info('Directory structure ensured', {
+        vesperaDir: vesperaDir.fsPath,
+        directoriesCreated: requiredDirectories.length
+      });
+    } catch (error) {
+      this.logger?.error('Failed to ensure directory structure', error);
+      throw error;
+    }
+  }
+
+  /**
    * Initialize templates and prompts in organized .vespera directory structure
    */
   public async initializeTemplates(workspaceUri: vscode.Uri): Promise<void> {
     try {
       const vesperaDir = vscode.Uri.joinPath(workspaceUri, '.vespera');
 
-      // Ensure base .vespera directory exists
-      await this.ensureDirectoryExists(vesperaDir);
+      // Ensure directory structure exists first
+      await this.ensureDirectoryStructure(workspaceUri);
 
       // Create all templates and prompts with subdirectories
       for (const template of DEFAULT_TEMPLATES) {
