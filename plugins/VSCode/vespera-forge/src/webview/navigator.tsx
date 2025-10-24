@@ -1,11 +1,14 @@
 /**
  * React Navigator Entry Point
- * Renders only the Codex Navigator for the sidebar view
+ * Phase 16b Stage 1 - Added ProjectSelector integration
+ * Renders the Codex Navigator with project switching support
  */
 import React, { useState, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { VSCodeAdapter } from '@/vespera-forge/core/adapters/vscode-adapter';
 import { CodexNavigator } from '@/vespera-forge/components/navigation/CodexNavigator';
+import { ProjectSelector } from '@/vespera-forge/components/project/ProjectSelector';
+import { ProjectProvider } from '@/contexts/ProjectContext';
 import { Codex, Template } from '@/vespera-forge/core/types';
 import '@/app/globals.css';
 
@@ -22,6 +25,11 @@ declare global {
 
 // Create platform adapter once (outside component to avoid re-acquiring VS Code API)
 const adapter = new VSCodeAdapter();
+
+// Get VS Code API for ProjectContext
+const vscodeApi = typeof window !== 'undefined' && window.acquireVsCodeApi
+  ? window.acquireVsCodeApi()
+  : undefined;
 
 /**
  * Navigator App Component
@@ -106,6 +114,17 @@ function NavigatorApp() {
     });
   }, []);
 
+  /**
+   * Handle project creation request
+   * Phase 16b Stage 2 will implement full creation wizard
+   */
+  const handleCreateProject = useCallback(() => {
+    adapter.sendMessage({
+      type: 'project:createWizard',
+      payload: {}
+    });
+  }, []);
+
   // Show "Open Folder" prompt if no workspace
   if (noWorkspace) {
     return (
@@ -129,50 +148,29 @@ function NavigatorApp() {
     );
   }
 
-  // TODO: Phase 16b - Add ProjectSelector component at top of Navigator
-  // This will allow users to switch between projects, with templates filtered by active project
-  //
-  // import { ProjectSelector } from '@/vespera-forge/components/project/ProjectSelector';
-  // import { IProject } from '@/types/project';
-  //
-  // const [projects, setProjects] = useState<IProject[]>([]);
-  // const [activeProject, setActiveProject] = useState<IProject | undefined>();
-  //
-  // <div className="flex flex-col h-full">
-  //   <ProjectSelector
-  //     activeProject={activeProject}
-  //     projects={projects}
-  //     onProjectSelect={(project) => {
-  //       setActiveProject(project);
-  //       adapter.sendMessage({ type: 'project.selected', payload: { projectId: project.id } });
-  //     }}
-  //     onCreateProject={() => {
-  //       adapter.sendMessage({ type: 'project.create' });
-  //     }}
-  //   />
-  //   <div className="flex-1 overflow-hidden">
-  //     <CodexNavigator
-  //       codices={codices}
-  //       templates={templates}
-  //       selectedCodexId={selectedCodexId}
-  //       onCodexSelect={handleCodexSelect}
-  //       onCodexCreate={handleCodexCreate}
-  //       onCodexDelete={handleCodexDelete}
-  //       onCodexUpdate={handleCodexUpdate}
-  //     />
-  //   </div>
-  // </div>
-
+  // Phase 16b Stage 1: Navigator with ProjectSelector
   return (
-    <CodexNavigator
-      codices={codices}
-      templates={templates}
-      selectedCodexId={selectedCodexId}
-      onCodexSelect={handleCodexSelect}
-      onCodexCreate={handleCodexCreate}
-      onCodexDelete={handleCodexDelete}
-      onCodexUpdate={handleCodexUpdate}
-    />
+    <div className="flex flex-col h-full">
+      {/* Project Selector - allows switching between projects */}
+      <div className="flex-shrink-0 border-b border-border p-2">
+        <ProjectSelector
+          onCreateProject={handleCreateProject}
+        />
+      </div>
+
+      {/* Codex Navigator - main content area */}
+      <div className="flex-1 overflow-hidden">
+        <CodexNavigator
+          codices={codices}
+          templates={templates}
+          selectedCodexId={selectedCodexId}
+          onCodexSelect={handleCodexSelect}
+          onCodexCreate={handleCodexCreate}
+          onCodexDelete={handleCodexDelete}
+          onCodexUpdate={handleCodexUpdate}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -190,10 +188,13 @@ function initializeNavigator(): void {
   adapter.applyVSCodeStyling();
 
   // Create React root and render
+  // Phase 16b Stage 1: Wrap in ProjectProvider for project context
   const root = createRoot(rootElement);
   root.render(
     <React.StrictMode>
-      <NavigatorApp />
+      <ProjectProvider vscode={vscodeApi}>
+        <NavigatorApp />
+      </ProjectProvider>
     </React.StrictMode>
   );
 

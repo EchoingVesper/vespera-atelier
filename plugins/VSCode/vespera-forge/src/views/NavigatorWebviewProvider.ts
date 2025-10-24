@@ -1,11 +1,13 @@
 /**
  * Navigator Webview Provider
- * Provides the left sidebar navigator view
+ * Phase 16b Stage 1 - Added ProjectService integration
+ * Provides the left sidebar navigator view with project management
  */
 import * as vscode from 'vscode';
 import { VesperaLogger } from '../core/logging/VesperaLogger';
 import { BinderyService } from '../services/bindery';
-import { BinderyConnectionStatus } from '../types/bindery';
+import { ProjectService } from '../services/ProjectService';
+import { BinderyConnectionStatus, BinderyConnectionInfo } from '../types/bindery';
 import { TemplateInitializer } from '../services/template-initializer';
 
 export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
@@ -15,15 +17,18 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
   private _disposables: vscode.Disposable[] = [];
   private _sessionId: string;
   private _templateInitializer: TemplateInitializer;
+  private _projectService?: ProjectService;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly binderyService: BinderyService,
     private readonly logger?: VesperaLogger,
-    private readonly onCodexSelected?: (codexId: string) => void
+    private readonly onCodexSelected?: (codexId: string) => void,
+    projectService?: ProjectService
   ) {
     this._sessionId = `vespera_navigator_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     this._templateInitializer = new TemplateInitializer(logger);
+    this._projectService = projectService;
   }
 
   public async resolveWebviewView(
@@ -161,6 +166,33 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
         if (message.payload?.command) {
           await vscode.commands.executeCommand(message.payload.command);
         }
+        break;
+
+      // Phase 16b Stage 1: Project management messages
+      case 'project:list':
+        await this.handleProjectList(message.id);
+        break;
+
+      case 'project:get':
+        await this.handleProjectGet(message.id, message.payload);
+        break;
+
+      case 'project:setActive':
+        await this.handleProjectSetActive(message.id, message.payload);
+        break;
+
+      case 'project:create':
+        await this.handleProjectCreate(message.id, message.payload);
+        break;
+
+      case 'project:delete':
+        await this.handleProjectDelete(message.id, message.payload);
+        break;
+
+      case 'project:createWizard':
+        // Phase 16b Stage 2 will implement the creation wizard
+        // For now, just log that it was requested
+        this.logger?.info('Project creation wizard requested (not yet implemented)');
         break;
 
       default:
@@ -456,6 +488,201 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
           id: messageId,
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    }
+  }
+
+  /**
+   * Phase 16b Stage 1: Project message handlers
+   */
+
+  private async handleProjectList(messageId?: string): Promise<void> {
+    if (!this._projectService) {
+      this.logger?.warn('ProjectService not available');
+      if (this._view && messageId) {
+        this._view.webview.postMessage({
+          type: 'project:error',
+          id: messageId,
+          payload: { error: 'Project service not available' }
+        });
+      }
+      return;
+    }
+
+    try {
+      const projects = await this._projectService.listProjects();
+      if (this._view) {
+        this._view.webview.postMessage({
+          type: 'project:list:response',
+          id: messageId,
+          payload: { projects }
+        });
+      }
+    } catch (error) {
+      this.logger?.error('Error listing projects', error);
+      if (this._view && messageId) {
+        this._view.webview.postMessage({
+          type: 'project:error',
+          id: messageId,
+          payload: { error: error instanceof Error ? error.message : 'Failed to list projects' }
+        });
+      }
+    }
+  }
+
+  private async handleProjectGet(messageId: string, payload: any): Promise<void> {
+    if (!this._projectService) {
+      if (this._view) {
+        this._view.webview.postMessage({
+          type: 'project:error',
+          id: messageId,
+          payload: { error: 'Project service not available' }
+        });
+      }
+      return;
+    }
+
+    try {
+      const project = await this._projectService.getProject(payload.projectId);
+      if (this._view) {
+        this._view.webview.postMessage({
+          type: 'project:get:response',
+          id: messageId,
+          payload: { project: project || null }
+        });
+      }
+    } catch (error) {
+      this.logger?.error('Error getting project', error);
+      if (this._view) {
+        this._view.webview.postMessage({
+          type: 'project:error',
+          id: messageId,
+          payload: { error: error instanceof Error ? error.message : 'Failed to get project' }
+        });
+      }
+    }
+  }
+
+  private async handleProjectSetActive(messageId: string, payload: any): Promise<void> {
+    if (!this._projectService) {
+      if (this._view) {
+        this._view.webview.postMessage({
+          type: 'project:error',
+          id: messageId,
+          payload: { error: 'Project service not available' }
+        });
+      }
+      return;
+    }
+
+    try {
+      const projectId = payload.projectId;
+      if (projectId) {
+        await this._projectService.setActiveProject(projectId);
+        const project = await this._projectService.getProject(projectId);
+        // Notify webview of active project change
+        if (this._view) {
+          this._view.webview.postMessage({
+            type: 'project:activeChanged',
+            payload: { project }
+          });
+        }
+      } else {
+        // Clear active project
+        this._projectService.clearActiveProject();
+        if (this._view) {
+          this._view.webview.postMessage({
+            type: 'project:activeChanged',
+            payload: { project: null }
+          });
+        }
+      }
+    } catch (error) {
+      this.logger?.error('Error setting active project', error);
+      if (this._view) {
+        this._view.webview.postMessage({
+          type: 'project:error',
+          id: messageId,
+          payload: { error: error instanceof Error ? error.message : 'Failed to set active project' }
+        });
+      }
+    }
+  }
+
+  private async handleProjectCreate(messageId: string, payload: any): Promise<void> {
+    if (!this._projectService) {
+      if (this._view) {
+        this._view.webview.postMessage({
+          type: 'project:error',
+          id: messageId,
+          payload: { error: 'Project service not available' }
+        });
+      }
+      return;
+    }
+
+    try {
+      const project = await this._projectService.createProject(payload);
+      if (this._view) {
+        this._view.webview.postMessage({
+          type: 'project:created',
+          id: messageId,
+          payload: { project }
+        });
+
+        // Notify that projects list changed
+        this._view.webview.postMessage({
+          type: 'project:projectsChanged',
+          payload: {}
+        });
+      }
+    } catch (error) {
+      this.logger?.error('Error creating project', error);
+      if (this._view) {
+        this._view.webview.postMessage({
+          type: 'project:error',
+          id: messageId,
+          payload: { error: error instanceof Error ? error.message : 'Failed to create project' }
+        });
+      }
+    }
+  }
+
+  private async handleProjectDelete(messageId: string, payload: any): Promise<void> {
+    if (!this._projectService) {
+      if (this._view) {
+        this._view.webview.postMessage({
+          type: 'project:error',
+          id: messageId,
+          payload: { error: 'Project service not available' }
+        });
+      }
+      return;
+    }
+
+    try {
+      const success = await this._projectService.deleteProject(payload.projectId);
+      if (this._view) {
+        this._view.webview.postMessage({
+          type: 'project:deleted',
+          id: messageId,
+          payload: { success }
+        });
+
+        // Notify that projects list changed
+        this._view.webview.postMessage({
+          type: 'project:projectsChanged',
+          payload: {}
+        });
+      }
+    } catch (error) {
+      this.logger?.error('Error deleting project', error);
+      if (this._view) {
+        this._view.webview.postMessage({
+          type: 'project:error',
+          id: messageId,
+          payload: { error: error instanceof Error ? error.message : 'Failed to delete project' }
         });
       }
     }
