@@ -327,7 +327,8 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
                 template_id: data.template_id,
                 created_at: data.created_at,
                 updated_at: data.updated_at,
-                projectId: data.project_id || data.metadata?.projectId,
+                // Phase 16b Stage 3: Check all possible locations for project_id
+                projectId: data.project_id || data.metadata?.project_id || data.metadata?.projectId,
                 status: data.metadata?.status,
                 priority: data.metadata?.priority,
                 assignedTo: data.metadata?.assignedTo
@@ -403,11 +404,18 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
         }
       }
 
-      this.logger?.info('Creating codex', { title, templateId: payload.templateId });
+      // Phase 16b Stage 3: Pass projectId to Bindery when creating codex
+      const projectId = payload.projectId;
+      this.logger?.info('Creating codex', {
+        title,
+        templateId: payload.templateId,
+        projectId
+      });
 
       const result = await this.binderyService.createCodex(
         title,
-        payload.templateId || 'default'
+        payload.templateId || 'default',
+        projectId  // Pass project ID to Bindery
       );
 
       if (this._view) {

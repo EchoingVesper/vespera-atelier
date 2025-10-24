@@ -134,11 +134,15 @@ function NavigatorApp() {
   }, []);
 
   const handleCodexCreate = useCallback(async (templateId: string) => {
+    // Phase 16b Stage 3: Include active project ID when creating codex
     adapter.sendMessage({
       type: 'codex.create',
-      payload: { templateId }
+      payload: {
+        templateId,
+        projectId: activeProject?.id  // Pass active project ID to backend
+      }
     });
-  }, [adapter]);
+  }, [adapter, activeProject]);
 
   const handleCodexDelete = useCallback(async (codexId: string) => {
     adapter.sendMessage({
