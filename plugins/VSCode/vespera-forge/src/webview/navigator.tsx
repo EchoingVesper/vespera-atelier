@@ -60,14 +60,12 @@ function NavigatorApp() {
     // Handle both camelCase (projectId) and snake_case (project_id) from backend
     const filtered = codices.filter(codex => {
       const codexProjectId = codex.metadata.projectId || (codex.metadata as any).project_id;
-      console.log('[Navigator] Checking codex:', {
-        name: codex.name,
-        id: codex.id,
-        metadata: codex.metadata,
-        codexProjectId,
-        activeProjectId: activeProject.id,
-        matches: codexProjectId === activeProject.id
-      });
+      console.log('[Navigator] Checking codex:', codex.name);
+      console.log('[Navigator]   ID:', codex.id);
+      console.log('[Navigator]   Metadata (stringified):', JSON.stringify(codex.metadata, null, 2));
+      console.log('[Navigator]   codexProjectId:', codexProjectId);
+      console.log('[Navigator]   activeProjectId:', activeProject.id);
+      console.log('[Navigator]   MATCHES:', codexProjectId === activeProject.id);
       return codexProjectId === activeProject.id;
     });
 
