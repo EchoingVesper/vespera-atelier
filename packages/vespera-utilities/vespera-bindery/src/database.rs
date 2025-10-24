@@ -1865,18 +1865,29 @@ impl Database {
         let now = Utc::now().to_rfc3339();
         let metadata_str = serde_json::to_string(metadata)?;
 
+        // Extract project_id from metadata for the separate column
+        let project_id = metadata.get("project_id")
+            .and_then(|v| v.as_str());
+
+        // Content defaults to empty JSON object
+        let content = serde_json::json!({"fields": {}});
+        let content_str = serde_json::to_string(&content)?;
+
         sqlx::query(
             r#"
-            INSERT INTO codices (id, title, template_id, metadata, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO codices (id, title, template_id, content, metadata, version, created_at, updated_at, project_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             "#,
         )
         .bind(id)
         .bind(title)
         .bind(template_id)
+        .bind(&content_str)
         .bind(&metadata_str)
+        .bind(1) // version
         .bind(&now)
         .bind(&now)
+        .bind(project_id)
         .execute(&self.pool)
         .await
         .map_err(|e| anyhow::anyhow!("Failed to create codex: {}", e))?;
