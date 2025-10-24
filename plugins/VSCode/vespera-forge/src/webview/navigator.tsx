@@ -50,7 +50,11 @@ function NavigatorApp() {
       // No active project - show no codices
       return [];
     }
-    return codices.filter(codex => codex.metadata.projectId === activeProject.id);
+    // Handle both camelCase (projectId) and snake_case (project_id) from backend
+    return codices.filter(codex => {
+      const codexProjectId = codex.metadata.projectId || (codex.metadata as any).project_id;
+      return codexProjectId === activeProject.id;
+    });
   }, [codices, activeProject]);
 
   // Listen for messages from the extension

@@ -81,9 +81,21 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({
       const success = await deleteProject(project.id);
       if (success) {
         console.log('[ProjectSelector] Project deleted:', project.name);
-        // If we deleted the active project, clear active project
+
+        // If we deleted the active project, switch to another project
         if (activeProject?.id === project.id) {
-          await setActiveProject(null);
+          // Find another project to switch to (excluding the deleted one)
+          const remainingProjects = projects.filter(p => p.id !== project.id);
+
+          if (remainingProjects.length > 0) {
+            // Auto-switch to the first remaining project
+            console.log('[ProjectSelector] Auto-switching to:', remainingProjects[0].name);
+            await setActiveProject(remainingProjects[0] as IProject);
+          } else {
+            // No projects left, clear active project (shows WelcomeScreen)
+            console.log('[ProjectSelector] No projects remaining, showing WelcomeScreen');
+            await setActiveProject(null);
+          }
         }
       }
     } catch (err) {
