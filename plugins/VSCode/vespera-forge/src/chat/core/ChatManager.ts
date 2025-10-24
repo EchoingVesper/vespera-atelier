@@ -5,10 +5,15 @@ import * as vscode from 'vscode';
 import { ChatTemplateRegistry } from './TemplateRegistry';
 import { ChatConfigurationManager } from './ConfigurationManager';
 import { ChatEventRouter } from '../events/ChatEventRouter';
-import { ProviderFactory } from '../providers/ProviderFactory';
-import { ChatProvider } from '../providers/BaseProvider';
+// Legacy provider imports - removed in Phase 14c
+// import { ProviderFactory } from '../providers/ProviderFactory';
+// import { ChatProvider } from '../providers/BaseProvider';
 import { ChatMessage, ChatResponse, ChatThread, ChatChunk } from '../types/chat';
 import { ProviderTemplate } from '../types/provider';
+
+// Temporary stub types for removed providers
+type ChatProvider = any;
+type ProviderFactory = any;
 
 export interface StreamingCallback {
   onStart?: () => void;

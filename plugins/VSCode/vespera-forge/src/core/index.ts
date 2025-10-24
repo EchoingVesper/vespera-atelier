@@ -50,6 +50,7 @@ export interface VesperaCoreStats {
  */
 export class VesperaCoreServices implements vscode.Disposable {
   private static instance: VesperaCoreServices;
+  private static isShuttingDown = false;
   private services!: {
     logger: VesperaLogger;
     errorHandler: VesperaErrorHandler;
@@ -220,18 +221,46 @@ export class VesperaCoreServices implements vscode.Disposable {
 
     // Setup process-level error handlers
     const handleUncaughtException = (error: Error) => {
-      logger.fatal('Uncaught exception detected', error);
-      errorHandler.handleError(error).catch(handlerError => {
-        console.error('Error handler itself failed:', handlerError);
-      });
+      // Silently ignore errors during shutdown - IPC channel may be closed
+      if (VesperaCoreServices.isShuttingDown) {
+        return;
+      }
+
+      try {
+        logger.fatal('Uncaught exception detected', error);
+        errorHandler.handleError(error).catch(handlerError => {
+          if (!VesperaCoreServices.isShuttingDown) {
+            console.error('Error handler itself failed:', handlerError);
+          }
+        });
+      } catch (err) {
+        // Ignore errors if channel is closed
+        if (!VesperaCoreServices.isShuttingDown) {
+          console.error('Failed to handle uncaught exception:', err);
+        }
+      }
     };
 
     const handleUnhandledRejection = (reason: any) => {
-      logger.error('Unhandled promise rejection detected', reason);
-      const error = reason instanceof Error ? reason : new Error(String(reason));
-      errorHandler.handleError(error).catch(handlerError => {
-        console.error('Error handler itself failed:', handlerError);
-      });
+      // Silently ignore errors during shutdown - IPC channel may be closed
+      if (VesperaCoreServices.isShuttingDown) {
+        return;
+      }
+
+      try {
+        logger.error('Unhandled promise rejection detected', reason);
+        const error = reason instanceof Error ? reason : new Error(String(reason));
+        errorHandler.handleError(error).catch(handlerError => {
+          if (!VesperaCoreServices.isShuttingDown) {
+            console.error('Error handler itself failed:', handlerError);
+          }
+        });
+      } catch (err) {
+        // Ignore errors if channel is closed
+        if (!VesperaCoreServices.isShuttingDown) {
+          console.error('Failed to handle unhandled rejection:', err);
+        }
+      }
     };
 
     process.on('uncaughtException', handleUncaughtException);
@@ -356,16 +385,30 @@ export class VesperaCoreServices implements vscode.Disposable {
       return;
     }
 
+    // Set shutdown flag FIRST to prevent error handlers from trying to use VS Code APIs
+    VesperaCoreServices.isShuttingDown = true;
+
     const { logger } = this.services;
-    logger.info('VesperaCoreServices shutdown initiated');
+
+    try {
+      logger.info('VesperaCoreServices shutdown initiated');
+    } catch (err) {
+      // Logger may fail if channel is already closed, that's okay
+    }
 
     try {
       // Dispose master disposal manager (which will dispose all registered services)
       await this.masterDisposalManager.dispose();
-      
+
       this.initialized = false;
-      logger.info('VesperaCoreServices shutdown completed');
+
+      try {
+        logger.info('VesperaCoreServices shutdown completed');
+      } catch (err) {
+        // Logger may fail if channel is already closed, that's okay
+      }
     } catch (error) {
+      // Don't try to log during shutdown - channel may be closed
       console.error('[Vespera Core] Error during shutdown:', error);
       throw error;
     }

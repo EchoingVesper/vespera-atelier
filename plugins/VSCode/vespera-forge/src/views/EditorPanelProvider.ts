@@ -87,8 +87,71 @@ export class EditorPanelProvider {
     return EditorPanelProvider.currentPanel;
   }
 
+  /**
+   * Wait for Bindery to be connected, with timeout
+   */
+  private async waitForConnection(timeoutMs: number = 5000): Promise<boolean> {
+    // Already connected?
+    if (this.binderyService.isConnected()) {
+      return true;
+    }
+
+    // Get current status
+    const connectionInfo = this.binderyService.getConnectionInfo();
+    this.logger?.debug('Editor: Current connection status', { status: connectionInfo.status });
+
+    // If disconnected, try to initialize
+    if (connectionInfo.status === 'disconnected') {
+      this.logger?.info('Editor: Bindery disconnected, attempting to initialize...');
+      const initResult = await this.binderyService.initialize();
+      if (!initResult.success) {
+        this.logger?.error('Editor: Failed to initialize Bindery', initResult.error);
+        return false;
+      }
+    }
+
+    // Wait for status to become 'connected' or timeout
+    return new Promise<boolean>((resolve) => {
+      const timeoutHandle = setTimeout(() => {
+        this.binderyService.removeListener('statusChanged', statusListener);
+        this.logger?.warn('Editor: Timeout waiting for Bindery connection');
+        resolve(false);
+      }, timeoutMs);
+
+      const statusListener = (info: any) => {
+        this.logger?.debug('Editor: Connection status changed', { status: info.status });
+        if (info.status === 'connected') {
+          clearTimeout(timeoutHandle);
+          this.binderyService.removeListener('statusChanged', statusListener);
+          resolve(true);
+        } else if (info.status === 'error' || info.status === 'no_workspace') {
+          clearTimeout(timeoutHandle);
+          this.binderyService.removeListener('statusChanged', statusListener);
+          resolve(false);
+        }
+      };
+
+      this.binderyService.on('statusChanged', statusListener);
+
+      // Double-check connection status in case it changed before we added the listener
+      if (this.binderyService.isConnected()) {
+        clearTimeout(timeoutHandle);
+        this.binderyService.removeListener('statusChanged', statusListener);
+        resolve(true);
+      }
+    });
+  }
+
   public async setActiveCodex(codexId: string): Promise<void> {
     this._activeCodexId = codexId;
+
+    // Wait for Bindery connection to be ready
+    const connected = await this.waitForConnection(5000);
+    if (!connected) {
+      this.logger?.error('Editor: Could not establish Bindery connection for loading Codex');
+      vscode.window.showErrorMessage('Could not connect to Bindery service. Please try again.');
+      return;
+    }
 
     // Fetch the actual codex data from Bindery
     try {
@@ -354,7 +417,12 @@ export class EditorPanelProvider {
   }
 
   public dispose(): void {
+    this.logger?.info('Disposing Editor panel');
     EditorPanelProvider.currentPanel = undefined;
+
+    // Remove all event listeners from Bindery service to prevent memory leaks
+    this.binderyService.removeAllListeners('statusChanged');
+    this.logger?.debug('Removed all statusChanged listeners from Bindery');
 
     this._panel.dispose();
 

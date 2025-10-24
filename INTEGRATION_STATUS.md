@@ -16,7 +16,7 @@
 - 4 System prompts: default-assistant, orchestrator-agent, code-writer, docs-writer
 - Templates in `.vespera/templates/` and `.vespera/prompts/` (temporary location)
 
-**Phase 14c In Progress** 🚧 (Extension Cleanup):
+**Phase 14c Complete** ✅ (Extension Cleanup):
 
 **Part 1 Complete** ✅ - Provider Removal (Commit: `6299161`):
 - **Deleted 9 files, ~2,945 lines** of legacy provider code
@@ -30,12 +30,27 @@
 - Fixed Object logging: Commented out 3 noisy object logs
 - See BINDERY_STDOUT_FIX.md for technical details
 
-**Part 2 Next** ⏳:
-- Create ChatChannelListProvider tree view (Slack/Discord-style)
-- Add vault commands: configureProviderKey, checkClaudeCodeAuth
-- Wire AI Assistant to Bindery backend
+**Part 2 Complete** ✅ - Chat Channel List & Template Migration (Commits: `8ea61ee`, `642154d`, `f573dd2`, `6c90a41`, `1fd87ff`, `7645c14`):
+- **Template Import Fix** (Commit: `8ea61ee`):
+  - Fixed "LLM_PROVIDER_TEMPLATE is not defined" error
+  - Changed from re-export to import-then-export pattern in `src/services/templates/index.ts`
+- **View Auto-Opening Settings** (Commit: `642154d`):
+  - Added `vesperaForge.views.autoOpenNavigator` setting (default: false)
+  - Added `vesperaForge.views.autoOpenAIAssistant` setting (default: false)
+  - Implemented settings logic in `src/views/index.ts`
+- **Removed When Clauses** (Commit: `f573dd2`):
+  - Removed `when: "vespera-forge:enabled"` from all views to fix AI Assistant loading
+  - AI Assistant now loads content immediately when sidebar opens
+- **Welcome View Addition** (Commit: `6c90a41`):
+  - Created `WelcomeViewProvider.ts` with helpful getting started content
+  - Added as first view in container to enable Navigator state persistence
+  - Fixed TypeScript errors (override modifier, dispose method)
+- **Chat Channel Auto-Loading** (Commits: `1fd87ff`, `7645c14`):
+  - Removed premature auto-loading from ChatChannelListProvider constructor
+  - Added visibility event handler to load channels when view opens
+  - Channels now auto-load without manual refresh
 
-**Next**: Continue Phase 14c Part 2 or compact context
+**Next**: Phase 14d - Testing & Backend Integration
 
 ## 🎉 Phase 13 AI Assistant Chat Fix Complete!
 

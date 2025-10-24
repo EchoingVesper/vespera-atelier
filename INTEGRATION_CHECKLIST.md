@@ -663,3 +663,85 @@ Integration is complete when:
 
 **Next Phase**: User testing and validation of chat functionality
 
+---
+
+### Phase 14: Codex-Based AI Chat Architecture 🚧 IN PROGRESS (2025-10-23)
+
+#### Phase 14a: Rust LLM Provider Module ✅ COMPLETE
+- [x] **Implement core type system**
+  - [x] ChatMessage, ChatRequest, ChatResponse types
+  - [x] Streaming infrastructure with ChatChunk
+  - [x] Provider trait with async methods
+- [x] **Implement Claude Code CLI provider** (PRIORITY)
+  - [x] CLI process spawning
+  - [x] Streaming output parsing
+  - [x] Auth checking
+  - [x] Tool whitelisting
+- [x] **Implement Ollama provider** (PRIORITY)
+  - [x] REST API integration
+  - [x] Streaming and non-streaming modes
+  - [x] Local LLM execution
+- [x] **Implement Secret Vault**
+  - [x] API key storage with vault references
+  - [x] Base64 encoding
+  - [x] File permissions (0o600)
+- [x] **Build verification**
+  - [x] Cargo compiles successfully
+
+#### Phase 14b: Codex Templates ✅ COMPLETE
+- [x] **Create LLM provider template**
+  - [x] llm-provider.json5 with conditional fields
+  - [x] Supports: claude-code, ollama, anthropic, openai
+- [x] **Create AI chat template**
+  - [x] ai-chat.json5 with message structure
+  - [x] Automation hooks for LLM interactions
+  - [x] Activity tracking and auto-archive
+- [x] **Create agent task templates**
+  - [x] task-orchestrator.json5 for meta-agents
+  - [x] task-code-writer.json5 for code specialists
+- [x] **Create system prompts**
+  - [x] default-assistant.md
+  - [x] orchestrator-agent.md
+  - [x] code-writer-specialist.md
+  - [x] docs-writer-specialist.md
+
+#### Phase 14c: Extension Cleanup ✅ COMPLETE
+- [x] **Part 1: Provider Removal** (Commit: `6299161`)
+  - [x] Delete 9 legacy provider files (~2,945 lines)
+  - [x] Deprecate VesperaChatSystem provider methods
+  - [x] Add migration notices
+- [x] **Part 1.5: Console Spam Fix** (Commit: `2c37db5`)
+  - [x] Filter Bindery stdout non-JSON-RPC messages
+  - [x] Remove object logging spam
+  - [x] 82% console log reduction
+- [x] **Part 2: Template Migration & View Fixes** (Commits: `8ea61ee`, `642154d`, `f573dd2`, `6c90a41`, `1fd87ff`, `7645c14`)
+  - [x] Fix template import error (LLM_PROVIDER_TEMPLATE not defined)
+  - [x] Add view auto-opening settings
+  - [x] Remove when clauses to fix AI Assistant loading
+  - [x] Create Welcome view for Navigator state persistence
+  - [x] Fix chat channel auto-loading with visibility events
+
+#### Phase 14d: Testing & Backend Integration ⏳ PENDING
+- [ ] **Test Claude Code provider**
+  - [ ] Verify CLI spawning
+  - [ ] Test streaming output parsing
+  - [ ] Validate authentication check
+- [ ] **Test Ollama provider**
+  - [ ] Verify REST API connection
+  - [ ] Test streaming vs non-streaming
+  - [ ] Validate local model execution
+- [ ] **Test multi-agent orchestration**
+  - [ ] Orchestrator spawns code-writer
+  - [ ] Code-writer uses local model
+  - [ ] Orchestrator uses Claude 4.5
+- [ ] **Wire AI Assistant to Bindery backend**
+  - [ ] Load/save messages to ai-chat Codex
+  - [ ] LLM provider resolution
+  - [ ] Streaming message display
+- [ ] **Test channel list UI**
+  - [ ] User chats displayed
+  - [ ] Agent tasks shown separately
+  - [ ] Activity indicators update
+
+**Next**: Begin Phase 14d testing
+

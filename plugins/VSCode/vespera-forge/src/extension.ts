@@ -22,6 +22,9 @@ import { SecurityIntegrationManager } from './security-integration';
 let coreServices: Awaited<ReturnType<typeof VesperaCoreServices.initialize>> | undefined;
 let securityIntegration: SecurityIntegrationManager | undefined;
 
+// Global shutdown flag to prevent VS Code API calls after IPC channel closes
+let isExtensionShuttingDown = false;
+
 /**
  * Extension activation function with enhanced memory management
  * Called when extension is first activated
@@ -142,10 +145,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     disposalManager.addHook({
       beforeDispose: async () => {
         logger.info('Starting comprehensive extension cleanup');
-        
-        // Clear VS Code context flags
-        await vscode.commands.executeCommand('setContext', 'vespera-forge:enabled', false);
-        
+
+        // Clear VS Code context flags (only if not shutting down)
+        if (!isExtensionShuttingDown) {
+          try {
+            await vscode.commands.executeCommand('setContext', 'vespera-forge:enabled', false);
+          } catch (err) {
+            // Silently ignore errors during shutdown - IPC channel may be closed
+          }
+        }
+
         // Dispose view context and all providers
         await contextManager.disposeViewContext(context);
       },
@@ -175,9 +184,22 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           await vscode.commands.executeCommand('vespera-forge.initialize');
           logger.info('Auto-initialization completed successfully');
         } catch (error) {
+          // Silently ignore errors during shutdown - IPC channel may be closed
+          if (isExtensionShuttingDown) {
+            return;
+          }
+
           const errorToHandle = error instanceof Error ? error : new Error(String(error));
           logger.error('Auto-initialization failed', errorToHandle);
-          await errorHandler.handleError(errorToHandle);
+
+          try {
+            await errorHandler.handleError(errorToHandle);
+          } catch (handlerError) {
+            // Error handler may fail if channel is closed during shutdown
+            if (!isExtensionShuttingDown) {
+              console.error('Failed to handle auto-initialization error:', handlerError);
+            }
+          }
         }
       });
     } else {
@@ -216,13 +238,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
  * Called when extension is deactivated
  */
 export async function deactivate(): Promise<void> {
+  // Set shutdown flag FIRST to prevent error handlers from trying to use VS Code APIs
+  isExtensionShuttingDown = true;
+
   if (!coreServices) {
     console.log('[Vespera] Extension already deactivated or never fully activated');
     return;
   }
 
   const { logger, contextManager, disposalManager, errorHandler } = coreServices;
-  
+
   try {
     logger.info('Starting Vespera Forge extension deactivation with enhanced cleanup');
     
@@ -244,7 +269,15 @@ export async function deactivate(): Promise<void> {
     } catch (binderyError) {
       const errorToHandle = binderyError instanceof Error ? binderyError : new Error(String(binderyError));
       logger.error('Error disposing Bindery service', errorToHandle);
-      await errorHandler.handleError(errorToHandle);
+
+      // Only try to handle error if not shutting down (error handler may use VS Code APIs)
+      if (!isExtensionShuttingDown) {
+        try {
+          await errorHandler.handleError(errorToHandle);
+        } catch (handlerError) {
+          console.error('Failed to handle Bindery disposal error:', handlerError);
+        }
+      }
     }
     
     // Perform comprehensive cleanup via disposal manager

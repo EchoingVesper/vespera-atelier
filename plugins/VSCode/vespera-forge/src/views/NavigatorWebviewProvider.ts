@@ -168,6 +168,61 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
     }
   }
 
+  /**
+   * Wait for Bindery to be connected, with timeout
+   */
+  private async waitForConnection(timeoutMs: number = 5000): Promise<boolean> {
+    // Already connected?
+    if (this.binderyService.isConnected()) {
+      return true;
+    }
+
+    // Get current status
+    const connectionInfo = this.binderyService.getConnectionInfo();
+    this.logger?.debug('Current connection status', { status: connectionInfo.status });
+
+    // If disconnected, try to initialize
+    if (connectionInfo.status === BinderyConnectionStatus.Disconnected) {
+      this.logger?.info('Bindery disconnected, attempting to initialize...');
+      const initResult = await this.binderyService.initialize();
+      if (!initResult.success) {
+        this.logger?.error('Failed to initialize Bindery', initResult.error);
+        return false;
+      }
+    }
+
+    // Wait for status to become 'connected' or timeout
+    return new Promise<boolean>((resolve) => {
+      const timeoutHandle = setTimeout(() => {
+        this.binderyService.removeListener('statusChanged', statusListener);
+        this.logger?.warn('Timeout waiting for Bindery connection');
+        resolve(false);
+      }, timeoutMs);
+
+      const statusListener = (info: BinderyConnectionInfo) => {
+        this.logger?.debug('Connection status changed', { status: info.status });
+        if (info.status === BinderyConnectionStatus.Connected) {
+          clearTimeout(timeoutHandle);
+          this.binderyService.removeListener('statusChanged', statusListener);
+          resolve(true);
+        } else if (info.status === BinderyConnectionStatus.Error || info.status === BinderyConnectionStatus.NoWorkspace) {
+          clearTimeout(timeoutHandle);
+          this.binderyService.removeListener('statusChanged', statusListener);
+          resolve(false);
+        }
+      };
+
+      this.binderyService.on('statusChanged', statusListener);
+
+      // Double-check connection status in case it changed before we added the listener
+      if (this.binderyService.isConnected()) {
+        clearTimeout(timeoutHandle);
+        this.binderyService.removeListener('statusChanged', statusListener);
+        resolve(true);
+      }
+    });
+  }
+
   public async sendInitialState(): Promise<void> {
     if (!this._view) return;
 
@@ -186,26 +241,10 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
         return;
       }
 
-      // Check if Bindery is connected
-      if (!this.binderyService.isConnected()) {
-        this.logger?.warn('Bindery not connected, attempting to initialize...');
-        const initResult = await this.binderyService.initialize();
-        if (!initResult.success) {
-          this.logger?.error('Failed to initialize Bindery', initResult.error);
-          // Send empty state
-          this._view.webview.postMessage({
-            type: 'initialState',
-            payload: { codices: [], templates: [] }
-          });
-          return;
-        }
-        // Wait a bit for connection to fully establish after initialization
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-
-      // Verify connection is ready before making requests
-      if (!this.binderyService.isConnected()) {
-        this.logger?.warn('Connection not ready yet, sending empty state');
+      // Wait for connection to be ready (with 5 second timeout)
+      const connected = await this.waitForConnection(5000);
+      if (!connected) {
+        this.logger?.warn('Could not establish Bindery connection, sending empty state');
         this._view.webview.postMessage({
           type: 'initialState',
           payload: { codices: [], templates: [] }
@@ -434,6 +473,12 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
   }
 
   public dispose(): void {
+    this.logger?.info('Disposing Navigator view');
+
+    // Remove all event listeners from Bindery service to prevent memory leaks
+    this.binderyService.removeAllListeners('statusChanged');
+    this.logger?.debug('Removed all statusChanged listeners from Bindery');
+
     while (this._disposables.length) {
       const disposable = this._disposables.pop();
       if (disposable) {

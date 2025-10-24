@@ -246,13 +246,9 @@
       ],
       "vespera-forge-assistant": [
         {
-          "id": "vesperaForge.chatChannelList",
-          "name": "Chat Channels"
-        },
-        {
           "id": "vespera-forge.aiAssistant",
           "type": "webview",
-          "name": "AI Chat"
+          "name": "AI Assistant"
         }
       ]
     },
@@ -276,16 +272,6 @@
           "command": "vespera-forge.refreshTaskTree",
           "when": "view == vesperaForgeTaskTree",
           "group": "navigation"
-        },
-        {
-          "command": "vespera-forge.createChatChannel",
-          "when": "view == vesperaForge.chatChannelList",
-          "group": "navigation"
-        },
-        {
-          "command": "vespera-forge.refreshChatChannels",
-          "when": "view == vesperaForge.chatChannelList",
-          "group": "navigation"
         }
       ],
       "view/item/context": [
@@ -303,11 +289,6 @@
           "command": "vespera-forge.deleteTask",
           "when": "view == vesperaForgeTaskTree && viewItem =~ /task/",
           "group": "2_destructive"
-        },
-        {
-          "command": "vespera-forge.archiveChatChannel",
-          "when": "view == vesperaForge.chatChannelList && viewItem == channel",
-          "group": "1_actions"
         }
       ]
     },

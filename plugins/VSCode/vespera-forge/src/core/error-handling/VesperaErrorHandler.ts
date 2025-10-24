@@ -31,11 +31,12 @@ export interface RetryMetadata {
  */
 export class VesperaErrorHandler implements vscode.Disposable, EnhancedDisposable {
   private static instance: VesperaErrorHandler;
+  private static isShuttingDown = false;
   private logger: VesperaLogger;
   private telemetryService: VesperaTelemetryService;
   private disposables: vscode.Disposable[] = [];
   private _isDisposed = false;
-  
+
   private strategies = new Map<VesperaErrorCode, ErrorHandlingStrategy>();
 
   private constructor(
@@ -227,20 +228,46 @@ export class VesperaErrorHandler implements vscode.Disposable, EnhancedDisposabl
    * Handle an error according to its configured strategy
    */
   public async handleError(error: Error | VesperaError): Promise<RetryMetadata | void> {
+    // Silently ignore errors during shutdown - IPC channel may be closed
+    if (VesperaErrorHandler.isShuttingDown) {
+      return;
+    }
+
     const vesperaError = this.normalizeError(error);
     const strategy = this.getStrategy(vesperaError.code);
 
-    // Always log errors
+    // Always log errors (but catch errors during shutdown)
     if (strategy.shouldLog) {
-      await this.logger.error(`${vesperaError.category}:${vesperaError.code}`, vesperaError, vesperaError.metadata);
+      try {
+        await this.logger.error(`${vesperaError.category}:${vesperaError.code}`, vesperaError, vesperaError.metadata);
+      } catch (err) {
+        // Logger may fail if channel is closed during shutdown
+        if (!VesperaErrorHandler.isShuttingDown) {
+          console.error('Failed to log error:', err);
+        }
+      }
     }
 
-    // Send telemetry for error tracking
-    this.telemetryService.trackError(vesperaError);
+    // Send telemetry for error tracking (but catch errors during shutdown)
+    try {
+      this.telemetryService.trackError(vesperaError);
+    } catch (err) {
+      // Telemetry may fail if channel is closed during shutdown
+      if (!VesperaErrorHandler.isShuttingDown) {
+        console.error('Failed to track error telemetry:', err);
+      }
+    }
 
-    // Notify user if necessary
+    // Notify user if necessary (but catch errors during shutdown)
     if (strategy.shouldNotifyUser) {
-      await this.notifyUser(vesperaError);
+      try {
+        await this.notifyUser(vesperaError);
+      } catch (err) {
+        // User notification may fail if channel is closed during shutdown
+        if (!VesperaErrorHandler.isShuttingDown) {
+          console.error('Failed to notify user of error:', err);
+        }
+      }
     }
 
     // Return retry metadata if configured and error is retryable
@@ -340,26 +367,50 @@ export class VesperaErrorHandler implements vscode.Disposable, EnhancedDisposabl
   private setupGlobalErrorHandling(): void {
     // Handle unhandled promise rejections
     const _unhandledRejectionHandler = (reason: any, _promise?: Promise<any>) => {
-      this.handleError(new VesperaError(
-        `Unhandled promise rejection: ${reason}`,
-        VesperaErrorCode.UNKNOWN_ERROR,
-        VesperaSeverity.HIGH,
-        { context: { reason: String(reason) } }
-      ));
+      // Silently ignore during shutdown - IPC channel may be closed
+      if (VesperaErrorHandler.isShuttingDown) {
+        return;
+      }
+
+      try {
+        this.handleError(new VesperaError(
+          `Unhandled promise rejection: ${reason}`,
+          VesperaErrorCode.UNKNOWN_ERROR,
+          VesperaSeverity.HIGH,
+          { context: { reason: String(reason) } }
+        ));
+      } catch (err) {
+        // Ignore errors if channel is closed
+        if (!VesperaErrorHandler.isShuttingDown) {
+          console.error('Failed to handle unhandled rejection:', err);
+        }
+      }
     };
 
     // Note: In Node.js context, we'd use process.on('unhandledRejection')
     // For VS Code extension context, we rely on proper try-catch blocks
     // But we can still set up some basic global handling
     process.on('uncaughtException', (error) => {
-      this.handleError(new VesperaError(
-        `Uncaught exception: ${error.message}`,
-        VesperaErrorCode.UNKNOWN_ERROR,
-        VesperaSeverity.CRITICAL,
-        { context: { stack: error.stack } },
-        false,
-        error
-      ));
+      // Silently ignore during shutdown - IPC channel may be closed
+      if (VesperaErrorHandler.isShuttingDown) {
+        return;
+      }
+
+      try {
+        this.handleError(new VesperaError(
+          `Uncaught exception: ${error.message}`,
+          VesperaErrorCode.UNKNOWN_ERROR,
+          VesperaSeverity.CRITICAL,
+          { context: { stack: error.stack } },
+          false,
+          error
+        ));
+      } catch (err) {
+        // Ignore errors if channel is closed
+        if (!VesperaErrorHandler.isShuttingDown) {
+          console.error('Failed to handle uncaught exception:', err);
+        }
+      }
     });
 
     // Use the extracted handler function for better code organization
@@ -386,7 +437,10 @@ export class VesperaErrorHandler implements vscode.Disposable, EnhancedDisposabl
 
   public dispose(): void {
     if (this._isDisposed) return;
-    
+
+    // Set shutdown flag to prevent error handlers from trying to use VS Code APIs
+    VesperaErrorHandler.isShuttingDown = true;
+
     this.disposables.forEach(d => d.dispose());
     this.disposables = [];
     this._isDisposed = true;

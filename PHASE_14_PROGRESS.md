@@ -201,9 +201,10 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls", "stream"] }
 - Actual errors and warnings now visible
 - Debugging significantly easier
 
-### Part 2: Chat Channel List UI ✅ COMPLETE
+### Part 2: Chat Channel List UI & Template Migration ✅ COMPLETE
 
-**Git Status**: Ready for commit
+**Status**: All commits pushed to branch
+**Commits**: `8ea61ee`, `642154d`, `f573dd2`, `6c90a41`, `1fd87ff`, `7645c14`, `d115ff0`
 
 **Files Created**:
 1. `src/views/ChatChannelListProvider.ts` (263 lines)
@@ -213,8 +214,34 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls", "stream"] }
    - Loads ai-chat Codices from Bindery
    - CRUD operations: create, delete, archive channels
 
+2. `src/views/WelcomeViewProvider.ts` (130 lines) - **NEW** (Commit: `6c90a41`)
+   - TreeDataProvider with helpful getting started content
+   - Two sections: "Quick Start" and "Documentation"
+   - Enables Navigator state persistence (multi-view container)
+   - Commands: Create Codex, Browse Templates, Open Navigator
+
 **Files Modified**:
-2. `src/commands/index.ts` - Added 7 command handlers:
+
+3. `src/services/templates/index.ts` - **FIXED** (Commit: `8ea61ee`)
+   - **Issue**: "LLM_PROVIDER_TEMPLATE is not defined" runtime error
+   - **Fix**: Changed from re-export to import-then-export pattern
+   - **Impact**: Extension now activates successfully
+
+4. `src/views/index.ts` - View registration & settings:
+   - Registered `ChatChannelListProvider` tree view
+   - Registered `WelcomeViewProvider` tree view (Commit: `6c90a41`)
+   - Exported in `VesperaViewContext`
+   - Global provider storage for commands
+   - **Added settings-based auto-opening logic** (Commit: `642154d`)
+   - Visibility event handler for chat channel loading (Commits: `1fd87ff`, `7645c14`)
+
+5. `src/views/ai-assistant.ts` - Channel switching support:
+   - `switchChannel()` method - Switch between channels
+   - Channel header - Shows active channel name with status
+   - Global provider storage for command access
+   - TODO: Load/save messages to Codex content
+
+6. `src/commands/index.ts` - Added 7 command handlers:
    - `createChatChannelCommand` - Create new chat channel
    - `selectChatChannelCommand` - Switch AI Assistant to channel
    - `deleteChatChannelCommand` - Delete channel with confirmation
@@ -223,26 +250,35 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls", "stream"] }
    - `configureProviderKeyCommand` - Store API keys in vault (stub)
    - `checkClaudeCodeAuthCommand` - Verify `claude login` status (stub)
 
-3. `src/views/ai-assistant.ts` - Channel switching support:
-   - `switchChannel()` method - Switch between channels
-   - Channel header - Shows active channel name with status
-   - Global provider storage for command access
-   - TODO: Load/save messages to Codex content
-
-4. `src/views/index.ts` - View registration:
-   - Registered `ChatChannelListProvider` tree view
-   - Exported in `VesperaViewContext`
-   - Global provider storage for commands
-
-5. `package.json` - UI integration:
+7. `package.json` - UI integration:
    - New view: `vesperaForge.chatChannelList` in assistant sidebar
+   - New view: `vesperaForge.welcomeView` in main sidebar (Commit: `6c90a41`)
    - 8 new commands registered
    - View title menus: + and refresh buttons
    - Context menus: Archive option for channels
+   - **New settings** (Commit: `642154d`):
+     - `vesperaForge.views.autoOpenNavigator` (default: false)
+     - `vesperaForge.views.autoOpenAIAssistant` (default: false)
+   - **Removed when clauses** (Commit: `f573dd2`):
+     - Removed `when: "vespera-forge:enabled"` from all views
+
+8. `src/views/ChatChannelListProvider.ts` - Constructor fix (Commit: `7645c14`)
+   - Removed premature `loadChannels()` call from constructor
+   - Prevents firing change events before tree view creation
+   - Channels now load via visibility event handler
 
 **Bug Fixes**:
-- Fixed `codices.filter is not a function` - Unwrap service result object
-- Fixed `claudeProvider.connect is not a function` - Removed deprecated provider init
+- ✅ Fixed `LLM_PROVIDER_TEMPLATE is not defined` - Import pattern fix (Commit: `8ea61ee`)
+- ✅ Fixed `codices.filter is not a function` - Unwrap service result object
+- ✅ Fixed `claudeProvider.connect is not a function` - Removed deprecated provider init
+- ✅ Fixed AI Assistant empty pane - Removed when clauses (Commit: `f573dd2`)
+- ✅ Fixed chat channels requiring manual refresh - Visibility event (Commits: `1fd87ff`, `7645c14`)
+- ✅ Fixed Navigator auto-opening - Welcome view addition (Commit: `6c90a41`, partial fix)
+
+**Known Issues**:
+- ⚠️ Welcome view stacks atop Navigator (minor visual issue, acceptable)
+- ⚠️ Blank "Vespera Forge" sub-pane in Explorer (pre-existing bug, noted for cleanup)
+- ⚠️ Navigator state persistence inconsistent (acceptable for now per user)
 
 ### Components to Keep
 

@@ -82,6 +82,7 @@ export class BinderyService extends EventEmitter {
   private pendingRequests = new Map<number, PendingRequest>();
   private buffer = '';
   private isConnecting = false;
+  private isShuttingDown = false;
 
   // Security components
   private securityServices: SecurityEnhancedVesperaCoreServices | null = null;
@@ -551,23 +552,45 @@ export class BinderyService extends EventEmitter {
    * Disconnect from Bindery backend
    */
   public async disconnect(): Promise<void> {
+    // Set shutdown flag to prevent new requests
+    this.isShuttingDown = true;
+    this.log('Bindery service shutting down...');
+
     if (this.process) {
-      // Cancel all pending requests
+      // Cancel all pending requests silently (errors during shutdown are expected)
       for (const [_id, request] of this.pendingRequests.entries()) {
         clearTimeout(request.timeout);
-        request.reject({ code: -1, message: 'Connection closed' });
+        try {
+          request.reject({ code: -1, message: 'Service shutting down' });
+        } catch (err) {
+          // Ignore errors during shutdown - channel may already be closed
+        }
       }
       this.pendingRequests.clear();
 
       // Terminate process gracefully
       this.process.kill('SIGTERM');
-      
-      // Force kill after timeout
-      setTimeout(() => {
-        if (this.process && !this.process.killed) {
-          this.process.kill('SIGKILL');
+
+      // Wait for process to exit, with force kill as fallback
+      await new Promise<void>((resolve) => {
+        const killTimer = setTimeout(() => {
+          if (this.process && !this.process.killed) {
+            this.log('Force killing Bindery process after timeout');
+            this.process.kill('SIGKILL');
+          }
+          resolve();
+        }, 3000);
+
+        if (this.process) {
+          this.process.once('exit', () => {
+            clearTimeout(killTimer);
+            resolve();
+          });
+        } else {
+          clearTimeout(killTimer);
+          resolve();
         }
-      }, 3000);
+      });
 
       this.process = null;
     }
@@ -575,8 +598,13 @@ export class BinderyService extends EventEmitter {
     this.connectionInfo = {
       status: BinderyConnectionStatus.Disconnected
     };
-    
-    this.emit('statusChanged', this.connectionInfo);
+
+    try {
+      this.emit('statusChanged', this.connectionInfo);
+    } catch (err) {
+      // Ignore errors during shutdown
+    }
+
     this.log('Bindery connection closed');
   }
 
@@ -1058,10 +1086,24 @@ export class BinderyService extends EventEmitter {
 
       if (sanitizedResponse.error) {
         this.log('Response contains error for request', response.id);
-        request.reject(sanitizedResponse.error);
+        try {
+          request.reject(sanitizedResponse.error);
+        } catch (err) {
+          // Ignore errors during promise rejection (channel may be closed during shutdown)
+          if (!this.isShuttingDown) {
+            this.log('Failed to reject request promise:', err);
+          }
+        }
       } else {
         this.log('Response successful for request', response.id);
-        request.resolve(sanitizedResponse.result);
+        try {
+          request.resolve(sanitizedResponse.result);
+        } catch (err) {
+          // Ignore errors during promise resolution (channel may be closed during shutdown)
+          if (!this.isShuttingDown) {
+            this.log('Failed to resolve request promise:', err);
+          }
+        }
       }
 
     } catch (error) {
@@ -1189,13 +1231,21 @@ export class BinderyService extends EventEmitter {
   }
 
   private async sendRequest<T>(method: string, params?: any): Promise<BinderyResult<T>> {
+    // Reject immediately if shutting down
+    if (this.isShuttingDown) {
+      return {
+        success: false,
+        error: { code: -1, message: 'Service is shutting down' }
+      };
+    }
+
     this.log(`Sending request: ${method}, connected: ${this.isConnected()}, status: ${this.connectionInfo.status}`);
-    
+
     if (!this.isConnected()) {
       this.log(`Request ${method} failed - not connected. Status: ${this.connectionInfo.status}`);
-      return { 
-        success: false, 
-        error: { code: -1, message: 'Not connected to Bindery' } 
+      return {
+        success: false,
+        error: { code: -1, message: 'Not connected to Bindery' }
       };
     }
 

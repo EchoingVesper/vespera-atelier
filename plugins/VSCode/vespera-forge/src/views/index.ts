@@ -39,8 +39,8 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
   // Create welcome view provider
   const welcomeProvider = new WelcomeViewProvider();
 
-  // Create AI assistant provider first
-  const aiAssistantProvider = new AIAssistantWebviewProvider(context.extensionUri, context);
+  // Create AI assistant provider with bindery service
+  const aiAssistantProvider = new AIAssistantWebviewProvider(context.extensionUri, context, binderyService);
 
   // Create chat channel list provider
   const chatChannelProvider = new ChatChannelListProvider(binderyService);
@@ -88,25 +88,9 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
   context.subscriptions.push(aiAssistantDisposable);
   console.log('[Vespera] AI Assistant view provider registered successfully');
 
-  // Register the chat channel list tree view provider
-  console.log('[Vespera] Registering Chat Channel List view provider');
-  const chatChannelTreeView = vscode.window.createTreeView('vesperaForge.chatChannelList', {
-    treeDataProvider: chatChannelProvider,
-    showCollapseAll: true
-  });
-  context.subscriptions.push(chatChannelTreeView);
-  console.log('[Vespera] Chat Channel List view provider registered successfully');
-
-  // Store tree view reference in provider for visibility-based loading
-  (chatChannelProvider as any).treeView = chatChannelTreeView;
-
-  // Set up visibility handler to load channels when view is first shown
-  chatChannelTreeView.onDidChangeVisibility((e) => {
-    if (e.visible) {
-      console.log('[Vespera] Chat channel list became visible - triggering refresh');
-      chatChannelProvider.refresh();
-    }
-  });
+  // Note: Chat channel list is now integrated into the AI Assistant webview
+  // The ChatChannelListProvider is kept for backward compatibility with commands,
+  // but is not registered as a separate view
 
   // Register command to open the editor panel
   const openEditorCommand = vscode.commands.registerCommand(
