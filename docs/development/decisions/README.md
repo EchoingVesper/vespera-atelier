@@ -85,6 +85,13 @@ We use a lightweight ADR format adapted from Michael Nygard's proposal. See [ADR
   - Summary: Standardized phase documentation with slash commands for context handover
   - Impact: Minimizes context loss between sessions, eventually automatable
 
+#### Development Process
+
+- **[ADR-011: Surgical Cleanup Before Architecture](./ADR-011-surgical-cleanup-before-architecture.md)** ✅
+  - Status: Accepted
+  - Summary: Hybrid approach - targeted technical debt cleanup before implementing project-centric architecture
+  - Impact: Clean foundation for critical features, manages scope while reducing mental overhead
+
 ---
 
 ## How to Create an ADR

@@ -13,7 +13,6 @@ import { ProviderTemplate } from '../types/provider';
 
 // Temporary stub types for removed providers
 type ChatProvider = any;
-type ProviderFactory = any;
 
 export interface StreamingCallback {
   onStart?: () => void;
@@ -247,19 +246,19 @@ export class ChatManager {
    */
   async addProvider(template: ProviderTemplate, config: any): Promise<void> {
     try {
-      const provider = ProviderFactory.createProvider(template, config, this.configManager);
-      
-      // Connect the provider
-      await provider.connect();
-      
-      // Store provider
-      this.providers.set(template.template_id, provider);
-      
+      // TODO: Replace with Bindery backend provider management
+      throw new Error('Legacy provider system removed. Use Bindery backend for LLM providers.');
+
+      // Legacy code removed:
+      // const provider = ProviderFactory.createProvider(template, config, this.configManager);
+      // await provider.connect();
+      // this.providers.set(template.template_id, provider);
+
       // Set as active if no active provider
       if (!this.activeProviderId) {
         this.activeProviderId = template.template_id;
       }
-      
+
       // Emit provider connected event
       this.eventRouter.emit({
         type: 'chatProviderConnected',

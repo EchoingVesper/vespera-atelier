@@ -183,14 +183,7 @@ provider.on('configUpdated', (config) => {
 
 ## Testing
 
-Run the test suite to verify the provider is working:
-
-```typescript
-import { runAllTests } from './test-claude-code-provider';
-
-// Run all tests
-await runAllTests();
-```
+The provider can be tested through the chat UI or programmatically by creating instances and calling the public API methods.
 
 ## Troubleshooting
 

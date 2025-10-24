@@ -25,7 +25,7 @@ cd ~/Development/vespera-atelier-worktrees/feat-codex-ui-framework
 
 # Install dependencies
 cd plugins/VSCode/vespera-forge
-npm install
+pnpm install
 
 # Copy framework files (if needed)
 rsync -av ../../../src/vespera-forge/ ./src/vespera-forge/
@@ -34,7 +34,7 @@ rsync -av ../../../src/lib/ ./src/lib/
 rsync -av ../../../src/hooks/ ./src/hooks/
 
 # Build extension
-npm run compile
+pnpm compile
 
 # Test in VS Code
 # Press F5 or use "Run Extension" from debug menu

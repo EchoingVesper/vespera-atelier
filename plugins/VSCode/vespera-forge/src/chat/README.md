@@ -60,24 +60,13 @@ src/chat/
 │   ├── chat.ts                   # Chat-related types
 │   ├── provider.ts               # Provider types
 │   └── config.ts                 # Configuration types
-├── examples/                      # Usage examples
-│   └── ChatIntegrationExample.tsx # Complete integration
 └── media/                         # Styles and assets
     └── chat.css                   # Complete styling
 ```
 
 ## Quick Start
 
-### 1. Basic Integration
-
-```typescript
-import { ChatIntegrationExample } from './chat/examples/ChatIntegrationExample';
-
-// In your VS Code webview
-<ChatIntegrationExample context={context} />
-```
-
-### 2. Custom Implementation
+### 1. Custom Implementation
 
 ```typescript
 import { ChatWindow } from './chat/ui/components/organisms/ChatWindow';

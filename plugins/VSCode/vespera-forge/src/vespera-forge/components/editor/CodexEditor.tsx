@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Codex, Template, TemplateField, FieldType, Context, ViewMode } from '../../core/types';
+import { Codex, Template, TemplateField, FieldType, Context } from '../../core/types';
 import { PlatformAdapter } from '../../core/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,16 +14,15 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  Save, 
-  Eye, 
-  Edit, 
-  Settings, 
-  GitBranch, 
+import {
+  Save,
+  Eye,
+  Edit,
+  Settings,
+  GitBranch,
   Users,
-  Calendar,
   Tag,
   MoreHorizontal
 } from 'lucide-react';
@@ -31,8 +30,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator
+  DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 

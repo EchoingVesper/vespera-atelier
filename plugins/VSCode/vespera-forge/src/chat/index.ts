@@ -41,7 +41,7 @@ import { ChatHistoryManager } from './core/ChatHistoryManager';
 import { ChatSessionManager } from './core/ChatSessionManager';
 import { ChatEventRouter } from './events/ChatEventRouter';
 import { ChatWebViewProvider } from './ui/webview/ChatWebViewProvider';
-import { ChatMessage, ChatSession, SessionSummary } from './types/chat';
+import { ChatSession, SessionSummary } from './types/chat';
 
 export interface VesperaChatSystemOptions {
   /** Skip webview registration (useful when embedding in another webview) */
@@ -350,7 +350,7 @@ export class VesperaChatSystem {
    * @deprecated Legacy provider system removed. Messages are now streamed via Bindery backend.
    * TODO: Replace with Bindery LLM streaming API
    */
-  async *streamMessage(message: any): AsyncIterable<any> {
+  async *streamMessage(_message: any): AsyncIterable<any> {
     console.warn('[VesperaChatSystem] streamMessage is deprecated - use Bindery LLM API');
 
     // TODO: Replace with Bindery streaming

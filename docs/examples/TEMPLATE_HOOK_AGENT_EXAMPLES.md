@@ -81,7 +81,7 @@ This document provides comprehensive examples of how to define hook agents and t
             "step": "setup_development_environment",
             "action": "run_setup_scripts",
             "working_directory": "./worktrees/{{branch_name}}",
-            "scripts": ["npm install", "pip install -r requirements.txt"]
+            "scripts": ["pnpm install", "pip install -r requirements.txt"]
           },
           {
             "step": "create_initial_commit",

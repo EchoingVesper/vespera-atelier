@@ -155,23 +155,23 @@ const characterTemplate: Template = {
 
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Build for production
-npm run build
+pnpm build
 
 # Development mode
-npm run dev
+pnpm dev
 ```
 
 ### Testing
 
 ```bash
 # Run tests
-npm test
+pnpm test
 
 # Run with coverage
-npm run test:coverage
+pnpm test:coverage
 ```
 
 ### Contributing

@@ -27,15 +27,15 @@ export class ObsidianAdapter implements PlatformAdapter {
     // Mock API for development
     return {
       vault: {
-        getAbstractFileByPath: (path: string) => null,
-        read: (file: any) => Promise.resolve(''),
-        write: (file: any, content: string) => Promise.resolve()
+        getAbstractFileByPath: (_path: string) => null,
+        read: (_file: any) => Promise.resolve(''),
+        write: (_file: any, _content: string) => Promise.resolve()
       },
       workspace: {
         getActiveFile: () => null,
-        openLinkText: (text: string, path: string) => Promise.resolve()
+        openLinkText: (_text: string, _path: string) => Promise.resolve()
       },
-      notice: (message: string, timeout?: number) => {
+      notice: (message: string, _timeout?: number) => {
         console.log('Obsidian Notice:', message);
       }
     };

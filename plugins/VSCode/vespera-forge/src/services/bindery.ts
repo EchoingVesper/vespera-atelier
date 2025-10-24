@@ -87,7 +87,7 @@ export class BinderyService extends EventEmitter {
   // Security components
   private securityServices: SecurityEnhancedVesperaCoreServices | null = null;
   private securityAuditLog: BinderySecurityAudit[] = [];
-  private securityMetrics: BinderySecurityMetrics;
+  private securityMetrics!: BinderySecurityMetrics;
   private readonly MAX_AUDIT_LOG_SIZE = 5000;
 
   // Process security monitoring

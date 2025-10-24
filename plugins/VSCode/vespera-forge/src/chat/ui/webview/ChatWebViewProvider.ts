@@ -1065,7 +1065,7 @@ export class ChatWebViewProvider implements vscode.WebviewViewProvider {
    * Test connection to a provider
    * @deprecated Providers are now managed by Bindery backend
    */
-  private async testProviderConnection(providerId: string, config: any): Promise<boolean> {
+  private async testProviderConnection(providerId: string, _config: any): Promise<boolean> {
     try {
       // TODO: Implement provider connection test via Bindery
       this.logger?.warn('[ChatWebViewProvider] testProviderConnection is deprecated - use Bindery backend');

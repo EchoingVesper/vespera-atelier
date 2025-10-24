@@ -28,8 +28,6 @@ src/core/
 │   └── VesperaContextManager.ts # WeakMap-based storage
 ├── telemetry/                  # Basic telemetry service
 │   └── VesperaTelemetryService.ts # Error tracking placeholder
-├── examples/                   # Usage examples and guides
-│   └── MigrationGuide.md       # Complete migration guide
 ├── index.ts                    # Core services initialization
 └── README.md                   # This file
 ```
@@ -129,10 +127,6 @@ const resourceId = contextManager.registerResource(myResource, 'MyResourceType')
 - **BaseDisposable**: Abstract base class for disposable resources
 - **BaseWebViewProvider**: Enhanced webview provider with disposal management
 - **BaseService**: Service base class with lifecycle management
-
-## Migration Guide
-
-See [examples/MigrationGuide.md](./examples/MigrationGuide.md) for comprehensive migration instructions and examples.
 
 ## Development
 
