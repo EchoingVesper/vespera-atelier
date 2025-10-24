@@ -681,7 +681,7 @@ impl Database {
                 due_date TEXT,
                 FOREIGN KEY(parent_id) REFERENCES tasks(id) ON DELETE CASCADE
             );
-
+            
             CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
             CREATE INDEX IF NOT EXISTS idx_tasks_priority ON tasks(priority);
             CREATE INDEX IF NOT EXISTS idx_tasks_parent ON tasks(parent_id);
@@ -689,24 +689,14 @@ impl Database {
 
             CREATE TABLE IF NOT EXISTS codices (
                 id TEXT PRIMARY KEY,
-                template_id TEXT NOT NULL,
                 title TEXT NOT NULL,
-                content TEXT NOT NULL,
+                template_id TEXT NOT NULL,
                 metadata TEXT NOT NULL,
-                crdt_state TEXT,
-                version INTEGER NOT NULL DEFAULT 1,
                 created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL,
-                created_by TEXT,
-                project_id TEXT,
-                parent_id TEXT,
-                FOREIGN KEY(parent_id) REFERENCES codices(id) ON DELETE SET NULL
+                updated_at TEXT NOT NULL
             );
 
-            CREATE INDEX IF NOT EXISTS idx_codices_template ON codices(template_id);
-            CREATE INDEX IF NOT EXISTS idx_codices_created ON codices(created_at DESC);
-            CREATE INDEX IF NOT EXISTS idx_codices_updated ON codices(updated_at DESC);
-            CREATE INDEX IF NOT EXISTS idx_codices_project ON codices(project_id);
+            CREATE INDEX IF NOT EXISTS idx_codices_created ON codices(created_at);
             "#
         ).execute(&self.pool).await?;
 
@@ -1857,6 +1847,122 @@ impl Database {
     /// Get the underlying pool for advanced operations (use with caution)
     pub fn get_pool(&self) -> &Pool<Sqlite> {
         &self.pool
+    }
+
+    // ============================================================================
+    // Codex Management Methods
+    // ============================================================================
+
+    /// Create a new codex in the database
+    #[instrument(skip(self), fields(codex_id = %id))]
+    pub async fn create_codex(
+        &self,
+        id: &str,
+        title: &str,
+        template_id: &str,
+        metadata: &serde_json::Value,
+    ) -> Result<()> {
+        let now = Utc::now().to_rfc3339();
+        let metadata_str = serde_json::to_string(metadata)?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO codices (id, title, template_id, metadata, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            "#,
+        )
+        .bind(id)
+        .bind(title)
+        .bind(template_id)
+        .bind(&metadata_str)
+        .bind(&now)
+        .bind(&now)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to create codex: {}", e))?;
+
+        info!(codex_id = %id, title = %title, "Created codex in database");
+        Ok(())
+    }
+
+    /// Get a codex by ID
+    #[instrument(skip(self), fields(codex_id = %id))]
+    pub async fn get_codex(&self, id: &str) -> Result<Option<serde_json::Value>> {
+        let row = sqlx::query(
+            r#"
+            SELECT id, title, template_id, metadata, created_at, updated_at
+            FROM codices
+            WHERE id = ?
+            "#,
+        )
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to get codex: {}", e))?;
+
+        if let Some(row) = row {
+            let id: String = row.get("id");
+            let title: String = row.get("title");
+            let template_id: String = row.get("template_id");
+            let metadata_str: String = row.get("metadata");
+            let created_at: String = row.get("created_at");
+            let updated_at: String = row.get("updated_at");
+
+            let metadata: serde_json::Value = serde_json::from_str(&metadata_str)
+                .unwrap_or(serde_json::json!({}));
+
+            let codex = serde_json::json!({
+                "id": id,
+                "title": title,
+                "template_id": template_id,
+                "metadata": metadata,
+                "created_at": created_at,
+                "updated_at": updated_at,
+            });
+
+            Ok(Some(codex))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// List all codices
+    #[instrument(skip(self))]
+    pub async fn list_codices(&self) -> Result<Vec<serde_json::Value>> {
+        let rows = sqlx::query(
+            r#"
+            SELECT id, title, template_id, metadata, created_at, updated_at
+            FROM codices
+            ORDER BY created_at DESC
+            "#,
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to list codices: {}", e))?;
+
+        let mut codices = Vec::new();
+        for row in rows {
+            let id: String = row.get("id");
+            let title: String = row.get("title");
+            let template_id: String = row.get("template_id");
+            let metadata_str: String = row.get("metadata");
+            let created_at: String = row.get("created_at");
+            let updated_at: String = row.get("updated_at");
+
+            let metadata: serde_json::Value = serde_json::from_str(&metadata_str)
+                .unwrap_or(serde_json::json!({}));
+
+            codices.push(serde_json::json!({
+                "id": id,
+                "title": title,
+                "template_id": template_id,
+                "metadata": metadata,
+                "created_at": created_at,
+                "updated_at": updated_at,
+            }));
+        }
+
+        Ok(codices)
     }
 }
 
