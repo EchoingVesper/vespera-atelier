@@ -387,12 +387,56 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls", "stream"] }
 **Files Changed**: 13 files, 1,107 additions, 166 deletions
 
 #### Known Issues (Minor)
-- ⚠️ Template directory ENOENT errors (harmless, directories should be auto-created)
-  - `/home/aya/Projects/discord-chat-logs/.vespera/chat-templates`
-  - `/home/aya/Projects/discord-chat-logs/.vespera/templates/providers`
-  - `/home/aya/Projects/discord-chat-logs/.vespera/templates/chat`
-  - `/home/aya/Projects/discord-chat-logs/.vespera/templates/agents`
-- 🔧 TODO: Create these directories on initialization
+- ~~⚠️ Template directory ENOENT errors (harmless, directories should be auto-created)~~ ✅ FIXED
+  - ✅ Fixed in commit `15c4286` - All directories now created upfront
+  - See Part 4 below for details
+
+### Part 4: Template Directory Structure Fix ✅ COMPLETE
+
+**Git Commit**: `15c4286` - "fix(vespera-forge): Ensure .vespera directory structure created before template access"
+
+**Status**: All changes committed to branch
+
+**Problem**: ENOENT errors when `ChatTemplateRegistry` tried to access `.vespera/chat-templates/` directory before it existed
+- Directory creation only happened during Navigator initialization
+- ChatTemplateRegistry initialized during AIAssistant startup (earlier in lifecycle)
+- Timing race condition between initialization paths
+- Existing projects skipped directory creation if templates already existed
+
+**Solution**: Separated directory structure creation from template file creation
+- Created `ensureDirectoryStructure()` method that ALWAYS runs
+- Method is idempotent - safe to call multiple times
+- Called from both AIAssistant and Navigator initialization paths
+- Creates all 6 required directories upfront:
+  - `templates/providers/`
+  - `templates/chat/`
+  - `templates/agents/`
+  - `prompts/`
+  - `chat-templates/` (NEW - fixes ENOENT)
+
+**Files Modified**:
+1. `src/services/template-initializer.ts` (54 lines added)
+   - New `ensureDirectoryStructure()` method (lines 29-63)
+   - Updated `initializeTemplates()` to call it first
+   - Updated file header documentation with complete directory structure
+
+2. `src/views/NavigatorWebviewProvider.ts` (6 lines added)
+   - Always calls `ensureDirectoryStructure()` before template initialization check
+   - Ensures directories exist for both new and existing projects
+
+3. `src/views/ai-assistant.ts` (7 lines added)
+   - Added `TemplateInitializer` import
+   - Calls `ensureDirectoryStructure()` before chat system initialization
+   - Prevents race condition with `ChatTemplateRegistry.loadUserTemplates()`
+
+**Results**:
+- ✅ All template directories created upfront
+- ✅ No more ENOENT errors for `.vespera/chat-templates/`
+- ✅ Works for both new and existing projects
+- ✅ Idempotent - safe to run on every initialization
+- ✅ Clean extension startup without filesystem errors
+
+**Files Changed**: 3 files, 54 additions, 4 deletions
 
 ### Components to Keep
 
