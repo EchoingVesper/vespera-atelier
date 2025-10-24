@@ -1,11 +1,16 @@
 /**
  * Comprehensive type definitions for Vespera Forge VS Code extension
- * 
+ *
  * Includes core infrastructure types, enhanced error handling, memory management,
- * and all service interfaces for type-safe development.
+ * project-centric architecture types, and all service interfaces for type-safe development.
  */
 
 import * as vscode from 'vscode';
+
+// =============================================================================
+// PROJECT TYPES - Phase 16a Foundation
+// =============================================================================
+export * from './project';
 import type { 
   VesperaError, 
   VesperaErrorCode, 

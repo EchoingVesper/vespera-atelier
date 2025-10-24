@@ -129,6 +129,40 @@ function NavigatorApp() {
     );
   }
 
+  // TODO: Phase 16b - Add ProjectSelector component at top of Navigator
+  // This will allow users to switch between projects, with templates filtered by active project
+  //
+  // import { ProjectSelector } from '@/vespera-forge/components/project/ProjectSelector';
+  // import { IProject } from '@/types/project';
+  //
+  // const [projects, setProjects] = useState<IProject[]>([]);
+  // const [activeProject, setActiveProject] = useState<IProject | undefined>();
+  //
+  // <div className="flex flex-col h-full">
+  //   <ProjectSelector
+  //     activeProject={activeProject}
+  //     projects={projects}
+  //     onProjectSelect={(project) => {
+  //       setActiveProject(project);
+  //       adapter.sendMessage({ type: 'project.selected', payload: { projectId: project.id } });
+  //     }}
+  //     onCreateProject={() => {
+  //       adapter.sendMessage({ type: 'project.create' });
+  //     }}
+  //   />
+  //   <div className="flex-1 overflow-hidden">
+  //     <CodexNavigator
+  //       codices={codices}
+  //       templates={templates}
+  //       selectedCodexId={selectedCodexId}
+  //       onCodexSelect={handleCodexSelect}
+  //       onCodexCreate={handleCodexCreate}
+  //       onCodexDelete={handleCodexDelete}
+  //       onCodexUpdate={handleCodexUpdate}
+  //     />
+  //   </div>
+  // </div>
+
   return (
     <CodexNavigator
       codices={codices}
