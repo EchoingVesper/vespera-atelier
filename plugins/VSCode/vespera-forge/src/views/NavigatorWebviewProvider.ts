@@ -252,19 +252,13 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
         return;
       }
 
-      // Always ensure directory structure exists first
+      // Always ensure directory structure and initialize templates
+      // initializeTemplates() is idempotent - it checks if each file exists before creating
       const workspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri;
       if (workspaceUri) {
-        this.logger?.info('Ensuring .vespera directory structure...');
-        await this._templateInitializer.ensureDirectoryStructure(workspaceUri);
-
-        // Then initialize templates if this is the first time
-        const templatesInitialized = await this._templateInitializer.areTemplatesInitialized(workspaceUri);
-        if (!templatesInitialized) {
-          this.logger?.info('Initializing default templates...');
-          await this._templateInitializer.initializeTemplates(workspaceUri);
-          this.logger?.info('Templates initialized successfully');
-        }
+        this.logger?.info('Initializing .vespera templates...');
+        await this._templateInitializer.initializeTemplates(workspaceUri);
+        this.logger?.info('Templates initialized successfully');
       }
 
       // Load codices from Bindery - first get IDs, then fetch full objects
