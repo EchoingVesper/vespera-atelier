@@ -19,14 +19,27 @@ vespera-atelier/
 ├── PRPs/                        # Product Requirement Prompts
 ├── docs/                        # Comprehensive architecture documentation
 │   ├── README.md               # Documentation hub and navigation
-│   ├── technical/              # Core system architecture documents
-│   │   ├── DYNAMIC_AUTOMATION_ARCHITECTURE.md  # Revolutionary automation system
-│   │   ├── CODEX_ARCHITECTURE.md               # Universal content system
-│   │   ├── TEMPLATE_SYSTEM_ARCHITECTURE.md     # User-extensible templates
-│   │   ├── UI-Architecture-Three-Panel-Design.md # Interface design
-│   │   └── MULTI_PROJECT_VAULT_ORGANIZATION.md  # Multi-project management
-│   ├── examples/               # Automation rule examples
-│   └── user-guides/            # User documentation and scenarios
+│   ├── architecture/           # Core system architecture documents
+│   │   ├── core/              # Foundation architecture (9 docs)
+│   │   │   ├── PROJECT_CENTRIC_ARCHITECTURE.md      # Projects as fundamental
+│   │   │   ├── HIERARCHICAL_TEMPLATE_SYSTEM.md      # Dynamic template system
+│   │   │   ├── CODEX_NESTING.md                     # Scrivener-style folders
+│   │   │   ├── CODEX_ARCHITECTURE.md                # Universal content system
+│   │   │   ├── TEMPLATE_SYSTEM_ARCHITECTURE.md      # Template implementation
+│   │   │   ├── DYNAMIC_AUTOMATION_ARCHITECTURE.md   # Automation (planned)
+│   │   │   └── ...
+│   │   ├── subsystems/        # Specialized components (7 docs)
+│   │   ├── integration/       # API specifications
+│   │   └── testing/           # Test infrastructure
+│   ├── development/           # Development tracking and decisions
+│   │   ├── decisions/         # Architecture Decision Records (ADRs)
+│   │   ├── phases/            # Phase completion reports
+│   │   ├── reports/           # Technical investigations
+│   │   └── environment/       # Development setup
+│   ├── examples/              # Automation rule examples
+│   ├── guides/                # User and developer guides
+│   ├── reference/             # Glossary and references
+│   └── legacy/                # Aspirational/unimplemented docs
 └── .claude/                     # Claude Code configuration
 ```
 
@@ -144,7 +157,7 @@ claude mcp add -s user vespera-scriptorium python3 /path/to/vespera-atelier/pack
 2. **READ** the required architectural documents for your component
 3. **UNDERSTAND** the template-driven, Codex-based system design
 4. **NEVER** hardcode content types - everything is template-driven
-5. **REFERENCE** docs/technical/ for technical specifications
+5. **REFERENCE** docs/architecture/ for technical specifications
 
 #### ***CRITICAL***: Git Commit After Every Task
 
@@ -265,7 +278,9 @@ python3 mcp_server.py             # Start server
 - **Vespera Scriptorium**: `packages/vespera-scriptorium/CLAUDE.md`
 - **PRPs Framework**: `PRPs/CLAUDE.md`
 - **Meta-PRP Transition**: `PRPs/vespera-scriptorium-transition/README.md`
-- **🔥 Dynamic Automation Architecture**: `docs/technical/DYNAMIC_AUTOMATION_ARCHITECTURE.md` (Revolutionary new system)
+- **⭐ Project-Centric Architecture**: `docs/architecture/core/PROJECT_CENTRIC_ARCHITECTURE.md` (Phase 15 foundation)
+- **⭐ Hierarchical Template System**: `docs/architecture/core/HIERARCHICAL_TEMPLATE_SYSTEM.md` (Phase 15 foundation)
+- **⭐ Codex Nesting**: `docs/architecture/core/CODEX_NESTING.md` (Phase 15 foundation)
 - **Architecture Documentation Hub**: `docs/README.md`
 
 ### Key Concepts
@@ -334,77 +349,90 @@ The Vespera Atelier is an ecosystem of intelligent tools for creative profession
 
 **📚 Comprehensive Documentation**: See `/docs/` directory for complete technical specifications:
 
+**Phase 15 Foundation Documents** (⭐ Start Here):
+- **[Project-Centric Architecture](docs/architecture/core/PROJECT_CENTRIC_ARCHITECTURE.md)**: Projects as fundamental entities - **READ THIS FIRST** for project context
+- **[Hierarchical Template System](docs/architecture/core/HIERARCHICAL_TEMPLATE_SYSTEM.md)**: Dynamic JSON5-based templates - **Essential** for template work
+- **[Codex Nesting](docs/architecture/core/CODEX_NESTING.md)**: Scrivener-style folder-documents - **Key** for content organization
+
 **Core System Architecture:**
-- **[Dynamic Automation Architecture](docs/technical/DYNAMIC_AUTOMATION_ARCHITECTURE.md)**: Revolutionary tag-driven automation system - **READ THIS FIRST** for any automation work
-- **[Codex Architecture](docs/technical/CODEX_ARCHITECTURE.md)**: Universal content system where everything is a Codex entry - **Essential** for content type work
-- **[Template System Architecture](docs/technical/TEMPLATE_SYSTEM_ARCHITECTURE.md)**: User-extensible templates via JSON5 files - **Required** for template development
-- **[Event System Specification](docs/technical/EVENT_SYSTEM_SPECIFICATION.md)**: Real-time event processing architecture - **Key** for reactive features
+- **[Codex Architecture](docs/architecture/core/CODEX_ARCHITECTURE.md)**: Universal content system where everything is a Codex entry
+- **[Template System Architecture](docs/architecture/core/TEMPLATE_SYSTEM_ARCHITECTURE.md)**: Template loading, validation, and rendering
+- **[UI Architecture Three-Panel Design](docs/architecture/core/UI-Architecture-Three-Panel-Design.md)**: Interface design with immersive environments
+- **[Multi-Project Vault Organization](docs/architecture/core/MULTI_PROJECT_VAULT_ORGANIZATION.md)**: Managing multiple projects in single vaults
 
-**UI and Organization:**
-- **[UI Architecture Three-Panel Design](docs/technical/UI-Architecture-Three-Panel-Design.md)**: Interface design with immersive environments - **Essential** for UI work
-- **[Multi-Project Vault Organization](docs/technical/MULTI_PROJECT_VAULT_ORGANIZATION.md)**: Managing multiple projects in single vaults - **Required** for project management features
+**Planned Features** (🔮 Not Yet Implemented):
+- **[Dynamic Automation Architecture](docs/architecture/core/DYNAMIC_AUTOMATION_ARCHITECTURE.md)**: Tag-driven automation (planned)
+- **[Event System Specification](docs/architecture/core/EVENT_SYSTEM_SPECIFICATION.md)**: Real-time event processing (planned)
 
-**Examples and User Guides:**
-- **[Automation Examples](docs/examples/AUTOMATION_RULE_EXAMPLES.md)**: Concrete automation rule examples
-- **[Real-World Integration Scenarios](docs/user-guides/REAL_WORLD_INTEGRATION_SCENARIOS.md)**: Comprehensive workflow examples
-- **[User Getting Started Guide](docs/user-guides/GETTING_STARTED_AUTOMATION.md)**: Step-by-step automation setup
+**Examples and Guides:**
+- **[Automation Examples](docs/examples/AUTOMATION_RULE_EXAMPLES.md)**: Automation rule examples (planned features)
+- **[Real-World Integration Scenarios](docs/legacy/future-features/REAL_WORLD_INTEGRATION_SCENARIOS.md)**: Aspirational use cases (⚠️ with warnings)
+- **[Getting Started with Automation](docs/legacy/future-features/GETTING_STARTED_AUTOMATION.md)**: Automation setup guide (⚠️ future features)
 
 ## 🧭 Component Development Guide
 
 **When working on specific components, ALWAYS reference the relevant architectural documents:**
 
-### Obsidian Plugin Development
+### VS Code Extension Development
 **Required Reading:**
-1. **[UI Architecture Three-Panel Design](docs/technical/UI-Architecture-Three-Panel-Design.md)** - Interface structure and immersive environments
-2. **[Codex Architecture](docs/technical/CODEX_ARCHITECTURE.md)** - Universal content system integration
-3. **[Template System Architecture](docs/technical/TEMPLATE_SYSTEM_ARCHITECTURE.md)** - Dynamic template rendering
+1. **[Project-Centric Architecture](docs/architecture/core/PROJECT_CENTRIC_ARCHITECTURE.md)** ⭐ - Projects as fundamental entities
+2. **[Hierarchical Template System](docs/architecture/core/HIERARCHICAL_TEMPLATE_SYSTEM.md)** ⭐ - Dynamic template filtering
+3. **[Codex Nesting](docs/architecture/core/CODEX_NESTING.md)** ⭐ - Navigator tree structure
+4. **[UI Architecture Three-Panel Design](docs/architecture/core/UI-Architecture-Three-Panel-Design.md)** - Interface structure
+5. **[Template System Architecture](docs/architecture/core/TEMPLATE_SYSTEM_ARCHITECTURE.md)** - Template rendering
 
 **Key Implementation Notes:**
-- Task Manager belongs in main editor area, not sidebar
-- Three-panel design: Left (navigation), Center (content), Right (context/chat)
-- Support immersive environment adaptation (music, lighting, themes)
+- Projects are mandatory - everything exists within a project
+- Templates filter by current project type
+- Navigator shows tree view with expand/collapse for nested Codices
+- Three-panel design: Left (Navigator), Center (Editor), Right (Chat/Context)
 - Template-driven UI components, not hardcoded types
 
-### Automation System Development
+### Automation System Development (🔮 Planned)
 **Required Reading:**
-1. **[Dynamic Automation Architecture](docs/technical/DYNAMIC_AUTOMATION_ARCHITECTURE.md)** - Complete automation system design
-2. **[Event System Specification](docs/technical/EVENT_SYSTEM_SPECIFICATION.md)** - Event processing implementation
-3. **[Automation Examples](docs/examples/AUTOMATION_RULE_EXAMPLES.md)** - Concrete rule examples
+1. **[Dynamic Automation Architecture](docs/architecture/core/DYNAMIC_AUTOMATION_ARCHITECTURE.md)** - Complete automation system design (planned)
+2. **[Event System Specification](docs/architecture/core/EVENT_SYSTEM_SPECIFICATION.md)** - Event processing implementation (planned)
+3. **[Automation Examples](docs/examples/AUTOMATION_RULE_EXAMPLES.md)** - Concrete rule examples (planned)
 
 **Key Implementation Notes:**
-- Tag changes trigger automation rules
+- ⚠️ **NOT YET IMPLEMENTED** - This is planned future work
+- Tag changes will trigger automation rules
 - LLM-assisted rule creation from natural language
 - Cross-codex automation chains (scene → character → task → music)
 - Real-time reactive UI updates
 
 ### Template System Development
 **Required Reading:**
-1. **[Template System Architecture](docs/technical/TEMPLATE_SYSTEM_ARCHITECTURE.md)** - Complete template system specification
-2. **[Codex Architecture](docs/technical/CODEX_ARCHITECTURE.md)** - Integration with universal content system
-3. **[Multi-Project Vault Organization](docs/technical/MULTI_PROJECT_VAULT_ORGANIZATION.md)** - Project-aware template switching
+1. **[Hierarchical Template System](docs/architecture/core/HIERARCHICAL_TEMPLATE_SYSTEM.md)** ⭐ - Dynamic template architecture
+2. **[Template System Architecture](docs/architecture/core/TEMPLATE_SYSTEM_ARCHITECTURE.md)** - Complete template specification
+3. **[Project-Centric Architecture](docs/architecture/core/PROJECT_CENTRIC_ARCHITECTURE.md)** - Project-aware template filtering
 
 **Key Implementation Notes:**
 - Everything is template-driven via JSON5 files
 - No hardcoded CodexType enums - dynamic type registration
-- Template inheritance and sharing via hash strings
-- Environmental adaptation configs in templates
+- Templates organized in hierarchical categories
+- Template inheritance via baseTemplate and mixins
+- Templates filter by current project type
 
 ### Content Management Development
 **Required Reading:**
-1. **[Codex Architecture](docs/technical/CODEX_ARCHITECTURE.md)** - Universal content system design
-2. **[Template System Architecture](docs/technical/TEMPLATE_SYSTEM_ARCHITECTURE.md)** - Template-driven content types
-3. **[Multi-Project Vault Organization](docs/technical/MULTI_PROJECT_VAULT_ORGANIZATION.md)** - Multi-project content organization
+1. **[Codex Architecture](docs/architecture/core/CODEX_ARCHITECTURE.md)** - Universal content system design
+2. **[Codex Nesting](docs/architecture/core/CODEX_NESTING.md)** ⭐ - Hierarchical organization
+3. **[Project-Centric Architecture](docs/architecture/core/PROJECT_CENTRIC_ARCHITECTURE.md)** ⭐ - Project boundaries
+4. **[Template System Architecture](docs/architecture/core/TEMPLATE_SYSTEM_ARCHITECTURE.md)** - Template-driven content
 
 **Key Implementation Notes:**
 - Everything is a Codex entry (.codex.md files)
+- All Codices must belong to a project
+- Codices can nest (parent-child relationships via metadata)
 - Virtual hierarchies via metadata, not file system structure
-- Cross-project references and template switching
-- Three-mode component behavior (programmatic/LLM/hybrid)
+- Scrivener-style folders with content
 
 ### MCP Server Development
 **Required Reading:**
-1. **[Event System Specification](docs/technical/EVENT_SYSTEM_SPECIFICATION.md)** - Event processing and MCP integration
-2. **[Dynamic Automation Architecture](docs/technical/DYNAMIC_AUTOMATION_ARCHITECTURE.md)** - Automation engine integration
+1. **[MCP Bindery Architecture](docs/architecture/subsystems/MCP_BINDERY_ARCHITECTURE.md)** - MCP server and Bindery integration
+2. **[Task Execution Architecture](docs/architecture/subsystems/TASK_EXECUTION_ARCHITECTURE.md)** - Task management system
+3. **[Event System Specification](docs/architecture/core/EVENT_SYSTEM_SPECIFICATION.md)** - Event processing (planned)
 
 **Current Architecture:**
 - 14 comprehensive MCP tools for complete Bindery integration
