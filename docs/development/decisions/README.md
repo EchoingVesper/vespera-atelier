@@ -78,6 +78,13 @@ We use a lightweight ADR format adapted from Michael Nygard's proposal. See [ADR
   - Summary: Folder-Codices can contain their own content in addition to children
   - Impact: Chapter summaries, folder notes, enhanced organization
 
+#### Context Management
+
+- **[ADR-010: Phase Handover Methodology](./ADR-010-phase-handover-methodology.md)** ✅
+  - Status: Accepted
+  - Summary: Standardized phase documentation with slash commands for context handover
+  - Impact: Minimizes context loss between sessions, eventually automatable
+
 ---
 
 ## How to Create an ADR

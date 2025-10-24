@@ -168,6 +168,25 @@ claude mcp add -s user vespera-scriptorium python3 /path/to/vespera-atelier/pack
 3. Include package scope in commit: `feat(scriptorium): description`
 4. Never leave uncommitted changes between tasks
 
+#### ***CRITICAL***: Phase Handover Process
+
+**When completing a phase or handing over context:**
+
+1. **Use `/phase-complete`** command to create comprehensive phase documentation
+2. **Fill out PHASE_[N]_COMPLETE.md** using the template with ALL sections
+3. **Special focus on "Context for AI Assistant" section** - this is critical for next sessions
+4. **Create related ADRs** for significant decisions made during the phase
+5. **For context window transitions**, use `/handover` command for quick summaries
+
+**Custom Slash Commands Available**:
+- `/phase-start` - Start a new development phase with planning
+- `/phase-complete` - Complete current phase with documentation
+- `/handover` - Create context handover for next session
+- `/context` - Quick context snapshot of current state
+- `/adr` - Create new Architecture Decision Record
+
+**See**: [docs/development/phases/PHASE_TEMPLATE.md](docs/development/phases/PHASE_TEMPLATE.md) for the phase documentation template
+
 ## 📦 Package Management
 
 ### Python Packages (vespera-scriptorium)
