@@ -9,6 +9,7 @@ import { AIAssistantWebviewProvider } from './ai-assistant';
 import { ChatChannelListProvider } from './ChatChannelListProvider';
 import { WelcomeViewProvider } from './WelcomeViewProvider';
 import { getBinderyService } from '../services/bindery';
+import { ProjectService } from '../services/ProjectService';
 
 // Export view providers
 export { NavigatorWebviewProvider } from './NavigatorWebviewProvider';
@@ -36,6 +37,19 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
   // Get the global Bindery service instance
   const binderyService = getBinderyService();
 
+  // Phase 16b: Initialize ProjectService
+  let projectService: ProjectService | undefined;
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+  if (workspaceFolder) {
+    projectService = ProjectService.getInstance(workspaceFolder.uri);
+    // Initialize asynchronously (non-blocking)
+    projectService.initialize().catch(err => {
+      console.error('[Vespera] Failed to initialize ProjectService:', err);
+    });
+  } else {
+    console.warn('[Vespera] No workspace folder open, ProjectService not initialized');
+  }
+
   // Create welcome view provider
   const welcomeProvider = new WelcomeViewProvider();
 
@@ -49,6 +63,7 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
   (global as any).vesperaChatChannelProvider = chatChannelProvider;
 
   // Create navigator provider with callback to open editor when codex is selected
+  // Phase 16b: Pass ProjectService to navigator
   const navigatorProvider = new NavigatorWebviewProvider(
     context,
     binderyService,
@@ -58,7 +73,8 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
       EditorPanelProvider.createOrShow(context, binderyService, undefined, codexId);
       // Optionally notify AI assistant about the selected codex
       console.log('[Vespera] Codex selected:', codexId);
-    }
+    },
+    projectService // Phase 16b: Project service for project management
   );
 
   // Register the welcome tree view provider in the vespera-forge sidebar

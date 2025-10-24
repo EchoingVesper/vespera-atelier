@@ -8,7 +8,8 @@ import { createRoot } from 'react-dom/client';
 import { VSCodeAdapter } from '@/vespera-forge/core/adapters/vscode-adapter';
 import { CodexNavigator } from '@/vespera-forge/components/navigation/CodexNavigator';
 import { ProjectSelector } from '@/vespera-forge/components/project/ProjectSelector';
-import { ProjectProvider } from '@/contexts/ProjectContext';
+import { WelcomeScreen } from '@/vespera-forge/components/project/WelcomeScreen';
+import { ProjectProvider, useProjectContext } from '@/contexts/ProjectContext';
 import { Codex, Template } from '@/vespera-forge/core/types';
 import '@/app/globals.css';
 
@@ -39,6 +40,9 @@ function NavigatorApp() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedCodexId, setSelectedCodexId] = useState<string | undefined>();
   const [noWorkspace, setNoWorkspace] = useState<{ message: string; action: string } | null>(null);
+
+  // Phase 16b Stage 2: Access project context for WelcomeScreen logic
+  const { projects, isLoading } = useProjectContext();
 
   // Listen for messages from the extension
   React.useEffect(() => {
@@ -146,6 +150,13 @@ function NavigatorApp() {
         </button>
       </div>
     );
+  }
+
+  // Phase 16b Stage 2: Show WelcomeScreen when no projects exist
+  const shouldShowWelcome = !isLoading && projects.length === 0;
+
+  if (shouldShowWelcome) {
+    return <WelcomeScreen onCreateProject={handleCreateProject} />;
   }
 
   // Phase 16b Stage 1: Navigator with ProjectSelector

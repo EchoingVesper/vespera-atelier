@@ -945,6 +945,17 @@ const getCommandsMap = (vesperaContext: VesperaForgeContext) => ({
     log('[Command] Initialize command executed');
     await initializeCommand(vesperaContext);
   },
+  'vespera-forge.createProjectWizard': async () => {
+    log('[Command] Create Project Wizard command executed');
+    // Get ProjectService from navigator provider (initialized in views/index.ts)
+    const navigatorProvider = (global as any).vesperaNavigatorProvider;
+    if (navigatorProvider && navigatorProvider._projectService) {
+      const { createProjectWizard } = await import('./project/createProjectWizard');
+      await createProjectWizard(navigatorProvider._projectService);
+    } else {
+      await showError('ProjectService not available. Please initialize the extension first.');
+    }
+  },
   'vespera-forge.createContent': async () => {
     try {
       log('[Command] Create Content command started');

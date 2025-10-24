@@ -190,9 +190,8 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
         break;
 
       case 'project:createWizard':
-        // Phase 16b Stage 2 will implement the creation wizard
-        // For now, just log that it was requested
-        this.logger?.info('Project creation wizard requested (not yet implemented)');
+        // Phase 16b Stage 2: Launch project creation wizard
+        await this.handleProjectCreateWizard();
         break;
 
       default:
@@ -497,6 +496,40 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
    * Phase 16b Stage 1: Project message handlers
    */
 
+  private async handleProjectCreateWizard(): Promise<void> {
+    this.logger?.info('Launching project creation wizard...');
+
+    try {
+      // Execute the wizard command
+      // The wizard command will handle the entire flow and create the project
+      await vscode.commands.executeCommand('vespera-forge.createProjectWizard');
+
+      // After wizard completes, refresh the projects list in the webview
+      // The wizard will have already set the active project
+      if (this._view && this._projectService) {
+        const activeProject = this._projectService.getActiveProject();
+
+        // Notify webview that projects changed
+        this._view.webview.postMessage({
+          type: 'project:projectsChanged',
+          payload: {}
+        });
+
+        // Update active project in webview
+        if (activeProject) {
+          this._view.webview.postMessage({
+            type: 'project:activeChanged',
+            payload: { project: activeProject }
+          });
+        }
+
+        this.logger?.info('Project creation wizard completed, projects refreshed');
+      }
+    } catch (error) {
+      this.logger?.error('Error launching project creation wizard', error);
+    }
+  }
+
   private async handleProjectList(messageId?: string): Promise<void> {
     if (!this._projectService) {
       this.logger?.warn('ProjectService not available');
@@ -511,12 +544,12 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
     }
 
     try {
-      const projects = await this._projectService.listProjects();
+      const projectList = await this._projectService.listProjects();
       if (this._view) {
         this._view.webview.postMessage({
           type: 'project:list:response',
           id: messageId,
-          payload: { projects }
+          payload: { projects: projectList }
         });
       }
     } catch (error) {
