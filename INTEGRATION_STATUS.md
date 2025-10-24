@@ -16,7 +16,7 @@
 - 4 System prompts: default-assistant, orchestrator-agent, code-writer, docs-writer
 - Templates in `.vespera/templates/` and `.vespera/prompts/` (temporary location)
 
-**Phase 14c Complete** ✅ (Extension Cleanup):
+**Phase 14c Complete** ✅ (Extension Cleanup - All 3 Parts):
 
 **Part 1 Complete** ✅ - Provider Removal (Commit: `6299161`):
 - **Deleted 9 files, ~2,945 lines** of legacy provider code
@@ -49,6 +49,32 @@
   - Removed premature auto-loading from ChatChannelListProvider constructor
   - Added visibility event handler to load channels when view opens
   - Channels now auto-load without manual refresh
+
+**Part 3 Complete** ✅ - Side-by-Side UI & Shutdown Awareness (Commit: `1691f01`):
+- **Side-by-Side Chat UI** - 589 lines added to AI Assistant:
+  - Channel list and chat now displayed side-by-side instead of stacked
+  - Removed separate ChatChannelListProvider view
+  - Embedded channel list in AI Assistant webview
+  - CSS flexbox layout for responsive side-by-side display
+- **Race Condition Fixes** - Event-driven connection wait:
+  - Implemented `waitForConnection()` using Bindery 'statusChanged' events
+  - Applied to AIAssistant, Navigator, and Editor panels
+  - Eliminates "Request failed - not connected" errors
+  - Views now auto-load content reliably on first open
+- **Shutdown Awareness** - Comprehensive shutdown flag system:
+  - Added shutdown flags in VesperaCoreServices, VesperaErrorHandler, and extension.ts
+  - Error handlers check shutdown state before using VS Code APIs
+  - Try-catch blocks around all VS Code API calls during shutdown
+  - **Result**: Clean shutdown without error spam
+- **Memory Leak Prevention** - Event listener cleanup:
+  - All view providers call `removeAllListeners('statusChanged')` in dispose()
+  - Prevents dangling references and memory leaks
+  - No more crashes when alt-tabbing
+- **13 files changed**: 1,107 additions, 166 deletions
+- **Shutdown now completely silent** - No "Channel has been closed" spam
+
+**Known Issues (Minor)**:
+- ⚠️ Template directory ENOENT errors (harmless, need directory auto-creation)
 
 **Next**: Phase 14d - Testing & Backend Integration
 

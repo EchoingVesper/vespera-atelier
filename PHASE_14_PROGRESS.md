@@ -3,7 +3,7 @@
 **Phase**: Codex-Based AI Chat Architecture
 **Branch**: `feat/codex-ui-framework`
 **Started**: 2025-10-22
-**Current Status**: Phase 14c In Progress 🚧
+**Current Status**: Phase 14c Complete ✅ / Phase 14d Pending ⏳
 
 ---
 
@@ -148,7 +148,7 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls", "stream"] }
 
 ---
 
-## Phase 14c: Extension Cleanup 🚧 IN PROGRESS
+## Phase 14c: Extension Cleanup ✅ COMPLETE
 
 ### Part 1: Provider Removal ✅ COMPLETE
 
@@ -279,6 +279,120 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls", "stream"] }
 - ⚠️ Welcome view stacks atop Navigator (minor visual issue, acceptable)
 - ⚠️ Blank "Vespera Forge" sub-pane in Explorer (pre-existing bug, noted for cleanup)
 - ⚠️ Navigator state persistence inconsistent (acceptable for now per user)
+
+### Part 3: Side-by-Side UI & Shutdown Awareness ✅ COMPLETE
+
+**Git Commit**: `1691f01` - "feat(vespera-forge): Implement side-by-side chat UI and comprehensive shutdown awareness"
+
+**Status**: All commits pushed to branch
+
+#### UI Restructuring
+**Files Modified**:
+1. `src/views/ai-assistant.ts` (589 lines added)
+   - Restructured to display channel list and chat side-by-side
+   - Removed separate ChatChannelListProvider view
+   - Channel list now embedded in AI Assistant webview
+   - Side-by-side layout using CSS flexbox
+   - Channel switching updates chat header
+
+2. `package.json`
+   - Removed separate `vesperaForge.chatChannelList` view
+   - Renamed "AI Chat" to "AI Assistant"
+   - Removed view menu items for channel list
+
+3. `src/views/index.ts` (26 lines modified)
+   - Pass binderyService directly to AIAssistantWebviewProvider
+   - Removed ChatChannelListProvider registration
+
+#### Race Condition Fixes
+**Problem**: Views tried to load content before Bindery connection established
+- Webview sends 'ready' immediately, but Bindery takes time to connect
+- Result: "Request failed - not connected" errors
+
+**Solution**: Event-driven connection wait pattern
+- Implemented `waitForConnection()` method using Bindery 'statusChanged' events
+- Applied to 3 view providers: AIAssistant, Navigator, Editor
+- Eliminates polling and fixed delays
+- Channels/codices now auto-load reliably
+
+**Files Modified**:
+- `src/views/ai-assistant.ts:285-407` - waitForConnection() + auto-load
+- `src/views/NavigatorWebviewProvider.ts:171-253` - waitForConnection() + sendInitialState()
+- `src/views/EditorPanelProvider.ts:90-159` - waitForConnection() + setActiveCodex()
+
+#### Shutdown Awareness Implementation
+**Problem**: "Channel has been closed" infinite error spam on shutdown
+- Error handlers tried to use VS Code APIs after IPC channel closed
+- Cascading errors from multiple error handler layers
+- Extension required manual force-close
+
+**Solution**: Comprehensive shutdown flag system
+
+**Core Services** (`src/core/index.ts`):
+- Added `isShuttingDown` static flag
+- Set flag in `dispose()` before cleanup
+- Global error handlers check flag before using VS Code APIs
+- Try-catch blocks around all VS Code API calls during shutdown
+
+**Error Handler** (`src/core/error-handling/VesperaErrorHandler.ts`):
+- Added `isShuttingDown` static flag
+- Early return from `handleError()` if shutting down
+- Try-catch around logger, telemetry, user notifications
+- Shutdown checks in `setupGlobalErrorHandling()`
+
+**Extension** (`src/extension.ts`):
+- Added `isExtensionShuttingDown` global flag
+- Set flag at start of `deactivate()` before any cleanup
+- beforeDispose hook: Skip VS Code commands if shutting down
+- Auto-initialization: Ignore errors if shutting down
+- Bindery disposal: Skip error handler if shutting down
+
+**Bindery Service** (`src/services/bindery.ts`):
+- Enhanced `disconnect()` with shutdown flag
+- Shutdown checks in `sendRequest()`
+- Try-catch around promise resolve/reject
+- Async process wait with SIGTERM/SIGKILL fallback
+
+#### Memory Leak Prevention
+**Problem**: Event listeners not cleaned up, causing crashes
+- `waitForConnection()` attached 'statusChanged' listeners
+- Listeners never removed when views disposed
+- Dangling references accumulated on each view open/close
+
+**Solution**: Proper cleanup in dispose() methods
+- All view providers call `removeAllListeners('statusChanged')`
+- Prevents accumulated listeners and memory leaks
+- No more crashes when alt-tabbing or toggling views
+
+**Files Modified**:
+- `src/views/ai-assistant.ts:517-540` - Enhanced dispose()
+- `src/views/NavigatorWebviewProvider.ts:475-488` - Enhanced dispose()
+- `src/views/EditorPanelProvider.ts:419-435` - Enhanced dispose()
+
+#### Results
+**Before**:
+- Infinite "Channel has been closed" error spam on shutdown
+- Required manual force-close (shift+F5)
+- Race conditions on view initialization
+- Memory leaks from event listeners
+- Crashes when alt-tabbing
+
+**After**:
+- ✅ Clean shutdown without manual intervention
+- ✅ No error spam (completely silent)
+- ✅ Views auto-load reliably
+- ✅ No memory leaks
+- ✅ No crashes
+
+**Files Changed**: 13 files, 1,107 additions, 166 deletions
+
+#### Known Issues (Minor)
+- ⚠️ Template directory ENOENT errors (harmless, directories should be auto-created)
+  - `/home/aya/Projects/discord-chat-logs/.vespera/chat-templates`
+  - `/home/aya/Projects/discord-chat-logs/.vespera/templates/providers`
+  - `/home/aya/Projects/discord-chat-logs/.vespera/templates/chat`
+  - `/home/aya/Projects/discord-chat-logs/.vespera/templates/agents`
+- 🔧 TODO: Create these directories on initialization
 
 ### Components to Keep
 
