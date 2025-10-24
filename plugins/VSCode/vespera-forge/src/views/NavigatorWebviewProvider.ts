@@ -404,12 +404,21 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
         }
       }
 
-      // Phase 16b Stage 3: Pass projectId to Bindery when creating codex
+      // Phase 16b Stage 3: Require projectId for all codex creation
       const projectId = payload.projectId;
-      this.logger?.info('Creating codex', {
+
+      // CRITICAL: ProjectId is required - throw error if missing
+      if (!projectId) {
+        const errorMsg = `FATAL: Cannot create codex without projectId! Payload: ${JSON.stringify(payload)}`;
+        this.logger?.error(errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      this.logger?.info('Creating codex with projectId', {
         title,
         templateId: payload.templateId,
-        projectId
+        projectId,
+        payloadReceived: payload
       });
 
       const result = await this.binderyService.createCodex(

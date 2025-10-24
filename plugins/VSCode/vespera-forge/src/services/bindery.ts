@@ -791,6 +791,15 @@ export class BinderyService extends EventEmitter {
       };
     }
 
+    // Phase 16b Stage 3: Log what we're sending to Bindery
+    console.log('[BinderyService] createCodex called with:', {
+      title,
+      templateId,
+      projectId,
+      hasProjectId: !!projectId,
+      payloadToBindery: JSON.stringify(payload)
+    });
+
     return this.sendRequest('create_codex', payload);
   }
 
