@@ -40,7 +40,18 @@ function NavigatorApp() {
   const [noWorkspace, setNoWorkspace] = useState<{ message: string; action: string } | null>(null);
 
   // Phase 16b Stage 2: Access project context for WelcomeScreen logic
-  const { projects, isLoading } = useProjectContext();
+  // Phase 16b Stage 3: Access activeProject for codex filtering
+  const { projects, isLoading, activeProject } = useProjectContext();
+
+  // Phase 16b Stage 3: Filter codices by active project
+  // Only show codices that belong to the currently active project
+  const filteredCodices = React.useMemo(() => {
+    if (!activeProject) {
+      // No active project - show no codices
+      return [];
+    }
+    return codices.filter(codex => codex.metadata.projectId === activeProject.id);
+  }, [codices, activeProject]);
 
   // Listen for messages from the extension
   React.useEffect(() => {
@@ -180,9 +191,10 @@ function NavigatorApp() {
       </div>
 
       {/* Codex Navigator - main content area */}
+      {/* Phase 16b Stage 3: Show filtered codices (only active project) */}
       <div className="flex-1 overflow-hidden">
         <CodexNavigator
-          codices={codices}
+          codices={filteredCodices}
           templates={templates}
           selectedCodexId={selectedCodexId}
           onCodexSelect={handleCodexSelect}

@@ -32,12 +32,14 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({
   onCreateProject,
   className
 }) => {
+  // Phase 16b Stage 3: Access deleteProject from context
   const {
     activeProject,
     projects,
     isLoading,
     error,
-    setActiveProject
+    setActiveProject,
+    deleteProject
   } = useProjectContext();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -68,6 +70,24 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({
     setIsDropdownOpen(false);
     if (onCreateProject) {
       onCreateProject();
+    }
+  };
+
+  /**
+   * Handle project deletion (Phase 16b Stage 3)
+   */
+  const handleProjectDelete = async (project: IProject) => {
+    try {
+      const success = await deleteProject(project.id);
+      if (success) {
+        console.log('[ProjectSelector] Project deleted:', project.name);
+        // If we deleted the active project, clear active project
+        if (activeProject?.id === project.id) {
+          await setActiveProject(null);
+        }
+      }
+    } catch (err) {
+      console.error('[ProjectSelector] Failed to delete project:', err);
     }
   };
 
@@ -122,6 +142,7 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({
           {/* TODO: Phase 16b Stage 4 - Add project search input */}
 
           {/* Project List */}
+          {/* Phase 16b Stage 3: Added onDelete handler for project deletion */}
           {projects.length > 0 ? (
             <div className="project-selector__list">
               {projects.map((project) => (
@@ -130,6 +151,7 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({
                   project={project as IProject}
                   isActive={activeProject?.id === project.id}
                   onClick={handleProjectSelect}
+                  onDelete={handleProjectDelete}
                 />
               ))}
             </div>
