@@ -231,40 +231,21 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
   }, [codices, templates, searchQuery, filters, viewMode]);
 
   function buildProjectTree(codices: Codex[]): TreeNode[] {
-    const projects = new Map<string, TreeNode>();
-    const root: TreeNode[] = [];
-
-    // Group by project
-    codices.forEach(codex => {
-      const projectId = codex.metadata.projectId || 'uncategorized';
-      
-      if (!projects.has(projectId)) {
-        const projectNode: TreeNode = {
-          id: `project-${projectId}`,
-          name: projectId === 'uncategorized' ? 'Uncategorized' : projectId,
-          type: 'project',
-          children: [],
-          icon: <Folder className="w-4 h-4" />
-        };
-        projects.set(projectId, projectNode);
-        root.push(projectNode);
-      }
-
+    // Phase 16b Stage 3: Return flat list since codices are already filtered by active project
+    // No need to group by project folders when viewing a single project's content
+    return codices.map(codex => {
       const template = templates.find(t => t.id === codex.templateId);
-      const projectNode = projects.get(projectId)!;
-      
-      projectNode.children.push({
+
+      return {
         id: codex.id,
         name: codex.name,
-        type: 'codex',
+        type: 'codex' as const,
         children: [],
         data: codex,
         icon: template ? getTemplateIcon(template.id) : <File className="w-4 h-4" />,
         badge: codex.metadata.status
-      });
+      };
     });
-
-    return root;
   };
 
   function buildTemplateTree(codices: Codex[], templates: Template[]): TreeNode[] {
