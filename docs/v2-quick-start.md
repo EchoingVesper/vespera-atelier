@@ -1,5 +1,35 @@
 # Vespera Scriptorium V2 Quick Start Guide
 
+---
+
+## ⚠️ IMPLEMENTATION STATUS WARNING
+
+**THIS DOCUMENT DESCRIBES UNIMPLEMENTED V2 FEATURES**
+
+This documentation was written aspirationally to describe a planned V2 architecture that **has not been fully implemented**. Many features described in this guide do not currently exist in the codebase.
+
+**Current Reality (Phase 15 - October 2025)**:
+- ❌ Hierarchical task system with parent-child relationships: **NOT IMPLEMENTED**
+- ❌ Role-based execution with file pattern restrictions: **NOT IMPLEMENTED**
+- ❌ 14 comprehensive V2 MCP tools: **PARTIALLY IMPLEMENTED**
+- ❌ Task dependencies and automatic ordering: **NOT IMPLEMENTED**
+- ❌ Real-time dashboard with metrics: **NOT IMPLEMENTED**
+
+**What Actually Exists**:
+- ✅ Basic FastMCP server with task management tools
+- ✅ Core Bindery backend for Codex management
+- ✅ VS Code extension with Navigator and Chat UI
+- ✅ Template system for content organization
+
+**For Current Implementation Status**:
+- See [Phase 15 Progress](../development/phases/PHASE_14_PROGRESS.md)
+- See [Project-Centric Architecture](../architecture/core/PROJECT_CENTRIC_ARCHITECTURE.md)
+- See [Current Architecture](../ARCHITECTURE.md)
+
+**This document is preserved for reference and future development planning.**
+
+---
+
 ## Overview
 
 Vespera Scriptorium V2 is a complete rewrite featuring a hierarchical task management system with role-based execution capabilities. Built on FastMCP (official MCP Python SDK), it provides 14 comprehensive tools for intelligent task orchestration.

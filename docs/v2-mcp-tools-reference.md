@@ -1,5 +1,29 @@
 # Vespera Scriptorium V2 MCP Tools Reference
 
+---
+
+## ⚠️ IMPLEMENTATION STATUS WARNING
+
+**THIS DOCUMENT DESCRIBES UNIMPLEMENTED V2 TOOLS**
+
+This reference documentation describes a planned set of V2 MCP tools that **are not fully implemented**. The tool signatures, parameters, and behaviors described here represent aspirational design goals.
+
+**Current Reality (Phase 15 - October 2025)**:
+- ❌ `create_task_tree`: **NOT IMPLEMENTED**
+- ❌ `get_task_tree`: **NOT IMPLEMENTED**
+- ❌ `analyze_task_dependencies`: **NOT IMPLEMENTED**
+- ❌ `add_task_dependency`: **NOT IMPLEMENTED**
+- ✅ `create_task`, `get_task`, `update_task`: **IMPLEMENTED** (basic versions)
+- ✅ `list_tasks`, `delete_task`, `complete_task`: **IMPLEMENTED** (basic versions)
+- ✅ `execute_task`, `assign_role_to_task`: **IMPLEMENTED** (basic versions)
+- ✅ `get_dashboard_stats`, `list_roles`, `health_check`: **IMPLEMENTED**
+
+**Actual Current Tools**: See `packages/vespera-scriptorium/mcp_server.py` for implemented MCP tools
+
+**This document is preserved for reference and future API design.**
+
+---
+
 ## Overview
 
 Vespera Scriptorium V2 provides 14 comprehensive MCP tools for complete task lifecycle management. All tools are available through Claude Code's MCP integration and use Pydantic validation for type safety.

@@ -1,5 +1,31 @@
 # Real-World Integration Scenarios and Use Cases
 
+---
+
+## ⚠️ FUTURE FEATURE DOCUMENTATION
+
+**THIS DOCUMENT DESCRIBES UNIMPLEMENTED INTEGRATION SCENARIOS**
+
+This documentation presents aspirational use cases and workflows for features that **are not currently implemented**. The scenarios, integrations, and automation described here represent future development goals.
+
+**Current Reality (Phase 15 - October 2025)**:
+- ❌ Music integration with scene moods: **NOT IMPLEMENTED**
+- ❌ Spotify/YouTube API automation: **NOT IMPLEMENTED**
+- ❌ Cross-codex automation chains: **NOT IMPLEMENTED**
+- ❌ Real-time reactive workflows: **NOT IMPLEMENTED**
+- ❌ Notion/Trello migration tools: **NOT IMPLEMENTED**
+
+**What Actually Exists**:
+- ✅ Basic Codex creation and editing
+- ✅ Template-based content types
+- ✅ Project organization
+
+**For Current Capabilities**: See [Project-Centric Architecture](../../architecture/core/PROJECT_CENTRIC_ARCHITECTURE.md) and [Template System](../../architecture/core/HIERARCHICAL_TEMPLATE_SYSTEM.md)
+
+**This document is preserved as inspiration for future integrations and use cases.**
+
+---
+
 This documentation demonstrates how the revolutionary Vespera Template-Driven Codex system solves actual creative workflows through concrete user stories, technical integrations, and migration scenarios. The Template-Driven Architecture enables users to define any content type and workflow through customizable templates, transforming static content into reactive, intelligent ecosystems that adapt to any creative discipline.
 
 ## 🎯 Concrete User Stories

@@ -1,213 +1,282 @@
 # Vespera Atelier Documentation
 
-Welcome to the comprehensive documentation for the Vespera Atelier monorepo - an ecosystem of intelligent tools for creative professionals, researchers, and knowledge workers.
+Welcome to the Vespera Atelier documentation - a comprehensive guide to building intelligent creative workspaces with project-centric organization, dynamic templates, and hierarchical content management.
 
-## 🏗️ Architecture Overview
+---
 
-The Vespera Atelier implements a revolutionary **Dynamic Automation and Tag-Driven Systems** architecture that transforms static content into reactive, intelligent ecosystems.
+## ⚠️ Documentation Status (Phase 15 - October 2025)
 
-### Core Innovation: Reactive Content Workflows
+This documentation reflects the **current Phase 15 architecture** following a major documentation audit and restructure. Many aspirational features described in legacy docs are **not yet implemented**.
 
-Instead of manual content management, Vespera Codex enables:
+**What Exists Now**:
+- ✅ Project-centric architecture with mandatory projects
+- ✅ Dynamic template system (JSON5-based)
+- ✅ Codex nesting (Scrivener-style folders)
+- ✅ VS Code extension with Navigator and Chat UI
+- ✅ FastMCP server with Bindery backend integration
 
-- **Tag-driven automation** that responds to content changes
-- **LLM-assisted rule creation** from natural language
-- **Cross-codex automation chains** that span multiple content types  
-- **Real-time reactive updates** across your creative workspace
+**Planned Features** (see `legacy/future-features/`):
+- ❌ Tag-driven automation system
+- ❌ LLM-assisted rule creation
+- ❌ Cross-codex automation chains
+- ❌ Real-time reactive workflows
+
+---
 
 ## 📚 Documentation Structure
 
-### 🎯 Core Architecture Documentation
+### 📖 Quick Start
 
-| Document | Purpose | Audience |
-|----------|---------|----------|
-| **[Dynamic Automation Architecture](./technical/DYNAMIC_AUTOMATION_ARCHITECTURE.md)** | Complete technical architecture for the revolutionary automation system | Developers, Architects |
-| **[Codex Architecture](./technical/CODEX_ARCHITECTURE.md)** | Universal content system where everything is a Codex entry with template-driven behavior | System Architects |
-| **[Template System Architecture](./technical/TEMPLATE_SYSTEM_ARCHITECTURE.md)** | Comprehensive template system enabling user-extensible content types via JSON5 files | Developers, Template Creators |  
-| **[Multi-Project Vault Organization](./technical/MULTI_PROJECT_VAULT_ORGANIZATION.md)** | Managing multiple project types within single vaults with seamless template switching | Project Managers, Power Users |
-| **[UI Architecture Three-Panel Design](./technical/UI-Architecture-Three-Panel-Design.md)** | Three-panel interface design with immersive environment integration | UI/UX Developers |
-| **[Event System Specification](./technical/EVENT_SYSTEM_SPECIFICATION.md)** | Detailed event processing and real-time reactive content implementation | Backend Developers |
+- **[Getting Started](./quickstart/GETTING_STARTED.md)** - Installation and first steps
+- **[Quick Reference](./quickstart/)** - Common commands and workflows
 
-### 🎨 Examples and Use Cases  
+### 🏛️ Architecture
 
-| Document | Purpose | Audience |
-|----------|---------|----------|
-| **[Automation Rule Examples](./examples/AUTOMATION_RULE_EXAMPLES.md)** | Concrete examples of automation rules for different creative workflows | All Users, Rule Creators |
+Comprehensive technical specifications organized by category:
 
-### 📖 User Guides
+#### Core Architecture (`architecture/core/`)
 
-| Document | Purpose | Audience |
-|----------|---------|----------|
-| **[Getting Started with Automation](./user-guides/GETTING_STARTED_AUTOMATION.md)** | Step-by-step guide to setting up and using automation | New Users, Content Creators |
-| **[Real-World Integration Scenarios](./user-guides/REAL_WORLD_INTEGRATION_SCENARIOS.md)** | Comprehensive examples of how Vespera integrates into various creative workflows | All Users, Workflow Designers |
+Foundation documents for the system:
 
-## 🚀 Quick Start: Experience the Magic
+- **[Project-Centric Architecture](./architecture/core/PROJECT_CENTRIC_ARCHITECTURE.md)** ⭐
+  - Projects as fundamental entities
+  - Multi-project workspace management
+  - Project context switching
 
-### The 30-Second Demo
+- **[Hierarchical Template System](./architecture/core/HIERARCHICAL_TEMPLATE_SYSTEM.md)** ⭐
+  - Dynamic JSON5-based templates
+  - Template categories and inheritance
+  - User-extensible content types
 
-1. **Create a scene** with tag `#mood:peaceful`
-2. **Link it to music** with "Forest Sounds"  
-3. **Change the tag** to `#mood:tense`
-4. **Watch the magic**: Music automatically switches to "Battle Drums"
+- **[Codex Nesting](./architecture/core/CODEX_NESTING.md)** ⭐
+  - Scrivener-style folder-documents
+  - Unlimited hierarchical organization
+  - Folders with content
 
-This is just the beginning. The system can automate complex creative workflows across any content type.
+- **[Codex Architecture](./architecture/core/CODEX_ARCHITECTURE.md)**
+  - Universal content model
+  - Template-driven behavior
+  - Metadata and frontmatter
 
-### Core Concepts
+- **[Template System Architecture](./architecture/core/TEMPLATE_SYSTEM_ARCHITECTURE.md)**
+  - Template loading and validation
+  - Field definitions and view modes
+  - Workflow states and actions
 
-**🏷️ Tag-Driven Automation**
+- **[Multi-Project Vault Organization](./architecture/core/MULTI_PROJECT_VAULT_ORGANIZATION.md)**
+  - Managing multiple projects in one vault
+  - Project-aware content filtering
+  - Cross-project references
 
-- Tags become automation triggers (`#mood:peaceful` → `#mood:tense`)
-- System responds with intelligent actions (music change, task creation, etc.)
-- No manual intervention required
+- **[UI Architecture Three-Panel Design](./architecture/core/UI-Architecture-Three-Panel-Design.md)**
+  - Three-panel layout (Navigator, Editor, Context)
+  - Immersive environment adaptation
+  - UI component structure
 
-**🤖 LLM-Assisted Setup**  
+- **[Dynamic Automation Architecture](./architecture/core/DYNAMIC_AUTOMATION_ARCHITECTURE.md)** 🔮
+  - Tag-driven automation (planned)
+  - LLM-assisted rule creation (planned)
+  - Cross-codex chains (planned)
 
-- Describe automation in natural language: "When Alice gets scared, change the music"
-- LLM converts to executable automation rules
-- No complex configuration required
+- **[Event System Specification](./architecture/core/EVENT_SYSTEM_SPECIFICATION.md)** 🔮
+  - Real-time event processing (planned)
+  - Event routing and handling (planned)
 
-**🔗 Cross-Codex Chains**
+#### Subsystems (`architecture/subsystems/`)
 
-- Scene completion → Character updates → Task creation → Music changes  
-- Cascading automation across different content types
-- Intelligent workflow orchestration
+Specialized components and integrations:
 
-**⚡ Real-Time Reactive Content**
+- **[MCP Bindery Architecture](./architecture/subsystems/MCP_BINDERY_ARCHITECTURE.md)** - FastMCP server and Rust backend
+- **[Task Execution Architecture](./architecture/subsystems/TASK_EXECUTION_ARCHITECTURE.md)** - Task management system
+- **[LLM Provider Architecture](./architecture/subsystems/llm-provider-architecture.md)** - Chat provider integration
+- **[Background Services Architecture](./architecture/subsystems/background-services-architecture.md)** - Service lifecycle
+- **[Hook Agent System](./architecture/subsystems/HOOK_AGENT_SYSTEM_IMPLEMENTATION.md)** - Agent coordination
+- **[Rust Module Architecture](./architecture/subsystems/RUST_MODULE_ARCHITECTURE.md)** - Bindery backend details
+- **[Triple Database Implementation](./architecture/subsystems/triple-database-implementation.md)** - Storage layer
 
-- Immediate UI updates when content changes
-- Background automation chains execute seamlessly  
-- Live feedback shows what's happening and why
+#### Integration (`architecture/integration/`)
 
-## 🏛️ Technical Foundation
+- **[API Overview](./architecture/integration/api-overview.md)** - Public API surface
 
-### Built on Proven Architecture
+#### Testing (`architecture/testing/`)
 
-The Dynamic Automation system extends Vespera Scriptorium V2's proven architecture:
+- **[Testing Enhancements](./architecture/testing/testing-enhancements.md)** - Test infrastructure
+- **[Testing Validation Report](./architecture/testing/testing-validation-report.md)** - Test coverage
 
-- **Triple Database System**: SQLite + Chroma + KuzuDB for performance and flexibility
-- **MCP Integration**: 14 comprehensive tools via official MCP Python SDK
-- **Hierarchical Task Management**: Parent-child relationships and dependencies
-- **Role-Based Execution**: Capability restrictions and file pattern matching
+### 🎯 Examples
 
-### Event-Driven Architecture
+Practical examples and patterns:
 
-```
-Content Change → Event Generation → Rule Matching → Action Execution → UI Updates
-     ↑              ↓                   ↓              ↓               ↓
-Tag Modified → Event Router → Automation Engine → Content Updates → Live Feedback
-```
+- **[Automation Rule Examples](./examples/AUTOMATION_RULE_EXAMPLES.md)** 🔮 - Tag-driven automation patterns (planned)
+- **[Template Hook Agent Examples](./examples/TEMPLATE_HOOK_AGENT_EXAMPLES.md)** - Agent integration examples
 
-## 🎮 User Experience Magic
+### 📝 Guides
 
-### Magical Automation Examples
+#### User Guides (`guides/users/`)
 
-**📝 Writing Assistant**
+Coming soon - practical guides for end users
 
-- Complete character development task → Automatically update relationship maps
-- Mark scene as "final" → Create review tasks for all characters involved  
-- Change character emotion → Update linked music and atmosphere
+#### Developer Guides (`guides/developers/`)
 
-**🎵 Dynamic Soundscapes**
+Coming soon - implementation guides for developers
 
-- Scene mood changes → Music automatically adapts
-- Character focus shifts → Theme music plays
-- Story tension rises → Background audio intensifies
+### 🔧 Development
 
-**📋 Intelligent Task Management**  
+#### Architecture Decision Records (`development/decisions/`)
 
-- Task completion → Dependent tasks automatically prioritize
-- Deadline changes → Workload rebalances across team
-- Dependencies resolve → Blocked tasks automatically unblock
+Significant architectural decisions with context and rationale:
 
-**🎨 Creative Workflow Optimization**
+- **[ADR-001: Projects as Fundamental](./development/decisions/ADR-001-projects-fundamental.md)** ✅
+- **[ADR-004: Dynamic Template System](./development/decisions/ADR-004-dynamic-templates.md)** ✅
+- **[ADR-007: Codex-Based Folders](./development/decisions/ADR-007-codex-folders.md)** ✅
+- [See full ADR index](./development/decisions/README.md)
 
-- Image upload → Automatic tagging and content linking
-- Video processing → Chapter generation and scene detection  
-- Audio analysis → Mood classification and music library integration
+#### Phase Tracking (`development/phases/`)
 
-## 🔧 Implementation Status
+Development progress organized by implementation phase:
 
-### ✅ Completed Components
+- Phase 1-3: Initial Bindery backend and MCP integration
+- Phase 12-13: Chat system integration
+- **Phase 14**: LLM architecture and UI integration (current)
+- **Phase 15**: Documentation audit and project-centric refactor (in progress)
 
-- **Core Architecture Design**: Complete technical specification
-- **Event System**: Comprehensive event processing framework
-- **Automation Engine**: Rule creation and execution system  
-- **Example Library**: Extensive automation rule examples
-- **User Documentation**: Getting started guides and tutorials
+#### Development Reports (`development/reports/`)
 
-### 🚧 In Development
+Technical investigations, integration summaries, and post-mortems
 
-- **Obsidian Plugin Integration**: Real-time UI components
-- **LLM Rule Generator**: Natural language to automation rules
-- **Performance Optimizations**: High-throughput event processing
-- **External Integrations**: Spotify, image services, writing tools
+#### Environment Setup (`development/environment/`)
 
-### 🔮 Planned Enhancements
+Worktree configurations, build setups, development workflows
 
-- **Machine Learning**: Pattern recognition and rule suggestion
-- **Advanced Analytics**: Content relationship analysis
-- **Collaboration Tools**: Team automation and shared rule libraries
-- **Mobile Interface**: Cross-platform content access
+### 📚 Reference
 
-## 🎯 Target Workflows
+#### Glossary (`reference/GLOSSARY.md`)
 
-### Creative Professionals
+Comprehensive terminology reference - coming soon
 
-- **Writers**: Dynamic character development and plot management
-- **Game Developers**: Asset management and narrative branching  
-- **Content Creators**: Multi-media project coordination
-- **Researchers**: Knowledge graph automation and insight generation
+### 🔮 Legacy Documentation
 
-### Business Applications
+#### Future Features (`legacy/future-features/`)
 
-- **Project Management**: Intelligent task orchestration
-- **Documentation**: Auto-updating knowledge bases
-- **Marketing**: Campaign asset coordination
-- **Training**: Interactive learning material management
+Aspirational documentation for planned features:
+
+- **[Getting Started with Automation](./legacy/future-features/GETTING_STARTED_AUTOMATION.md)** ⚠️ - Describes unimplemented automation
+- **[Real-World Integration Scenarios](./legacy/future-features/REAL_WORLD_INTEGRATION_SCENARIOS.md)** ⚠️ - Aspirational use cases
+- **[V2 Quick Start](./v2-quick-start.md)** ⚠️ - Describes partially implemented V2 features
+- **[V2 MCP Tools Reference](./v2-mcp-tools-reference.md)** ⚠️ - Aspirational tool specifications
+- **[V2 Role System Guide](./v2-role-system-guide.md)** ⚠️ - Unimplemented role system
+
+---
+
+## 🚀 Quick Navigation
+
+### New to Vespera Atelier?
+
+1. **[Getting Started Guide](./quickstart/GETTING_STARTED.md)** - Install and set up
+2. **[Project-Centric Architecture](./architecture/core/PROJECT_CENTRIC_ARCHITECTURE.md)** - Understand the core concept
+3. **[Hierarchical Template System](./architecture/core/HIERARCHICAL_TEMPLATE_SYSTEM.md)** - Learn about content types
+
+### Implementing Features?
+
+1. **[Architecture Decision Records](./development/decisions/README.md)** - Understand design decisions
+2. **[Core Architecture](./architecture/core/)** - Read relevant architectural docs
+3. **[Phase Tracking](./development/phases/)** - Check current development status
+
+### Contributing?
+
+1. **[ADR Template](./development/decisions/ADR-TEMPLATE.md)** - Document new decisions
+2. **[Development Reports](./development/reports/)** - Review past investigations
+3. **[Current Phase Status](./development/phases/PHASE_14_PROGRESS.md)** - See what's in progress
+
+---
+
+## 🎯 Core Concepts
+
+### Projects are Fundamental
+
+Everything in Vespera Atelier exists within a **Project** context. Projects organize content, filter templates, and provide clear boundaries for creative work.
+
+### Dynamic Templates
+
+Templates are JSON5 files that define content types. No hardcoded types means users can create custom templates for any workflow.
+
+### Codex Nesting
+
+Like Scrivener, Codices can contain both content AND children. Chapters can have summaries and contain Scenes. Folders are just Codices with children.
+
+### Template-Driven UI
+
+The UI adapts to templates - field layouts, view modes, and actions all defined in template files.
+
+---
+
+## 📊 Implementation Status
+
+### Phase 15 (Current): Documentation & Architecture
+
+**Goals**:
+- ✅ Clean up documentation structure
+- ✅ Create foundation architecture documents
+- ✅ Add implementation warnings to aspirational docs
+- ✅ Establish ADR system
+- 🚧 Update documentation hub (in progress)
+
+**Next**: Phase 16 will implement the project-centric refactor
+
+### Recent Phases
+
+- **Phase 14**: LLM provider integration, Chat UI, Navigator improvements
+- **Phase 13**: Chat system fixes and template initialization
+- **Phase 12**: Chat provider architecture
+
+---
 
 ## 🔗 Related Documentation
 
 ### Monorepo Context
 
-- **[Main Monorepo Guide](../CLAUDE.md)**: Overall project structure and development
-- **[PRP Framework](../PRPs/CLAUDE.md)**: Product requirement process documentation
-- **[Vespera Scriptorium](../packages/vespera-scriptorium/CLAUDE.md)**: Task orchestrator backend
+- **[ARCHITECTURE.md](../ARCHITECTURE.md)** - High-level system overview
+- **[CLAUDE.md](../CLAUDE.md)** - Claude Code development instructions
+- **[README.md](../README.md)** - Project introduction
 
-### Package-Specific Docs
+### Package-Specific
 
-- **Vespera Scriptorium V2**: Enhanced task orchestrator with triple database
-- **Obsidian Plugin**: Frontend integration and user interface
-- **Vespera Utilities**: Shared libraries and utilities
-
-## 🚀 Getting Involved
-
-### For Developers
-
-1. **Start with Core Architecture**: Read the [Dynamic Automation Architecture](./DYNAMIC_AUTOMATION_ARCHITECTURE.md)
-2. **Understand Events**: Review the [Event System Specification](./technical/EVENT_SYSTEM_SPECIFICATION.md)  
-3. **Explore Examples**: Study the [Automation Rule Examples](./examples/AUTOMATION_RULE_EXAMPLES.md)
-4. **Build and Test**: Set up the development environment
-
-### For Users
-
-1. **Quick Start**: Follow the [Getting Started Guide](./user-guides/GETTING_STARTED_AUTOMATION.md)
-2. **Explore Examples**: Try the automation rule examples
-3. **Create Rules**: Use natural language to describe your automation needs
-4. **Share Experience**: Contribute rule examples and use cases
-
-### For Contributors
-
-1. **Architecture Feedback**: Help refine the technical design
-2. **Implementation**: Contribute to core components
-3. **Documentation**: Improve guides and examples
-4. **Testing**: Validate automation rules and workflows
-
-## 🎉 Vision Statement
-
-**The Vespera Atelier represents the future of creative content management - where static files become living, reactive ecosystems that anticipate your needs and automate your workflows with magical precision.**
-
-By combining proven task orchestration with revolutionary automation capabilities, we're creating tools that don't just organize content, but actively participate in the creative process.
+- **[Vespera Forge VS Code Extension](../plugins/VSCode/vespera-forge/)** - Extension implementation
+- **[Vespera Scriptorium MCP Server](../packages/vespera-scriptorium/)** - Backend server
+- **[PRPs Framework](../PRPs/)** - Product Requirement Prompts
 
 ---
 
-*Welcome to the age of intelligent creative workspaces. Welcome to Vespera Atelier.* ✨
+## 🌟 Vision
+
+Vespera Atelier aims to create intelligent creative workspaces where:
+
+- **Projects organize everything** - Clear context, reduced clutter
+- **Templates define workflows** - User-extensible, project-aware
+- **Content nests naturally** - Scrivener-style hierarchies
+- **Automation reacts to changes** - Future: Tag-driven workflows
+
+We're building tools that don't just store content, but understand its structure and adapt to creative workflows.
+
+---
+
+## 📝 Documentation Conventions
+
+### Status Indicators
+
+- ⭐ **Start here** - Essential reading
+- ✅ **Implemented** - Feature exists and works
+- 🚧 **In progress** - Currently being implemented
+- 🔮 **Planned** - Designed but not yet implemented
+- ⚠️ **Warning** - Describes unimplemented features
+
+### Document Organization
+
+- **Core** - Foundation concepts everyone should know
+- **Subsystems** - Specialized components for specific features
+- **Integration** - APIs and interfaces between systems
+- **Testing** - Quality assurance and validation
+
+---
+
+*Last Updated: Phase 15 - October 2025*

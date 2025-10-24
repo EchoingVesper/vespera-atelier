@@ -1,5 +1,27 @@
 # Vespera Scriptorium V2 Role System Guide
 
+---
+
+## ⚠️ IMPLEMENTATION STATUS WARNING
+
+**THIS DOCUMENT DESCRIBES AN UNIMPLEMENTED ROLE SYSTEM**
+
+This guide describes a planned V2 role-based execution system with tool groups and file pattern restrictions that **has not been implemented**. The role system, tool groups, and validation mechanisms described here are aspirational designs.
+
+**Current Reality (Phase 15 - October 2025)**:
+- ❌ Tool group-based role system: **NOT IMPLEMENTED**
+- ❌ File pattern restrictions: **NOT IMPLEMENTED**
+- ❌ Runtime capability validation: **NOT IMPLEMENTED**
+- ❌ 10 predefined roles (architect, implementer, etc.): **NOT IMPLEMENTED**
+- ✅ Basic role assignment to tasks: **IMPLEMENTED** (without enforcement)
+- ✅ `list_roles` MCP tool: **IMPLEMENTED** (returns placeholder data)
+
+**Actual Role System**: Currently roles are metadata-only with no enforcement or restrictions
+
+**This document is preserved for reference and future security architecture design.**
+
+---
+
 ## Overview
 
 The V2 Role System provides capability-restricted execution inspired by Roo Code's tool group architecture. Instead of granular permissions, roles organize capabilities into logical tool groups with file pattern restrictions for enhanced security and workflow organization.

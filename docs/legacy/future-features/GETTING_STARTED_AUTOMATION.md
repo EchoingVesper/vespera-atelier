@@ -1,5 +1,31 @@
 # Getting Started with Vespera Codex Automation
 
+---
+
+## ⚠️ FUTURE FEATURE DOCUMENTATION
+
+**THIS GUIDE DESCRIBES UNIMPLEMENTED AUTOMATION FEATURES**
+
+This documentation was written aspirationally to describe the planned Dynamic Automation and Tag-Driven Systems. **These features are not currently implemented.**
+
+**Current Reality (Phase 15 - October 2025)**:
+- ❌ Automation Engine: **NOT IMPLEMENTED**
+- ❌ Tag-driven automation rules: **NOT IMPLEMENTED**
+- ❌ LLM-assisted rule creation: **NOT IMPLEMENTED**
+- ❌ Cross-codex automation chains: **NOT IMPLEMENTED**
+- ❌ Real-time reactive content: **NOT IMPLEMENTED**
+
+**What Actually Exists**:
+- ✅ Basic Codex tagging system
+- ✅ Template-based content creation
+- ✅ Project-centric organization
+
+**For Current Architecture**: See [Dynamic Automation Architecture](../../architecture/core/DYNAMIC_AUTOMATION_ARCHITECTURE.md) for planned design
+
+**This document is preserved as a design reference for future development.**
+
+---
+
 This guide will help you get started with the Dynamic Automation and Tag-Driven Systems in the Vespera Codex. You'll learn how to set up automation rules, create reactive content workflows, and leverage the power of intelligent content ecosystems.
 
 ## 🚀 Quick Start
