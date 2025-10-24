@@ -46,31 +46,14 @@ function NavigatorApp() {
   // Phase 16b Stage 3: Filter codices by active project
   // Only show codices that belong to the currently active project
   const filteredCodices = React.useMemo(() => {
-    console.log('[Navigator] Filtering codices:', {
-      totalCodex: codices.length,
-      activeProjectId: activeProject?.id,
-      activeProjectName: activeProject?.name
-    });
-
     if (!activeProject) {
-      console.log('[Navigator] No active project - returning empty array');
       return [];
     }
-
     // Handle both camelCase (projectId) and snake_case (project_id) from backend
-    const filtered = codices.filter(codex => {
+    return codices.filter(codex => {
       const codexProjectId = codex.metadata.projectId || (codex.metadata as any).project_id;
-      console.log('[Navigator] Checking codex:', codex.name);
-      console.log('[Navigator]   ID:', codex.id);
-      console.log('[Navigator]   Metadata (stringified):', JSON.stringify(codex.metadata, null, 2));
-      console.log('[Navigator]   codexProjectId:', codexProjectId);
-      console.log('[Navigator]   activeProjectId:', activeProject.id);
-      console.log('[Navigator]   MATCHES:', codexProjectId === activeProject.id);
       return codexProjectId === activeProject.id;
     });
-
-    console.log('[Navigator] Filtered result:', filtered.length, 'codices match active project');
-    return filtered;
   }, [codices, activeProject]);
 
   // Listen for messages from the extension
