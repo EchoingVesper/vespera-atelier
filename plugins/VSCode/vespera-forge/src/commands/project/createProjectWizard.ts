@@ -285,20 +285,21 @@ async function createProject(
   description?: string
 ): Promise<WizardResult> {
   try {
-    // Build input
+    // Build input with guaranteed settings
     const input: CreateProjectInput = {
       name,
       type: type.id,
       description,
       settings: {
-        ...type.defaultSettings,
+        color: type.defaultSettings?.color ?? '#6B7280',
         icon: type.icon,
-        enabledAutomation: type.defaultSettings?.enabledAutomation ?? false
+        enabledAutomation: type.defaultSettings?.enabledAutomation ?? false,
+        features: type.defaultSettings?.features ?? { automation: false }
       }
     };
 
-    // Create project
-    const project = await projectService.createProject(input);
+    // Create project - cast to ProjectCreateInput since we know settings is defined
+    const project = await projectService.createProject(input as any);
 
     return {
       success: true,

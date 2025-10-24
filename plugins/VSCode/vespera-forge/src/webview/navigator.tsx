@@ -27,10 +27,8 @@ declare global {
 // Create platform adapter once (outside component to avoid re-acquiring VS Code API)
 const adapter = new VSCodeAdapter();
 
-// Get VS Code API for ProjectContext
-const vscodeApi = typeof window !== 'undefined' && window.acquireVsCodeApi
-  ? window.acquireVsCodeApi()
-  : undefined;
+// Use the adapter's existing VS Code API instance (already acquired in adapter constructor)
+const vscodeApi = adapter.api;
 
 /**
  * Navigator App Component
@@ -72,6 +70,18 @@ function NavigatorApp() {
         case 'response':
           // Handle response from extension
           console.log('[Navigator] Received response:', message);
+          break;
+
+        // Project-related messages are handled by ProjectContext, silently ignore here
+        case 'project:list:response':
+        case 'project:get:response':
+        case 'project:create:response':
+        case 'project:update:response':
+        case 'project:delete:response':
+        case 'project:setActive:response':
+        case 'project:projectsChanged':
+        case 'project:activeChanged':
+          // Handled by ProjectContext
           break;
 
         default:

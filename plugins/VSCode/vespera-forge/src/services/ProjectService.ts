@@ -659,8 +659,11 @@ export class ProjectService implements DisposableResource {
   private serializeProject(project: IProject): any {
     return {
       ...project,
-      createdAt: project.createdAt.toISOString(),
-      updatedAt: project.updatedAt.toISOString()
+      metadata: {
+        ...project.metadata,
+        createdAt: project.metadata.createdAt.toISOString(),
+        updatedAt: project.metadata.updatedAt.toISOString()
+      }
     };
   }
 
@@ -670,8 +673,11 @@ export class ProjectService implements DisposableResource {
   private deserializeProject(json: any): IProject {
     return {
       ...json,
-      createdAt: new Date(json.createdAt),
-      updatedAt: new Date(json.updatedAt)
+      metadata: {
+        ...json.metadata,
+        createdAt: new Date(json.metadata.createdAt),
+        updatedAt: new Date(json.metadata.updatedAt)
+      }
     };
   }
 
@@ -756,7 +762,7 @@ export class ProjectService implements DisposableResource {
       name: project.name,
       type: project.type,
       status: project.status,
-      updatedAt: project.updatedAt.toISOString()
+      updatedAt: project.metadata.updatedAt.toISOString()
     };
 
     await this.saveIndex();
@@ -798,7 +804,7 @@ export class ProjectService implements DisposableResource {
               name: project.name,
               type: project.type,
               status: project.status,
-              updatedAt: project.updatedAt.toISOString()
+              updatedAt: project.metadata.updatedAt.toISOString()
             };
           }
         }

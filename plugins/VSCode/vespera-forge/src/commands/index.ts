@@ -442,6 +442,24 @@ export const createCodexCommand: CommandHandler = async (_context: VesperaForgeC
   try {
     const binderyService = getBinderyService();
 
+    // Get active project (Phase 16b Stage 3)
+    const projectService = (global as any).navigatorProvider?._projectService;
+    const activeProject = projectService?.getActiveProject();
+
+    // Require active project for codex creation
+    if (!activeProject) {
+      const createProject = await vscode.window.showWarningMessage(
+        'No active project. Codices must belong to a project.',
+        'Create Project',
+        'Cancel'
+      );
+
+      if (createProject === 'Create Project') {
+        await vscode.commands.executeCommand('vespera-forge.createProjectWizard');
+      }
+      return;
+    }
+
     // Show template picker
     const templates = [
       { label: '📝 Note', description: 'Simple note or document', templateId: 'note' },
@@ -470,8 +488,12 @@ export const createCodexCommand: CommandHandler = async (_context: VesperaForgeC
       return;
     }
 
-    // Create the codex with title
-    const result = await binderyService.createCodex(title.trim(), selectedTemplate.templateId);
+    // Create the codex with title and project ID (Phase 16b Stage 3)
+    const result = await binderyService.createCodex(
+      title.trim(),
+      selectedTemplate.templateId,
+      activeProject.id
+    );
 
     if (result.success) {
       const codexId = result.data;

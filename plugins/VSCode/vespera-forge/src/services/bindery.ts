@@ -776,12 +776,22 @@ export class BinderyService extends EventEmitter {
    */
   public async createCodex(
     title: string,
-    templateId: string
+    templateId: string,
+    projectId?: string
   ): Promise<BinderyResult<CodexId>> {
-    return this.sendRequest('create_codex', {
+    const payload: any = {
       title,
       template_id: templateId
-    });
+    };
+
+    // Add project_id to metadata if provided
+    if (projectId) {
+      payload.metadata = {
+        project_id: projectId
+      };
+    }
+
+    return this.sendRequest('create_codex', payload);
   }
 
   /**
