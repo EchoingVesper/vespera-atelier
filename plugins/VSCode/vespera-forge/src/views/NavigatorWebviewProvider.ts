@@ -292,31 +292,24 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
         this.logger?.info('Templates initialized successfully');
       }
 
-      // Load codices from Bindery - first get IDs, then fetch full objects
-      const codicesIdsResult = await this.binderyService.listCodeices();
+      // Load codices from Bindery - list_codices now returns full objects
+      const codicesResult = await this.binderyService.listCodeices();
 
       let codices: any[] = [];
-      if (codicesIdsResult.success && codicesIdsResult.data.length > 0) {
-        this.logger?.info('Fetching full codex objects', {
-          idCount: codicesIdsResult.data.length
+      if (codicesResult.success && codicesResult.data.length > 0) {
+        this.logger?.info('Processing codex objects', {
+          count: codicesResult.data.length
         });
 
-        // Fetch full codex objects for each ID
-        const codexPromises = codicesIdsResult.data.map(id =>
-          this.binderyService.getCodex(id)
-        );
-        const codexResults = await Promise.all(codexPromises);
-
-        // Extract successful results and transform to UI format
-        codices = codexResults
-          .filter(result => result.success)
-          .map(result => {
-            const data = result.data as any;
-            // Transform flat Bindery response to UI's expected structure
-            return {
-              id: data.id,
-              name: data.title,
-              templateId: data.template_id,
+        // Transform codex objects to UI format (no need to fetch individually)
+        codices = codicesResult.data.map((data: any) => {
+          // Transform flat Bindery response to UI's expected structure
+          return {
+            id: data.id,
+            name: data.title,
+            templateId: data.template_id,
+            // Phase 16b Stage 3: Include project_id for filtering
+            projectId: data.project_id || data.metadata?.project_id || data.metadata?.projectId,
               tags: data.tags || [],
               relationships: data.relationships || [],
               createdAt: data.created_at ? new Date(data.created_at) : new Date(),
