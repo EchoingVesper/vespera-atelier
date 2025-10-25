@@ -247,6 +247,67 @@ Vespera Scriptorium implements a FastMCP-based translation layer to the Rust Bin
 - `test_*.py`: Unit and integration tests for MCP tools
 - `run_mcp_tests.py`: Test runner for MCP server functionality
 
+## 💡 Development Best Practices
+
+### Component Refactoring Strategy
+
+**IMPORTANT**: When encountering complex components that need refactoring:
+
+❌ **DO NOT** create simplified/alternative versions of existing components
+✅ **DO** modularize complex components by breaking them into smaller pieces
+
+**Rationale**:
+- Simplified versions create orphaned files that confuse future AI agents and developers
+- Multiple implementations of the same concept increase maintenance burden
+- Modularization preserves existing functionality while improving structure
+- Proper refactoring creates clearer architecture vs. duplicating components
+
+**Example**:
+```typescript
+// ❌ BAD: Creating simplified version
+// CodexEditor.tsx (existing complex component)
+// CodexEditorSimple.tsx (new simplified version) ← AVOID THIS
+
+// ✅ GOOD: Modularizing complex component
+// CodexEditor.tsx (main orchestrator)
+// ├── CodexEditorHeader.tsx (extracted module)
+// ├── CodexEditorFields.tsx (extracted module)
+// ├── CodexEditorToolbar.tsx (extracted module)
+// └── hooks/
+//     ├── useCodexState.ts (extracted logic)
+//     └── useCodexValidation.ts (extracted logic)
+```
+
+See [ADR-012: Codices as File Containers](docs/development/decisions/ADR-012-codices-as-file-containers.md) for architectural context.
+
+### Template Development Standards
+
+**Templates are the core of the system** and must be carefully constructed:
+
+1. **Standardize schemas first** before implementing features that depend on them
+2. **Create defined subcomponents** that templates are allowed to contain
+3. **Implement validation** with clear error messages for invalid structures
+4. **Add fallback behavior** for edge cases and missing data
+5. **Document template patterns** for consistency across template authors
+
+Template composition is essential for task automation - see [ADR-013: Template Composition](docs/development/decisions/ADR-013-template-composition.md).
+
+### Performance Considerations
+
+**Virtualization from the Start**:
+- Implement virtualized rendering for lists and large content areas from the beginning
+- Don't wait for performance issues to surface - build it right initially
+- Target: Handle 10k+ Codices in Navigator, 100k chars in Editor
+
+See [ADR-014: Content Chunking](docs/development/decisions/ADR-014-content-chunking.md) for size limit strategies.
+
+### Collaborative Editing
+
+When implementing save/sync features, consider the **Bindery CRDT infrastructure**:
+- The Bindery backend has CRDT (Conflict-free Replicated Data Type) support built-in
+- Future goal: Multi-user simultaneous editing like Google Docs
+- Design with eventual CRDT integration in mind rather than simple last-write-wins
+
 ## 📋 Development Commands
 
 ### Essential Commands
