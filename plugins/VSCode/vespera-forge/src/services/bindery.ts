@@ -972,8 +972,8 @@ export class BinderyService extends EventEmitter {
 
   private async startBinderyProcess(binderyPath: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      const args = ['--json-rpc'];
-      
+      const args = ['--json-rpc', '--workspace', this.config.workspaceRoot || process.cwd()];
+
       // Security-enhanced process spawn options
       const spawnOptions: any = {
         stdio: ['pipe', 'pipe', 'pipe'],
