@@ -1,10 +1,10 @@
 ---
-description: Resume work from a previous session's handover document
+description: Continue work from a previous session's handover document
 ---
 
-# Resume from Handover
+# Continue from Handover
 
-You are starting a new Claude Code session and need to pick up where the previous session left off. This command helps you quickly get oriented and resume work.
+You are starting a new Claude Code session and need to pick up where the previous session left off. This command helps you quickly get oriented and continue work.
 
 ## 1. Find Most Recent Handover
 
@@ -79,7 +79,7 @@ If no handover document exists:
 ## Example Usage
 
 ```
-User: /resume
+User: /continue
 Assistant: I'll find and load the most recent handover...
 
 Found: docs/development/handovers/HANDOVER_2025-10-24-2345.md
