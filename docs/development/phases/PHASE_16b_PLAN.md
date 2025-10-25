@@ -1,8 +1,9 @@
 # Phase 16b: Project-Centric UI Integration
 
-**Status**: Proposed
-**Duration**: [TBD - Estimated 2-3 sessions]
-**Context Window**: [Current session]
+**Status**: Complete (Stages 1-3), Stage 4 deferred to Phase 17
+**Duration**: 2025-10-24 (3 context windows / ~12-15 hours)
+**Context Window**: Windows 1-3 (Oct 24, 2025)
+**Completion Document**: [PHASE_16b_COMPLETE.md](./PHASE_16b_COMPLETE.md)
 **Related ADRs**: [ADR-001](../decisions/ADR-001-projects-fundamental.md), [ADR-004](../decisions/ADR-004-dynamic-templates.md), [ADR-007](../decisions/ADR-007-codex-folders.md), [ADR-011](../decisions/ADR-011-surgical-cleanup-before-architecture.md)
 **Previous Phase**: [Phase 16a: Surgical Cleanup & Foundation](./PHASE_16a_COMPLETE.md)
 
