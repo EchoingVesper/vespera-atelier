@@ -4,20 +4,37 @@
 **Duration**: [To be determined after approval]
 **Context Window**: [To be linked after execution]
 **Related ADRs**:
-- [ADR-001](../decisions/ADR-001-projects-fundamental.md) - Projects as Fundamental
+- [ADR-001](../decisions/ADR-001-projects-fundamental.md) - Projects as Fundamental (superseded by ADR-015)
 - [ADR-004](../decisions/ADR-004-dynamic-templates.md) - Dynamic Templates
-- [ADR-012](../decisions/ADR-012-codices-as-file-containers.md) - Codices as File Containers ✨ NEW
-- [ADR-013](../decisions/ADR-013-template-composition.md) - Template Composition ✨ NEW
-- [ADR-014](../decisions/ADR-014-content-chunking.md) - Content Chunking ✨ NEW
+- [ADR-012](../decisions/ADR-012-codices-as-file-containers.md) - Codices as File Containers ✨
+- [ADR-013](../decisions/ADR-013-template-composition.md) - Template Composition ✨
+- [ADR-014](../decisions/ADR-014-content-chunking.md) - Content Chunking ✨
+- [ADR-015](../decisions/ADR-015-workspace-project-context-hierarchy.md) - Workspace/Project/Context Hierarchy ⭐ NEW
+- [ADR-016](../decisions/ADR-016-global-registry-storage.md) - Global Registry + Workspace Storage ⭐ NEW
 **Previous Phase**: [Phase 16b: Project-Centric UI Integration](./PHASE_16b_COMPLETE.md)
 
 ---
 
 ## Executive Summary
 
-Phase 17 completes the core Vespera Forge editing workflow by implementing the Codex Viewer/Editor functionality and polishing the project-centric system from Phase 16b. Users will be able to click a codex in the Navigator and see it load in the Editor panel with template-driven forms for editing content. This phase also fixes critical bugs preventing the editor from displaying codices and adds polish features like status bar integration and template filtering completion.
+Phase 17 refactors the architectural foundation established in Phase 16b and completes the core Vespera Forge editing workflow. This phase has two major components:
 
-**Key Achievement Goal**: End-to-end workflow from Navigator click → Editor display → Content edit → Save back to Bindery
+**Part 1: Architectural Refactoring** (NEW - Critical Foundation)
+- Refactor Phase 16b's "Projects" to "Contexts" within a proper three-level hierarchy (Workspace → Project → Context)
+- Implement global registry in OS user directory (~/.vespera/) for cross-workspace project tracking
+- Add workspace discovery algorithm supporting flexible VS Code folder opening
+
+**Part 2: Editor Implementation**
+- Implement Codex Viewer/Editor with template-driven forms for editing content
+- Fix critical bugs preventing editor from displaying codices
+- Complete template filtering by project context
+- Add status bar integration and UI polish
+
+**Rationale for Refactoring**: During planning, we discovered that "Projects" in Phase 16b are actually "organizational contexts" within real-world projects. A game development project naturally spans story development, mythology research, code implementation, and art - all different contexts using different template types. Fixing this now prevents compounding confusion and technical debt.
+
+**Key Achievement Goals**:
+1. Clean Workspace → Project → Context architecture matching real-world usage
+2. End-to-end workflow: Navigator click → Editor display → Content edit → Save back to Bindery
 
 ---
 
@@ -25,11 +42,39 @@ Phase 17 completes the core Vespera Forge editing workflow by implementing the C
 
 ### Primary Goals
 
-- [ ] **Implement Codex Viewer/Editor** (HIGHEST PRIORITY)
+**Part 1: Architectural Refactoring** (MUST DO FIRST)
+
+- [ ] **Refactor Workspace/Project/Context Hierarchy**
+  - Rename "Project" entities to "Context" throughout codebase
+  - Add new "Project" layer above Context
+  - Update database schema with new three-level hierarchy
+  - Codices belong to Projects, appear in Contexts (many-to-many)
+
+- [ ] **Implement Global Registry**
+  - Create global registry in OS user directory (~/.vespera/)
+  - Store cross-workspace project tracking
+  - Implement platform-specific paths (Windows/macOS/Linux)
+  - Sync mechanism between global registry and workspace data
+
+- [ ] **Implement Workspace Discovery**
+  - Search for `.vespera/` in current workspace
+  - Search up directory tree (max 5 levels)
+  - Check global registry for projects in current path
+  - Prompt to initialize if not found
+
+- [ ] **Create Migration Script**
+  - Migrate Phase 16b "Projects" → Phase 17 "Contexts"
+  - Create default Project for existing workspaces
+  - Preserve all existing Codex data
+  - Update UI to show Project + Context selectors
+
+**Part 2: Editor Implementation** (AFTER REFACTORING)
+
+- [ ] **Implement Codex Viewer/Editor**
   - Display codex content when clicked in Navigator
   - Render template-driven form fields
   - Load and display codex metadata (tags, relationships)
-  - Show timestamps and project info
+  - Show timestamps and project/context info
 
 - [ ] **Fix Editor Data Flow Issues**
   - Resolve "No Codex Selected" error when clicking codices
@@ -39,14 +84,14 @@ Phase 17 completes the core Vespera Forge editing workflow by implementing the C
 - [ ] **Implement Edit and Save Functionality**
   - Enable editing of codex content fields
   - Validate field values according to template schema
-  - Save changes back to Bindery database
+  - Save changes to file system (for file-backed Codices) AND database (metadata)
   - Show save confirmation/error messages
   - Update Navigator display after save
 
-- [ ] **Complete Template Filtering by Project Type**
-  - Filter templates in creation UI by active project type
+- [ ] **Complete Template Filtering by Context Type**
+  - Filter templates in creation UI by active context's template type
   - Implement universal template pattern (`projectTypes: ["*"]`)
-  - Show appropriate templates for current project
+  - Show appropriate templates for current context
 
 ### Secondary Goals
 
@@ -128,14 +173,48 @@ The data flow IS working up to the webview. The issue is likely in the `CodexEdi
 
 ### Implementation Strategy
 
-Phase 17 uses a **diagnostic-first, fix-then-build approach**:
+Phase 17 uses a **refactor-first, then-build approach**:
 
-1. **Diagnose & Fix** (Stage 1): Fix the data flow issues preventing editor display
+0. **Architectural Refactoring** (Stage 0): Fix foundational model before building more on it
+1. **Diagnostic & Fix** (Stage 1): Fix editor data flow issues
 2. **Implement Core Features** (Stage 2): Build out editing functionality
 3. **Polish & Test** (Stage 3): Add template filtering and UI polish
 4. **Validation** (Stage 4): End-to-end testing
 
 #### Implementation Order
+
+**Stage 0: Architectural Refactoring** (3-5 hours) - **CRITICAL FOUNDATION**
+
+Why First: Phase 16b's "Project" model doesn't match real-world usage. Refactoring now prevents building more code on flawed architecture.
+
+1. Create ADRs documenting new architecture (ADR-015, ADR-016) ✅ DONE
+2. Update database schema:
+   - Add `projects` table (real-world endeavors)
+   - Rename `projects` table to `contexts` (organizational lenses)
+   - Add `codex_contexts` many-to-many join table
+3. Implement global registry:
+   - Create `~/.vespera/` directory structure
+   - Implement `projects-registry.json` schema
+   - Platform-specific path logic (Windows/macOS/Linux)
+4. Implement workspace discovery algorithm:
+   - Search current workspace for `.vespera/`
+   - Search up directory tree (max 5 levels)
+   - Check global registry for projects in path
+   - Initialization prompt if not found
+5. Create migration script:
+   - Convert Phase 16b "projects" → "contexts"
+   - Create default Project for workspace
+   - Link existing Codices to new schema
+6. Refactor codebase terminology:
+   - Rename `ProjectService` → `ContextService`
+   - Rename `ProjectSelector` → `ContextSelector`
+   - Add new `ProjectService` above contexts
+   - Update all variable names and comments
+7. Update UI components:
+   - Add Project selector (top level)
+   - Repurpose existing selector as Context switcher
+   - Update Navigator to show Project > Context hierarchy
+8. Test migration with Phase 16b data
 
 **Stage 1: Diagnostic & Bug Fixes** (2-3 hours)
 1. Investigate CodexEditor component - why isn't it displaying the codex?
@@ -416,11 +495,14 @@ Now, we don't need most of those editors for the MVP. The MVP needs to deal with
 
 ## Estimated Timeline
 
+- **Stage 0 (Architectural Refactoring)**: 3-5 hours
 - **Stage 1 (Diagnostic & Fixes)**: 2-3 hours
 - **Stage 2 (Core Editor)**: 6-8 hours
 - **Stage 3 (Template Filtering & Polish)**: 3-4 hours
 - **Stage 4 (Testing & Validation)**: 2-3 hours
-- **Total**: 13-18 hours (~2 context windows)
+- **Total**: 16-23 hours (~3 context windows)
+
+**Note**: Stage 0 is critical foundation work that refactors Phase 16b's Project/Context model. Attempting to build the editor before this refactoring risks building on flawed architecture.
 
 ---
 
@@ -462,20 +544,35 @@ Now, we don't need most of those editors for the MVP. The MVP needs to deal with
 
 ## Deliverables
 
-### Code Artifacts
+### Stage 0: Architectural Refactoring
+
+- [x] ADR-015: Workspace/Project/Context Hierarchy ✅
+- [x] ADR-016: Global Registry + Workspace Storage ✅
+- [x] Updated ADR README.md ✅
+- [x] Updated Phase 17 plan with new architecture ✅
+- [ ] Refactored database schema (projects/contexts split)
+- [ ] Global registry implementation (~/.vespera/)
+- [ ] Discovery algorithm (workspace → tree → registry)
+- [ ] UI updates (Project selector + Context switcher)
+- [ ] Phase 16b migration script
+- [ ] Updated Bindery integration for new schema
+
+### Stage 1-4: Editor Implementation
 
 - [ ] Fixed `CodexEditor.tsx` - Displays codex content
 - [ ] Fixed AI Assistant channel loading - Correct get_codex parameters
 - [ ] Updated `EditorPanelProvider.ts` - Any necessary message passing fixes
 - [ ] `TemplateFieldRenderer.tsx` - Template-driven form fields (if new)
 - [ ] `ProjectStatusBarItem.ts` - Status bar integration
-- [ ] Updated template loading - Project type filtering
-- [ ] Updated command registration - Project commands
+- [ ] Updated template loading - Context type filtering (renamed from project type)
+- [ ] Updated command registration - Project and Context commands
 - [ ] Integration tests for editor workflow
 - [ ] Manual testing checklist
 
 ### Documentation
 
+- [x] ADR-015: Workspace/Project/Context Hierarchy ✅
+- [x] ADR-016: Global Registry + Workspace Storage ✅
 - [ ] Phase 17 completion report (PHASE_17_COMPLETE.md)
 - [ ] Updated user guide with editing workflows
 - [ ] Updated CLAUDE.md if new patterns emerged

@@ -115,6 +115,18 @@ We use a lightweight ADR format adapted from Michael Nygard's proposal. See [ADR
   - Summary: Templates define optional max content sizes to optimize RAG chunking and encourage good organization
   - Impact: Better search results, improved AI context, forces modular structure, user guidance
 
+#### Workspace & Project Organization
+
+- **[ADR-015: Workspace/Project/Context Hierarchy](./ADR-015-workspace-project-context-hierarchy.md)** ✅
+  - Status: Accepted
+  - Summary: Three-level hierarchy (Workspace → Project → Context) where Projects are real-world endeavors with multiple organizational modes
+  - Impact: Supports multi-faceted projects, content reuse across contexts, clear conceptual boundaries
+
+- **[ADR-016: Global Registry + Workspace Storage Architecture](./ADR-016-global-registry-storage.md)** ✅
+  - Status: Accepted
+  - Summary: Global registry in OS user directory tracks all projects, workspace storage isolates data per workspace
+  - Impact: Cross-workspace awareness, workspace isolation, discovery from anywhere, follows Git/VS Code patterns
+
 ---
 
 ## How to Create an ADR
