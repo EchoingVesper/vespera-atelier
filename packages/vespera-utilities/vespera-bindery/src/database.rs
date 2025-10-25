@@ -689,14 +689,26 @@ impl Database {
 
             CREATE TABLE IF NOT EXISTS codices (
                 id TEXT PRIMARY KEY,
-                title TEXT NOT NULL,
                 template_id TEXT NOT NULL,
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
                 metadata TEXT NOT NULL,
+                crdt_state TEXT,
+                version INTEGER NOT NULL DEFAULT 1,
                 created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+                updated_at TEXT NOT NULL,
+                created_by TEXT,
+                project_id TEXT,
+                parent_id TEXT,
+                FOREIGN KEY(parent_id) REFERENCES codices(id) ON DELETE SET NULL
             );
 
-            CREATE INDEX IF NOT EXISTS idx_codices_created ON codices(created_at);
+            CREATE INDEX IF NOT EXISTS idx_codices_template_id ON codices(template_id);
+            CREATE INDEX IF NOT EXISTS idx_codices_project_id ON codices(project_id);
+            CREATE INDEX IF NOT EXISTS idx_codices_parent_id ON codices(parent_id);
+            CREATE INDEX IF NOT EXISTS idx_codices_created_at ON codices(created_at);
+            CREATE INDEX IF NOT EXISTS idx_codices_updated_at ON codices(updated_at);
+            CREATE INDEX IF NOT EXISTS idx_codices_created_by ON codices(created_by);
             "#
         ).execute(&self.pool).await?;
 
