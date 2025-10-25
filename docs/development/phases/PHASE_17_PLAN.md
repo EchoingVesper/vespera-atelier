@@ -189,38 +189,280 @@ Phase 17 uses a **refactor-first, then-build approach**:
 
 #### Implementation Order
 
-**Stage 0: Architectural Refactoring** (3-5 hours) - **CRITICAL FOUNDATION**
+**Stage 0: Architectural Refactoring** (12-16 hours estimated) - **CRITICAL FOUNDATION**
 
-Why First: Phase 16b's "Project" model doesn't match real-world usage. Refactoring now prevents building more code on flawed architecture.
+**Why First**: Phase 16b's "Project" model doesn't match real-world usage. Refactoring now prevents building more code on flawed architecture.
 
-1. Create ADRs documenting new architecture (ADR-015, ADR-016) ✅ DONE
-2. Update database schema:
-   - Add `projects` table (real-world endeavors)
-   - Rename `projects` table to `contexts` (organizational lenses)
-   - Add `codex_contexts` many-to-many join table
-3. Implement global registry:
-   - Create `~/.vespera/` directory structure
-   - Implement `projects-registry.json` schema
-   - Platform-specific path logic (Windows/macOS/Linux)
-4. Implement workspace discovery algorithm:
-   - Search current workspace for `.vespera/`
-   - Search up directory tree (max 5 levels)
-   - Check global registry for projects in path
-   - Initialization prompt if not found
-5. Create migration script:
-   - Convert Phase 16b "projects" → "contexts"
-   - Create default Project for workspace
-   - Link existing Codices to new schema
-6. Refactor codebase terminology:
-   - Rename `ProjectService` → `ContextService`
-   - Rename `ProjectSelector` → `ContextSelector`
-   - Add new `ProjectService` above contexts
-   - Update all variable names and comments
-7. Update UI components:
-   - Add Project selector (top level)
-   - Repurpose existing selector as Context switcher
-   - Update Navigator to show Project > Context hierarchy
-8. Test migration with Phase 16b data
+**Strategy**: Use subagent orchestration with 26 discrete tasks organized into 7 clusters. Tasks within clusters can often run in parallel.
+
+---
+
+### ✅ Cluster 0: Architecture Documentation (DONE)
+- ✅ **Task 0.1**: Create ADR-015 (Workspace/Project/Context Hierarchy)
+- ✅ **Task 0.2**: Create ADR-016 (Global Registry + Workspace Storage)
+- ✅ **Task 0.3**: Update Phase 17 plan with granular task breakdown
+
+---
+
+### Cluster A: Database Schema (Rust Backend) - 5 tasks
+**Estimated**: 3-4 hours | **Dependencies**: None | **Parallelization**: High
+
+**Task A1: Create Projects Table Migration**
+- Create new migration file `005_projects_table.sql`
+- Define `projects` table schema per ADR-015
+- Add indexes for `workspace_id`, `active_context_id`
+- Include rollback SQL
+- **Deliverable**: Migration file in `packages/vespera-utilities/vespera-bindery/migrations/`
+
+**Task A2: Rename Projects → Contexts Migration**
+- Create migration `006_rename_projects_to_contexts.sql`
+- Rename `projects` table to `contexts`
+- Add `project_id` column to contexts
+- Update foreign key references
+- Preserve all existing data
+- **Deliverable**: Migration file with data preservation
+
+**Task A3: Create Codex-Contexts Join Table**
+- Create migration `007_codex_contexts_join.sql`
+- Define `codex_contexts` many-to-many table
+- Add primary key `(codex_id, context_id)`
+- Add foreign keys with CASCADE delete
+- Add `is_primary` boolean flag
+- Add indexes for performance
+- **Deliverable**: Migration file with indexes
+
+**Task A4: Update Codices Table Schema**
+- Create migration `008_update_codices_project_ref.sql`
+- Modify `codices.project_id` to reference `projects` table
+- Update foreign key constraints
+- Ensure cascading deletes work correctly
+- **Deliverable**: Migration file with constraint updates
+
+**Task A5: Test All Migrations**
+- Run migrations on test database in order
+- Verify rollback works for each migration
+- Test with sample Phase 16b data
+- Document migration order and dependencies
+- **Deliverable**: Test results, migration order documentation
+
+---
+
+### Cluster B: Global Registry (TypeScript/VS Code) - 4 tasks
+**Estimated**: 3-4 hours | **Dependencies**: None | **Parallelization**: Medium
+
+**Task B1: Platform-Specific Path Detection**
+- Implement `getGlobalVesperaPath()` in new `src/services/GlobalRegistry.ts`
+- Handle Windows (`%APPDATA%/Vespera`)
+- Handle macOS (`~/Library/Application Support/Vespera`)
+- Handle Linux (`~/.local/share/vespera` or `~/.vespera`)
+- Add `VESPERA_REGISTRY_PATH` environment variable override
+- **Deliverable**: Platform path utility with tests
+
+**Task B2: Registry Schema & Persistence**
+- Define `ProjectsRegistry` TypeScript interface
+- Implement `loadRegistry()` and `saveRegistry()` functions
+- Create JSON schema validation
+- Handle corrupted registry (rebuild or reset)
+- Add version field for future migrations
+- **Deliverable**: Registry persistence module
+
+**Task B3: Registry Sync Mechanism**
+- Implement `syncProjectToRegistry()` function
+- Update registry on project create/update/delete
+- Handle registry vs workspace conflicts (last-write-wins)
+- Add `last_opened` timestamp tracking
+- **Deliverable**: Sync functions with conflict handling
+
+**Task B4: Registry Initialization**
+- Create `~/.vespera/` directory structure on first run
+- Initialize empty `projects-registry.json` if not exists
+- Create `templates/` and `cache/` subdirectories
+- Log registry location for debugging
+- **Deliverable**: Initialization logic in extension activation
+
+---
+
+### Cluster C: Discovery Algorithm (TypeScript/VS Code) - 3 tasks
+**Estimated**: 2-3 hours | **Dependencies**: Cluster B complete | **Parallelization**: Low
+
+**Task C1: Workspace .vespera/ Search**
+- Implement `findWorkspaceVespera()` function
+- Check current workspace root for `.vespera/`
+- Load `workspace.json` metadata if found
+- Handle permission errors gracefully
+- **Deliverable**: Workspace search function
+
+**Task C2: Directory Tree Traversal**
+- Implement `searchUpForVespera(startPath, maxLevels=5)`
+- Traverse up directory tree looking for `.vespera/`
+- Stop at filesystem root
+- Return closest match or null
+- **Deliverable**: Tree traversal function
+
+**Task C3: Discovery Orchestration & UI**
+- Create `discoverVesperaWorkspace()` orchestration function
+- Flow: workspace → tree → registry → init prompt
+- Show initialization dialog if no workspace found
+- Handle "No workspace" state gracefully
+- Wire into `extension.ts` activation
+- **Deliverable**: Complete discovery system integrated
+
+---
+
+### Cluster D: Service Refactoring (TypeScript/VS Code) - 5 tasks
+**Estimated**: 4-5 hours | **Dependencies**: Cluster A complete | **Parallelization**: High
+
+**Task D1: Rename ProjectService → ContextService**
+- Copy `src/services/ProjectService.ts` → `src/services/ContextService.ts`
+- Rename class `ProjectService` → `ContextService`
+- Update file paths: `.vespera/contexts/` (was `.vespera/projects/`)
+- Rename all internal references (methods, variables, comments)
+- Keep functionality identical (just rename)
+- **Deliverable**: `ContextService.ts` with renamed types
+
+**Task D2: Create New ProjectService**
+- Create new `src/services/ProjectService.ts` for real-world projects
+- Implement CRUD operations (create, get, update, delete, list)
+- Add project ↔ contexts relationship management
+- Integrate with global registry (sync on changes)
+- Add `active_context_id` tracking
+- **Deliverable**: New `ProjectService.ts` managing real projects
+
+**Task D3: Update Type Definitions**
+- Create `src/types/context.ts` with `IContext` type (renamed from `IProject`)
+- Update `src/types/project.ts` with new `IProject` type (real-world projects)
+- Add `IWorkspace` type for workspace metadata
+- Ensure backward compatibility where possible
+- **Deliverable**: Updated type definitions
+
+**Task D4: Update Navigator Integration**
+- Add Project selector dropdown to Navigator header
+- Convert existing dropdown to Context switcher
+- Update Navigator tree filtering to use `activeContextId`
+- Show Project > Context hierarchy in UI
+- **Deliverable**: Updated Navigator UI components
+
+**Task D5: Update All Service References**
+- Find all `import { ProjectService }` statements
+- Update to `import { ContextService }` where appropriate
+- Update variable names (`activeProjectId` → `activeContextId`)
+- Update webview message types
+- Verify no broken imports
+- **Deliverable**: Codebase-wide refactoring complete
+
+---
+
+### Cluster E: Migration & Data Preservation - 3 tasks
+**Estimated**: 2-3 hours | **Dependencies**: Clusters A, D complete | **Parallelization**: Low
+
+**Task E1: Create Migration Script**
+- Create `src/migration/migratePhase16bToPhase17.ts`
+- Implement `migratePhase16bToPhase17()` function
+- Convert old "projects" JSON files → new "contexts"
+- Create default Project for workspace
+- Link existing Codices to new Project
+- **Deliverable**: Migration script
+
+**Task E2: Codex-Context Linking**
+- Populate `codex_contexts` join table during migration
+- Set `is_primary = true` for each codex's original context
+- Update `codices.project_id` to point to new default Project
+- Verify all codices have valid project + context relationships
+- **Deliverable**: Join table population logic
+
+**Task E3: Test Migration with Sample Data**
+- Create test workspace with Phase 16b projects and codices
+- Run migration script
+- Verify all data preserved correctly (no data loss)
+- Test Navigator displays migrated data
+- Test rollback capability
+- **Deliverable**: Migration test suite
+
+---
+
+### Cluster F: Integration & Validation - 4 tasks
+**Estimated**: 3-4 hours | **Dependencies**: All previous clusters | **Parallelization**: Low
+
+**Task F1: Update Bindery JSON-RPC Calls**
+- Update `src/services/bindery.ts` for new schema
+- Add `getContext()`, `listContexts()` methods
+- Update `createCodex()` to accept `project_id` + `context_ids[]`
+- Add `linkCodexToContext()` for many-to-many
+- Test all CRUD operations
+- **Deliverable**: Updated Bindery service layer
+
+**Task F2: End-to-End CRUD Testing**
+- Test: Create project → create context → create codex
+- Test: Codex appears in multiple contexts
+- Test: Project/context deletion cascades correctly
+- Test: UI updates after CRUD operations
+- **Deliverable**: Integration test suite
+
+**Task F3: Discovery Algorithm Testing**
+- Test opening VS Code at workspace root
+- Test opening VS Code 3 levels deep in project
+- Test global registry lookup
+- Test initialization flow on fresh system
+- Test on Windows/macOS/Linux (if possible)
+- **Deliverable**: Discovery test results
+
+**Task F4: Performance & Data Integrity**
+- Test with 50+ projects, 200+ contexts, 1000+ codices
+- Verify no data loss during migration
+- Check database constraints enforced (foreign keys, cascades)
+- Profile query performance (should be <100ms)
+- **Deliverable**: Performance benchmarks
+
+---
+
+### Cluster G: Documentation - 2 tasks
+**Estimated**: 1-2 hours | **Dependencies**: All implementation complete | **Parallelization**: High
+
+**Task G1: Update Architecture Docs**
+- Update `docs/architecture/core/PROJECT_CENTRIC_ARCHITECTURE.md`
+- Add migration guide in `docs/guides/MIGRATION_PHASE_16B_TO_17.md`
+- Document new API surface in architecture docs
+- Update code examples to use new hierarchy
+- **Deliverable**: Updated architecture documentation
+
+**Task G2: Create Migration Runbook**
+- Document step-by-step migration process for users
+- Add troubleshooting section (common errors)
+- Create rollback instructions
+- Include testing checklist
+- **Deliverable**: `docs/guides/PHASE_17_MIGRATION_RUNBOOK.md`
+
+---
+
+### Execution Strategy
+
+**Total Tasks**: 26 discrete subagent tasks across 7 clusters
+
+**Recommended Execution Order**:
+1. **Cluster 0** (✅ DONE) - Architecture documentation
+2. **Cluster A** - Database schema (foundation)
+3. **Cluster B** - Global registry (needed for discovery)
+4. **Cluster C** - Discovery algorithm
+5. **Cluster E** - Migration script (critical for data preservation)
+6. **Cluster D** - Service refactoring (after backend ready)
+7. **Cluster F** - Integration testing
+8. **Cluster G** - Documentation
+
+**Parallelization Opportunities**:
+- **Cluster A**: All 5 tasks can run in parallel (independent migrations)
+- **Cluster B**: Tasks B1-B2 can run in parallel, B3-B4 depend on B2
+- **Cluster D**: Tasks D1, D2, D3 can run in parallel (separate files)
+- **Cluster G**: Both tasks can run in parallel
+
+**Time Estimates**:
+- Cluster A: 3-4 hours
+- Cluster B: 3-4 hours
+- Cluster C: 2-3 hours
+- Cluster D: 4-5 hours
+- Cluster E: 2-3 hours
+- Cluster F: 3-4 hours
+- Cluster G: 1-2 hours
+- **Total**: 18-25 hours (~3-4 context windows)
 
 **Stage 1: Diagnostic & Bug Fixes** (2-3 hours)
 1. Investigate CodexEditor component - why isn't it displaying the codex?
