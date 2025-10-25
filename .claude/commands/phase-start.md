@@ -48,7 +48,14 @@ For any significant architectural decisions:
 
 Use the TodoWrite tool to create a task list for the phase based on objectives.
 
-## 7. Confirm with User
+## 7. Plan Release Notes
+
+Consider if this phase will have a release:
+- Check `docs/development/releases/README.md` for versioning scheme
+- Note release version in phase plan if applicable
+- Release notes will be created during `/phase-complete`
+
+## 8. Confirm with User
 
 Present the phase plan to the user for review and approval before beginning implementation.
 

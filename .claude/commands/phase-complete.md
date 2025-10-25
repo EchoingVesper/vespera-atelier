@@ -99,7 +99,19 @@ git commit -m "docs: Phase [N] completion - [Title]
 "
 ```
 
-## 10. Prepare Handover Summary
+## 10. Create Release Notes (If Applicable)
+
+If this phase represents a release milestone:
+
+1. Use template at `docs/development/releases/RELEASE_TEMPLATE.md`
+2. Create file: `docs/development/releases/phase-[N]/v0.[N].0-alpha.md`
+3. Fill in all applicable sections
+4. Update `docs/development/releases/README.md` index
+5. Link release notes from phase completion document
+
+**Note**: Not all phases require releases. Early phases or incremental work may skip this step.
+
+## 11. Prepare Handover Summary
 
 Use `/handover` command to create a concise summary for the next context window.
 
