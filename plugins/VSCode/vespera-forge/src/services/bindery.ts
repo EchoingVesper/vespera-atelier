@@ -1107,7 +1107,7 @@ export class BinderyService extends EventEmitter {
       const sanitizedResponse = responseValidation.sanitizedResponse || response;
 
       if (sanitizedResponse.error) {
-        this.log('Response contains error for request', response.id);
+        this.log('Response contains error for request', response.id, '- Error:', JSON.stringify(sanitizedResponse.error));
         try {
           request.reject(sanitizedResponse.error);
         } catch (err) {
