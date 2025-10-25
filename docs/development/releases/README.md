@@ -38,18 +38,26 @@ releases/
 ### Completed Phases
 
 #### Phase 16b (October 2025)
-- **[v0.16b.0-alpha](phase-16b/v0.16b.0-alpha.md)** - Project-Centric UI Integration
-  - *Release notes to be created*
+- **[v0.16b.0-alpha](phase-16b/v0.16b.0-alpha.md)** ✅ - Project-Centric UI Integration
+  - Navigator UI with project filtering
+  - Project creation wizard and switcher
+  - Bindery integration fixes
+  - Known issues: Editor not displaying, template filtering pending
   - See [Phase 16b Completion](../phases/PHASE_16b_COMPLETE.md)
 
 #### Phase 16a (October 2025)
-- **[v0.16a.0-alpha](phase-16a/v0.16a.0-alpha.md)** - Project-Centric Architecture Foundation
-  - *Release notes to be created*
+- **[v0.16a.0-alpha](phase-16a/v0.16a.0-alpha.md)** ✅ - Project-Centric Architecture Foundation
+  - ProjectService with CRUD operations (1,018 lines, 60+ tests)
+  - 43 project types with comprehensive templates
+  - Breaking changes: Enum → String literals, npm → pnpm
   - See [Phase 16a Completion](../phases/PHASE_16a_COMPLETE.md)
 
 #### Phase 15 (October 2025)
-- **[v0.15.0-alpha](phase-15/v0.15.0-alpha.md)** - Documentation Audit & Architecture Foundation
-  - *Release notes to be created*
+- **[v0.15.0-alpha](phase-15/v0.15.0-alpha.md)** ✅ - Documentation Audit & Architecture Foundation
+  - Documentation reorganization (56 files moved)
+  - 3 foundation architecture documents created
+  - ADR system and phase handover methodology established
+  - No production code changes
   - See [Phase 15 Completion](../phases/PHASE_15_COMPLETE.md)
 
 #### Phase 12 (October 2025)

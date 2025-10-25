@@ -154,6 +154,12 @@ Phase 17 refactors the architectural foundation established in Phase 16b and com
 - AI Assistant tries to call `get_codex` without proper parameters
 - **Problem**: AI Assistant is trying to use codices as channels but not passing codex_id correctly
 
+❌ **Chat Feature Currently Disabled**:
+- Chat responds with placeholder message: "Chat moved to Rust backend"
+- Backend chat functions exist but haven't been tested yet
+- **Problem**: Need to wire in backend chat functions and replace placeholder response
+- **Priority**: Low (AI Assistant errors are higher priority)
+
 ### Log Evidence
 
 From user's console logs:
