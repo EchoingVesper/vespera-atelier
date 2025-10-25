@@ -94,6 +94,29 @@ We use a lightweight ADR format adapted from Michael Nygard's proposal. See [ADR
 
 ---
 
+### Phase 17: Codex Editor & System Polish (October 2025)
+
+#### Codex System Architecture
+
+- **[ADR-012: Codices as Universal File Containers](./ADR-012-codices-as-file-containers.md)** ✅
+  - Status: Accepted
+  - Summary: Codices are metadata wrappers for any file type (documents, media, code) linked into database for task/RAG system management
+  - Impact: Universal project support, enables "chameleon" behavior, requires file synchronization
+
+#### Template System Enhancements
+
+- **[ADR-013: Template Composition and Nesting](./ADR-013-template-composition.md)** ✅
+  - Status: Accepted
+  - Summary: Templates can reference other templates for automatic creation of nested Codex structures
+  - Impact: Powerful workflow automation, captures organizational best practices, essential for task system
+
+- **[ADR-014: Content Chunking via Template Size Limits](./ADR-014-content-chunking.md)** ✅
+  - Status: Accepted
+  - Summary: Templates define optional max content sizes to optimize RAG chunking and encourage good organization
+  - Impact: Better search results, improved AI context, forces modular structure, user guidance
+
+---
+
 ## How to Create an ADR
 
 1. Copy `ADR-TEMPLATE.md` to new file with format `ADR-XXX-short-title.md`
