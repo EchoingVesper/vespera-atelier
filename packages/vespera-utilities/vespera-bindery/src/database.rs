@@ -663,6 +663,7 @@ impl Database {
     
     /// Initialize the database schema manually (fallback if migrations don't work)
     pub async fn init_schema(&self) -> Result<()> {
+        // Create tasks table
         sqlx::query(
             r#"
             CREATE TABLE IF NOT EXISTS tasks (
@@ -674,19 +675,29 @@ impl Database {
                 parent_id TEXT,
                 project_id TEXT,
                 assignee TEXT,
-                tags TEXT, -- JSON array of strings
-                labels TEXT, -- JSON object
+                tags TEXT,
+                labels TEXT,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
                 due_date TEXT,
                 FOREIGN KEY(parent_id) REFERENCES tasks(id) ON DELETE CASCADE
-            );
-            
-            CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
-            CREATE INDEX IF NOT EXISTS idx_tasks_priority ON tasks(priority);
-            CREATE INDEX IF NOT EXISTS idx_tasks_parent ON tasks(parent_id);
-            CREATE INDEX IF NOT EXISTS idx_tasks_created ON tasks(created_at);
+            )
+            "#
+        ).execute(&self.pool).await?;
 
+        // Create tasks indexes
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)")
+            .execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_tasks_priority ON tasks(priority)")
+            .execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_tasks_parent ON tasks(parent_id)")
+            .execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_tasks_created ON tasks(created_at)")
+            .execute(&self.pool).await?;
+
+        // Create codices table
+        sqlx::query(
+            r#"
             CREATE TABLE IF NOT EXISTS codices (
                 id TEXT PRIMARY KEY,
                 template_id TEXT NOT NULL,
@@ -701,16 +712,23 @@ impl Database {
                 project_id TEXT,
                 parent_id TEXT,
                 FOREIGN KEY(parent_id) REFERENCES codices(id) ON DELETE SET NULL
-            );
-
-            CREATE INDEX IF NOT EXISTS idx_codices_template_id ON codices(template_id);
-            CREATE INDEX IF NOT EXISTS idx_codices_project_id ON codices(project_id);
-            CREATE INDEX IF NOT EXISTS idx_codices_parent_id ON codices(parent_id);
-            CREATE INDEX IF NOT EXISTS idx_codices_created_at ON codices(created_at);
-            CREATE INDEX IF NOT EXISTS idx_codices_updated_at ON codices(updated_at);
-            CREATE INDEX IF NOT EXISTS idx_codices_created_by ON codices(created_by);
+            )
             "#
         ).execute(&self.pool).await?;
+
+        // Create codices indexes
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_codices_template_id ON codices(template_id)")
+            .execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_codices_project_id ON codices(project_id)")
+            .execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_codices_parent_id ON codices(parent_id)")
+            .execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_codices_created_at ON codices(created_at)")
+            .execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_codices_updated_at ON codices(updated_at)")
+            .execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_codices_created_by ON codices(created_by)")
+            .execute(&self.pool).await?;
 
         Ok(())
     }
