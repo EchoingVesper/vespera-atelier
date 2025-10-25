@@ -1967,12 +1967,12 @@ impl Database {
         }
     }
 
-    /// List all codices
+    /// List all codices (with project_id for filtering)
     #[instrument(skip(self))]
     pub async fn list_codices(&self) -> Result<Vec<serde_json::Value>> {
         let rows = sqlx::query(
             r#"
-            SELECT id, title, template_id, metadata, created_at, updated_at
+            SELECT id, title, template_id, metadata, project_id, created_at, updated_at
             FROM codices
             ORDER BY created_at DESC
             "#,
@@ -1986,6 +1986,7 @@ impl Database {
             let title: String = row.get("title");
             let template_id: String = row.get("template_id");
             let metadata_str: String = row.get("metadata");
+            let project_id: Option<String> = row.get("project_id");
             let created_at: String = row.get("created_at");
             let updated_at: String = row.get("updated_at");
 
@@ -1997,6 +1998,7 @@ impl Database {
                 "title": title,
                 "template_id": template_id,
                 "metadata": metadata,
+                "project_id": project_id,
                 "created_at": created_at,
                 "updated_at": updated_at,
             }));
