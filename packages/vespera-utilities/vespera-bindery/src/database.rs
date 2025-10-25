@@ -1980,7 +1980,6 @@ impl Database {
         .fetch_all(&self.pool)
         .await
         .map_err(|e| anyhow::anyhow!("Failed to list codices: {}", e))?;
-
         let mut codices = Vec::new();
         for row in rows {
             let id: String = row.get("id");

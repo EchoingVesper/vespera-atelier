@@ -4,7 +4,7 @@
 //! for integration with various clients like VS Code extensions, web applications, etc.
 
 use std::collections::HashMap;
-use std::io::{self, BufRead, Write};
+use std::io::{self, Write};
 use std::sync::Arc;
 use std::path::PathBuf;
 
@@ -267,7 +267,7 @@ enum Commands {
     },
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread", worker_threads = 4)]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
@@ -403,6 +403,8 @@ async fn run_migration_command(
 
 /// Run JSON-RPC server using stdin/stdout for VS Code extension
 async fn run_json_rpc_stdio(workspace: Option<PathBuf>) -> Result<()> {
+    use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+
     // For stdio mode, log to stderr instead of stdout to avoid interfering with JSON-RPC
     eprintln!("Running in JSON-RPC stdio mode");
 
@@ -411,23 +413,31 @@ async fn run_json_rpc_stdio(workspace: Option<PathBuf>) -> Result<()> {
     });
     eprintln!("Debug: Using workspace directory: {:?}", workspace_root);
     let state = Arc::new(AppState::new(workspace_root).await?);
-    let stdin = io::stdin();
-    let stdout = io::stdout();
-    let mut stdout_lock = stdout.lock();
-    
-    for line in stdin.lock().lines() {
-        let line = line.context("Failed to read line from stdin")?;
+
+    let stdin = tokio::io::stdin();
+    let mut reader = BufReader::new(stdin);
+    let mut stdout = tokio::io::stdout();
+    let mut line = String::new();
+
+    loop {
+        line.clear();
+        let bytes_read = reader.read_line(&mut line).await?;
+        if bytes_read == 0 {
+            break; // EOF
+        }
+
         if line.trim().is_empty() {
             continue;
         }
-        
+
         let response = handle_json_rpc_request(&state, &line).await;
         let response_json = serde_json::to_string(&response)?;
-        
-        writeln!(stdout_lock, "{}", response_json)?;
-        stdout_lock.flush()?;
+
+        stdout.write_all(response_json.as_bytes()).await?;
+        stdout.write_all(b"\n").await?;
+        stdout.flush().await?;
     }
-    
+
     Ok(())
 }
 
