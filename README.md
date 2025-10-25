@@ -1,141 +1,130 @@
-# 🚀 Welcome to Z.ai Code Scaffold
+# Vespera Atelier
 
-A modern, production-ready web application scaffold powered by cutting-edge technologies, designed to accelerate your development with [Z.ai](https://chat.z.ai)'s AI-powered coding assistance.
+A template-driven creative project management system, currently in early development.
 
-## ✨ Technology Stack
+## What This Is (and Isn't)
 
-This scaffold provides a robust foundation built with:
+Vespera Atelier is an attempt to build a universal project management tool that adapts to different types of creative work through templates. Whether you're writing a novel, building a game, conducting research, or managing code - the goal is to have one system that transforms to fit your needs.
 
-### 🎯 Core Framework
-- **⚡ Next.js 15** - The React framework for production with App Router
-- **📘 TypeScript 5** - Type-safe JavaScript for better developer experience
-- **🎨 Tailwind CSS 4** - Utility-first CSS framework for rapid UI development
+**Current Reality**: This is a solo development project in active construction. The vision is ambitious, the implementation is incremental. Many features are planned but not yet built.
 
-### 🧩 UI Components & Styling
-- **🧩 shadcn/ui** - High-quality, accessible components built on Radix UI
-- **🎯 Lucide React** - Beautiful & consistent icon library
-- **🌈 Framer Motion** - Production-ready motion library for React
-- **🎨 Next Themes** - Perfect dark mode in 2 lines of code
+**What Works Now** (Phase 16b):
+- Basic VS Code extension (Vespera Forge)
+- Project creation and management
+- Template-driven content types (Codices)
+- Rust backend for storage (Bindery)
 
-### 📋 Forms & Validation
-- **🎣 React Hook Form** - Performant forms with easy validation
-- **✅ Zod** - TypeScript-first schema validation
+**What's Being Built** (Phase 17):
+- Codex editor and viewer
+- Multi-context project organization
+- Better template filtering
 
-### 🔄 State Management & Data Fetching
-- **🐻 Zustand** - Simple, scalable state management
-- **🔄 TanStack Query** - Powerful data synchronization for React
-- **🌐 Axios** - Promise-based HTTP client
+**What's Planned** (Future):
+- Obsidian plugin
+- Template browser and sharing
+- AI-assisted workflows
+- Collaborative editing
 
-### 🗄️ Database & Backend
-- **🗄️ Prisma** - Next-generation Node.js and TypeScript ORM
-- **🔐 NextAuth.js** - Complete open-source authentication solution
+## Why This Exists
 
-### 🎨 Advanced UI Features
-- **📊 TanStack Table** - Headless UI for building tables and datagrids
-- **🖱️ DND Kit** - Modern drag and drop toolkit for React
-- **📊 Recharts** - Redefined chart library built with React and D3
-- **🖼️ Sharp** - High performance image processing
+I built this to solve my own problems with managing creative projects while dealing with executive dysfunction (ADHD + autism). The design philosophy comes from trying to create tools that work when you're tired, overwhelmed, or struggling - not just when you're at peak performance.
 
-### 🌍 Internationalization & Utilities
-- **🌍 Next Intl** - Internationalization library for Next.js
-- **📅 Date-fns** - Modern JavaScript date utility library
-- **🪝 ReactUse** - Collection of essential React hooks for modern development
+That philosophy is documented in [docs/philosophy/pressure-lid-metaphor.md](docs/philosophy/pressure-lid-metaphor.md), which explains the "cognitive accessibility first" approach.
 
-## 🎯 Why This Scaffold?
+**The Chameleon Idea**: Instead of having separate tools for fiction writing, game development, research, etc., templates let the same system adapt. A game project might have Story, Research, Code, and Art contexts - all in one place. That's the goal, anyway.
 
-- **🏎️ Fast Development** - Pre-configured tooling and best practices
-- **🎨 Beautiful UI** - Complete shadcn/ui component library with advanced interactions
-- **🔒 Type Safety** - Full TypeScript configuration with Zod validation
-- **📱 Responsive** - Mobile-first design principles with smooth animations
-- **🗄️ Database Ready** - Prisma ORM configured for rapid backend development
-- **🔐 Auth Included** - NextAuth.js for secure authentication flows
-- **📊 Data Visualization** - Charts, tables, and drag-and-drop functionality
-- **🌍 i18n Ready** - Multi-language support with Next Intl
-- **🚀 Production Ready** - Optimized build and deployment settings
-- **🤖 AI-Friendly** - Structured codebase perfect for AI assistance
+## ⚠️ Development Status
 
-## 🚀 Quick Start
+**Use at Your Own Risk**
+- Active early development by solo developer
+- Breaking changes expected
+- Features may be incomplete or buggy
+- Not recommended for production use
+- Documentation may be ahead of implementation
 
-```bash
-# Install dependencies
-pnpm install
+See [docs/development/phases/](docs/development/phases/) for detailed progress tracking.
 
-# Start development server
-pnpm dev
+## Architecture Overview
 
-# Build for production
-pnpm build
-
-# Start production server
-pnpm start
+**Monorepo Structure:**
+```
+vespera-atelier/
+├── plugins/
+│   ├── VSCode/vespera-forge/      # VS Code extension (primary focus)
+│   └── Obsidian/Vespera-Scriptorium/  # Obsidian plugin (planned)
+├── packages/
+│   ├── vespera-scriptorium/       # MCP server for Claude Code
+│   └── vespera-utilities/
+│       └── vespera-bindery/       # Rust backend for content management
+└── docs/                          # Architecture and development docs
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see your application running.
+**Tech Stack:**
+- **Frontend**: TypeScript, React, VS Code Extension API
+- **Backend**: Rust (Bindery), SQLite
+- **Integration**: FastMCP server for AI assistant integration
+- **Future**: Vector + Graph databases for RAG
 
-## 🤖 Powered by Z.ai
+## Getting Started
 
-This scaffold is optimized for use with [Z.ai](https://chat.z.ai) - your AI assistant for:
+### For Users
 
-- **💻 Code Generation** - Generate components, pages, and features instantly
-- **🎨 UI Development** - Create beautiful interfaces with AI assistance  
-- **🔧 Bug Fixing** - Identify and resolve issues with intelligent suggestions
-- **📝 Documentation** - Auto-generate comprehensive documentation
-- **🚀 Optimization** - Performance improvements and best practices
+Not ready for general use yet. Check back when Phase 17+ is complete.
 
-Ready to build something amazing? Start chatting with Z.ai at [chat.z.ai](https://chat.z.ai) and experience the future of AI-powered development!
+### For Developers
 
-## 📁 Project Structure
+Want to contribute or explore the codebase?
 
-```
-src/
-├── app/                 # Next.js App Router pages
-├── components/          # Reusable React components
-│   └── ui/             # shadcn/ui components
-├── hooks/              # Custom React hooks
-└── lib/                # Utility functions and configurations
-```
+1. **Read First:**
+   - [CLAUDE.md](CLAUDE.md) - Monorepo guidance and structure
+   - [docs/architecture/](docs/architecture/core/) - System design
+   - [docs/development/decisions/](docs/development/decisions/) - Key architectural decisions
 
-## 🎨 Available Features & Components
+2. **Setup:**
+   See [docs/contributing/SETUP.md](docs/contributing/SETUP.md) for development environment setup.
 
-This scaffold includes a comprehensive set of modern web development tools:
+3. **Contributing:**
+   See [docs/contributing/CONTRIBUTING.md](docs/contributing/CONTRIBUTING.md) for contribution guidelines.
 
-### 🧩 UI Components (shadcn/ui)
-- **Layout**: Card, Separator, Aspect Ratio, Resizable Panels
-- **Forms**: Input, Textarea, Select, Checkbox, Radio Group, Switch
-- **Feedback**: Alert, Toast (Sonner), Progress, Skeleton
-- **Navigation**: Breadcrumb, Menubar, Navigation Menu, Pagination
-- **Overlay**: Dialog, Sheet, Popover, Tooltip, Hover Card
-- **Data Display**: Badge, Avatar, Calendar
+**Current Focus**: Implementing the codex editor (Phase 17)
 
-### 📊 Advanced Data Features
-- **Tables**: Powerful data tables with sorting, filtering, pagination (TanStack Table)
-- **Charts**: Beautiful visualizations with Recharts
-- **Forms**: Type-safe forms with React Hook Form + Zod validation
+## Core Concepts
 
-### 🎨 Interactive Features
-- **Animations**: Smooth micro-interactions with Framer Motion
-- **Drag & Drop**: Modern drag-and-drop functionality with DND Kit
-- **Theme Switching**: Built-in dark/light mode support
+**Codices**: Universal file containers with metadata. Wrap any file type (markdown, code, images, audio, etc.) with tags, relationships, and project context. Managed by both the task system and AI RAG system.
 
-### 🔐 Backend Integration
-- **Authentication**: Ready-to-use auth flows with NextAuth.js
-- **Database**: Type-safe database operations with Prisma
-- **API Client**: HTTP requests with Axios + TanStack Query
-- **State Management**: Simple and scalable with Zustand
+**Templates**: Define project types and content structures. Written in JSON5, user-extensible without code changes. Categories include projects, content types, organizational structures, and AI agents.
 
-### 🌍 Production Features
-- **Internationalization**: Multi-language support with Next Intl
-- **Image Optimization**: Automatic image processing with Sharp
-- **Type Safety**: End-to-end TypeScript with Zod validation
-- **Essential Hooks**: 100+ useful React hooks with ReactUse for common patterns
+**Projects & Contexts**: Real-world projects (e.g., "My Game") contain multiple organizational contexts (Story, Research, Code, Art). Same content can appear in different contexts with different organization.
 
-## 🤝 Get Started with Z.ai
+**Cognitive Accessibility**: Design philosophy focused on reducing friction and working with human limitations. Based on personal experience with executive dysfunction. See [docs/philosophy/](docs/philosophy/) for details.
 
-1. **Clone this scaffold** to jumpstart your project
-2. **Visit [chat.z.ai](https://chat.z.ai)** to access your AI coding assistant
-3. **Start building** with intelligent code generation and assistance
-4. **Deploy with confidence** using the production-ready setup
+## Documentation
+
+- **[Documentation Hub](docs/README.md)** - Complete documentation navigation
+- **[Architecture Docs](docs/architecture/core/)** - Technical specifications and design
+- **[ADRs](docs/development/decisions/)** - Architecture Decision Records
+- **[Philosophy](docs/philosophy/)** - Design principles and motivation
+- **[Phase Reports](docs/development/phases/)** - Development progress tracking
+- **[Glossary](docs/reference/GLOSSARY.md)** - Key concepts and terminology
+
+## The Bigger Picture
+
+The long-term vision is a "chameleon" tool that transforms based on project needs, with:
+- Template marketplace where users share project types
+- Universal file management that indexes and organizes any content
+- AI-assisted workflows that break down complex projects
+- Collaborative editing with CRDT support
+
+That's years of work. Right now, I'm focused on getting the basic editor working.
+
+## Contributing
+
+Contributions welcome, but be aware this is early-stage development with frequent breaking changes. See [docs/contributing/CONTRIBUTING.md](docs/contributing/CONTRIBUTING.md).
+
+## License
+
+GNU Affero General Public License v3.0 (AGPL-3.0)
 
 ---
 
-Built with ❤️ for the developer community. Supercharged by [Z.ai](https://chat.z.ai) 🚀
+*Built incrementally by someone who needs it to exist*

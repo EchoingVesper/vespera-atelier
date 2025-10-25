@@ -120,6 +120,14 @@ Coming soon - practical guides for end users
 
 Coming soon - implementation guides for developers
 
+### 🤝 Contributing
+
+Resources for contributors:
+
+- **[Contributing Guide](./contributing/CONTRIBUTING.md)** - How to get involved
+- **[Development Setup](./contributing/SETUP.md)** - Environment configuration
+- **[AI Style Guide](./contributing/AI_STYLE_GUIDE.md)** - Documentation standards for AI agents
+
 ### 🔧 Development
 
 #### Architecture Decision Records (`development/decisions/`)
@@ -184,9 +192,11 @@ Aspirational documentation for planned features:
 
 ### Contributing?
 
-1. **[ADR Template](./development/decisions/ADR-TEMPLATE.md)** - Document new decisions
-2. **[Development Reports](./development/reports/)** - Review past investigations
-3. **[Current Phase Status](./development/phases/PHASE_14_PROGRESS.md)** - See what's in progress
+1. **[Contributing Guide](./contributing/CONTRIBUTING.md)** - How to contribute
+2. **[Development Setup](./contributing/SETUP.md)** - Environment configuration
+3. **[AI Style Guide](./contributing/AI_STYLE_GUIDE.md)** - Documentation standards for AI agents
+4. **[Current Phase Status](./development/phases/)** - See what's in progress
+5. **[ADR Template](./development/decisions/ADR-TEMPLATE.md)** - Document new decisions
 
 ---
 
