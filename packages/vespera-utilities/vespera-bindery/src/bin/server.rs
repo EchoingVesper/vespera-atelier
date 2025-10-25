@@ -161,9 +161,9 @@ impl AppState {
 
         // Create optimized database pool configuration for high-throughput
         let pool_config = vespera_bindery::database::DatabasePoolConfig::builder()
-            .max_connections(8)? // Optimized for SQLite with WAL mode
-            .min_connections(2)   // Keep some connections warm
-            .acquire_timeout(std::time::Duration::from_secs(3))? // Fast timeout for responsiveness
+            .max_connections(20)? // Increased for concurrent VS Code extension requests
+            .min_connections(3)   // Keep some connections warm
+            .acquire_timeout(std::time::Duration::from_secs(10))? // Longer timeout for safety
             .idle_timeout(std::time::Duration::from_secs(300))? // 5 minutes idle timeout
             .max_connection_lifetime(std::time::Duration::from_secs(3600))? // 1 hour lifetime
             .test_before_acquire(true)
