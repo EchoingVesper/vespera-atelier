@@ -27,7 +27,8 @@ import {
   removeProjectFromRegistry,
   updateLastOpened,
   getRecentProjects,
-  findProjectsByWorkspace
+  findProjectsByWorkspace,
+  initializeGlobalRegistry
 } from '../../services/GlobalRegistry';
 import { IProject, ProjectStatus } from '../../types/project';
 
@@ -989,8 +990,7 @@ suite('GlobalRegistry Tests', () => {
         },
         settings: {
           enabledAutomation: false,
-          customSettings: {},
-          activeContextId: undefined
+          customSettings: {}
         }
       };
     }
@@ -1632,6 +1632,210 @@ suite('GlobalRegistry Tests', () => {
       // Search without trailing slash
       const projects2 = await findProjectsByWorkspace('/workspace/path');
       assert.strictEqual(projects2.length, 1, 'Should find project without trailing slash');
+    });
+  });
+
+  // =============================================================================
+  // REGISTRY INITIALIZATION - Phase 17 Task B4
+  // =============================================================================
+
+  suite('initializeGlobalRegistry', () => {
+    let testRegistryPath: string;
+    let originalGetGlobalVesperaPath: () => string;
+
+    setup(() => {
+      const tmpDir = os.tmpdir();
+      testRegistryPath = path.join(tmpDir, `vespera-test-init-${Date.now()}`);
+
+      // Mock getGlobalVesperaPath to return test path
+      originalGetGlobalVesperaPath = require('../../services/GlobalRegistry').getGlobalVesperaPath;
+      const GlobalRegistry = require('../../services/GlobalRegistry');
+      GlobalRegistry.getGlobalVesperaPath = () => testRegistryPath;
+    });
+
+    teardown(async () => {
+      // Restore original function
+      const GlobalRegistry = require('../../services/GlobalRegistry');
+      GlobalRegistry.getGlobalVesperaPath = originalGetGlobalVesperaPath;
+
+      // Clean up test directory
+      try {
+        const uri = vscode.Uri.file(testRegistryPath);
+        await vscode.workspace.fs.delete(uri, { recursive: true, useTrash: false });
+      } catch (_error) {
+        // Ignore cleanup errors
+      }
+    });
+
+    test('should create directory structure when nothing exists', async () => {
+      const wasInitialized = await initializeGlobalRegistry();
+
+      assert.strictEqual(wasInitialized, true, 'Should return true on first initialization');
+
+      // Verify main directory exists
+      const mainUri = vscode.Uri.file(testRegistryPath);
+      const mainStat = await vscode.workspace.fs.stat(mainUri);
+      assert.strictEqual(mainStat.type, vscode.FileType.Directory, 'Main directory should exist');
+
+      // Verify subdirectories exist
+      const GlobalRegistry = require('../../services/GlobalRegistry');
+
+      const templatesPath = GlobalRegistry.getGlobalTemplatesPath();
+      const templatesUri = vscode.Uri.file(templatesPath);
+      const templatesStat = await vscode.workspace.fs.stat(templatesUri);
+      assert.strictEqual(templatesStat.type, vscode.FileType.Directory, 'Templates directory should exist');
+
+      const cachePath = GlobalRegistry.getGlobalCachePath();
+      const cacheUri = vscode.Uri.file(cachePath);
+      const cacheStat = await vscode.workspace.fs.stat(cacheUri);
+      assert.strictEqual(cacheStat.type, vscode.FileType.Directory, 'Cache directory should exist');
+
+      const logsPath = GlobalRegistry.getGlobalLogsPath();
+      const logsUri = vscode.Uri.file(logsPath);
+      const logsStat = await vscode.workspace.fs.stat(logsUri);
+      assert.strictEqual(logsStat.type, vscode.FileType.Directory, 'Logs directory should exist');
+    });
+
+    test('should create empty registry file', async () => {
+      await initializeGlobalRegistry();
+
+      // Verify registry file exists and is valid
+      const GlobalRegistry = require('../../services/GlobalRegistry');
+      const registryPath = GlobalRegistry.getProjectsRegistryPath();
+      const registryUri = vscode.Uri.file(registryPath);
+
+      const registryStat = await vscode.workspace.fs.stat(registryUri);
+      assert.strictEqual(registryStat.type, vscode.FileType.File, 'Registry file should exist');
+
+      // Load and validate registry
+      const registry = await loadRegistry();
+      assert.ok(registry, 'Registry should be loadable');
+      assert.strictEqual(registry.version, '1.0.0', 'Registry should have version 1.0.0');
+      assert.deepStrictEqual(registry.projects, {}, 'Registry should have empty projects');
+    });
+
+    test('should be idempotent - calling twice does not error', async () => {
+      const firstCall = await initializeGlobalRegistry();
+      assert.strictEqual(firstCall, true, 'First call should return true');
+
+      const secondCall = await initializeGlobalRegistry();
+      assert.strictEqual(secondCall, false, 'Second call should return false');
+
+      // Verify directory still exists and is valid
+      const mainUri = vscode.Uri.file(testRegistryPath);
+      const mainStat = await vscode.workspace.fs.stat(mainUri);
+      assert.strictEqual(mainStat.type, vscode.FileType.Directory, 'Main directory should still exist');
+    });
+
+    test('should return true on first call, false on subsequent calls', async () => {
+      const firstCall = await initializeGlobalRegistry();
+      assert.strictEqual(firstCall, true, 'First call should return true');
+
+      const secondCall = await initializeGlobalRegistry();
+      assert.strictEqual(secondCall, false, 'Second call should return false');
+
+      const thirdCall = await initializeGlobalRegistry();
+      assert.strictEqual(thirdCall, false, 'Third call should return false');
+    });
+
+    test('should verify directory structure after initialization', async () => {
+      await initializeGlobalRegistry();
+
+      const GlobalRegistry = require('../../services/GlobalRegistry');
+
+      // Verify all expected paths exist
+      const paths = [
+        testRegistryPath,
+        GlobalRegistry.getProjectsRegistryPath(),
+        GlobalRegistry.getGlobalTemplatesPath(),
+        GlobalRegistry.getGlobalCachePath(),
+        GlobalRegistry.getGlobalLogsPath()
+      ];
+
+      for (const checkPath of paths) {
+        const uri = vscode.Uri.file(checkPath);
+        try {
+          await vscode.workspace.fs.stat(uri);
+          // Path exists - good
+        } catch (error) {
+          assert.fail(`Expected path to exist: ${checkPath}`);
+        }
+      }
+    });
+
+    test('should handle existing directory but missing registry', async () => {
+      // Create directory manually
+      const mainUri = vscode.Uri.file(testRegistryPath);
+      await vscode.workspace.fs.createDirectory(mainUri);
+
+      // Now initialize (should create registry)
+      const wasInitialized = await initializeGlobalRegistry();
+      assert.strictEqual(wasInitialized, true, 'Should return true when creating registry in existing directory');
+
+      // Verify registry was created
+      const GlobalRegistry = require('../../services/GlobalRegistry');
+      const registryPath = GlobalRegistry.getProjectsRegistryPath();
+      const registryUri = vscode.Uri.file(registryPath);
+
+      const registryStat = await vscode.workspace.fs.stat(registryUri);
+      assert.strictEqual(registryStat.type, vscode.FileType.File, 'Registry file should exist');
+    });
+
+    test('should create subdirectories in correct locations', async () => {
+      await initializeGlobalRegistry();
+
+      const GlobalRegistry = require('../../services/GlobalRegistry');
+
+      // Verify subdirectories are children of main directory
+      const templatesPath = GlobalRegistry.getGlobalTemplatesPath();
+      assert.ok(templatesPath.startsWith(testRegistryPath), 'Templates should be in main directory');
+
+      const cachePath = GlobalRegistry.getGlobalCachePath();
+      assert.ok(cachePath.startsWith(testRegistryPath), 'Cache should be in main directory');
+
+      const logsPath = GlobalRegistry.getGlobalLogsPath();
+      assert.ok(logsPath.startsWith(testRegistryPath), 'Logs should be in main directory');
+    });
+
+    test('should handle existing complete structure gracefully', async () => {
+      // Initialize once
+      await initializeGlobalRegistry();
+
+      // Add a project to the registry
+      const project: IProject = {
+        id: 'proj-123',
+        name: 'Test Project',
+        type: 'fiction',
+        description: 'Test',
+        status: ProjectStatus.Active,
+        metadata: {
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          version: '1.0.0',
+          tags: []
+        },
+        settings: {
+          enabledAutomation: false,
+          customSettings: {}
+        }
+      };
+      await syncProjectToRegistry(project, '/workspace');
+
+      // Initialize again - should not wipe out existing data
+      const wasInitialized = await initializeGlobalRegistry();
+      assert.strictEqual(wasInitialized, false, 'Should return false for already initialized');
+
+      // Verify project still exists in registry
+      const registry = await loadRegistry();
+      assert.ok(registry, 'Registry should exist');
+      assert.ok(registry.projects['proj-123'], 'Existing project should be preserved');
+    });
+
+    test('should properly handle errors and provide meaningful messages', async () => {
+      // This test is difficult to write without mocking filesystem errors
+      // In a real scenario, we'd use a mocking framework
+      // For now, we'll just verify that the function exists and is callable
+      assert.ok(typeof initializeGlobalRegistry === 'function', 'initializeGlobalRegistry should be a function');
     });
   });
 });

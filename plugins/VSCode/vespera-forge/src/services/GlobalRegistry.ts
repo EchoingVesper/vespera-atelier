@@ -787,3 +787,133 @@ export async function findProjectsByWorkspace(workspacePath: string): Promise<Pr
     throw new Error(`Failed to find projects by workspace: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
+
+// =============================================================================
+// REGISTRY INITIALIZATION
+// =============================================================================
+// Phase 17 Task B4 - Initialize global registry directory structure
+
+/**
+ * Initialize the global Vespera directory structure
+ *
+ * Creates directories and empty registry if they don't exist.
+ * This function is idempotent - safe to call multiple times.
+ *
+ * Directory structure created:
+ * ```
+ * ~/.vespera/                              (or platform-specific equivalent)
+ * ├── projects-registry.json               (empty registry file)
+ * ├── templates/                           (for future global template storage)
+ * ├── cache/                               (for cached data)
+ * └── logs/                                (for extension logs)
+ * ```
+ *
+ * @returns true if initialization was performed, false if already initialized
+ *
+ * @example
+ * ```typescript
+ * import { initializeGlobalRegistry } from './services/GlobalRegistry';
+ *
+ * // In extension activation
+ * const wasInitialized = await initializeGlobalRegistry();
+ * if (wasInitialized) {
+ *   console.log('Global Vespera directory initialized');
+ * } else {
+ *   console.log('Global Vespera directory already exists');
+ * }
+ * ```
+ *
+ * Integration points (to be implemented in extension.ts):
+ * ```typescript
+ * // In extension.ts activate() function:
+ * import { initializeGlobalRegistry } from './services/GlobalRegistry';
+ *
+ * export async function activate(context: vscode.ExtensionContext) {
+ *   // Initialize global registry on extension activation
+ *   await initializeGlobalRegistry();
+ *
+ *   // ... rest of extension activation
+ * }
+ * ```
+ */
+export async function initializeGlobalRegistry(): Promise<boolean> {
+  try {
+    const globalPath = getGlobalVesperaPath();
+    const uri = vscode.Uri.file(globalPath);
+
+    // Check if directory exists
+    let directoryExists = false;
+    try {
+      await vscode.workspace.fs.stat(uri);
+      directoryExists = true;
+    } catch (error) {
+      // Directory doesn't exist - will be created
+      directoryExists = false;
+    }
+
+    if (directoryExists) {
+      // Directory exists, check if registry exists
+      const registryPath = getProjectsRegistryPath();
+      const registryUri = vscode.Uri.file(registryPath);
+
+      try {
+        await vscode.workspace.fs.stat(registryUri);
+        // Registry exists, already initialized
+        return false;
+      } catch {
+        // Registry doesn't exist, create it
+        const emptyRegistry = createEmptyRegistry();
+        await saveRegistry(emptyRegistry);
+        console.log(`[GlobalRegistry] Created projects registry at: ${registryPath}`);
+        return true;
+      }
+    } else {
+      // Directory doesn't exist, create everything
+      await vscode.workspace.fs.createDirectory(uri);
+      console.log(`[GlobalRegistry] Created global Vespera directory at: ${globalPath}`);
+
+      // Create subdirectories
+      const templatesUri = vscode.Uri.file(getGlobalTemplatesPath());
+      const cacheUri = vscode.Uri.file(getGlobalCachePath());
+      const logsUri = vscode.Uri.file(getGlobalLogsPath());
+
+      await vscode.workspace.fs.createDirectory(templatesUri);
+      console.log(`[GlobalRegistry] Created templates directory`);
+
+      await vscode.workspace.fs.createDirectory(cacheUri);
+      console.log(`[GlobalRegistry] Created cache directory`);
+
+      await vscode.workspace.fs.createDirectory(logsUri);
+      console.log(`[GlobalRegistry] Created logs directory`);
+
+      // Create empty registry
+      const emptyRegistry = createEmptyRegistry();
+      await saveRegistry(emptyRegistry);
+      console.log(`[GlobalRegistry] Created projects registry`);
+
+      console.log(`[GlobalRegistry] Initialized global Vespera directory at: ${globalPath}`);
+      return true;
+    }
+  } catch (error) {
+    // Handle errors gracefully - log but don't crash extension
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Check for permission errors
+    if (errorMessage.includes('EACCES') || errorMessage.includes('permission')) {
+      console.error(`[GlobalRegistry] Permission error initializing global directory: ${errorMessage}`);
+      console.error(`[GlobalRegistry] Please check file system permissions for Vespera directories`);
+    }
+    // Check for disk full errors
+    else if (errorMessage.includes('ENOSPC') || errorMessage.includes('space')) {
+      console.error(`[GlobalRegistry] Disk full error initializing global directory: ${errorMessage}`);
+      console.error(`[GlobalRegistry] Please free up disk space and restart VS Code`);
+    }
+    // Other errors
+    else {
+      console.error(`[GlobalRegistry] Error initializing global directory: ${errorMessage}`);
+    }
+
+    // Re-throw error for caller to handle
+    throw new Error(`Failed to initialize global registry: ${errorMessage}`);
+  }
+}
