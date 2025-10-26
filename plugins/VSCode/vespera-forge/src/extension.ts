@@ -79,6 +79,23 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       environment: isDevelopment() ? 'development' : 'production'
     });
 
+    // Phase 17 Cluster C: Discover Vespera workspace
+    logger.info('Discovering Vespera workspace...');
+    const { initializeWorkspaceDiscovery } = await import('./services/WorkspaceDiscovery');
+    const discoveryResult = await initializeWorkspaceDiscovery(context);
+
+    if (discoveryResult.found) {
+      logger.info('Workspace discovery successful', {
+        workspaceName: discoveryResult.metadata?.name,
+        discoveryMethod: discoveryResult.discoveryMethod,
+        vesperaPath: discoveryResult.vesperaPath
+      });
+    } else {
+      logger.info('No workspace found - extension will run in limited mode', {
+        discoveryMethod: discoveryResult.discoveryMethod
+      });
+    }
+
     // Initialize providers
     const { contentProvider } = initializeProviders(context);
 
