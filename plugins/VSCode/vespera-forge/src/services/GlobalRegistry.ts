@@ -523,3 +523,267 @@ export async function saveRegistry(registry: ProjectsRegistry): Promise<void> {
     throw new Error(`Failed to save registry: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
+
+// =============================================================================
+// REGISTRY SYNC OPERATIONS
+// =============================================================================
+// Phase 17 Task B3 - Sync workspace projects with global registry
+
+/**
+ * Sync a project to the global registry
+ *
+ * Creates or updates the project entry in the global registry.
+ * This should be called whenever a project is created or updated in workspace storage.
+ *
+ * Sync strategy:
+ * - Last-write-wins: Registry timestamp always uses current time on update
+ * - No merge: Complete replacement of entry on sync
+ * - Atomic operation: Loads registry, updates entry, saves back
+ *
+ * @param project The project to sync (from workspace)
+ * @param workspacePath Absolute path to workspace root
+ * @throws Error if unable to load or save registry
+ *
+ * @example
+ * ```typescript
+ * import { syncProjectToRegistry } from './GlobalRegistry';
+ *
+ * // When creating/updating a project
+ * const project = await projectService.createProject({ name: 'My Novel', type: 'fiction' });
+ * await syncProjectToRegistry(project, workspaceRoot);
+ * ```
+ *
+ * Integration points (to be implemented in Task D):
+ * - ProjectService.createProject() should call syncProjectToRegistry()
+ * - ProjectService.updateProject() should call syncProjectToRegistry()
+ */
+export async function syncProjectToRegistry(
+  project: import('../types/project').IProject,
+  workspacePath: string
+): Promise<void> {
+  try {
+    // Load registry (or create empty)
+    let registry = await loadRegistry();
+    if (!registry) {
+      registry = createEmptyRegistry();
+    }
+
+    // Create/update entry
+    // Note: We explicitly convert Date objects to ISO strings for registry storage
+    // TODO (Task D): Get active_context_id from project context when context system is implemented
+    registry.projects[project.id] = {
+      id: project.id,
+      name: project.name,
+      workspace_path: workspacePath,
+      project_type: project.type,
+      last_opened: new Date().toISOString(),
+      active_context_id: undefined, // TODO: Will be populated from project context in Task D
+      created_at: project.metadata.createdAt.toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    // Save back to disk
+    await saveRegistry(registry);
+
+    // Log for debugging
+    console.log(`[GlobalRegistry] Synced project ${project.id} (${project.name}) to registry`);
+  } catch (error) {
+    throw new Error(`Failed to sync project to registry: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/**
+ * Remove a project from the global registry
+ *
+ * Removes the project entry from the registry when a project is deleted from workspace.
+ * If the project doesn't exist in the registry, this is a no-op (doesn't throw error).
+ *
+ * @param projectId The project ID to remove
+ * @throws Error if unable to load or save registry
+ *
+ * @example
+ * ```typescript
+ * import { removeProjectFromRegistry } from './GlobalRegistry';
+ *
+ * // When deleting a project
+ * await projectService.deleteProject('proj-123');
+ * await removeProjectFromRegistry('proj-123');
+ * ```
+ *
+ * Integration points (to be implemented in Task D):
+ * - ProjectService.deleteProject() should call removeProjectFromRegistry()
+ */
+export async function removeProjectFromRegistry(projectId: string): Promise<void> {
+  try {
+    // Load registry
+    let registry = await loadRegistry();
+
+    // If no registry exists, nothing to remove
+    if (!registry) {
+      return;
+    }
+
+    // If project doesn't exist, nothing to remove (no error)
+    if (!registry.projects[projectId]) {
+      console.log(`[GlobalRegistry] Project ${projectId} not in registry, nothing to remove`);
+      return;
+    }
+
+    // Remove project entry
+    delete registry.projects[projectId];
+
+    // Save back to disk
+    await saveRegistry(registry);
+
+    console.log(`[GlobalRegistry] Removed project ${projectId} from registry`);
+  } catch (error) {
+    throw new Error(`Failed to remove project from registry: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/**
+ * Update last_opened timestamp for a project
+ *
+ * Updates the last_opened timestamp for a project when user opens/activates it.
+ * This is used to track recent projects for "Recent Projects" UI.
+ *
+ * If the project doesn't exist in registry, this is a no-op (doesn't throw error).
+ *
+ * @param projectId The project ID
+ * @throws Error if unable to load or save registry
+ *
+ * @example
+ * ```typescript
+ * import { updateLastOpened } from './GlobalRegistry';
+ *
+ * // When user opens a project
+ * await projectService.setActiveProject('proj-123');
+ * await updateLastOpened('proj-123');
+ * ```
+ *
+ * Integration points (to be implemented in Task D):
+ * - ProjectService.setActiveProject() should call updateLastOpened()
+ */
+export async function updateLastOpened(projectId: string): Promise<void> {
+  try {
+    // Load registry
+    let registry = await loadRegistry();
+
+    // If no registry exists, nothing to update
+    if (!registry) {
+      console.log(`[GlobalRegistry] No registry exists, cannot update last_opened for ${projectId}`);
+      return;
+    }
+
+    // If project doesn't exist, nothing to update (no error)
+    if (!registry.projects[projectId]) {
+      console.log(`[GlobalRegistry] Project ${projectId} not in registry, cannot update last_opened`);
+      return;
+    }
+
+    // Update last_opened timestamp
+    registry.projects[projectId].last_opened = new Date().toISOString();
+
+    // Save back to disk
+    await saveRegistry(registry);
+
+    console.log(`[GlobalRegistry] Updated last_opened for project ${projectId}`);
+  } catch (error) {
+    throw new Error(`Failed to update last_opened: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/**
+ * Get all projects from registry sorted by last_opened (most recent first)
+ *
+ * Returns projects sorted by last access time, useful for "Recent Projects" UI.
+ * Optionally limit the number of results returned.
+ *
+ * @param limit Optional limit on number of results (default: no limit)
+ * @returns Array of project registry entries sorted by last_opened (descending)
+ *
+ * @example
+ * ```typescript
+ * import { getRecentProjects } from './GlobalRegistry';
+ *
+ * // Show recent projects in UI
+ * const recentProjects = await getRecentProjects(10);
+ * console.log('Recent:', recentProjects.map(p => p.name));
+ * ```
+ */
+export async function getRecentProjects(limit?: number): Promise<ProjectRegistryEntry[]> {
+  try {
+    // Load registry
+    const registry = await loadRegistry();
+
+    // If no registry, return empty array
+    if (!registry) {
+      return [];
+    }
+
+    // Convert projects object to array
+    const projectsArray = Object.values(registry.projects);
+
+    // Sort by last_opened (most recent first)
+    projectsArray.sort((a, b) => {
+      const dateA = new Date(a.last_opened).getTime();
+      const dateB = new Date(b.last_opened).getTime();
+      return dateB - dateA; // Descending order (most recent first)
+    });
+
+    // Apply limit if specified
+    if (limit !== undefined && limit > 0) {
+      return projectsArray.slice(0, limit);
+    }
+
+    return projectsArray;
+  } catch (error) {
+    throw new Error(`Failed to get recent projects: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/**
+ * Find project in registry by workspace path
+ *
+ * Returns all projects that belong to the specified workspace.
+ * Useful for discovering which projects exist in a workspace.
+ *
+ * @param workspacePath Absolute path to workspace
+ * @returns Array of projects in that workspace
+ *
+ * @example
+ * ```typescript
+ * import { findProjectsByWorkspace } from './GlobalRegistry';
+ *
+ * // Find all projects in current workspace
+ * const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+ * if (workspacePath) {
+ *   const projects = await findProjectsByWorkspace(workspacePath);
+ *   console.log(`Found ${projects.length} projects in workspace`);
+ * }
+ * ```
+ */
+export async function findProjectsByWorkspace(workspacePath: string): Promise<ProjectRegistryEntry[]> {
+  try {
+    // Load registry
+    const registry = await loadRegistry();
+
+    // If no registry, return empty array
+    if (!registry) {
+      return [];
+    }
+
+    // Filter projects by workspace_path
+    // Note: We normalize paths to handle trailing slashes and path separators
+    const normalizedSearchPath = path.normalize(workspacePath);
+
+    const projectsArray = Object.values(registry.projects).filter(project => {
+      const normalizedProjectPath = path.normalize(project.workspace_path);
+      return normalizedProjectPath === normalizedSearchPath;
+    });
+
+    return projectsArray;
+  } catch (error) {
+    throw new Error(`Failed to find projects by workspace: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}

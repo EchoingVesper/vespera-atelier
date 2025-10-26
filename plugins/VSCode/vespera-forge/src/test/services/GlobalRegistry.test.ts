@@ -22,8 +22,14 @@ import {
   createEmptyRegistry,
   validateRegistry,
   loadRegistry,
-  saveRegistry
+  saveRegistry,
+  syncProjectToRegistry,
+  removeProjectFromRegistry,
+  updateLastOpened,
+  getRecentProjects,
+  findProjectsByWorkspace
 } from '../../services/GlobalRegistry';
+import { IProject, ProjectStatus } from '../../types/project';
 
 suite('GlobalRegistry Tests', () => {
   // Store original environment variables to restore after tests
@@ -954,6 +960,678 @@ suite('GlobalRegistry Tests', () => {
       assert.ok(loaded, 'Should load registry');
       assert.ok(!loaded.projects['proj-1'], 'Should not have first project');
       assert.ok(loaded.projects['proj-2'], 'Should have second project');
+    });
+  });
+
+  // =============================================================================
+  // REGISTRY SYNC OPERATIONS - Phase 17 Task B3
+  // =============================================================================
+
+  suite('syncProjectToRegistry', () => {
+    // Use a temporary directory for test registry
+    let testRegistryPath: string;
+    let originalGetProjectsRegistryPath: () => string;
+
+    // Helper to create a mock IProject
+    function createMockProject(id: string, name: string, type: string): IProject {
+      const now = new Date();
+      return {
+        id,
+        name,
+        type,
+        description: `Test project ${name}`,
+        status: ProjectStatus.Active,
+        metadata: {
+          createdAt: now,
+          updatedAt: now,
+          version: '1.0.0',
+          tags: []
+        },
+        settings: {
+          enabledAutomation: false,
+          customSettings: {},
+          activeContextId: undefined
+        }
+      };
+    }
+
+    setup(() => {
+      // Create a unique temp directory for this test
+      const tmpDir = os.tmpdir();
+      testRegistryPath = path.join(tmpDir, `vespera-test-sync-${Date.now()}`);
+
+      // Mock getProjectsRegistryPath to return test path
+      originalGetProjectsRegistryPath = require('../../services/GlobalRegistry').getProjectsRegistryPath;
+      const GlobalRegistry = require('../../services/GlobalRegistry');
+      GlobalRegistry.getProjectsRegistryPath = () => path.join(testRegistryPath, 'projects-registry.json');
+    });
+
+    teardown(async () => {
+      // Restore original function
+      const GlobalRegistry = require('../../services/GlobalRegistry');
+      GlobalRegistry.getProjectsRegistryPath = originalGetProjectsRegistryPath;
+
+      // Clean up test directory
+      try {
+        const uri = vscode.Uri.file(testRegistryPath);
+        await vscode.workspace.fs.delete(uri, { recursive: true, useTrash: false });
+      } catch (_error) {
+        // Ignore cleanup errors
+      }
+    });
+
+    test('should sync project to empty registry', async () => {
+      const project = createMockProject('proj-123', 'Test Project', 'fiction');
+      const workspacePath = '/path/to/workspace';
+
+      await syncProjectToRegistry(project, workspacePath);
+
+      const registry = await loadRegistry();
+      assert.ok(registry, 'Registry should exist');
+      assert.strictEqual(Object.keys(registry.projects).length, 1, 'Should have one project');
+
+      const entry = registry.projects['proj-123'];
+      assert.ok(entry, 'Should have project entry');
+      assert.strictEqual(entry.id, 'proj-123', 'Should preserve id');
+      assert.strictEqual(entry.name, 'Test Project', 'Should preserve name');
+      assert.strictEqual(entry.workspace_path, '/path/to/workspace', 'Should set workspace_path');
+      assert.strictEqual(entry.project_type, 'fiction', 'Should preserve type');
+      assert.ok(entry.created_at, 'Should have created_at');
+      assert.ok(entry.updated_at, 'Should have updated_at');
+      assert.ok(entry.last_opened, 'Should have last_opened');
+    });
+
+    test('should sync multiple projects', async () => {
+      const project1 = createMockProject('proj-1', 'Project 1', 'fiction');
+      const project2 = createMockProject('proj-2', 'Project 2', 'research');
+
+      await syncProjectToRegistry(project1, '/workspace1');
+      await syncProjectToRegistry(project2, '/workspace2');
+
+      const registry = await loadRegistry();
+      assert.ok(registry, 'Registry should exist');
+      assert.strictEqual(Object.keys(registry.projects).length, 2, 'Should have two projects');
+      assert.ok(registry.projects['proj-1'], 'Should have project 1');
+      assert.ok(registry.projects['proj-2'], 'Should have project 2');
+    });
+
+    test('should update existing project in registry', async () => {
+      const project = createMockProject('proj-123', 'Original Name', 'fiction');
+
+      await syncProjectToRegistry(project, '/workspace');
+
+      // Wait a bit to ensure timestamp difference
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // Update project and sync again
+      project.name = 'Updated Name';
+      await syncProjectToRegistry(project, '/workspace');
+
+      const registry = await loadRegistry();
+      assert.ok(registry, 'Registry should exist');
+      assert.strictEqual(Object.keys(registry.projects).length, 1, 'Should still have one project');
+
+      const entry = registry.projects['proj-123'];
+      assert.strictEqual(entry.name, 'Updated Name', 'Should update name');
+    });
+
+    test('should sync project with active_context_id as undefined (until Task D)', async () => {
+      const project = createMockProject('proj-123', 'Test', 'fiction');
+      // TODO (Task D): Test with actual context when context system is implemented
+
+      await syncProjectToRegistry(project, '/workspace');
+
+      const registry = await loadRegistry();
+      assert.ok(registry, 'Registry should exist');
+
+      const entry = registry.projects['proj-123'];
+      assert.strictEqual(entry.active_context_id, undefined, 'Should be undefined until context system implemented');
+    });
+
+    test('should handle project without active_context_id', async () => {
+      const project = createMockProject('proj-123', 'Test', 'fiction');
+      // active_context_id is undefined
+
+      await syncProjectToRegistry(project, '/workspace');
+
+      const registry = await loadRegistry();
+      assert.ok(registry, 'Registry should exist');
+
+      const entry = registry.projects['proj-123'];
+      assert.strictEqual(entry.active_context_id, undefined, 'Should be undefined');
+    });
+
+    test('should set updated_at to current time', async () => {
+      const project = createMockProject('proj-123', 'Test', 'fiction');
+      const beforeSync = new Date();
+
+      await syncProjectToRegistry(project, '/workspace');
+
+      const afterSync = new Date();
+      const registry = await loadRegistry();
+      assert.ok(registry, 'Registry should exist');
+
+      const entry = registry.projects['proj-123'];
+      const updatedAt = new Date(entry.updated_at);
+
+      assert.ok(updatedAt >= beforeSync, 'updated_at should be after or equal to before time');
+      assert.ok(updatedAt <= afterSync, 'updated_at should be before or equal to after time');
+    });
+
+    test('should set last_opened to current time', async () => {
+      const project = createMockProject('proj-123', 'Test', 'fiction');
+      const beforeSync = new Date();
+
+      await syncProjectToRegistry(project, '/workspace');
+
+      const afterSync = new Date();
+      const registry = await loadRegistry();
+      assert.ok(registry, 'Registry should exist');
+
+      const entry = registry.projects['proj-123'];
+      const lastOpened = new Date(entry.last_opened);
+
+      assert.ok(lastOpened >= beforeSync, 'last_opened should be after or equal to before time');
+      assert.ok(lastOpened <= afterSync, 'last_opened should be before or equal to after time');
+    });
+
+    test('should preserve created_at from project metadata', async () => {
+      const project = createMockProject('proj-123', 'Test', 'fiction');
+      const createdAt = new Date('2025-01-01T00:00:00Z');
+      project.metadata.createdAt = createdAt;
+
+      await syncProjectToRegistry(project, '/workspace');
+
+      const registry = await loadRegistry();
+      assert.ok(registry, 'Registry should exist');
+
+      const entry = registry.projects['proj-123'];
+      assert.strictEqual(entry.created_at, createdAt.toISOString(), 'Should preserve created_at');
+    });
+  });
+
+  suite('removeProjectFromRegistry', () => {
+    let testRegistryPath: string;
+    let originalGetProjectsRegistryPath: () => string;
+
+    function createMockProject(id: string, name: string, type: string): IProject {
+      const now = new Date();
+      return {
+        id,
+        name,
+        type,
+        description: `Test project ${name}`,
+        status: ProjectStatus.Active,
+        metadata: {
+          createdAt: now,
+          updatedAt: now,
+          version: '1.0.0',
+          tags: []
+        },
+        settings: {
+          enabledAutomation: false,
+          customSettings: {}
+        }
+      };
+    }
+
+    setup(() => {
+      const tmpDir = os.tmpdir();
+      testRegistryPath = path.join(tmpDir, `vespera-test-remove-${Date.now()}`);
+
+      originalGetProjectsRegistryPath = require('../../services/GlobalRegistry').getProjectsRegistryPath;
+      const GlobalRegistry = require('../../services/GlobalRegistry');
+      GlobalRegistry.getProjectsRegistryPath = () => path.join(testRegistryPath, 'projects-registry.json');
+    });
+
+    teardown(async () => {
+      const GlobalRegistry = require('../../services/GlobalRegistry');
+      GlobalRegistry.getProjectsRegistryPath = originalGetProjectsRegistryPath;
+
+      try {
+        const uri = vscode.Uri.file(testRegistryPath);
+        await vscode.workspace.fs.delete(uri, { recursive: true, useTrash: false });
+      } catch (_error) {
+        // Ignore cleanup errors
+      }
+    });
+
+    test('should remove project from registry', async () => {
+      const project = createMockProject('proj-123', 'Test', 'fiction');
+      await syncProjectToRegistry(project, '/workspace');
+
+      // Verify it was added
+      let registry = await loadRegistry();
+      assert.ok(registry?.projects['proj-123'], 'Project should exist before removal');
+
+      // Remove it
+      await removeProjectFromRegistry('proj-123');
+
+      // Verify it was removed
+      registry = await loadRegistry();
+      assert.ok(registry, 'Registry should still exist');
+      assert.strictEqual(registry.projects['proj-123'], undefined, 'Project should be removed');
+    });
+
+    test('should handle removing non-existent project', async () => {
+      // Create registry with one project
+      const project = createMockProject('proj-123', 'Test', 'fiction');
+      await syncProjectToRegistry(project, '/workspace');
+
+      // Try to remove project that doesn't exist (should not error)
+      await removeProjectFromRegistry('proj-999');
+
+      // Verify original project still exists
+      const registry = await loadRegistry();
+      assert.ok(registry?.projects['proj-123'], 'Original project should still exist');
+    });
+
+    test('should handle removing from empty registry', async () => {
+      // Create empty registry
+      const registry = createEmptyRegistry();
+      await saveRegistry(registry);
+
+      // Try to remove project (should not error)
+      await removeProjectFromRegistry('proj-123');
+
+      // Verify registry still empty
+      const loaded = await loadRegistry();
+      assert.ok(loaded, 'Registry should exist');
+      assert.strictEqual(Object.keys(loaded.projects).length, 0, 'Registry should still be empty');
+    });
+
+    test('should handle removing from non-existent registry', async () => {
+      // Don't create registry at all
+
+      // Try to remove project (should not error)
+      await removeProjectFromRegistry('proj-123');
+
+      // Verify registry still doesn't exist
+      const registry = await loadRegistry();
+      assert.strictEqual(registry, null, 'Registry should not exist');
+    });
+
+    test('should remove correct project from multiple projects', async () => {
+      const project1 = createMockProject('proj-1', 'Project 1', 'fiction');
+      const project2 = createMockProject('proj-2', 'Project 2', 'research');
+      const project3 = createMockProject('proj-3', 'Project 3', 'journalism');
+
+      await syncProjectToRegistry(project1, '/workspace1');
+      await syncProjectToRegistry(project2, '/workspace2');
+      await syncProjectToRegistry(project3, '/workspace3');
+
+      // Remove middle project
+      await removeProjectFromRegistry('proj-2');
+
+      const registry = await loadRegistry();
+      assert.ok(registry, 'Registry should exist');
+      assert.ok(registry.projects['proj-1'], 'Project 1 should still exist');
+      assert.strictEqual(registry.projects['proj-2'], undefined, 'Project 2 should be removed');
+      assert.ok(registry.projects['proj-3'], 'Project 3 should still exist');
+    });
+  });
+
+  suite('updateLastOpened', () => {
+    let testRegistryPath: string;
+    let originalGetProjectsRegistryPath: () => string;
+
+    function createMockProject(id: string, name: string, type: string): IProject {
+      const now = new Date();
+      return {
+        id,
+        name,
+        type,
+        description: `Test project ${name}`,
+        status: ProjectStatus.Active,
+        metadata: {
+          createdAt: now,
+          updatedAt: now,
+          version: '1.0.0',
+          tags: []
+        },
+        settings: {
+          enabledAutomation: false,
+          customSettings: {}
+        }
+      };
+    }
+
+    setup(() => {
+      const tmpDir = os.tmpdir();
+      testRegistryPath = path.join(tmpDir, `vespera-test-lastopened-${Date.now()}`);
+
+      originalGetProjectsRegistryPath = require('../../services/GlobalRegistry').getProjectsRegistryPath;
+      const GlobalRegistry = require('../../services/GlobalRegistry');
+      GlobalRegistry.getProjectsRegistryPath = () => path.join(testRegistryPath, 'projects-registry.json');
+    });
+
+    teardown(async () => {
+      const GlobalRegistry = require('../../services/GlobalRegistry');
+      GlobalRegistry.getProjectsRegistryPath = originalGetProjectsRegistryPath;
+
+      try {
+        const uri = vscode.Uri.file(testRegistryPath);
+        await vscode.workspace.fs.delete(uri, { recursive: true, useTrash: false });
+      } catch (_error) {
+        // Ignore cleanup errors
+      }
+    });
+
+    test('should update last_opened timestamp', async () => {
+      const project = createMockProject('proj-123', 'Test', 'fiction');
+      await syncProjectToRegistry(project, '/workspace');
+
+      // Wait a bit to ensure timestamp difference
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      const beforeUpdate = new Date();
+      await updateLastOpened('proj-123');
+      const afterUpdate = new Date();
+
+      const registry = await loadRegistry();
+      assert.ok(registry, 'Registry should exist');
+
+      const lastOpened = new Date(registry.projects['proj-123'].last_opened);
+      assert.ok(lastOpened >= beforeUpdate, 'last_opened should be updated to current time');
+      assert.ok(lastOpened <= afterUpdate, 'last_opened should be updated to current time');
+    });
+
+    test('should handle updating non-existent project', async () => {
+      // Create registry with one project
+      const project = createMockProject('proj-123', 'Test', 'fiction');
+      await syncProjectToRegistry(project, '/workspace');
+
+      // Try to update non-existent project (should not error)
+      await updateLastOpened('proj-999');
+
+      // Verify original project unchanged
+      const registry = await loadRegistry();
+      assert.ok(registry?.projects['proj-123'], 'Original project should still exist');
+    });
+
+    test('should handle updating when registry does not exist', async () => {
+      // Don't create registry
+
+      // Try to update (should not error)
+      await updateLastOpened('proj-123');
+
+      // Verify registry still doesn't exist
+      const registry = await loadRegistry();
+      assert.strictEqual(registry, null, 'Registry should not exist');
+    });
+
+    test('should only update last_opened, not other fields', async () => {
+      const project = createMockProject('proj-123', 'Test', 'fiction');
+      await syncProjectToRegistry(project, '/workspace');
+
+      const registryBefore = await loadRegistry();
+      const entryBefore = registryBefore!.projects['proj-123'];
+
+      // Wait a bit to ensure timestamp difference
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      await updateLastOpened('proj-123');
+
+      const registryAfter = await loadRegistry();
+      const entryAfter = registryAfter!.projects['proj-123'];
+
+      // Verify only last_opened changed
+      assert.strictEqual(entryAfter.id, entryBefore.id, 'id should not change');
+      assert.strictEqual(entryAfter.name, entryBefore.name, 'name should not change');
+      assert.strictEqual(entryAfter.workspace_path, entryBefore.workspace_path, 'workspace_path should not change');
+      assert.strictEqual(entryAfter.project_type, entryBefore.project_type, 'project_type should not change');
+      assert.strictEqual(entryAfter.created_at, entryBefore.created_at, 'created_at should not change');
+      assert.notStrictEqual(entryAfter.last_opened, entryBefore.last_opened, 'last_opened should change');
+    });
+  });
+
+  suite('getRecentProjects', () => {
+    let testRegistryPath: string;
+    let originalGetProjectsRegistryPath: () => string;
+
+    function createMockProject(id: string, name: string, type: string): IProject {
+      const now = new Date();
+      return {
+        id,
+        name,
+        type,
+        description: `Test project ${name}`,
+        status: ProjectStatus.Active,
+        metadata: {
+          createdAt: now,
+          updatedAt: now,
+          version: '1.0.0',
+          tags: []
+        },
+        settings: {
+          enabledAutomation: false,
+          customSettings: {}
+        }
+      };
+    }
+
+    setup(() => {
+      const tmpDir = os.tmpdir();
+      testRegistryPath = path.join(tmpDir, `vespera-test-recent-${Date.now()}`);
+
+      originalGetProjectsRegistryPath = require('../../services/GlobalRegistry').getProjectsRegistryPath;
+      const GlobalRegistry = require('../../services/GlobalRegistry');
+      GlobalRegistry.getProjectsRegistryPath = () => path.join(testRegistryPath, 'projects-registry.json');
+    });
+
+    teardown(async () => {
+      const GlobalRegistry = require('../../services/GlobalRegistry');
+      GlobalRegistry.getProjectsRegistryPath = originalGetProjectsRegistryPath;
+
+      try {
+        const uri = vscode.Uri.file(testRegistryPath);
+        await vscode.workspace.fs.delete(uri, { recursive: true, useTrash: false });
+      } catch (_error) {
+        // Ignore cleanup errors
+      }
+    });
+
+    test('should return empty array when registry does not exist', async () => {
+      const recent = await getRecentProjects();
+      assert.deepStrictEqual(recent, [], 'Should return empty array');
+    });
+
+    test('should return empty array when registry is empty', async () => {
+      const registry = createEmptyRegistry();
+      await saveRegistry(registry);
+
+      const recent = await getRecentProjects();
+      assert.deepStrictEqual(recent, [], 'Should return empty array');
+    });
+
+    test('should return projects sorted by last_opened (most recent first)', async () => {
+      // Create projects with different last_opened times
+      const project1 = createMockProject('proj-1', 'Project 1', 'fiction');
+      const project2 = createMockProject('proj-2', 'Project 2', 'research');
+      const project3 = createMockProject('proj-3', 'Project 3', 'journalism');
+
+      // Sync in order (with delays to ensure different timestamps)
+      await syncProjectToRegistry(project1, '/workspace1');
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      await syncProjectToRegistry(project2, '/workspace2');
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      await syncProjectToRegistry(project3, '/workspace3');
+
+      const recent = await getRecentProjects();
+
+      assert.strictEqual(recent.length, 3, 'Should return all 3 projects');
+      assert.strictEqual(recent[0].id, 'proj-3', 'Most recent should be first');
+      assert.strictEqual(recent[1].id, 'proj-2', 'Second most recent should be second');
+      assert.strictEqual(recent[2].id, 'proj-1', 'Oldest should be last');
+    });
+
+    test('should respect limit parameter', async () => {
+      const project1 = createMockProject('proj-1', 'Project 1', 'fiction');
+      const project2 = createMockProject('proj-2', 'Project 2', 'research');
+      const project3 = createMockProject('proj-3', 'Project 3', 'journalism');
+
+      await syncProjectToRegistry(project1, '/workspace1');
+      await new Promise(resolve => setTimeout(resolve, 10));
+      await syncProjectToRegistry(project2, '/workspace2');
+      await new Promise(resolve => setTimeout(resolve, 10));
+      await syncProjectToRegistry(project3, '/workspace3');
+
+      const recent = await getRecentProjects(2);
+
+      assert.strictEqual(recent.length, 2, 'Should return only 2 projects');
+      assert.strictEqual(recent[0].id, 'proj-3', 'Most recent should be first');
+      assert.strictEqual(recent[1].id, 'proj-2', 'Second most recent should be second');
+    });
+
+    test('should return all projects when limit is greater than count', async () => {
+      const project1 = createMockProject('proj-1', 'Project 1', 'fiction');
+      await syncProjectToRegistry(project1, '/workspace1');
+
+      const recent = await getRecentProjects(10);
+
+      assert.strictEqual(recent.length, 1, 'Should return 1 project');
+    });
+
+    test('should handle zero limit', async () => {
+      const project1 = createMockProject('proj-1', 'Project 1', 'fiction');
+      await syncProjectToRegistry(project1, '/workspace1');
+
+      const recent = await getRecentProjects(0);
+
+      assert.strictEqual(recent.length, 0, 'Should return empty array');
+    });
+
+    test('should update order when last_opened is updated', async () => {
+      const project1 = createMockProject('proj-1', 'Project 1', 'fiction');
+      const project2 = createMockProject('proj-2', 'Project 2', 'research');
+
+      await syncProjectToRegistry(project1, '/workspace1');
+      await new Promise(resolve => setTimeout(resolve, 10));
+      await syncProjectToRegistry(project2, '/workspace2');
+
+      // At this point, order should be: proj-2, proj-1
+
+      let recent = await getRecentProjects();
+      assert.strictEqual(recent[0].id, 'proj-2', 'proj-2 should be most recent');
+      assert.strictEqual(recent[1].id, 'proj-1', 'proj-1 should be second');
+
+      // Update last_opened for proj-1
+      await new Promise(resolve => setTimeout(resolve, 10));
+      await updateLastOpened('proj-1');
+
+      // Now order should be: proj-1, proj-2
+      recent = await getRecentProjects();
+      assert.strictEqual(recent[0].id, 'proj-1', 'proj-1 should now be most recent');
+      assert.strictEqual(recent[1].id, 'proj-2', 'proj-2 should now be second');
+    });
+  });
+
+  suite('findProjectsByWorkspace', () => {
+    let testRegistryPath: string;
+    let originalGetProjectsRegistryPath: () => string;
+
+    function createMockProject(id: string, name: string, type: string): IProject {
+      const now = new Date();
+      return {
+        id,
+        name,
+        type,
+        description: `Test project ${name}`,
+        status: ProjectStatus.Active,
+        metadata: {
+          createdAt: now,
+          updatedAt: now,
+          version: '1.0.0',
+          tags: []
+        },
+        settings: {
+          enabledAutomation: false,
+          customSettings: {}
+        }
+      };
+    }
+
+    setup(() => {
+      const tmpDir = os.tmpdir();
+      testRegistryPath = path.join(tmpDir, `vespera-test-findws-${Date.now()}`);
+
+      originalGetProjectsRegistryPath = require('../../services/GlobalRegistry').getProjectsRegistryPath;
+      const GlobalRegistry = require('../../services/GlobalRegistry');
+      GlobalRegistry.getProjectsRegistryPath = () => path.join(testRegistryPath, 'projects-registry.json');
+    });
+
+    teardown(async () => {
+      const GlobalRegistry = require('../../services/GlobalRegistry');
+      GlobalRegistry.getProjectsRegistryPath = originalGetProjectsRegistryPath;
+
+      try {
+        const uri = vscode.Uri.file(testRegistryPath);
+        await vscode.workspace.fs.delete(uri, { recursive: true, useTrash: false });
+      } catch (_error) {
+        // Ignore cleanup errors
+      }
+    });
+
+    test('should return empty array when registry does not exist', async () => {
+      const projects = await findProjectsByWorkspace('/workspace');
+      assert.deepStrictEqual(projects, [], 'Should return empty array');
+    });
+
+    test('should return empty array when no projects in workspace', async () => {
+      const project = createMockProject('proj-1', 'Project 1', 'fiction');
+      await syncProjectToRegistry(project, '/workspace1');
+
+      const projects = await findProjectsByWorkspace('/workspace2');
+      assert.deepStrictEqual(projects, [], 'Should return empty array');
+    });
+
+    test('should find projects by workspace path', async () => {
+      const project1 = createMockProject('proj-1', 'Project 1', 'fiction');
+      const project2 = createMockProject('proj-2', 'Project 2', 'research');
+
+      await syncProjectToRegistry(project1, '/workspace1');
+      await syncProjectToRegistry(project2, '/workspace1');
+
+      const projects = await findProjectsByWorkspace('/workspace1');
+
+      assert.strictEqual(projects.length, 2, 'Should find 2 projects');
+      assert.ok(projects.find(p => p.id === 'proj-1'), 'Should include proj-1');
+      assert.ok(projects.find(p => p.id === 'proj-2'), 'Should include proj-2');
+    });
+
+    test('should filter by workspace path correctly', async () => {
+      const project1 = createMockProject('proj-1', 'Project 1', 'fiction');
+      const project2 = createMockProject('proj-2', 'Project 2', 'research');
+      const project3 = createMockProject('proj-3', 'Project 3', 'journalism');
+
+      await syncProjectToRegistry(project1, '/workspace1');
+      await syncProjectToRegistry(project2, '/workspace2');
+      await syncProjectToRegistry(project3, '/workspace1');
+
+      const projectsWs1 = await findProjectsByWorkspace('/workspace1');
+      const projectsWs2 = await findProjectsByWorkspace('/workspace2');
+
+      assert.strictEqual(projectsWs1.length, 2, 'Workspace 1 should have 2 projects');
+      assert.ok(projectsWs1.find(p => p.id === 'proj-1'), 'Workspace 1 should include proj-1');
+      assert.ok(projectsWs1.find(p => p.id === 'proj-3'), 'Workspace 1 should include proj-3');
+
+      assert.strictEqual(projectsWs2.length, 1, 'Workspace 2 should have 1 project');
+      assert.strictEqual(projectsWs2[0].id, 'proj-2', 'Workspace 2 should include proj-2');
+    });
+
+    test('should normalize paths for comparison', async () => {
+      const project = createMockProject('proj-1', 'Project 1', 'fiction');
+      await syncProjectToRegistry(project, '/workspace/path');
+
+      // Search with trailing slash
+      const projects1 = await findProjectsByWorkspace('/workspace/path/');
+      assert.strictEqual(projects1.length, 1, 'Should find project with trailing slash');
+
+      // Search without trailing slash
+      const projects2 = await findProjectsByWorkspace('/workspace/path');
+      assert.strictEqual(projects2.length, 1, 'Should find project without trailing slash');
     });
   });
 });
