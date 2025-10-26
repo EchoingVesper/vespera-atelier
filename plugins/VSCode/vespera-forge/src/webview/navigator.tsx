@@ -1,16 +1,19 @@
 /**
  * React Navigator Entry Point
  * Phase 16b Stage 1 - Added ProjectSelector integration
- * Renders the Codex Navigator with project switching support
+ * Phase 17 Task D4 - Added ContextSelector for Project > Context hierarchy
+ * Renders the Codex Navigator with project and context switching support
  */
 import React, { useState, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { VSCodeAdapter } from '@/vespera-forge/core/adapters/vscode-adapter';
 import { CodexNavigator } from '@/vespera-forge/components/navigation/CodexNavigator';
 import { ProjectSelector } from '@/vespera-forge/components/project/ProjectSelector';
+import { ContextSelector } from '@/vespera-forge/components/context/ContextSelector';
 import { WelcomeScreen } from '@/vespera-forge/components/project/WelcomeScreen';
 import { ProjectProvider, useProjectContext } from '@/contexts/ProjectContext';
 import { Codex, Template } from '@/vespera-forge/core/types';
+import { IContext } from '@/types/context';
 import '@/app/globals.css';
 
 // Declare VS Code API type
@@ -39,22 +42,43 @@ function NavigatorApp() {
   const [selectedCodexId, setSelectedCodexId] = useState<string | undefined>();
   const [noWorkspace, setNoWorkspace] = useState<{ message: string; action: string } | null>(null);
 
+  // Phase 17 Task D4: Context state management (UI-only, backend wiring in Cluster F)
+  // TODO (Cluster F - Task F1): Wire to ContextService via ContextContext
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [contexts, setContexts] = useState<IContext[]>([]);
+  const [activeContext, setActiveContext] = useState<IContext | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [contextsLoading, setContextsLoading] = useState(false);
+
   // Phase 16b Stage 2: Access project context for WelcomeScreen logic
   // Phase 16b Stage 3: Access activeProject for codex filtering
   const { projects, isLoading, activeProject } = useProjectContext();
 
-  // Phase 16b Stage 3: Filter codices by active project
-  // Only show codices that belong to the currently active project
+  // Phase 17 Task D4: Filter codices by active context (not just project)
+  // TODO (Cluster F - Task F1): Update backend to support context filtering
   const filteredCodices = React.useMemo(() => {
     if (!activeProject) {
       return [];
     }
-    // Handle both camelCase (projectId) and snake_case (project_id) from backend
+
+    // Filter by active context if one is selected
+    if (activeContext) {
+      // TODO (Cluster F): Filter by context_id when backend supports it
+      // For now, filter by project only (Phase 16b behavior)
+      return codices.filter(codex => {
+        const codexProjectId = codex.metadata.projectId || (codex.metadata as any).project_id;
+        const codexContextId = (codex.metadata as any).context_id || (codex.metadata as any).contextId;
+
+        return codexProjectId === activeProject.id && (!codexContextId || codexContextId === activeContext.id);
+      });
+    }
+
+    // If no context selected, show all codices in project (Phase 16b behavior)
     return codices.filter(codex => {
       const codexProjectId = codex.metadata.projectId || (codex.metadata as any).project_id;
       return codexProjectId === activeProject.id;
     });
-  }, [codices, activeProject]);
+  }, [codices, activeProject, activeContext]);
 
   // Listen for messages from the extension
   React.useEffect(() => {
@@ -157,6 +181,54 @@ function NavigatorApp() {
     });
   }, []);
 
+  /**
+   * Handle context selection
+   * Phase 17 Task D4: UI-only implementation
+   * TODO (Cluster F - Task F1): Wire to backend ContextService
+   */
+  const handleContextSelect = useCallback((context: IContext) => {
+    console.log('[Navigator] Context selected:', context.name);
+    setActiveContext(context);
+
+    // TODO (Cluster F): Notify backend to update active context
+    // adapter.sendMessage({
+    //   type: 'context:setActive',
+    //   payload: { contextId: context.id }
+    // });
+  }, []);
+
+  /**
+   * Handle context creation request
+   * Phase 17 Task D4: Placeholder for context creation
+   * TODO (Cluster F - Task F1): Implement context creation wizard
+   */
+  const handleCreateContext = useCallback(() => {
+    console.log('[Navigator] Create context requested');
+
+    // TODO (Cluster F): Implement context creation wizard
+    // adapter.sendMessage({
+    //   type: 'context:createWizard',
+    //   payload: { projectId: activeProject?.id }
+    // });
+  }, [activeProject]);
+
+  /**
+   * Handle context deletion
+   * Phase 17 Task D4: Placeholder for context deletion
+   * TODO (Cluster F - Task F1): Wire to backend ContextService
+   */
+  const handleDeleteContext = useCallback(async (contextId: string): Promise<boolean> => {
+    console.log('[Navigator] Delete context requested:', contextId);
+
+    // TODO (Cluster F): Implement context deletion
+    // adapter.sendMessage({
+    //   type: 'context:delete',
+    //   payload: { contextId }
+    // });
+
+    return false; // Placeholder
+  }, []);
+
   // Show "Open Folder" prompt if no workspace
   if (noWorkspace) {
     return (
@@ -187,18 +259,36 @@ function NavigatorApp() {
     return <WelcomeScreen onCreateProject={handleCreateProject} />;
   }
 
-  // Phase 16b Stage 1: Navigator with ProjectSelector
+  // Phase 17 Task D4: Navigator with Project > Context hierarchy
   return (
     <div className="flex flex-col h-full">
-      {/* Project Selector - allows switching between projects */}
-      <div className="flex-shrink-0 border-b border-border p-2">
-        <ProjectSelector
-          onCreateProject={handleCreateProject}
-        />
+      {/* Project > Context Selector Hierarchy */}
+      <div className="flex-shrink-0 border-b border-border">
+        {/* Project Selector - top level */}
+        <div className="p-2 border-b border-border">
+          <ProjectSelector
+            onCreateProject={handleCreateProject}
+          />
+        </div>
+
+        {/* Context Selector - second level, below project */}
+        {/* Phase 17 Task D4: Shows contexts for active project */}
+        {/* TODO (Cluster F): Load contexts from backend ContextService */}
+        <div className="p-2 bg-muted/30">
+          <ContextSelector
+            activeContext={activeContext}
+            contexts={contexts}
+            isLoading={contextsLoading}
+            onContextSelect={handleContextSelect}
+            onCreateContext={handleCreateContext}
+            onDeleteContext={handleDeleteContext}
+            disabled={!activeProject}
+          />
+        </div>
       </div>
 
       {/* Codex Navigator - main content area */}
-      {/* Phase 16b Stage 3: Show filtered codices (only active project) */}
+      {/* Phase 17 Task D4: Show filtered codices (by active context) */}
       <div className="flex-1 overflow-hidden">
         <CodexNavigator
           codices={filteredCodices}
