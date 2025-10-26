@@ -1,51 +1,104 @@
 /**
- * ProjectService - Core service for project management
- * Phase 16a Round 3 - Project-centric architecture foundation
+ * ProjectService - Manages workspace-level projects via Bindery backend
+ * Phase 17 - Real-world creative endeavors containing multiple contexts
  *
- * Provides CRUD operations, validation, and file-based persistence for projects.
- * Projects are the fundamental organizing unit - everything exists within a project.
+ * Projects are stored in the database (via Bindery), not the filesystem.
+ * This is a thin wrapper around Bindery JSON-RPC calls.
  *
- * Based on: docs/architecture/core/PROJECT_CENTRIC_ARCHITECTURE.md
+ * Architecture:
+ * - Workspace → Project → Context → Codex (3-level hierarchy)
+ * - Projects are database-backed entities managed by Rust Bindery backend
+ * - This service provides a TypeScript API layer for project CRUD operations
+ * - Uses BinderyService as transport layer for JSON-RPC communication
+ *
+ * Migration Note:
+ * - The OLD ProjectService (Phase 16) managed file-based "contexts"
+ * - That functionality has moved to ContextService
+ * - THIS is the NEW ProjectService for workspace-level projects
  */
 
-import * as vscode from 'vscode';
-import * as path from 'path';
-import { v4 as uuidv4 } from 'uuid';
-import {
-  IProject,
-  ProjectType,
-  ProjectStatus,
-  ProjectCreateInput,
-  ProjectUpdateInput,
-  ProjectListItem,
-  ProjectValidationResult,
-  ProjectQueryFilters,
-  ProjectStats,
-  ProjectMetadata,
-  ProjectSettings,
-  createDefaultProjectSettings,
-  createDefaultProjectMetadata,
-  isProject,
-  isProjectType,
-  PROJECT_CONSTANTS,
-  PROJECT_TYPE_METADATA
-} from '../types/project';
+import { BinderyService } from './bindery';
+import { ProjectId, WorkspaceId, BinderyConnectionStatus } from '../types/bindery';
 import { VesperaLogger } from '../core/logging/VesperaLogger';
 import { DisposableResource } from '../types';
 
+// =============================================================================
+// PROJECT INTERFACES
+// =============================================================================
+
 /**
- * Project index structure for fast lookups
+ * Project entity - workspace-level organizational unit
+ *
+ * A Project represents a real-world creative endeavor (e.g., "My Novel",
+ * "Research Paper on AI", "D&D Campaign"). Projects contain multiple Contexts.
  */
-interface ProjectIndex {
-  version: string;
-  lastUpdated: string;
-  projects: Record<string, {
-    id: string;
-    name: string;
-    type: ProjectType;
-    status: ProjectStatus;
-    updatedAt: string;
-  }>;
+export interface IProject {
+  /** Unique project identifier (UUID) */
+  id: ProjectId;
+
+  /** Workspace this project belongs to */
+  workspace_id: WorkspaceId;
+
+  /** Human-readable project name */
+  name: string;
+
+  /** Optional project description */
+  description?: string;
+
+  /** Project type (journalism, research, fiction, documentation, general) */
+  project_type: string;
+
+  /** Currently active context ID within this project */
+  active_context_id?: string;
+
+  /** Project-specific settings (JSON object) */
+  settings?: Record<string, any>;
+
+  /** Creation timestamp (ISO 8601 string) */
+  created_at: string;
+
+  /** Last update timestamp (ISO 8601 string) */
+  updated_at: string;
+}
+
+/**
+ * Input for creating a new project
+ */
+export interface ProjectCreateInput {
+  /** Workspace this project belongs to */
+  workspace_id: WorkspaceId;
+
+  /** Human-readable project name */
+  name: string;
+
+  /** Optional project description */
+  description?: string;
+
+  /** Project type (journalism, research, fiction, documentation, general) */
+  project_type: string;
+
+  /** Optional project-specific settings */
+  settings?: Record<string, any>;
+}
+
+/**
+ * Input for updating an existing project
+ */
+export interface ProjectUpdateInput {
+  /** New project name */
+  name?: string;
+
+  /** New project description */
+  description?: string;
+
+  /** New project type */
+  project_type?: string;
+
+  /** Set the active context ID */
+  active_context_id?: string;
+
+  /** Update project settings */
+  settings?: Record<string, any>;
 }
 
 /**
@@ -55,65 +108,47 @@ export interface ProjectServiceConfig {
   /** Logger instance for debugging */
   logger?: VesperaLogger;
 
-  /** Enable automatic index rebuilds on inconsistency */
-  autoRebuildIndex?: boolean;
-
-  /** Enable project backups before destructive operations */
-  enableBackups?: boolean;
+  /** BinderyService instance (optional - will create default if not provided) */
+  binderyService?: BinderyService;
 }
 
+// =============================================================================
+// PROJECT SERVICE
+// =============================================================================
+
 /**
- * ProjectService - Manages project lifecycle and persistence
+ * ProjectService - Manages workspace-level projects via Bindery backend
  *
- * Features:
- * - CRUD operations for projects
- * - File-based persistence (.vespera/projects/)
- * - Project validation
- * - Active project tracking
- * - Index management for fast listing
+ * This is a SIMPLE service that:
+ * 1. Communicates with Rust Bindery backend via JSON-RPC
+ * 2. Uses the existing BinderyService as the transport layer
+ * 3. Provides CRUD operations for workspace-level projects
+ * 4. Manages active project state
+ *
+ * Unlike the old ProjectService (now ContextService), this:
+ * - Does NOT manage files directly
+ * - Does NOT have file persistence logic
+ * - Does NOT have complex index management
+ * - IS a thin wrapper around Bindery JSON-RPC calls
  */
 export class ProjectService implements DisposableResource {
   private static instance: ProjectService | null = null;
-  private readonly workspaceRoot: string;
-  private readonly projectsDir: vscode.Uri;
-  private readonly indexFile: vscode.Uri;
-  private activeProjectId: string | null = null;
-  private projectCache: Map<string, IProject> = new Map();
-  private indexCache: ProjectIndex | null = null;
+  private bindery: BinderyService;
+  private activeProjectId: ProjectId | null = null;
   private _isDisposed = false;
   private readonly config: ProjectServiceConfig;
 
-  private constructor(
-    workspaceUri: vscode.Uri,
-    config: ProjectServiceConfig = {}
-  ) {
-    this.workspaceRoot = workspaceUri.fsPath;
-    this.projectsDir = vscode.Uri.joinPath(workspaceUri, '.vespera', 'projects');
-    this.indexFile = vscode.Uri.joinPath(this.projectsDir, 'projects-index.json');
-    this.config = {
-      autoRebuildIndex: true,
-      enableBackups: true,
-      ...config
-    };
-
-    this.config.logger?.debug('ProjectService initialized', {
-      workspaceRoot: this.workspaceRoot,
-      projectsDir: this.projectsDir.fsPath
-    });
+  private constructor(config: ProjectServiceConfig = {}) {
+    this.config = config;
+    this.bindery = config.binderyService || new BinderyService();
   }
 
   /**
    * Get or create singleton instance
    */
-  public static getInstance(
-    workspaceUri?: vscode.Uri,
-    config?: ProjectServiceConfig
-  ): ProjectService {
+  public static getInstance(config?: ProjectServiceConfig): ProjectService {
     if (!ProjectService.instance) {
-      if (!workspaceUri) {
-        throw new Error('ProjectService requires workspaceUri for first initialization');
-      }
-      ProjectService.instance = new ProjectService(workspaceUri, config);
+      ProjectService.instance = new ProjectService(config);
     }
     return ProjectService.instance;
   }
@@ -129,27 +164,24 @@ export class ProjectService implements DisposableResource {
   }
 
   /**
-   * Initialize the service - ensure directories exist and load index
+   * Initialize the service - ensure Bindery connection is established
    */
   public async initialize(): Promise<void> {
     if (this._isDisposed) {
       throw new Error('Cannot initialize disposed ProjectService');
     }
 
-    try {
-      // Ensure .vespera/projects directory exists
-      await vscode.workspace.fs.createDirectory(this.projectsDir);
-
-      // Load or create index
-      await this.loadIndex();
-
-      this.config.logger?.info('ProjectService initialized successfully', {
-        projectCount: Object.keys(this.indexCache?.projects || {}).length
-      });
-    } catch (error) {
-      this.config.logger?.error('Failed to initialize ProjectService', error);
-      throw error;
+    // Initialize Bindery connection if needed
+    const connectionInfo = this.bindery.getConnectionInfo();
+    if (connectionInfo.status !== BinderyConnectionStatus.Connected) {
+      const result = await this.bindery.initialize();
+      if (!result.success) {
+        const errorMessage = result.success === false ? result.error.message : 'Unknown error';
+        throw new Error(`Failed to initialize Bindery: ${errorMessage}`);
+      }
     }
+
+    this.config.logger?.info('ProjectService initialized successfully');
   }
 
   // =============================================================================
@@ -158,302 +190,169 @@ export class ProjectService implements DisposableResource {
 
   /**
    * Create a new project
+   *
+   * @param input - Project creation parameters
+   * @returns The created project
+   * @throws Error if creation fails
+   *
+   * Implementation Note:
+   * TODO: This will call Bindery backend in Task F1 (Integration cluster)
+   * Method: "create_project"
+   * Params: { workspace_id, name, description, project_type, settings }
    */
   public async createProject(input: ProjectCreateInput): Promise<IProject> {
     if (this._isDisposed) {
       throw new Error('ProjectService is disposed');
     }
 
-    // Validate input
-    const validation = this.validateProjectInput(input);
-    if (!validation.isValid) {
-      throw new Error(`Invalid project input: ${validation.errors.join(', ')}`);
-    }
+    // TODO (Task F1): Call Bindery backend via JSON-RPC
+    // const result = await this.bindery.sendRequest('create_project', {
+    //   workspace_id: input.workspace_id,
+    //   name: input.name,
+    //   description: input.description,
+    //   project_type: input.project_type,
+    //   settings: input.settings
+    // });
+    //
+    // if (!result.success) {
+    //   throw new Error(`Failed to create project: ${result.error?.message}`);
+    // }
+    //
+    // return result.data;
 
-    // Generate ID if not provided
-    const id = input.id || uuidv4();
-
-    // Check for duplicate ID
-    if (await this.projectExists(id)) {
-      throw new Error(`Project with ID ${id} already exists`);
-    }
-
-    // Create project object
-    const now = new Date();
-    const defaultMetadata = createDefaultProjectMetadata();
-
-    const project: IProject = {
-      id,
-      name: input.name,
-      type: input.type,
-      description: input.description,
-      status: input.status || ProjectStatus.Active,
-      metadata: {
-        ...defaultMetadata,
-        ...(input.metadata || {}),
-        createdAt: now,
-        updatedAt: now
-      },
-      settings: input.settings || createDefaultProjectSettings()
-    };
-
-    // Persist to file
-    await this.saveProjectToFile(project);
-
-    // Update cache and index
-    this.projectCache.set(id, project);
-    await this.updateIndex(project);
-
-    this.config.logger?.info('Project created', { id, name: project.name, type: project.type });
-
-    return project;
+    throw new Error('Not implemented - will call Bindery backend in Task F1');
   }
 
   /**
    * Get project by ID
+   *
+   * @param projectId - Project UUID
+   * @returns The project, or null if not found
+   *
+   * Implementation Note:
+   * TODO: This will call Bindery backend in Task F1
+   * Method: "get_project"
+   * Params: { project_id }
    */
-  public async getProject(projectId: string): Promise<IProject | undefined> {
+  public async getProject(projectId: ProjectId): Promise<IProject | null> {
     if (this._isDisposed) {
       throw new Error('ProjectService is disposed');
     }
 
-    // Check cache first
-    if (this.projectCache.has(projectId)) {
-      return this.projectCache.get(projectId);
-    }
+    // TODO (Task F1): Call Bindery backend
+    // const result = await this.bindery.sendRequest('get_project', {
+    //   project_id: projectId
+    // });
+    //
+    // if (!result.success) {
+    //   if (result.error?.code === -32602) { // Not found
+    //     return null;
+    //   }
+    //   throw new Error(`Failed to get project: ${result.error?.message}`);
+    // }
+    //
+    // return result.data;
 
-    // Load from file
-    try {
-      const project = await this.loadProjectFromFile(projectId);
-      if (project) {
-        this.projectCache.set(projectId, project);
-      }
-      return project;
-    } catch (error) {
-      this.config.logger?.error(`Failed to load project ${projectId}`, error);
-      return undefined;
-    }
+    throw new Error('Not implemented - will call Bindery backend in Task F1');
   }
 
   /**
    * Update existing project
+   *
+   * @param projectId - Project UUID
+   * @param update - Fields to update
+   * @returns The updated project
+   * @throws Error if update fails or project not found
+   *
+   * Implementation Note:
+   * TODO: This will call Bindery backend in Task F1
+   * Method: "update_project"
+   * Params: { project_id, ...update }
    */
   public async updateProject(
-    projectId: string,
-    updates: Partial<ProjectUpdateInput>
+    projectId: ProjectId,
+    update: ProjectUpdateInput
   ): Promise<IProject> {
     if (this._isDisposed) {
       throw new Error('ProjectService is disposed');
     }
 
-    // Load existing project
-    const existing = await this.getProject(projectId);
-    if (!existing) {
-      throw new Error(`Project ${projectId} not found`);
-    }
+    // TODO (Task F1): Call Bindery backend
+    // const result = await this.bindery.sendRequest('update_project', {
+    //   project_id: projectId,
+    //   ...update
+    // });
+    //
+    // if (!result.success) {
+    //   throw new Error(`Failed to update project: ${result.error?.message}`);
+    // }
+    //
+    // return result.data;
 
-    // Create backup if enabled
-    if (this.config.enableBackups) {
-      await this.backupProject(existing);
-    }
-
-    // Merge updates
-    const updated: IProject = {
-      ...existing,
-      ...updates,
-      id: projectId, // Ensure ID doesn't change
-      metadata: {
-        ...existing.metadata,
-        ...(updates.metadata || {}),
-        createdAt: existing.metadata.createdAt, // Preserve creation date
-        updatedAt: new Date()
-      },
-      settings: {
-        ...existing.settings,
-        ...(updates.settings || {})
-      }
-    };
-
-    // Validate updated project
-    const validation = this.validateProject(updated);
-    if (!validation.isValid) {
-      throw new Error(`Invalid project update: ${validation.errors.join(', ')}`);
-    }
-
-    // Persist changes
-    await this.saveProjectToFile(updated);
-
-    // Update cache and index
-    this.projectCache.set(projectId, updated);
-    await this.updateIndex(updated);
-
-    this.config.logger?.info('Project updated', { id: projectId });
-
-    return updated;
+    throw new Error('Not implemented - will call Bindery backend in Task F1');
   }
 
   /**
    * Delete project
+   *
+   * @param projectId - Project UUID
+   * @throws Error if deletion fails
+   *
+   * Implementation Note:
+   * TODO: This will call Bindery backend in Task F1
+   * Method: "delete_project"
+   * Params: { project_id }
    */
-  public async deleteProject(projectId: string): Promise<boolean> {
+  public async deleteProject(projectId: ProjectId): Promise<void> {
     if (this._isDisposed) {
       throw new Error('ProjectService is disposed');
     }
 
-    const project = await this.getProject(projectId);
-    if (!project) {
-      return false;
+    // TODO (Task F1): Call Bindery backend
+    // const result = await this.bindery.sendRequest('delete_project', {
+    //   project_id: projectId
+    // });
+    //
+    // if (!result.success) {
+    //   throw new Error(`Failed to delete project: ${result.error?.message}`);
+    // }
+
+    // Clear active project if deleted
+    if (this.activeProjectId === projectId) {
+      this.activeProjectId = null;
     }
 
-    // Create backup before deletion
-    if (this.config.enableBackups) {
-      await this.backupProject(project);
-    }
-
-    try {
-      // Delete project file
-      const projectFile = this.getProjectFilePath(projectId);
-      await vscode.workspace.fs.delete(projectFile);
-
-      // Remove from cache and index
-      this.projectCache.delete(projectId);
-      await this.removeFromIndex(projectId);
-
-      // Clear active project if this was it
-      if (this.activeProjectId === projectId) {
-        this.activeProjectId = null;
-      }
-
-      this.config.logger?.info('Project deleted', { id: projectId });
-
-      return true;
-    } catch (error) {
-      this.config.logger?.error(`Failed to delete project ${projectId}`, error);
-      return false;
-    }
+    throw new Error('Not implemented - will call Bindery backend in Task F1');
   }
 
   /**
-   * List all projects with optional filtering and sorting
+   * List all projects in a workspace
+   *
+   * @param workspaceId - Workspace UUID
+   * @returns Array of projects in the workspace
+   *
+   * Implementation Note:
+   * TODO: This will call Bindery backend in Task F1
+   * Method: "list_projects"
+   * Params: { workspace_id }
    */
-  public async listProjects(filters?: ProjectQueryFilters): Promise<IProject[]> {
+  public async listProjects(workspaceId: WorkspaceId): Promise<IProject[]> {
     if (this._isDisposed) {
       throw new Error('ProjectService is disposed');
     }
 
-    // Load index to get list of project IDs
-    const index = await this.loadIndex();
-    const projectIds = Object.keys(index.projects);
+    // TODO (Task F1): Call Bindery backend
+    // const result = await this.bindery.sendRequest('list_projects', {
+    //   workspace_id: workspaceId
+    // });
+    //
+    // if (!result.success) {
+    //   throw new Error(`Failed to list projects: ${result.error?.message}`);
+    // }
+    //
+    // return result.data;
 
-    // Load all projects (TODO: optimize with pagination in Phase 16b)
-    const projects: IProject[] = [];
-    for (const id of projectIds) {
-      const project = await this.getProject(id);
-      if (project) {
-        projects.push(project);
-      }
-    }
-
-    // Apply filters
-    let filtered = this.applyFilters(projects, filters);
-
-    // Apply sorting
-    filtered = this.applySorting(filtered, filters);
-
-    // Apply pagination
-    if (filters?.limit || filters?.offset) {
-      const offset = filters.offset || 0;
-      const limit = filters.limit || filtered.length;
-      filtered = filtered.slice(offset, offset + limit);
-    }
-
-    return filtered;
-  }
-
-  /**
-   * Get lightweight project list items (for UI pickers)
-   */
-  public async listProjectItems(filters?: ProjectQueryFilters): Promise<ProjectListItem[]> {
-    const projects = await this.listProjects(filters);
-    return projects.map(p => ({
-      id: p.id,
-      name: p.name,
-      type: p.type,
-      status: p.status,
-      updatedAt: p.updatedAt,
-      icon: p.metadata.icon,
-      color: p.metadata.color
-    }));
-  }
-
-  /**
-   * Get project statistics
-   */
-  public async getStats(): Promise<ProjectStats> {
-    const projects = await this.listProjects();
-
-    const stats: ProjectStats = {
-      total: projects.length,
-      byType: {
-        journalism: 0,
-        research: 0,
-        fiction: 0,
-        documentation: 0,
-        general: 0
-      },
-      byStatus: {
-        [ProjectStatus.Active]: 0,
-        [ProjectStatus.Archived]: 0,
-        [ProjectStatus.Template]: 0
-      }
-    };
-
-    let mostRecent: IProject | null = null;
-    let oldest: IProject | null = null;
-
-    for (const project of projects) {
-      // Count by type
-      stats.byType[project.type]++;
-
-      // Count by status
-      stats.byStatus[project.status]++;
-
-      // Track most recent
-      if (!mostRecent || project.updatedAt > mostRecent.updatedAt) {
-        mostRecent = project;
-      }
-
-      // Track oldest
-      if (!oldest || project.createdAt < oldest.createdAt) {
-        oldest = project;
-      }
-    }
-
-    if (mostRecent) {
-      stats.recentlyUpdated = {
-        id: mostRecent.id,
-        name: mostRecent.name,
-        type: mostRecent.type,
-        status: mostRecent.status,
-        updatedAt: mostRecent.updatedAt,
-        icon: mostRecent.metadata.icon,
-        color: mostRecent.metadata.color
-      };
-    }
-
-    if (oldest) {
-      stats.oldest = {
-        id: oldest.id,
-        name: oldest.name,
-        type: oldest.type,
-        status: oldest.status,
-        updatedAt: oldest.updatedAt,
-        icon: oldest.metadata.icon,
-        color: oldest.metadata.color
-      };
-    }
-
-    return stats;
+    throw new Error('Not implemented - will call Bindery backend in Task F1');
   }
 
   // =============================================================================
@@ -462,448 +361,37 @@ export class ProjectService implements DisposableResource {
 
   /**
    * Set the active project (current working context)
+   *
+   * @param projectId - Project UUID to set as active, or null to clear
    */
-  public async setActiveProject(projectId: string): Promise<void> {
+  public setActiveProject(projectId: ProjectId | null): void {
     if (this._isDisposed) {
       throw new Error('ProjectService is disposed');
     }
 
-    // Verify project exists
-    const project = await this.getProject(projectId);
-    if (!project) {
-      throw new Error(`Cannot set active project: ${projectId} not found`);
-    }
-
     this.activeProjectId = projectId;
-    this.config.logger?.debug('Active project set', { id: projectId, name: project.name });
-
-    // TODO: Phase 16b - Emit event for listeners (Navigator, Template system, etc.)
+    this.config.logger?.debug('Active project changed', { projectId });
   }
 
   /**
-   * Get the currently active project
+   * Get the currently active project ID
+   *
+   * @returns The active project ID, or null if none
    */
-  public getActiveProject(): IProject | undefined {
-    if (this._isDisposed || !this.activeProjectId) {
-      return undefined;
-    }
-
-    return this.projectCache.get(this.activeProjectId);
-  }
-
-  /**
-   * Get active project ID
-   */
-  public getActiveProjectId(): string | null {
+  public getActiveProjectId(): ProjectId | null {
     return this.activeProjectId;
   }
 
   /**
-   * Clear active project
+   * Get the currently active project
+   *
+   * @returns The active project, or null if none or not found
    */
-  public clearActiveProject(): void {
-    this.activeProjectId = null;
-    this.config.logger?.debug('Active project cleared');
-  }
-
-  // =============================================================================
-  // VALIDATION
-  // =============================================================================
-
-  /**
-   * Validate project input for creation
-   */
-  private validateProjectInput(input: ProjectCreateInput): ProjectValidationResult {
-    const errors: string[] = [];
-    const warnings: string[] = [];
-    const fieldErrors: Record<string, string> = {};
-
-    // Validate name
-    if (!input.name || input.name.trim().length === 0) {
-      errors.push('Project name is required');
-      fieldErrors.name = 'Name cannot be empty';
-    } else if (input.name.length < PROJECT_CONSTANTS.NAME.MIN_LENGTH) {
-      errors.push(`Project name must be at least ${PROJECT_CONSTANTS.NAME.MIN_LENGTH} character`);
-      fieldErrors.name = 'Name too short';
-    } else if (input.name.length > PROJECT_CONSTANTS.NAME.MAX_LENGTH) {
-      errors.push(`Project name cannot exceed ${PROJECT_CONSTANTS.NAME.MAX_LENGTH} characters`);
-      fieldErrors.name = 'Name too long';
-    } else if (!PROJECT_CONSTANTS.NAME.PATTERN.test(input.name)) {
-      errors.push('Project name contains invalid characters');
-      fieldErrors.name = 'Invalid characters in name';
+  public async getActiveProject(): Promise<IProject | null> {
+    if (!this.activeProjectId) {
+      return null;
     }
-
-    // Validate type
-    if (!input.type) {
-      errors.push('Project type is required');
-      fieldErrors.type = 'Type is required';
-    } else if (!isProjectType(input.type)) {
-      errors.push(`Invalid project type: ${input.type}`);
-      fieldErrors.type = 'Invalid project type';
-    }
-
-    // Validate description
-    if (input.description && input.description.length > PROJECT_CONSTANTS.DESCRIPTION.MAX_LENGTH) {
-      errors.push(`Description cannot exceed ${PROJECT_CONSTANTS.DESCRIPTION.MAX_LENGTH} characters`);
-      fieldErrors.description = 'Description too long';
-    }
-
-    // Validate tags
-    if (input.metadata?.tags) {
-      if (input.metadata.tags.length > PROJECT_CONSTANTS.TAGS.MAX_COUNT) {
-        errors.push(`Cannot have more than ${PROJECT_CONSTANTS.TAGS.MAX_COUNT} tags`);
-        fieldErrors['metadata.tags'] = 'Too many tags';
-      }
-
-      for (const tag of input.metadata.tags) {
-        if (tag.length > PROJECT_CONSTANTS.TAGS.MAX_LENGTH) {
-          errors.push(`Tag "${tag}" exceeds ${PROJECT_CONSTANTS.TAGS.MAX_LENGTH} characters`);
-          fieldErrors['metadata.tags'] = 'Tag too long';
-        }
-        if (!PROJECT_CONSTANTS.TAGS.PATTERN.test(tag)) {
-          errors.push(`Tag "${tag}" contains invalid characters`);
-          fieldErrors['metadata.tags'] = 'Invalid tag characters';
-        }
-      }
-    }
-
-    // Validate ID format if provided
-    if (input.id && !PROJECT_CONSTANTS.ID.PATTERN.test(input.id)) {
-      errors.push('Invalid project ID format (must be UUID)');
-      fieldErrors.id = 'Invalid UUID format';
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-      warnings,
-      fieldErrors: Object.keys(fieldErrors).length > 0 ? fieldErrors : undefined
-    };
-  }
-
-  /**
-   * Validate complete project object
-   */
-  public validateProject(project: Partial<IProject>): ProjectValidationResult {
-    if (!isProject(project)) {
-      return {
-        isValid: false,
-        errors: ['Invalid project structure'],
-        fieldErrors: { _: 'Object is not a valid IProject' }
-      };
-    }
-
-    return this.validateProjectInput(project as ProjectCreateInput);
-  }
-
-  // =============================================================================
-  // FILE PERSISTENCE
-  // =============================================================================
-
-  /**
-   * Save project to JSON file
-   */
-  private async saveProjectToFile(project: IProject): Promise<void> {
-    const filePath = this.getProjectFilePath(project.id);
-
-    // Serialize with Date objects as ISO strings
-    const serialized = this.serializeProject(project);
-    const content = JSON.stringify(serialized, null, 2);
-
-    const encoder = new TextEncoder();
-    await vscode.workspace.fs.writeFile(filePath, encoder.encode(content));
-  }
-
-  /**
-   * Load project from JSON file
-   */
-  private async loadProjectFromFile(projectId: string): Promise<IProject | undefined> {
-    const filePath = this.getProjectFilePath(projectId);
-
-    try {
-      const content = await vscode.workspace.fs.readFile(filePath);
-      const decoder = new TextDecoder();
-      const json = JSON.parse(decoder.decode(content));
-
-      return this.deserializeProject(json);
-    } catch (error) {
-      if ((error as any).code === 'FileNotFound') {
-        return undefined;
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Get file path for a project
-   */
-  private getProjectFilePath(projectId: string): vscode.Uri {
-    return vscode.Uri.joinPath(this.projectsDir, `${projectId}.json`);
-  }
-
-  /**
-   * Check if project file exists
-   */
-  private async projectExists(projectId: string): Promise<boolean> {
-    try {
-      await vscode.workspace.fs.stat(this.getProjectFilePath(projectId));
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  /**
-   * Serialize project for JSON storage (convert Dates to strings)
-   */
-  private serializeProject(project: IProject): any {
-    return {
-      ...project,
-      metadata: {
-        ...project.metadata,
-        createdAt: project.metadata.createdAt.toISOString(),
-        updatedAt: project.metadata.updatedAt.toISOString()
-      }
-    };
-  }
-
-  /**
-   * Deserialize project from JSON storage (convert strings to Dates)
-   */
-  private deserializeProject(json: any): IProject {
-    return {
-      ...json,
-      metadata: {
-        ...json.metadata,
-        createdAt: new Date(json.metadata.createdAt),
-        updatedAt: new Date(json.metadata.updatedAt)
-      }
-    };
-  }
-
-  /**
-   * Create backup of project before destructive operation
-   */
-  private async backupProject(project: IProject): Promise<void> {
-    const backupDir = vscode.Uri.joinPath(this.projectsDir, '.backups');
-    await vscode.workspace.fs.createDirectory(backupDir);
-
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupFile = vscode.Uri.joinPath(
-      backupDir,
-      `${project.id}_${timestamp}.json`
-    );
-
-    const serialized = this.serializeProject(project);
-    const content = JSON.stringify(serialized, null, 2);
-
-    const encoder = new TextEncoder();
-    await vscode.workspace.fs.writeFile(backupFile, encoder.encode(content));
-  }
-
-  // =============================================================================
-  // INDEX MANAGEMENT
-  // =============================================================================
-
-  /**
-   * Load or create project index
-   */
-  private async loadIndex(): Promise<ProjectIndex> {
-    if (this.indexCache) {
-      return this.indexCache;
-    }
-
-    try {
-      const content = await vscode.workspace.fs.readFile(this.indexFile);
-      const decoder = new TextDecoder();
-      this.indexCache = JSON.parse(decoder.decode(content));
-      return this.indexCache!;
-    } catch (error) {
-      // Index doesn't exist or is corrupted - rebuild
-      if (this.config.autoRebuildIndex) {
-        this.config.logger?.warn('Project index missing or corrupted, rebuilding...');
-        return await this.rebuildIndex();
-      } else {
-        // Create empty index
-        this.indexCache = {
-          version: '1.0.0',
-          lastUpdated: new Date().toISOString(),
-          projects: {}
-        };
-        await this.saveIndex();
-        return this.indexCache;
-      }
-    }
-  }
-
-  /**
-   * Save index to file
-   */
-  private async saveIndex(): Promise<void> {
-    if (!this.indexCache) {
-      return;
-    }
-
-    this.indexCache.lastUpdated = new Date().toISOString();
-    const content = JSON.stringify(this.indexCache, null, 2);
-
-    const encoder = new TextEncoder();
-    await vscode.workspace.fs.writeFile(this.indexFile, encoder.encode(content));
-  }
-
-  /**
-   * Update index with project information
-   */
-  private async updateIndex(project: IProject): Promise<void> {
-    const index = await this.loadIndex();
-
-    index.projects[project.id] = {
-      id: project.id,
-      name: project.name,
-      type: project.type,
-      status: project.status,
-      updatedAt: project.metadata.updatedAt.toISOString()
-    };
-
-    await this.saveIndex();
-  }
-
-  /**
-   * Remove project from index
-   */
-  private async removeFromIndex(projectId: string): Promise<void> {
-    const index = await this.loadIndex();
-    delete index.projects[projectId];
-    await this.saveIndex();
-  }
-
-  /**
-   * Rebuild index from project files
-   */
-  public async rebuildIndex(): Promise<ProjectIndex> {
-    this.config.logger?.info('Rebuilding project index...');
-
-    const newIndex: ProjectIndex = {
-      version: '1.0.0',
-      lastUpdated: new Date().toISOString(),
-      projects: {}
-    };
-
-    try {
-      // Read all files in projects directory
-      const files = await vscode.workspace.fs.readDirectory(this.projectsDir);
-
-      for (const [filename, fileType] of files) {
-        if (fileType === vscode.FileType.File && filename.endsWith('.json') && filename !== 'projects-index.json') {
-          const projectId = filename.replace('.json', '');
-          const project = await this.loadProjectFromFile(projectId);
-
-          if (project) {
-            newIndex.projects[project.id] = {
-              id: project.id,
-              name: project.name,
-              type: project.type,
-              status: project.status,
-              updatedAt: project.metadata.updatedAt.toISOString()
-            };
-          }
-        }
-      }
-
-      this.indexCache = newIndex;
-      await this.saveIndex();
-
-      this.config.logger?.info('Index rebuilt successfully', {
-        projectCount: Object.keys(newIndex.projects).length
-      });
-
-      return newIndex;
-    } catch (error) {
-      this.config.logger?.error('Failed to rebuild index', error);
-      throw error;
-    }
-  }
-
-  // =============================================================================
-  // FILTERING AND SORTING
-  // =============================================================================
-
-  /**
-   * Apply query filters to project list
-   */
-  private applyFilters(projects: IProject[], filters?: ProjectQueryFilters): IProject[] {
-    if (!filters) {
-      return projects;
-    }
-
-    return projects.filter(project => {
-      // Filter by type
-      if (filters.type) {
-        const types = Array.isArray(filters.type) ? filters.type : [filters.type];
-        if (!types.includes(project.type)) {
-          return false;
-        }
-      }
-
-      // Filter by status
-      if (filters.status) {
-        const statuses = Array.isArray(filters.status) ? filters.status : [filters.status];
-        if (!statuses.includes(project.status)) {
-          return false;
-        }
-      }
-
-      // Filter by tags
-      if (filters.tags && filters.tags.length > 0) {
-        const hasMatchingTag = filters.tags.some(tag =>
-          project.metadata.tags.includes(tag)
-        );
-        if (!hasMatchingTag) {
-          return false;
-        }
-      }
-
-      // Filter by search query
-      if (filters.search) {
-        const query = filters.search.toLowerCase();
-        const matchesName = project.name.toLowerCase().includes(query);
-        const matchesDescription = project.description?.toLowerCase().includes(query);
-        if (!matchesName && !matchesDescription) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }
-
-  /**
-   * Apply sorting to project list
-   */
-  private applySorting(projects: IProject[], filters?: ProjectQueryFilters): IProject[] {
-    if (!filters?.sortBy) {
-      return projects;
-    }
-
-    const direction = filters.sortDirection === 'desc' ? -1 : 1;
-
-    return [...projects].sort((a, b) => {
-      let comparison = 0;
-
-      switch (filters.sortBy) {
-        case 'name':
-          comparison = a.name.localeCompare(b.name);
-          break;
-        case 'createdAt':
-          comparison = a.createdAt.getTime() - b.createdAt.getTime();
-          break;
-        case 'updatedAt':
-          comparison = a.updatedAt.getTime() - b.updatedAt.getTime();
-          break;
-      }
-
-      return comparison * direction;
-    });
+    return this.getProject(this.activeProjectId);
   }
 
   // =============================================================================
@@ -920,23 +408,14 @@ export class ProjectService implements DisposableResource {
   /**
    * Dispose the service and clean up resources
    */
-  public async dispose(): Promise<void> {
+  public dispose(): void {
     if (this._isDisposed) {
       return;
     }
 
     this.config.logger?.info('Disposing ProjectService');
 
-    // Save index one final time
-    try {
-      await this.saveIndex();
-    } catch (error) {
-      this.config.logger?.error('Failed to save index during disposal', error);
-    }
-
-    // Clear caches
-    this.projectCache.clear();
-    this.indexCache = null;
+    // Clear active project
     this.activeProjectId = null;
 
     this._isDisposed = true;
@@ -955,7 +434,7 @@ export class ProjectService implements DisposableResource {
 export function getProjectService(): ProjectService {
   const instance = ProjectService.getInstance();
   if (!instance) {
-    throw new Error('ProjectService not initialized. Call ProjectService.getInstance(workspaceUri) first.');
+    throw new Error('ProjectService not initialized. Call ProjectService.getInstance() first.');
   }
   return instance;
 }
@@ -964,10 +443,9 @@ export function getProjectService(): ProjectService {
  * Initialize and get ProjectService singleton
  */
 export async function initializeProjectService(
-  workspaceUri: vscode.Uri,
   config?: ProjectServiceConfig
 ): Promise<ProjectService> {
-  const service = ProjectService.getInstance(workspaceUri, config);
+  const service = ProjectService.getInstance(config);
   await service.initialize();
   return service;
 }
