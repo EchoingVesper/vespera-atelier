@@ -9,27 +9,22 @@
  */
 
 import * as vscode from 'vscode';
-import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import {
-  IProject,
-  ProjectType,
-  ProjectStatus,
-  ProjectCreateInput,
-  ProjectUpdateInput,
-  ProjectListItem,
-  ProjectValidationResult,
-  ProjectQueryFilters,
-  ProjectStats,
-  ProjectMetadata,
-  ProjectSettings,
-  createDefaultProjectSettings,
-  createDefaultProjectMetadata,
-  isProject,
-  isProjectType,
-  PROJECT_CONSTANTS,
-  PROJECT_TYPE_METADATA
-} from '../types/project';
+  IContext,
+  ContextType,
+  ContextStatus,
+  ContextCreateInput,
+  ContextUpdateInput,
+  ContextListItem,
+  ContextValidationResult,
+  ContextQueryFilters,
+  ContextStats,
+  createDefaultContextSettings,
+  createDefaultContextMetadata,
+  isContext,
+  CONTEXT_CONSTANTS
+} from '../types/context';
 import { VesperaLogger } from '../core/logging/VesperaLogger';
 import { DisposableResource } from '../types';
 
@@ -42,8 +37,8 @@ interface ContextIndex {
   contexts: Record<string, {
     id: string;
     name: string;
-    type: ProjectType;
-    status: ProjectStatus;
+    type: ContextType;
+    status: ContextStatus;
     updatedAt: string;
   }>;
 }
@@ -78,7 +73,7 @@ export class ContextService implements DisposableResource {
   private readonly contextsDir: vscode.Uri;
   private readonly indexFile: vscode.Uri;
   private activeContextId: string | null = null;
-  private contextCache: Map<string, IProject> = new Map();
+  private contextCache: Map<string, IContext> = new Map();
   private indexCache: ContextIndex | null = null;
   private _isDisposed = false;
   private readonly config: ContextServiceConfig;
@@ -159,7 +154,7 @@ export class ContextService implements DisposableResource {
   /**
    * Create a new context
    */
-  public async createContext(input: ProjectCreateInput): Promise<IProject> {
+  public async createContext(input: ContextCreateInput): Promise<IContext> {
     if (this._isDisposed) {
       throw new Error('ContextService is disposed');
     }
@@ -170,8 +165,8 @@ export class ContextService implements DisposableResource {
       throw new Error(`Invalid context input: ${validation.errors.join(', ')}`);
     }
 
-    // Generate ID if not provided
-    const id = input.id || uuidv4();
+    // Generate ID with ctx- prefix
+    const id = `ctx-${uuidv4()}`;
 
     // Check for duplicate ID
     if (await this.contextExists(id)) {
@@ -180,21 +175,21 @@ export class ContextService implements DisposableResource {
 
     // Create context object
     const now = new Date();
-    const defaultMetadata = createDefaultProjectMetadata();
+    const defaultMetadata = createDefaultContextMetadata();
 
-    const context: IProject = {
+    const context: IContext = {
       id,
+      project_id: input.project_id,
       name: input.name,
       type: input.type,
       description: input.description,
-      status: input.status || ProjectStatus.Active,
+      status: input.status || ContextStatus.Active,
       metadata: {
         ...defaultMetadata,
-        ...(input.metadata || {}),
         createdAt: now,
         updatedAt: now
       },
-      settings: input.settings || createDefaultProjectSettings()
+      settings: input.settings || createDefaultContextSettings()
     };
 
     // Persist to file
@@ -212,7 +207,7 @@ export class ContextService implements DisposableResource {
   /**
    * Get context by ID
    */
-  public async getContext(contextId: string): Promise<IProject | undefined> {
+  public async getContext(contextId: string): Promise<IContext | undefined> {
     if (this._isDisposed) {
       throw new Error('ContextService is disposed');
     }
@@ -240,8 +235,8 @@ export class ContextService implements DisposableResource {
    */
   public async updateContext(
     contextId: string,
-    updates: Partial<ProjectUpdateInput>
-  ): Promise<IProject> {
+    updates: Partial<ContextUpdateInput>
+  ): Promise<IContext> {
     if (this._isDisposed) {
       throw new Error('ContextService is disposed');
     }
@@ -258,13 +253,13 @@ export class ContextService implements DisposableResource {
     }
 
     // Merge updates
-    const updated: IProject = {
+    const updated: IContext = {
       ...existing,
       ...updates,
       id: contextId, // Ensure ID doesn't change
+      project_id: existing.project_id, // Ensure project_id doesn't change
       metadata: {
         ...existing.metadata,
-        ...(updates.metadata || {}),
         createdAt: existing.metadata.createdAt, // Preserve creation date
         updatedAt: new Date()
       },
@@ -336,7 +331,7 @@ export class ContextService implements DisposableResource {
   /**
    * List all contexts with optional filtering and sorting
    */
-  public async listContexts(filters?: ProjectQueryFilters): Promise<IProject[]> {
+  public async listContexts(filters?: ContextQueryFilters): Promise<IContext[]> {
     if (this._isDisposed) {
       throw new Error('ContextService is disposed');
     }
@@ -346,7 +341,7 @@ export class ContextService implements DisposableResource {
     const contextIds = Object.keys(index.contexts);
 
     // Load all contexts (TODO: optimize with pagination in Phase 17)
-    const contexts: IProject[] = [];
+    const contexts: IContext[] = [];
     for (const id of contextIds) {
       const context = await this.getContext(id);
       if (context) {
@@ -373,14 +368,15 @@ export class ContextService implements DisposableResource {
   /**
    * Get lightweight context list items (for UI pickers)
    */
-  public async listContextItems(filters?: ProjectQueryFilters): Promise<ProjectListItem[]> {
+  public async listContextItems(filters?: ContextQueryFilters): Promise<ContextListItem[]> {
     const contexts = await this.listContexts(filters);
     return contexts.map(c => ({
       id: c.id,
       name: c.name,
+      project_id: c.project_id,
       type: c.type,
       status: c.status,
-      updatedAt: c.updatedAt,
+      updatedAt: c.metadata.updatedAt,
       icon: c.metadata.icon,
       color: c.metadata.color
     }));
@@ -389,42 +385,40 @@ export class ContextService implements DisposableResource {
   /**
    * Get context statistics
    */
-  public async getStats(): Promise<ProjectStats> {
+  public async getStats(): Promise<ContextStats> {
     const contexts = await this.listContexts();
 
-    const stats: ProjectStats = {
+    const stats: ContextStats = {
       total: contexts.length,
-      byType: {
-        journalism: 0,
-        research: 0,
-        fiction: 0,
-        documentation: 0,
-        general: 0
-      },
+      byType: {} as Record<ContextType, number>,
       byStatus: {
-        [ProjectStatus.Active]: 0,
-        [ProjectStatus.Archived]: 0,
-        [ProjectStatus.Template]: 0
+        [ContextStatus.Active]: 0,
+        [ContextStatus.Archived]: 0,
+        [ContextStatus.Template]: 0,
+        [ContextStatus.Paused]: 0
       }
     };
 
-    let mostRecent: IProject | null = null;
-    let oldest: IProject | null = null;
+    let mostRecent: IContext | null = null;
+    let oldest: IContext | null = null;
 
     for (const context of contexts) {
-      // Count by type
+      // Count by type (dynamic)
+      if (!stats.byType[context.type]) {
+        stats.byType[context.type] = 0;
+      }
       stats.byType[context.type]++;
 
       // Count by status
       stats.byStatus[context.status]++;
 
       // Track most recent
-      if (!mostRecent || context.updatedAt > mostRecent.updatedAt) {
+      if (!mostRecent || context.metadata.updatedAt > mostRecent.metadata.updatedAt) {
         mostRecent = context;
       }
 
       // Track oldest
-      if (!oldest || context.createdAt < oldest.createdAt) {
+      if (!oldest || context.metadata.createdAt < oldest.metadata.createdAt) {
         oldest = context;
       }
     }
@@ -433,9 +427,10 @@ export class ContextService implements DisposableResource {
       stats.recentlyUpdated = {
         id: mostRecent.id,
         name: mostRecent.name,
+        project_id: mostRecent.project_id,
         type: mostRecent.type,
         status: mostRecent.status,
-        updatedAt: mostRecent.updatedAt,
+        updatedAt: mostRecent.metadata.updatedAt,
         icon: mostRecent.metadata.icon,
         color: mostRecent.metadata.color
       };
@@ -445,9 +440,10 @@ export class ContextService implements DisposableResource {
       stats.oldest = {
         id: oldest.id,
         name: oldest.name,
+        project_id: oldest.project_id,
         type: oldest.type,
         status: oldest.status,
-        updatedAt: oldest.updatedAt,
+        updatedAt: oldest.metadata.updatedAt,
         icon: oldest.metadata.icon,
         color: oldest.metadata.color
       };
@@ -483,7 +479,7 @@ export class ContextService implements DisposableResource {
   /**
    * Get the currently active context
    */
-  public getActiveContext(): IProject | undefined {
+  public getActiveContext(): IContext | undefined {
     if (this._isDisposed || !this.activeContextId) {
       return undefined;
     }
@@ -513,7 +509,7 @@ export class ContextService implements DisposableResource {
   /**
    * Validate context input for creation
    */
-  private validateContextInput(input: ProjectCreateInput): ProjectValidationResult {
+  private validateContextInput(input: ContextCreateInput): ContextValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
     const fieldErrors: Record<string, string> = {};
@@ -522,54 +518,55 @@ export class ContextService implements DisposableResource {
     if (!input.name || input.name.trim().length === 0) {
       errors.push('Context name is required');
       fieldErrors.name = 'Name cannot be empty';
-    } else if (input.name.length < PROJECT_CONSTANTS.NAME.MIN_LENGTH) {
-      errors.push(`Context name must be at least ${PROJECT_CONSTANTS.NAME.MIN_LENGTH} character`);
+    } else if (input.name.length < CONTEXT_CONSTANTS.NAME.MIN_LENGTH) {
+      errors.push(`Context name must be at least ${CONTEXT_CONSTANTS.NAME.MIN_LENGTH} character`);
       fieldErrors.name = 'Name too short';
-    } else if (input.name.length > PROJECT_CONSTANTS.NAME.MAX_LENGTH) {
-      errors.push(`Context name cannot exceed ${PROJECT_CONSTANTS.NAME.MAX_LENGTH} characters`);
+    } else if (input.name.length > CONTEXT_CONSTANTS.NAME.MAX_LENGTH) {
+      errors.push(`Context name cannot exceed ${CONTEXT_CONSTANTS.NAME.MAX_LENGTH} characters`);
       fieldErrors.name = 'Name too long';
-    } else if (!PROJECT_CONSTANTS.NAME.PATTERN.test(input.name)) {
+    } else if (!CONTEXT_CONSTANTS.NAME.PATTERN.test(input.name)) {
       errors.push('Context name contains invalid characters');
       fieldErrors.name = 'Invalid characters in name';
     }
 
-    // Validate type
+    // Validate type (context types are dynamic, so just check it's a non-empty string)
     if (!input.type) {
       errors.push('Context type is required');
       fieldErrors.type = 'Type is required';
-    } else if (!isProjectType(input.type)) {
+    } else if (typeof input.type !== 'string' || input.type.trim().length === 0) {
       errors.push(`Invalid context type: ${input.type}`);
       fieldErrors.type = 'Invalid context type';
     }
 
     // Validate description
-    if (input.description && input.description.length > PROJECT_CONSTANTS.DESCRIPTION.MAX_LENGTH) {
-      errors.push(`Description cannot exceed ${PROJECT_CONSTANTS.DESCRIPTION.MAX_LENGTH} characters`);
+    if (input.description && input.description.length > CONTEXT_CONSTANTS.DESCRIPTION.MAX_LENGTH) {
+      errors.push(`Description cannot exceed ${CONTEXT_CONSTANTS.DESCRIPTION.MAX_LENGTH} characters`);
       fieldErrors.description = 'Description too long';
     }
 
-    // Validate tags
-    if (input.metadata?.tags) {
-      if (input.metadata.tags.length > PROJECT_CONSTANTS.TAGS.MAX_COUNT) {
-        errors.push(`Cannot have more than ${PROJECT_CONSTANTS.TAGS.MAX_COUNT} tags`);
+    // Validate tags (only for IContext, not ContextCreateInput)
+    const fullContext = input as any;
+    if (fullContext.metadata?.tags) {
+      if (fullContext.metadata.tags.length > CONTEXT_CONSTANTS.TAGS.MAX_COUNT) {
+        errors.push(`Cannot have more than ${CONTEXT_CONSTANTS.TAGS.MAX_COUNT} tags`);
         fieldErrors['metadata.tags'] = 'Too many tags';
       }
 
-      for (const tag of input.metadata.tags) {
-        if (tag.length > PROJECT_CONSTANTS.TAGS.MAX_LENGTH) {
-          errors.push(`Tag "${tag}" exceeds ${PROJECT_CONSTANTS.TAGS.MAX_LENGTH} characters`);
+      for (const tag of fullContext.metadata.tags) {
+        if (tag.length > CONTEXT_CONSTANTS.TAGS.MAX_LENGTH) {
+          errors.push(`Tag "${tag}" exceeds ${CONTEXT_CONSTANTS.TAGS.MAX_LENGTH} characters`);
           fieldErrors['metadata.tags'] = 'Tag too long';
         }
-        if (!PROJECT_CONSTANTS.TAGS.PATTERN.test(tag)) {
+        if (!CONTEXT_CONSTANTS.TAGS.PATTERN.test(tag)) {
           errors.push(`Tag "${tag}" contains invalid characters`);
           fieldErrors['metadata.tags'] = 'Invalid tag characters';
         }
       }
     }
 
-    // Validate ID format if provided
-    if (input.id && !PROJECT_CONSTANTS.ID.PATTERN.test(input.id)) {
-      errors.push('Invalid context ID format (must be UUID)');
+    // Validate ID format if provided (only for IContext)
+    if (fullContext.id && !CONTEXT_CONSTANTS.ID.PATTERN.test(fullContext.id)) {
+      errors.push('Invalid context ID format (must be ctx-UUID)');
       fieldErrors.id = 'Invalid UUID format';
     }
 
@@ -584,16 +581,16 @@ export class ContextService implements DisposableResource {
   /**
    * Validate complete context object
    */
-  public validateContext(context: Partial<IProject>): ProjectValidationResult {
-    if (!isProject(context)) {
+  public validateContext(context: Partial<IContext>): ContextValidationResult {
+    if (!isContext(context)) {
       return {
         isValid: false,
         errors: ['Invalid context structure'],
-        fieldErrors: { _: 'Object is not a valid IProject' }
+        fieldErrors: { _: 'Object is not a valid IContext' }
       };
     }
 
-    return this.validateContextInput(context as ProjectCreateInput);
+    return this.validateContextInput(context as ContextCreateInput);
   }
 
   // =============================================================================
@@ -603,7 +600,7 @@ export class ContextService implements DisposableResource {
   /**
    * Save context to JSON file
    */
-  private async saveContextToFile(context: IProject): Promise<void> {
+  private async saveContextToFile(context: IContext): Promise<void> {
     const filePath = this.getContextFilePath(context.id);
 
     // Serialize with Date objects as ISO strings
@@ -617,7 +614,7 @@ export class ContextService implements DisposableResource {
   /**
    * Load context from JSON file
    */
-  private async loadContextFromFile(contextId: string): Promise<IProject | undefined> {
+  private async loadContextFromFile(contextId: string): Promise<IContext | undefined> {
     const filePath = this.getContextFilePath(contextId);
 
     try {
@@ -656,7 +653,7 @@ export class ContextService implements DisposableResource {
   /**
    * Serialize context for JSON storage (convert Dates to strings)
    */
-  private serializeContext(context: IProject): any {
+  private serializeContext(context: IContext): any {
     return {
       ...context,
       metadata: {
@@ -670,7 +667,7 @@ export class ContextService implements DisposableResource {
   /**
    * Deserialize context from JSON storage (convert strings to Dates)
    */
-  private deserializeContext(json: any): IProject {
+  private deserializeContext(json: any): IContext {
     return {
       ...json,
       metadata: {
@@ -684,7 +681,7 @@ export class ContextService implements DisposableResource {
   /**
    * Create backup of context before destructive operation
    */
-  private async backupContext(context: IProject): Promise<void> {
+  private async backupContext(context: IContext): Promise<void> {
     const backupDir = vscode.Uri.joinPath(this.contextsDir, '.backups');
     await vscode.workspace.fs.createDirectory(backupDir);
 
@@ -754,7 +751,7 @@ export class ContextService implements DisposableResource {
   /**
    * Update index with context information
    */
-  private async updateIndex(context: IProject): Promise<void> {
+  private async updateIndex(context: IContext): Promise<void> {
     const index = await this.loadIndex();
 
     index.contexts[context.id] = {
@@ -831,7 +828,7 @@ export class ContextService implements DisposableResource {
   /**
    * Apply query filters to context list
    */
-  private applyFilters(contexts: IProject[], filters?: ProjectQueryFilters): IProject[] {
+  private applyFilters(contexts: IContext[], filters?: ContextQueryFilters): IContext[] {
     if (!filters) {
       return contexts;
     }
@@ -855,8 +852,11 @@ export class ContextService implements DisposableResource {
 
       // Filter by tags
       if (filters.tags && filters.tags.length > 0) {
+        if (!context.metadata.tags) {
+          return false;
+        }
         const hasMatchingTag = filters.tags.some(tag =>
-          context.metadata.tags.includes(tag)
+          context.metadata.tags!.includes(tag)
         );
         if (!hasMatchingTag) {
           return false;
@@ -880,7 +880,7 @@ export class ContextService implements DisposableResource {
   /**
    * Apply sorting to context list
    */
-  private applySorting(contexts: IProject[], filters?: ProjectQueryFilters): IProject[] {
+  private applySorting(contexts: IContext[], filters?: ContextQueryFilters): IContext[] {
     if (!filters?.sortBy) {
       return contexts;
     }
@@ -895,10 +895,10 @@ export class ContextService implements DisposableResource {
           comparison = a.name.localeCompare(b.name);
           break;
         case 'createdAt':
-          comparison = a.createdAt.getTime() - b.createdAt.getTime();
+          comparison = a.metadata.createdAt.getTime() - b.metadata.createdAt.getTime();
           break;
         case 'updatedAt':
-          comparison = a.updatedAt.getTime() - b.updatedAt.getTime();
+          comparison = a.metadata.updatedAt.getTime() - b.metadata.updatedAt.getTime();
           break;
       }
 

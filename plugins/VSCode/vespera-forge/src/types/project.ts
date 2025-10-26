@@ -10,7 +10,8 @@
  * @see {@link docs/architecture/core/HIERARCHICAL_TEMPLATE_SYSTEM.md} for template integration
  */
 
-import { ProjectId, UserId } from './bindery';
+import { ProjectId, UserId, WorkspaceId } from './bindery';
+import { ContextId } from './context';
 
 // =============================================================================
 // PROJECT TYPE SYSTEM - EXTENSIBLE, NOT HARDCODED
@@ -431,6 +432,16 @@ export interface IProject {
   /** Unique project identifier (UUID) - matches ProjectId from bindery.ts */
   id: ProjectId;
 
+  /**
+   * Workspace ID this project belongs to
+   *
+   * Phase 17: Projects are workspace-level entities stored in database.
+   * Each project is associated with exactly one workspace.
+   *
+   * @see {@link docs/development/decisions/ADR-015-workspace-project-context-hierarchy.md}
+   */
+  workspace_id: WorkspaceId;
+
   /** Human-readable project name (1-100 characters, alphanumeric with spaces/hyphens/underscores) */
   name: string;
 
@@ -447,6 +458,17 @@ export interface IProject {
 
   /** Optional project description for context and documentation */
   description?: string;
+
+  /**
+   * Currently active context ID within this project
+   *
+   * Phase 17: Projects contain multiple contexts (organizational lenses).
+   * This tracks which context is currently active for this project.
+   * Optional - may be null if no context is active.
+   *
+   * @see {@link docs/development/decisions/ADR-015-workspace-project-context-hierarchy.md}
+   */
+  active_context_id?: ContextId;
 
   /** Current project lifecycle status */
   status: ProjectStatus;
@@ -471,16 +493,18 @@ export interface IProjectSettings extends ProjectSettings {}
 /**
  * Input for creating a new project
  *
- * Requires only name and type. Other fields are optional or auto-generated:
+ * Requires name, workspace_id, and type. Other fields are optional or auto-generated:
  * - id: Generated as UUID
  * - metadata: Auto-populated with current timestamp, version "1.0.0"
  * - settings: Merged with project type defaults
  * - status: Defaults to ProjectStatus.Active
+ * - active_context_id: Optional, can be set later
  *
  * @example
  * ```typescript
  * const input: CreateProjectInput = {
  *   name: "My Novel",
+ *   workspace_id: "ws-123e4567-e89b-12d3-a456-426614174000",
  *   type: "fiction",
  *   description: "A gripping thriller",
  *   settings: {
@@ -491,19 +515,23 @@ export interface IProjectSettings extends ProjectSettings {}
  * };
  * ```
  */
-export type CreateProjectInput = Pick<IProject, "name" | "type"> &
-  Partial<Omit<IProject, "id" | "name" | "type" | "metadata">>;
+export type CreateProjectInput = Pick<IProject, "name" | "workspace_id" | "type"> &
+  Partial<Omit<IProject, "id" | "name" | "workspace_id" | "type" | "metadata">>;
 
 /**
  * Input for updating an existing project
  *
- * All fields except id and metadata are optional.
- * Metadata fields (updatedAt, version) are managed by the service.
+ * All fields except id, workspace_id, and metadata are optional.
+ * - id: Cannot be changed (immutable identifier)
+ * - workspace_id: Cannot be changed (projects cannot move between workspaces)
+ * - metadata: Managed by the service (updatedAt, version auto-updated)
+ * - active_context_id: Can be updated to switch active context
  *
  * @example
  * ```typescript
  * const update: UpdateProjectInput = {
  *   name: "The Quantum Prophecy (Revised)",
+ *   active_context_id: "ctx-456",
  *   settings: {
  *     ...existingSettings,
  *     color: "#5A9FE2"
@@ -511,7 +539,7 @@ export type CreateProjectInput = Pick<IProject, "name" | "type"> &
  * };
  * ```
  */
-export type UpdateProjectInput = Partial<Omit<IProject, "id" | "metadata">>;
+export type UpdateProjectInput = Partial<Omit<IProject, "id" | "workspace_id" | "metadata">>;
 
 /**
  * @deprecated Legacy create input - Use CreateProjectInput
