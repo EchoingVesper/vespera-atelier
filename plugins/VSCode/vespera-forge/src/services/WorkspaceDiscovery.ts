@@ -185,21 +185,125 @@ export async function findWorkspaceVespera(): Promise<WorkspaceDiscoveryResult> 
 }
 
 /**
- * TODO: Task C2 - Implement tree traversal search
- * Search up directory tree for .vespera/ (max 5 levels)
+ * Helper: Load workspace metadata from a .vespera/ directory path
  *
- * @param startPath - Directory to start search from
- * @param maxLevels - Maximum levels to traverse (default: 5)
- * @returns Discovery result if found
+ * @param vesperaPath - Absolute path to .vespera/ directory
+ * @returns Workspace metadata if valid, null if invalid or error
+ */
+async function loadWorkspaceMetadata(vesperaPath: string): Promise<WorkspaceMetadata | null> {
+  try {
+    const workspaceJsonPath = path.join(vesperaPath, 'workspace.json');
+    const content = await fs.promises.readFile(workspaceJsonPath, 'utf-8');
+    const metadata = JSON.parse(content) as WorkspaceMetadata;
+
+    // Validate required fields
+    if (!metadata.id || !metadata.name || !metadata.version) {
+      return null;
+    }
+
+    return metadata;
+  } catch {
+    // Return null on any error (file not found, permission denied, invalid JSON, etc.)
+    return null;
+  }
+}
+
+/**
+ * Task C2: Search up directory tree for .vespera/ directory
+ *
+ * Traverses up the directory tree from the starting path, looking for a
+ * `.vespera/` directory at each level. Stops at filesystem root or after
+ * reaching the maximum number of levels.
+ *
+ * This is useful when VS Code is opened in a subdirectory of a Vespera workspace,
+ * allowing the extension to find the workspace root automatically.
+ *
+ * @param startPath - Absolute directory path to start search from
+ * @param maxLevels - Maximum number of parent directories to check (default: 5)
+ * @returns Discovery result with workspace path and metadata if found
+ *
+ * @example
+ * ```typescript
+ * // Search from a subdirectory
+ * const result = await searchUpForVespera('/home/user/projects/game/code/src', 5);
+ * if (result.found) {
+ *   // Found workspace at /home/user/projects/game/.vespera
+ *   console.log(`Found at: ${result.vesperaPath}`);
+ * }
+ * ```
  */
 export async function searchUpForVespera(
   startPath: string,
   maxLevels: number = 5
 ): Promise<WorkspaceDiscoveryResult> {
-  // TODO: Implement Task C2
+  // Validate inputs
+  if (!startPath) {
+    return {
+      found: false,
+      error: 'startPath is required',
+      discoveryMethod: 'tree-traversal'
+    };
+  }
+
+  if (maxLevels < 1) {
+    return {
+      found: false,
+      error: 'maxLevels must be at least 1',
+      discoveryMethod: 'tree-traversal'
+    };
+  }
+
+  let currentPath = startPath;
+
+  // Traverse up the directory tree
+  for (let level = 0; level < maxLevels; level++) {
+    const vesperaPath = path.join(currentPath, '.vespera');
+
+    try {
+      // Check if .vespera/ exists and is a directory
+      const stats = await fs.promises.stat(vesperaPath);
+      if (stats.isDirectory()) {
+        // Found .vespera/ - try to load metadata
+        const metadata = await loadWorkspaceMetadata(vesperaPath);
+
+        if (metadata) {
+          // Valid workspace found!
+          return {
+            found: true,
+            vesperaPath,
+            metadata,
+            discoveryMethod: 'tree-traversal'
+          };
+        } else {
+          // .vespera/ exists but workspace.json is invalid
+          // Keep searching up the tree
+          continue;
+        }
+      }
+    } catch (err: any) {
+      // .vespera/ doesn't exist at this level or permission error
+      // Continue searching up the tree
+      if (err.code !== 'ENOENT') {
+        // Log permission errors but don't stop searching
+        // We might find a valid workspace higher up
+      }
+    }
+
+    // Move to parent directory
+    const parentPath = path.dirname(currentPath);
+
+    // Check if we've reached the filesystem root
+    if (parentPath === currentPath) {
+      // Reached root (e.g., '/' on Unix, 'C:\' on Windows)
+      break;
+    }
+
+    currentPath = parentPath;
+  }
+
+  // Didn't find .vespera/ in any parent directory
   return {
     found: false,
-    error: 'Tree traversal not yet implemented (Task C2)',
     discoveryMethod: 'tree-traversal'
   };
 }

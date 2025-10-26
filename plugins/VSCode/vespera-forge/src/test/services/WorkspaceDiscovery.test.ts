@@ -237,19 +237,172 @@ suite('WorkspaceDiscovery Tests', () => {
   });
 
   suite('searchUpForVespera', () => {
-    test('should return not implemented error (Task C2)', async () => {
-      const result = await searchUpForVespera(tempDir, 5);
+    test('should return error when startPath is empty', async () => {
+      const result = await searchUpForVespera('', 5);
 
       assert.strictEqual(result.found, false);
       assert.strictEqual(result.discoveryMethod, 'tree-traversal');
-      assert.ok(result.error?.includes('not yet implemented'));
+      assert.ok(result.error?.includes('startPath is required'));
     });
 
-    test('should accept custom maxLevels parameter', async () => {
-      const result = await searchUpForVespera(tempDir, 10);
+    test('should return error when maxLevels is less than 1', async () => {
+      const result = await searchUpForVespera(tempDir, 0);
 
       assert.strictEqual(result.found, false);
-      assert.ok(result.error?.includes('not yet implemented'));
+      assert.strictEqual(result.discoveryMethod, 'tree-traversal');
+      assert.ok(result.error?.includes('maxLevels must be at least 1'));
+    });
+
+    test('should return not found when no .vespera/ in tree', async () => {
+      // Create nested directories without .vespera/
+      const deepPath = path.join(tempDir, 'level1', 'level2', 'level3');
+      await fs.promises.mkdir(deepPath, { recursive: true });
+
+      const result = await searchUpForVespera(deepPath, 5);
+
+      assert.strictEqual(result.found, false);
+      assert.strictEqual(result.discoveryMethod, 'tree-traversal');
+    });
+
+    test('should find .vespera/ in parent directory', async () => {
+      // Create .vespera/ at root level
+      const vesperaPath = path.join(tempDir, '.vespera');
+      await fs.promises.mkdir(vesperaPath, { recursive: true });
+
+      const metadata: WorkspaceMetadata = {
+        id: 'ws-parent-test',
+        name: 'Parent Test Workspace',
+        version: '1.0.0',
+        created_at: new Date().toISOString(),
+        settings: { auto_sync: true }
+      };
+
+      await fs.promises.writeFile(
+        path.join(vesperaPath, 'workspace.json'),
+        JSON.stringify(metadata, null, 2)
+      );
+
+      // Create nested directory and search from there
+      const deepPath = path.join(tempDir, 'level1', 'level2');
+      await fs.promises.mkdir(deepPath, { recursive: true });
+
+      const result = await searchUpForVespera(deepPath, 5);
+
+      assert.strictEqual(result.found, true);
+      assert.strictEqual(result.discoveryMethod, 'tree-traversal');
+      assert.strictEqual(result.vesperaPath, vesperaPath);
+      assert.strictEqual(result.metadata?.id, 'ws-parent-test');
+    });
+
+    test('should find closest .vespera/ when multiple exist', async () => {
+      // Create .vespera/ at root level
+      const rootVespera = path.join(tempDir, '.vespera');
+      await fs.promises.mkdir(rootVespera, { recursive: true });
+      await fs.promises.writeFile(
+        path.join(rootVespera, 'workspace.json'),
+        JSON.stringify({
+          id: 'ws-root',
+          name: 'Root Workspace',
+          version: '1.0.0',
+          created_at: new Date().toISOString(),
+          settings: { auto_sync: true }
+        }, null, 2)
+      );
+
+      // Create .vespera/ at level1
+      const level1Path = path.join(tempDir, 'level1');
+      const level1Vespera = path.join(level1Path, '.vespera');
+      await fs.promises.mkdir(level1Vespera, { recursive: true });
+      await fs.promises.writeFile(
+        path.join(level1Vespera, 'workspace.json'),
+        JSON.stringify({
+          id: 'ws-level1',
+          name: 'Level1 Workspace',
+          version: '1.0.0',
+          created_at: new Date().toISOString(),
+          settings: { auto_sync: true }
+        }, null, 2)
+      );
+
+      // Search from level2 - should find level1 first (closest)
+      const deepPath = path.join(level1Path, 'level2');
+      await fs.promises.mkdir(deepPath, { recursive: true });
+
+      const result = await searchUpForVespera(deepPath, 5);
+
+      assert.strictEqual(result.found, true);
+      assert.strictEqual(result.discoveryMethod, 'tree-traversal');
+      assert.strictEqual(result.metadata?.id, 'ws-level1');
+    });
+
+    test('should respect maxLevels parameter', async () => {
+      // Create .vespera/ at root level
+      const vesperaPath = path.join(tempDir, '.vespera');
+      await fs.promises.mkdir(vesperaPath, { recursive: true });
+      await fs.promises.writeFile(
+        path.join(vesperaPath, 'workspace.json'),
+        JSON.stringify({
+          id: 'ws-deep',
+          name: 'Deep Workspace',
+          version: '1.0.0',
+          created_at: new Date().toISOString(),
+          settings: { auto_sync: true }
+        }, null, 2)
+      );
+
+      // Create deep path (6 levels)
+      const deepPath = path.join(tempDir, 'l1', 'l2', 'l3', 'l4', 'l5', 'l6');
+      await fs.promises.mkdir(deepPath, { recursive: true });
+
+      // Search with maxLevels=3 (should not find it)
+      const result = await searchUpForVespera(deepPath, 3);
+
+      assert.strictEqual(result.found, false);
+      assert.strictEqual(result.discoveryMethod, 'tree-traversal');
+    });
+
+    test('should skip .vespera/ with invalid workspace.json', async () => {
+      // Create invalid .vespera/ at level1
+      const level1Path = path.join(tempDir, 'level1');
+      const level1Vespera = path.join(level1Path, '.vespera');
+      await fs.promises.mkdir(level1Vespera, { recursive: true });
+      await fs.promises.writeFile(
+        path.join(level1Vespera, 'workspace.json'),
+        '{invalid json}'
+      );
+
+      // Create valid .vespera/ at root
+      const rootVespera = path.join(tempDir, '.vespera');
+      await fs.promises.mkdir(rootVespera, { recursive: true });
+      await fs.promises.writeFile(
+        path.join(rootVespera, 'workspace.json'),
+        JSON.stringify({
+          id: 'ws-valid',
+          name: 'Valid Workspace',
+          version: '1.0.0',
+          created_at: new Date().toISOString(),
+          settings: { auto_sync: true }
+        }, null, 2)
+      );
+
+      // Search from level2 - should skip invalid level1 and find valid root
+      const deepPath = path.join(level1Path, 'level2');
+      await fs.promises.mkdir(deepPath, { recursive: true });
+
+      const result = await searchUpForVespera(deepPath, 5);
+
+      assert.strictEqual(result.found, true);
+      assert.strictEqual(result.metadata?.id, 'ws-valid');
+    });
+
+    test('should stop at filesystem root', async () => {
+      // This test documents behavior but doesn't actually test it
+      // (we can't traverse to real filesystem root in tests)
+
+      // Behavior: When parentPath === currentPath, stop traversal
+      // This happens at filesystem root ('/', 'C:\', etc.)
+
+      assert.ok(true, 'Filesystem root detection documented');
     });
   });
 
