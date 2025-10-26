@@ -31,6 +31,32 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
     this._projectService = projectService;
   }
 
+  /**
+   * Get workspace ID for current workspace
+   *
+   * Phase 17 Cluster D - Temporary implementation
+   * TODO (Cluster F - Task F1): Replace with proper workspace ID from Bindery backend
+   * For now, derives ID from workspace folder path using simple hashing
+   */
+  private getWorkspaceId(): string {
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    if (!workspaceFolder) {
+      // Return a default workspace ID if no folder is open
+      return 'default-workspace';
+    }
+
+    // Simple hash of workspace path to create consistent ID
+    // This will be replaced with proper UUID from Bindery in Cluster F
+    const path = workspaceFolder.uri.fsPath;
+    let hash = 0;
+    for (let i = 0; i < path.length; i++) {
+      const char = path.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return `ws-${Math.abs(hash).toString(36)}`;
+  }
+
   public async resolveWebviewView(
     webviewView: vscode.WebviewView,
     _context: vscode.WebviewViewResolveContext,
@@ -554,7 +580,9 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
     }
 
     try {
-      const projectList = await this._projectService.listProjects();
+      // Phase 17 Task D5: listProjects now requires workspace ID
+      const workspaceId = this.getWorkspaceId();
+      const projectList = await this._projectService.listProjects(workspaceId);
       if (this._view) {
         this._view.webview.postMessage({
           type: 'project:list:response',
@@ -632,8 +660,8 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
           });
         }
       } else {
-        // Clear active project
-        this._projectService.clearActiveProject();
+        // Clear active project (Phase 17: new ProjectService uses null instead of separate clear method)
+        this._projectService.setActiveProject(null);
         if (this._view) {
           this._view.webview.postMessage({
             type: 'project:activeChanged',

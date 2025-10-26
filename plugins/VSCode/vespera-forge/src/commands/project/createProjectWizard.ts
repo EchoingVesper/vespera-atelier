@@ -12,8 +12,8 @@
  */
 
 import * as vscode from 'vscode';
-import { ProjectService } from '../../services/ProjectService';
-import { DEFAULT_PROJECT_TYPES, ProjectTypeDefinition, CreateProjectInput } from '../../types/project';
+import { ProjectService, ProjectCreateInput } from '../../services/ProjectService';
+import { DEFAULT_PROJECT_TYPES, ProjectTypeDefinition } from '../../types/project';
 
 /**
  * QuickPickItem for project types with metadata
@@ -29,6 +29,29 @@ interface WizardResult {
   success: boolean;
   projectId?: string;
   error?: string;
+}
+
+/**
+ * Get workspace ID for current workspace
+ *
+ * Phase 17 Task D5 - Temporary implementation
+ * TODO (Cluster F - Task F1): Replace with proper workspace ID from Bindery backend
+ */
+function getWorkspaceId(): string {
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+  if (!workspaceFolder) {
+    return 'default-workspace';
+  }
+
+  // Simple hash of workspace path
+  const path = workspaceFolder.uri.fsPath;
+  let hash = 0;
+  for (let i = 0; i < path.length; i++) {
+    const char = path.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return `ws-${Math.abs(hash).toString(36)}`;
 }
 
 /**
@@ -171,7 +194,9 @@ async function enterProjectName(
 
       // Uniqueness check
       try {
-        const existingProjects = await projectService.listProjects();
+        // Phase 17 Task D5: listProjects now requires workspace ID
+        const workspaceId = getWorkspaceId();
+        const existingProjects = await projectService.listProjects(workspaceId);
         const nameExists = existingProjects.some(
           p => p.name.toLowerCase() === value.toLowerCase()
         );
@@ -285,10 +310,11 @@ async function createProject(
   description?: string
 ): Promise<WizardResult> {
   try {
-    // Build input with guaranteed settings
-    const input: CreateProjectInput = {
+    // Phase 17 Task D5: ProjectCreateInput now requires workspace_id and uses project_type field
+    const input: ProjectCreateInput = {
+      workspace_id: getWorkspaceId(),
       name,
-      type: type.id,
+      project_type: type.id,
       description,
       settings: {
         color: type.defaultSettings?.color ?? '#6B7280',
@@ -298,8 +324,8 @@ async function createProject(
       }
     };
 
-    // Create project - cast to ProjectCreateInput since we know settings is defined
-    const project = await projectService.createProject(input as any);
+    // Create project
+    const project = await projectService.createProject(input);
 
     return {
       success: true,

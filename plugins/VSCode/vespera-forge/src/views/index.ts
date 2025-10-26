@@ -37,11 +37,12 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
   // Get the global Bindery service instance
   const binderyService = getBinderyService();
 
-  // Phase 16b: Initialize ProjectService
+  // Phase 17: Initialize ProjectService (database-backed, no workspace URI needed)
+  // The new ProjectService uses Bindery backend instead of filesystem
   let projectService: ProjectService | undefined;
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
   if (workspaceFolder) {
-    projectService = ProjectService.getInstance(workspaceFolder.uri);
+    projectService = ProjectService.getInstance({ binderyService });
     // Initialize asynchronously (non-blocking)
     projectService.initialize().catch(err => {
       console.error('[Vespera] Failed to initialize ProjectService:', err);
