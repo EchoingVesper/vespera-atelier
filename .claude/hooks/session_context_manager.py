@@ -51,11 +51,12 @@ def find_current_prp():
 
 def load_session_context():
     """Load existing session context"""
-    # Try V2 location first, then fall back to V1 location if it exists
+    # Try current location first, then fall back to legacy locations for migration
+    current_context_file = Path('.vespera/.session_context.json')
     v2_context_file = Path('.vespera_v2/.session_context.json')
     v1_context_file = Path('.task_orchestrator/.session_context.json')
-    
-    for context_file in [v2_context_file, v1_context_file]:
+
+    for context_file in [current_context_file, v2_context_file, v1_context_file]:
         if context_file.exists():
             try:
                 with open(context_file, 'r') as f:
@@ -67,7 +68,7 @@ def load_session_context():
 
 def save_session_context():
     """Save current session context"""
-    context_dir = Path('.vespera_v2')
+    context_dir = Path('.vespera')
     context_dir.mkdir(exist_ok=True)
     
     context_file = context_dir / '.session_context.json'
