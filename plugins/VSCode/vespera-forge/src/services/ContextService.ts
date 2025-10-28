@@ -27,6 +27,7 @@ import {
 } from '../types/context';
 import { VesperaLogger } from '../core/logging/VesperaLogger';
 import { DisposableResource } from '../types';
+import { ProjectService } from './ProjectService';
 
 /**
  * Context index structure for fast lookups
@@ -49,6 +50,9 @@ interface ContextIndex {
 export interface ContextServiceConfig {
   /** Logger instance for debugging */
   logger?: VesperaLogger;
+
+  /** ProjectService instance for project_id validation */
+  projectService?: ProjectService;
 
   /** Enable automatic index rebuilds on inconsistency */
   autoRebuildIndex?: boolean;
@@ -77,6 +81,7 @@ export class ContextService implements DisposableResource {
   private indexCache: ContextIndex | null = null;
   private _isDisposed = false;
   private readonly config: ContextServiceConfig;
+  private readonly projectService?: ProjectService;
 
   private constructor(
     workspaceUri: vscode.Uri,
@@ -90,10 +95,12 @@ export class ContextService implements DisposableResource {
       enableBackups: true,
       ...config
     };
+    this.projectService = config.projectService;
 
     this.config.logger?.debug('ContextService initialized', {
       workspaceRoot: this.workspaceRoot,
-      contextsDir: this.contextsDir.fsPath
+      contextsDir: this.contextsDir.fsPath,
+      hasProjectService: !!this.projectService
     });
   }
 
@@ -152,6 +159,33 @@ export class ContextService implements DisposableResource {
   // =============================================================================
 
   /**
+   * Validate that a project_id exists in the database
+   *
+   * Phase 17 Task F2: Backend integration - verify project exists before creating context
+   */
+  private async validateProjectExists(project_id: string): Promise<boolean> {
+    if (!this.projectService) {
+      // If no ProjectService is configured, skip validation (for backwards compatibility)
+      this.config.logger?.warn('ProjectService not configured - skipping project_id validation', {
+        project_id
+      });
+      return true;
+    }
+
+    try {
+      const project = await this.projectService.getProject(project_id);
+      if (!project) {
+        this.config.logger?.error('Project not found', { project_id });
+        return false;
+      }
+      return true;
+    } catch (error) {
+      this.config.logger?.error('Error validating project', { project_id, error });
+      return false;
+    }
+  }
+
+  /**
    * Create a new context
    */
   public async createContext(input: ContextCreateInput): Promise<IContext> {
@@ -163,6 +197,12 @@ export class ContextService implements DisposableResource {
     const validation = this.validateContextInput(input);
     if (!validation.isValid) {
       throw new Error(`Invalid context input: ${validation.errors.join(', ')}`);
+    }
+
+    // Phase 17 Task F2: Validate project_id exists
+    const projectExists = await this.validateProjectExists(input.project_id);
+    if (!projectExists) {
+      throw new Error(`Cannot create context: project_id "${input.project_id}" does not exist`);
     }
 
     // Generate ID with ctx- prefix

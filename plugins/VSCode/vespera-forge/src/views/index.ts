@@ -10,6 +10,7 @@ import { ChatChannelListProvider } from './ChatChannelListProvider';
 import { WelcomeViewProvider } from './WelcomeViewProvider';
 import { getBinderyService } from '../services/bindery';
 import { ProjectService } from '../services/ProjectService';
+import { ContextService } from '../services/ContextService';
 
 // Export view providers
 export { NavigatorWebviewProvider } from './NavigatorWebviewProvider';
@@ -40,6 +41,7 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
   // Phase 17: Initialize ProjectService (database-backed, no workspace URI needed)
   // The new ProjectService uses Bindery backend instead of filesystem
   let projectService: ProjectService | undefined;
+  let contextService: ContextService | undefined;
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
   if (workspaceFolder) {
     projectService = ProjectService.getInstance({ binderyService });
@@ -47,8 +49,14 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
     projectService.initialize().catch(err => {
       console.error('[Vespera] Failed to initialize ProjectService:', err);
     });
+
+    // Phase 17 Task F2: Initialize ContextService with ProjectService for validation
+    contextService = ContextService.getInstance(workspaceFolder.uri, { projectService });
+    contextService.initialize().catch(err => {
+      console.error('[Vespera] Failed to initialize ContextService:', err);
+    });
   } else {
-    console.warn('[Vespera] No workspace folder open, ProjectService not initialized');
+    console.warn('[Vespera] No workspace folder open, ProjectService and ContextService not initialized');
   }
 
   // Create welcome view provider
