@@ -447,7 +447,7 @@ export class ContextService implements DisposableResource {
       if (!stats.byType[context.type]) {
         stats.byType[context.type] = 0;
       }
-      stats.byType[context.type]++;
+      stats.byType[context.type]!++;
 
       // Count by status
       stats.byStatus[context.status]++;
@@ -557,31 +557,31 @@ export class ContextService implements DisposableResource {
     // Validate name
     if (!input.name || input.name.trim().length === 0) {
       errors.push('Context name is required');
-      fieldErrors.name = 'Name cannot be empty';
+      fieldErrors['name'] = 'Name cannot be empty';
     } else if (input.name.length < CONTEXT_CONSTANTS.NAME.MIN_LENGTH) {
       errors.push(`Context name must be at least ${CONTEXT_CONSTANTS.NAME.MIN_LENGTH} character`);
-      fieldErrors.name = 'Name too short';
+      fieldErrors['name'] = 'Name too short';
     } else if (input.name.length > CONTEXT_CONSTANTS.NAME.MAX_LENGTH) {
       errors.push(`Context name cannot exceed ${CONTEXT_CONSTANTS.NAME.MAX_LENGTH} characters`);
-      fieldErrors.name = 'Name too long';
+      fieldErrors['name'] = 'Name too long';
     } else if (!CONTEXT_CONSTANTS.NAME.PATTERN.test(input.name)) {
       errors.push('Context name contains invalid characters');
-      fieldErrors.name = 'Invalid characters in name';
+      fieldErrors['name'] = 'Invalid characters in name';
     }
 
     // Validate type (context types are dynamic, so just check it's a non-empty string)
     if (!input.type) {
       errors.push('Context type is required');
-      fieldErrors.type = 'Type is required';
+      fieldErrors['type'] = 'Type is required';
     } else if (typeof input.type !== 'string' || input.type.trim().length === 0) {
       errors.push(`Invalid context type: ${input.type}`);
-      fieldErrors.type = 'Invalid context type';
+      fieldErrors['type'] = 'Invalid context type';
     }
 
     // Validate description
     if (input.description && input.description.length > CONTEXT_CONSTANTS.DESCRIPTION.MAX_LENGTH) {
       errors.push(`Description cannot exceed ${CONTEXT_CONSTANTS.DESCRIPTION.MAX_LENGTH} characters`);
-      fieldErrors.description = 'Description too long';
+      fieldErrors['description'] = 'Description too long';
     }
 
     // Validate tags (only for IContext, not ContextCreateInput)
@@ -607,7 +607,7 @@ export class ContextService implements DisposableResource {
     // Validate ID format if provided (only for IContext)
     if (fullContext.id && !CONTEXT_CONSTANTS.ID.PATTERN.test(fullContext.id)) {
       errors.push('Invalid context ID format (must be ctx-UUID)');
-      fieldErrors.id = 'Invalid UUID format';
+      fieldErrors['id'] = 'Invalid UUID format';
     }
 
     return {
