@@ -14,16 +14,14 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { ProjectService, initializeProjectService, disposeProjectService } from '../../services/ProjectService';
 import {
+  ProjectService,
+  initializeProjectService,
+  disposeProjectService,
   IProject,
-  ProjectType,
-  ProjectStatus,
   ProjectCreateInput,
-  createDefaultProjectSettings,
-  createDefaultProjectMetadata,
-  PROJECT_CONSTANTS
-} from '../../types/project';
+  ProjectUpdateInput
+} from '../../services/ProjectService';
 
 /**
  * Helper to create a temporary workspace for testing
@@ -59,11 +57,11 @@ async function cleanupTestWorkspace(workspaceUri: vscode.Uri): Promise<void> {
  */
 function createTestProjectInput(overrides: Partial<ProjectCreateInput> = {}): ProjectCreateInput {
   return {
+    workspace_id: 'test-workspace-id',
     name: 'Test Project',
-    type: 'fiction',
+    project_type: 'fiction',
     description: 'A test project for unit tests',
-    metadata: createDefaultProjectMetadata(),
-    settings: createDefaultProjectSettings(),
+    settings: {},
     ...overrides
   };
 }
@@ -84,7 +82,9 @@ suite('ProjectService Tests', () => {
 
   // Setup before each test
   setup(async () => {
-    service = await initializeProjectService(workspaceUri);
+    // Phase 17: ProjectService no longer takes workspaceUri directly
+    // It uses BinderyService for workspace-level storage
+    service = await initializeProjectService();
   });
 
   // Teardown after each test
@@ -303,12 +303,12 @@ suite('ProjectService Tests', () => {
         metadata: {
           ...created.metadata,
           tags: ['tag1', 'tag2'],
-          icon: '=Ö'
+          icon: '=ï¿½'
         }
       });
 
       assert.deepStrictEqual(updated.metadata.tags, ['tag1', 'tag2']);
-      assert.strictEqual(updated.metadata.icon, '=Ö');
+      assert.strictEqual(updated.metadata.icon, '=ï¿½');
     });
 
     test('Updates updatedAt timestamp', async () => {
