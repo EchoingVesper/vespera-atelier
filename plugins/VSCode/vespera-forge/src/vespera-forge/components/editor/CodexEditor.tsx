@@ -61,7 +61,7 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
   useEffect(() => {
     if (codex) {
       // Codex content is stored in content.fields, not directly in content
-      const contentFields = codex.content?.fields || {};
+      const contentFields = codex.content?.['fields'] || {};
       setFormData({ ...contentFields, ...codex.metadata });
     } else {
       setFormData({});
@@ -71,12 +71,12 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
   // Set default view mode based on template and context
   useEffect(() => {
     if (template && template.viewModes.length > 0) {
-      const contextViewMode = template.viewModes.find(vm => 
-        vm.contexts.includes(context.workflowStage) || 
+      const contextViewMode = template.viewModes.find(vm =>
+        vm.contexts.includes(context.workflowStage) ||
         vm.contexts.includes(context.role) ||
         vm.contexts.includes('all')
       );
-      setActiveViewMode(contextViewMode?.id || template.viewModes[0].id);
+      setActiveViewMode(contextViewMode?.id || template.viewModes[0]?.id || '');
     }
   }, [template, context]);
 
@@ -225,11 +225,15 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
                 <SelectValue placeholder={`Select ${(field.label || field.name).toLowerCase()}`} />
               </SelectTrigger>
               <SelectContent>
-                {field.options.map(option => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
+                {field.options.map((option: string | { value: string; label: string }) => {
+                  const optionValue = typeof option === 'string' ? option : option.value;
+                  const optionLabel = typeof option === 'string' ? option : option.label;
+                  return (
+                    <SelectItem key={optionValue} value={optionValue}>
+                      {optionLabel}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
@@ -313,7 +317,7 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
                 {codex?.metadata.status && (
                   <Badge variant="secondary">{codex.metadata.status}</Badge>
                 )}
-                {codex?.metadata.tags?.map(tag => (
+                {codex?.metadata.tags?.map((tag: string) => (
                   <Badge key={tag} variant="outline" className="text-xs">
                     {tag}
                   </Badge>
@@ -390,7 +394,7 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {codex.metadata.references.map(rel => (
+                      {codex.metadata.references.map((rel: { id: string; type: string; targetId: string }) => (
                         <div key={rel.id} className="flex items-center justify-between p-2 border rounded">
                           <span className="text-sm">{rel.type}</span>
                           <Badge variant="outline">{rel.targetId}</Badge>

@@ -23,6 +23,10 @@ export interface CodexMetadata {
   assignedTo?: string;
   workflowState?: string;
   customFields?: Record<string, any>;
+  /** TODO: Phase 17 - Tags should be on Codex itself, not metadata. Remove after refactor. */
+  tags?: string[];
+  /** TODO: Phase 17 - Implement references/relationships system. Currently incomplete. */
+  references?: Array<{ id: string; type: string; targetId: string }>;
 }
 
 export interface Relationship {
@@ -69,6 +73,10 @@ export interface TemplateField {
   validation?: ValidationRule[];
   visibility?: FieldVisibility;
   styling?: FieldStyling;
+  /** Optional display label for UI (falls back to name if not provided) */
+  label?: string;
+  /** Options for select/multi-select field types */
+  options?: Array<{ value: string; label: string }>;
 }
 
 export enum FieldType {
