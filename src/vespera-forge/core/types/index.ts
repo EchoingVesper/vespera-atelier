@@ -313,6 +313,8 @@ export interface PlatformAdapter {
   openFile: (path: string) => void;
   saveFile: (path: string, content: string) => Promise<void>;
   showNotification: (message: string, type: 'info' | 'warning' | 'error') => void;
+  setState?: (state: Record<string, any>) => Promise<void>;
+  getCurrentContext: () => Context;
 }
 
 // Event System Types
