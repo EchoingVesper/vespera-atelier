@@ -64,7 +64,11 @@
 	"exclude": [
 		"node_modules",
 		"out",
-		"dist"
+		"dist",
+		"src/vespera-forge/plugins/obsidian-plugin.ts",
+		"src/vespera-forge/core/adapters/obsidian-adapter.ts",
+		"**/obsidian-plugin.ts",
+		"**/obsidian-adapter.ts"
 	],
 	"ts-node": {
 		"esm": true

@@ -4,9 +4,13 @@
  * Compatible with VS Code and Obsidian plugins
  */
 
+// Core imports for local use
+import { VSCodeAdapter } from './core/adapters/vscode-adapter';
+
 // Core exports
 export { VSCodeAdapter } from './core/adapters/vscode-adapter';
-export { ObsidianAdapter } from './core/adapters/obsidian-adapter';
+// NOTE: ObsidianAdapter excluded from VS Code plugin build (Phase 17 Stage 0.5b)
+// export { ObsidianAdapter } from './core/adapters/obsidian-adapter';
 export * from './core/types';
 
 // Component exports
@@ -18,7 +22,8 @@ export { CodexEditor } from './components/editor/CodexEditor';
 
 // Plugin exports
 export * from './plugins/vscode-extension';
-export * from './plugins/obsidian-plugin';
+// NOTE: obsidian-plugin excluded from VS Code plugin build (Phase 17 Stage 0.5b)
+// export * from './plugins/obsidian-plugin';
 
 // Version
 export const VERSION = '1.0.0';
@@ -99,9 +104,10 @@ export const createVSCodeExtension = () => {
   };
 };
 
-export const createObsidianPlugin = () => {
-  return require('./plugins/obsidian-plugin').default;
-};
+// NOTE: Obsidian plugin excluded from VS Code plugin build (Phase 17 Stage 0.5b)
+// export const createObsidianPlugin = () => {
+//   return require('./plugins/obsidian-plugin').default;
+// };
 
 // Platform detection
 export const detectPlatform = (): 'vscode' | 'obsidian' | 'unknown' => {
@@ -119,12 +125,14 @@ export const detectPlatform = (): 'vscode' | 'obsidian' | 'unknown' => {
 // Factory function for creating the appropriate adapter
 export const createAdapter = (platform?: 'vscode' | 'obsidian', api?: any) => {
   const detectedPlatform = platform || detectPlatform();
-  
+
   switch (detectedPlatform) {
     case 'vscode':
       return new VSCodeAdapter();
     case 'obsidian':
-      return new ObsidianAdapter(api);
+      // NOTE: ObsidianAdapter excluded from VS Code plugin build (Phase 17 Stage 0.5b)
+      throw new Error('Obsidian platform not supported in VS Code plugin build');
+      // return new ObsidianAdapter(api);
     default:
       throw new Error(`Unsupported platform: ${detectedPlatform}`);
   }
