@@ -973,25 +973,18 @@ suite('GlobalRegistry Tests', () => {
     let testRegistryPath: string;
     let originalGetProjectsRegistryPath: () => string;
 
-    // Helper to create a mock IProject
-    function createMockProject(id: string, name: string, type: string): IProject {
+    // Helper to create a mock IProject (Phase 17)
+    function createMockProject(id: string, name: string, type: string, workspaceId: string = 'test-workspace-id'): IProject {
       const now = new Date();
       return {
         id,
+        workspace_id: workspaceId,
         name,
-        type,
+        project_type: type,
         description: `Test project ${name}`,
-        status: ProjectStatus.Active,
-        metadata: {
-          createdAt: now,
-          updatedAt: now,
-          version: '1.0.0',
-          tags: []
-        },
-        settings: {
-          enabledAutomation: false,
-          customSettings: {}
-        }
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+        settings: {}
       };
     }
 
@@ -1154,24 +1147,17 @@ suite('GlobalRegistry Tests', () => {
     let testRegistryPath: string;
     let originalGetProjectsRegistryPath: () => string;
 
-    function createMockProject(id: string, name: string, type: string): IProject {
+    function createMockProject(id: string, name: string, type: string, workspaceId: string = 'test-workspace-id'): IProject {
       const now = new Date();
       return {
         id,
+        workspace_id: workspaceId,
         name,
-        type,
+        project_type: type,
         description: `Test project ${name}`,
-        status: ProjectStatus.Active,
-        metadata: {
-          createdAt: now,
-          updatedAt: now,
-          version: '1.0.0',
-          tags: []
-        },
-        settings: {
-          enabledAutomation: false,
-          customSettings: {}
-        }
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+        settings: {}
       };
     }
 
@@ -1275,24 +1261,17 @@ suite('GlobalRegistry Tests', () => {
     let testRegistryPath: string;
     let originalGetProjectsRegistryPath: () => string;
 
-    function createMockProject(id: string, name: string, type: string): IProject {
+    function createMockProject(id: string, name: string, type: string, workspaceId: string = 'test-workspace-id'): IProject {
       const now = new Date();
       return {
         id,
+        workspace_id: workspaceId,
         name,
-        type,
+        project_type: type,
         description: `Test project ${name}`,
-        status: ProjectStatus.Active,
-        metadata: {
-          createdAt: now,
-          updatedAt: now,
-          version: '1.0.0',
-          tags: []
-        },
-        settings: {
-          enabledAutomation: false,
-          customSettings: {}
-        }
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+        settings: {}
       };
     }
 
@@ -1389,24 +1368,17 @@ suite('GlobalRegistry Tests', () => {
     let testRegistryPath: string;
     let originalGetProjectsRegistryPath: () => string;
 
-    function createMockProject(id: string, name: string, type: string): IProject {
+    function createMockProject(id: string, name: string, type: string, workspaceId: string = 'test-workspace-id'): IProject {
       const now = new Date();
       return {
         id,
+        workspace_id: workspaceId,
         name,
-        type,
+        project_type: type,
         description: `Test project ${name}`,
-        status: ProjectStatus.Active,
-        metadata: {
-          createdAt: now,
-          updatedAt: now,
-          version: '1.0.0',
-          tags: []
-        },
-        settings: {
-          enabledAutomation: false,
-          customSettings: {}
-        }
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+        settings: {}
       };
     }
 
@@ -1532,24 +1504,17 @@ suite('GlobalRegistry Tests', () => {
     let testRegistryPath: string;
     let originalGetProjectsRegistryPath: () => string;
 
-    function createMockProject(id: string, name: string, type: string): IProject {
+    function createMockProject(id: string, name: string, type: string, workspaceId: string = 'test-workspace-id'): IProject {
       const now = new Date();
       return {
         id,
+        workspace_id: workspaceId,
         name,
-        type,
+        project_type: type,
         description: `Test project ${name}`,
-        status: ProjectStatus.Active,
-        metadata: {
-          createdAt: now,
-          updatedAt: now,
-          version: '1.0.0',
-          tags: []
-        },
-        settings: {
-          enabledAutomation: false,
-          customSettings: {}
-        }
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+        settings: {}
       };
     }
 
