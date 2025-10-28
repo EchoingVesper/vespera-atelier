@@ -17,7 +17,7 @@ import {
   getGlobalConfigPath,
   getGlobalCachePath,
   getGlobalLogsPath,
-  ProjectRegistryEntry,
+  // ProjectRegistryEntry, // Unused type in tests
   ProjectsRegistry,
   createEmptyRegistry,
   validateRegistry,

@@ -12,7 +12,7 @@
  *   └── chat-templates/  (User-customizable chat provider templates)
  */
 import * as vscode from 'vscode';
-import * as path from 'path';
+// import * as path from 'path'; // Unused - may be needed for future path operations
 import { VesperaLogger } from '../core/logging/VesperaLogger';
 import { DEFAULT_TEMPLATES, type TemplateDefinition } from './templates';
 

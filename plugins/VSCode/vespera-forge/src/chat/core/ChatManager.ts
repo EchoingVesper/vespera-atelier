@@ -244,7 +244,7 @@ export class ChatManager {
   /**
    * Add or update a provider
    */
-  async addProvider(template: ProviderTemplate, config: any): Promise<void> {
+  async addProvider(template: ProviderTemplate, _config: any): Promise<void> {
     try {
       // TODO: Replace with Bindery backend provider management
       throw new Error('Legacy provider system removed. Use Bindery backend for LLM providers.');

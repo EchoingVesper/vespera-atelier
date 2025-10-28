@@ -960,7 +960,7 @@ export type SerializableProject = Omit<IProject, 'metadata'> & {
  * ```
  */
 export function serializeProject(project: IProject): string {
-  return JSON.stringify(project, (key, value) => {
+  return JSON.stringify(project, (_key, value) => {
     // Convert Dates to ISO strings
     if (value instanceof Date) {
       return value.toISOString();

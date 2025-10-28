@@ -9,9 +9,9 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import * as vscode from 'vscode';
+// import * as vscode from 'vscode'; // Unused in current tests
 import {
-  findWorkspaceVespera,
+  // findWorkspaceVespera, // Unused in current tests
   searchUpForVespera,
   discoverVesperaWorkspace,
   WorkspaceMetadata,

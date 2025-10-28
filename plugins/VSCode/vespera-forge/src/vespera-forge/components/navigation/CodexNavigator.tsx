@@ -17,7 +17,7 @@ import {
   Plus,
   MoreHorizontal
 } from 'lucide-react';
-import { Codex, Template, RelationshipType, FilterConfig } from '../../core/types';
+import { Codex, Template, /* RelationshipType, */ FilterConfig } from '../../core/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -72,13 +72,13 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
   onCodexSelect,
   onCodexCreate,
   onCodexDelete,
-  onCodexUpdate,
+  onCodexUpdate: _onCodexUpdate,
   className
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('projects');
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-  const [filters, setFilters] = useState<FilterConfig[]>([]);
+  const [filters, _setFilters] = useState<FilterConfig[]>([]);
 
   // Context menu state
   const [contextMenu, setContextMenu] = useState<{

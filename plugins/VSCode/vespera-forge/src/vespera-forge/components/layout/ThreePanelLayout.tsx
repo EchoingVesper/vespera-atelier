@@ -80,6 +80,7 @@ export const ThreePanelLayout: React.FC<ThreePanelLayoutProps> = ({
       updateState({ rightPanelWidth: size });
     }
   }, [updateState]);
+  void handlePanelResize; // Reserved for future drag-resize functionality
 
   // Toggle panel visibility
   const togglePanel = useCallback((panel: 'left' | 'right') => {

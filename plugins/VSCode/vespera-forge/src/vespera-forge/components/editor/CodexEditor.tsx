@@ -23,7 +23,7 @@ import {
   Settings,
   GitBranch,
   Users,
-  Tag,
+  // Tag, // Unused - may be needed for tag management UI
   MoreHorizontal
 } from 'lucide-react';
 import {

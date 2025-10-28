@@ -13,13 +13,13 @@
 import * as assert from 'assert';
 import { suite, test } from 'mocha';
 import { ChatSessionPersistence } from '../../chat/state/ChatSessionPersistence';
-import { VesperaLogger } from '../../core/logging/VesperaLogger';
-import { 
-  SecureSessionPersistenceManager,
+// Note: VesperaLogger type unused - using mock implementation
+import {
+  // SecureSessionPersistenceManager unused - using mock implementation
   ServerState,
   ChannelState
 } from '../../chat/persistence/SecureSessionPersistenceManager';
-import { 
+import {
   MultiChatState
 } from '../../chat/state/MultiChatStateTypes';
 

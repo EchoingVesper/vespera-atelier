@@ -12,8 +12,8 @@
 import * as assert from 'assert';
 import { suite, test } from 'mocha';
 import { ChatStateValidation } from '../../chat/state/ChatStateValidation';
-import { VesperaLogger } from '../../core/logging/VesperaLogger';
-import { 
+// Note: VesperaLogger type unused - using mock implementation
+import {
   MultiChatState,
   ServerNavigationState,
   ChannelViewState,

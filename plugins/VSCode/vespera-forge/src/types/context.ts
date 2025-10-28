@@ -832,7 +832,7 @@ export type SerializableContext = Omit<IContext, 'metadata'> & {
  * ```
  */
 export function serializeContext(context: IContext): string {
-  return JSON.stringify(context, (key, value) => {
+  return JSON.stringify(context, (_key, value) => {
     // Convert Dates to ISO strings
     if (value instanceof Date) {
       return value.toISOString();

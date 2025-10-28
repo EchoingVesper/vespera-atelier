@@ -27,7 +27,7 @@ export interface TelemetryEventData {
 export async function logSecurityEvent(
   coreServices: SecurityEnhancedVesperaCoreServices,
   eventData: SecurityEventData,
-  metadata: Record<string, any>,
+  _metadata: Record<string, any>,
   source: string
 ): Promise<void> {
   try {

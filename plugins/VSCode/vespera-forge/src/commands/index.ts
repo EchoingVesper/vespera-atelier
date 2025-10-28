@@ -932,8 +932,7 @@ export const configureProviderKeyCommand: CommandHandler = async (_context: Vesp
     }
 
     // Store in Bindery vault via JSON-RPC
-    const binderyService = getBinderyService();
-    // TODO: Implement vault_store JSON-RPC method in Bindery
+    // TODO: Implement vault_store JSON-RPC method in Bindery using getBinderyService()
     // For now, show a placeholder message
     await showInfo(`API key for ${providerName} will be stored in Bindery vault (implementation pending)`);
 

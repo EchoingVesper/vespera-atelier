@@ -89,7 +89,7 @@ class VesperaForgePanel {
         VesperaForgePanel.currentPanel = new VesperaForgePanel(panel, extensionUri, adapter);
     }
 
-    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, adapter: VSCodeAdapter) {
+    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, _adapter: VSCodeAdapter) {
         this._panel = panel;
         this._extensionUri = extensionUri;
 

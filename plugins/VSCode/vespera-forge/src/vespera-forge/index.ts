@@ -123,7 +123,7 @@ export const detectPlatform = (): 'vscode' | 'obsidian' | 'unknown' => {
 };
 
 // Factory function for creating the appropriate adapter
-export const createAdapter = (platform?: 'vscode' | 'obsidian', api?: any) => {
+export const createAdapter = (platform?: 'vscode' | 'obsidian', _api?: any) => {
   const detectedPlatform = platform || detectPlatform();
 
   switch (detectedPlatform) {
@@ -132,7 +132,7 @@ export const createAdapter = (platform?: 'vscode' | 'obsidian', api?: any) => {
     case 'obsidian':
       // NOTE: ObsidianAdapter excluded from VS Code plugin build (Phase 17 Stage 0.5b)
       throw new Error('Obsidian platform not supported in VS Code plugin build');
-      // return new ObsidianAdapter(api);
+      // return new ObsidianAdapter(_api);
     default:
       throw new Error(`Unsupported platform: ${detectedPlatform}`);
   }

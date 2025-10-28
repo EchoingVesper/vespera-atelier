@@ -203,7 +203,7 @@ export const VesperaForge: React.FC<VesperaForgeProps> = ({
   }, [activeCodex, onCodexDelete, platformAdapter]);
 
   // AI operations
-  const handleAIMessage = useCallback(async (message: string, assistant: AIAssistantType, aiContext: any) => {
+  const handleAIMessage = useCallback(async (_message: string, _assistant: AIAssistantType, _aiContext: any) => {
     try {
       // Default AI response logic
       const responses = [

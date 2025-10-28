@@ -379,7 +379,7 @@ export async function discoverVesperaWorkspace(): Promise<WorkspaceDiscoveryResu
  * @returns Discovery result
  */
 export async function initializeWorkspaceDiscovery(
-  context: vscode.ExtensionContext
+  _context: vscode.ExtensionContext
 ): Promise<WorkspaceDiscoveryResult> {
   // Discover workspace
   const result = await discoverVesperaWorkspace();

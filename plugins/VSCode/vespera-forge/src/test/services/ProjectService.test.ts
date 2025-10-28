@@ -18,9 +18,9 @@ import {
   ProjectService,
   initializeProjectService,
   disposeProjectService,
-  IProject,
-  ProjectCreateInput,
-  ProjectUpdateInput
+  // IProject, // Unused in tests
+  ProjectCreateInput
+  // ProjectUpdateInput // Unused in tests
 } from '../../services/ProjectService';
 
 /**
@@ -574,7 +574,8 @@ suite('ProjectService Tests', () => {
     });
 
     test('Counts projects by status', async () => {
-      const active = await service.createProject(createTestProjectInput({ name: 'Active' }));
+      const _active = await service.createProject(createTestProjectInput({ name: 'Active' }));
+      void _active; // Used for side effect only
       const toArchive = await service.createProject(createTestProjectInput({ name: 'Archived' }));
       await service.updateProject(toArchive.id, { status: ProjectStatus.Archived });
 
@@ -584,7 +585,8 @@ suite('ProjectService Tests', () => {
     });
 
     test('Identifies most recently updated project', async () => {
-      const p1 = await service.createProject(createTestProjectInput({ name: 'Old' }));
+      const _p1 = await service.createProject(createTestProjectInput({ name: 'Old' }));
+      void _p1; // Used for side effect only
       await new Promise(resolve => setTimeout(resolve, 10));
       const p2 = await service.createProject(createTestProjectInput({ name: 'Recent' }));
 

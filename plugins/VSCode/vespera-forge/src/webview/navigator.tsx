@@ -45,10 +45,10 @@ function NavigatorApp() {
   // Phase 17 Task D4: Context state management (UI-only, backend wiring in Cluster F)
   // TODO (Cluster F - Task F1): Wire to ContextService via ContextContext
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [contexts, setContexts] = useState<IContext[]>([]);
+  const [contexts, _setContexts] = useState<IContext[]>([]);
   const [activeContext, setActiveContext] = useState<IContext | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [contextsLoading, setContextsLoading] = useState(false);
+  const [contextsLoading, _setContextsLoading] = useState(false);
 
   // Phase 16b Stage 2: Access project context for WelcomeScreen logic
   // Phase 16b Stage 3: Access activeProject for codex filtering

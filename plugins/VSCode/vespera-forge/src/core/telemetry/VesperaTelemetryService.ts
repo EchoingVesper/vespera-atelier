@@ -43,12 +43,12 @@ export class VesperaTelemetryService {
   /**
    * Track a general event
    */
-  public trackEvent(event: TelemetryEvent): void {
+  public trackEvent(_event: TelemetryEvent): void {
     if (!this.enabled) {
       return;
     }
 
-    // console.debug('[VesperaTelemetry] Event tracked:', event.name, '-', event.duration ? `${event.duration}ms` : 'no duration');
+    // console.debug('[VesperaTelemetry] Event tracked:', _event.name, '-', _event.duration ? `${_event.duration}ms` : 'no duration');
   }
 
   /**
