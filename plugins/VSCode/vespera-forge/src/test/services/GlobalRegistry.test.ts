@@ -17,7 +17,7 @@ import {
   getGlobalConfigPath,
   getGlobalCachePath,
   getGlobalLogsPath,
-  // ProjectRegistryEntry, // Unused type in tests
+  ProjectRegistryEntry,
   ProjectsRegistry,
   createEmptyRegistry,
   validateRegistry,
@@ -799,6 +799,7 @@ suite('GlobalRegistry Tests', () => {
       assert.ok(loaded, 'Should load saved registry');
 
       const project = loaded.projects['proj-123'];
+      assert.ok(project, 'Project should exist');
       assert.strictEqual(project.active_context_id, 'ctx-456', 'Should preserve active_context_id');
     });
 
@@ -839,7 +840,7 @@ suite('GlobalRegistry Tests', () => {
       assert.strictEqual(Object.keys(loaded.projects).length, 10, 'Should have 10 projects');
 
       for (let i = 0; i < 10; i++) {
-        const project = loaded.projects[`proj-${i}`];
+        const project: ProjectRegistryEntry | undefined = loaded.projects[`proj-${i}`];
         assert.ok(project, `Should have project proj-${i}`);
         assert.strictEqual(project.name, `Project ${i}`, `Should preserve name for project ${i}`);
       }
@@ -980,11 +981,16 @@ suite('GlobalRegistry Tests', () => {
         id,
         workspace_id: workspaceId,
         name,
-        project_type: type,
+        type: type,
         description: `Test project ${name}`,
-        created_at: now.toISOString(),
-        updated_at: now.toISOString(),
-        settings: {}
+        status: ProjectStatus.Active,
+        metadata: {
+          createdAt: now,
+          updatedAt: now,
+          version: '1.0.0',
+          tags: []
+        },
+        settings: { enabledAutomation: false }
       };
     }
 
@@ -1065,6 +1071,7 @@ suite('GlobalRegistry Tests', () => {
       assert.strictEqual(Object.keys(registry.projects).length, 1, 'Should still have one project');
 
       const entry = registry.projects['proj-123'];
+      assert.ok(entry, 'Entry should exist');
       assert.strictEqual(entry.name, 'Updated Name', 'Should update name');
     });
 
@@ -1078,6 +1085,7 @@ suite('GlobalRegistry Tests', () => {
       assert.ok(registry, 'Registry should exist');
 
       const entry = registry.projects['proj-123'];
+      assert.ok(entry, 'Entry should exist');
       assert.strictEqual(entry.active_context_id, undefined, 'Should be undefined until context system implemented');
     });
 
@@ -1091,6 +1099,7 @@ suite('GlobalRegistry Tests', () => {
       assert.ok(registry, 'Registry should exist');
 
       const entry = registry.projects['proj-123'];
+      assert.ok(entry, 'Entry should exist');
       assert.strictEqual(entry.active_context_id, undefined, 'Should be undefined');
     });
 
@@ -1105,6 +1114,7 @@ suite('GlobalRegistry Tests', () => {
       assert.ok(registry, 'Registry should exist');
 
       const entry = registry.projects['proj-123'];
+      assert.ok(entry, 'Entry should exist');
       const updatedAt = new Date(entry.updated_at);
 
       assert.ok(updatedAt >= beforeSync, 'updated_at should be after or equal to before time');
@@ -1122,6 +1132,7 @@ suite('GlobalRegistry Tests', () => {
       assert.ok(registry, 'Registry should exist');
 
       const entry = registry.projects['proj-123'];
+      assert.ok(entry, 'Entry should exist');
       const lastOpened = new Date(entry.last_opened);
 
       assert.ok(lastOpened >= beforeSync, 'last_opened should be after or equal to before time');
@@ -1139,6 +1150,7 @@ suite('GlobalRegistry Tests', () => {
       assert.ok(registry, 'Registry should exist');
 
       const entry = registry.projects['proj-123'];
+      assert.ok(entry, 'Entry should exist');
       assert.strictEqual(entry.created_at, createdAt.toISOString(), 'Should preserve created_at');
     });
   });
@@ -1153,11 +1165,16 @@ suite('GlobalRegistry Tests', () => {
         id,
         workspace_id: workspaceId,
         name,
-        project_type: type,
+        type: type,
         description: `Test project ${name}`,
-        created_at: now.toISOString(),
-        updated_at: now.toISOString(),
-        settings: {}
+        status: ProjectStatus.Active,
+        metadata: {
+          createdAt: now,
+          updatedAt: now,
+          version: '1.0.0',
+          tags: []
+        },
+        settings: { enabledAutomation: false }
       };
     }
 
@@ -1267,11 +1284,16 @@ suite('GlobalRegistry Tests', () => {
         id,
         workspace_id: workspaceId,
         name,
-        project_type: type,
+        type: type,
         description: `Test project ${name}`,
-        created_at: now.toISOString(),
-        updated_at: now.toISOString(),
-        settings: {}
+        status: ProjectStatus.Active,
+        metadata: {
+          createdAt: now,
+          updatedAt: now,
+          version: '1.0.0',
+          tags: []
+        },
+        settings: { enabledAutomation: false }
       };
     }
 
@@ -1310,7 +1332,9 @@ suite('GlobalRegistry Tests', () => {
       const registry = await loadRegistry();
       assert.ok(registry, 'Registry should exist');
 
-      const lastOpened = new Date(registry.projects['proj-123'].last_opened);
+      const entry = registry.projects['proj-123'];
+      assert.ok(entry, 'Project entry should exist');
+      const lastOpened = new Date(entry.last_opened);
       assert.ok(lastOpened >= beforeUpdate, 'last_opened should be updated to current time');
       assert.ok(lastOpened <= afterUpdate, 'last_opened should be updated to current time');
     });
@@ -1345,6 +1369,7 @@ suite('GlobalRegistry Tests', () => {
 
       const registryBefore = await loadRegistry();
       const entryBefore = registryBefore!.projects['proj-123'];
+      assert.ok(entryBefore, 'Entry should exist before update');
 
       // Wait a bit to ensure timestamp difference
       await new Promise(resolve => setTimeout(resolve, 10));
@@ -1353,6 +1378,7 @@ suite('GlobalRegistry Tests', () => {
 
       const registryAfter = await loadRegistry();
       const entryAfter = registryAfter!.projects['proj-123'];
+      assert.ok(entryAfter, 'Entry should exist after update');
 
       // Verify only last_opened changed
       assert.strictEqual(entryAfter.id, entryBefore.id, 'id should not change');
@@ -1374,11 +1400,16 @@ suite('GlobalRegistry Tests', () => {
         id,
         workspace_id: workspaceId,
         name,
-        project_type: type,
+        type: type,
         description: `Test project ${name}`,
-        created_at: now.toISOString(),
-        updated_at: now.toISOString(),
-        settings: {}
+        status: ProjectStatus.Active,
+        metadata: {
+          createdAt: now,
+          updatedAt: now,
+          version: '1.0.0',
+          tags: []
+        },
+        settings: { enabledAutomation: false }
       };
     }
 
@@ -1434,6 +1465,9 @@ suite('GlobalRegistry Tests', () => {
       const recent = await getRecentProjects();
 
       assert.strictEqual(recent.length, 3, 'Should return all 3 projects');
+      assert.ok(recent[0], 'First item should exist');
+      assert.ok(recent[1], 'Second item should exist');
+      assert.ok(recent[2], 'Third item should exist');
       assert.strictEqual(recent[0].id, 'proj-3', 'Most recent should be first');
       assert.strictEqual(recent[1].id, 'proj-2', 'Second most recent should be second');
       assert.strictEqual(recent[2].id, 'proj-1', 'Oldest should be last');
@@ -1453,6 +1487,8 @@ suite('GlobalRegistry Tests', () => {
       const recent = await getRecentProjects(2);
 
       assert.strictEqual(recent.length, 2, 'Should return only 2 projects');
+      assert.ok(recent[0], 'First item should exist');
+      assert.ok(recent[1], 'Second item should exist');
       assert.strictEqual(recent[0].id, 'proj-3', 'Most recent should be first');
       assert.strictEqual(recent[1].id, 'proj-2', 'Second most recent should be second');
     });
@@ -1486,6 +1522,8 @@ suite('GlobalRegistry Tests', () => {
       // At this point, order should be: proj-2, proj-1
 
       let recent = await getRecentProjects();
+      assert.ok(recent[0], 'First item should exist');
+      assert.ok(recent[1], 'Second item should exist');
       assert.strictEqual(recent[0].id, 'proj-2', 'proj-2 should be most recent');
       assert.strictEqual(recent[1].id, 'proj-1', 'proj-1 should be second');
 
@@ -1495,6 +1533,8 @@ suite('GlobalRegistry Tests', () => {
 
       // Now order should be: proj-1, proj-2
       recent = await getRecentProjects();
+      assert.ok(recent[0], 'First item should exist after update');
+      assert.ok(recent[1], 'Second item should exist after update');
       assert.strictEqual(recent[0].id, 'proj-1', 'proj-1 should now be most recent');
       assert.strictEqual(recent[1].id, 'proj-2', 'proj-2 should now be second');
     });
@@ -1510,11 +1550,16 @@ suite('GlobalRegistry Tests', () => {
         id,
         workspace_id: workspaceId,
         name,
-        project_type: type,
+        type: type,
         description: `Test project ${name}`,
-        created_at: now.toISOString(),
-        updated_at: now.toISOString(),
-        settings: {}
+        status: ProjectStatus.Active,
+        metadata: {
+          createdAt: now,
+          updatedAt: now,
+          version: '1.0.0',
+          tags: []
+        },
+        settings: { enabledAutomation: false }
       };
     }
 
@@ -1583,6 +1628,7 @@ suite('GlobalRegistry Tests', () => {
       assert.ok(projectsWs1.find(p => p.id === 'proj-3'), 'Workspace 1 should include proj-3');
 
       assert.strictEqual(projectsWs2.length, 1, 'Workspace 2 should have 1 project');
+      assert.ok(projectsWs2[0], 'Workspace 2 project should exist');
       assert.strictEqual(projectsWs2[0].id, 'proj-2', 'Workspace 2 should include proj-2');
     });
 
@@ -1769,6 +1815,7 @@ suite('GlobalRegistry Tests', () => {
       // Add a project to the registry
       const project: IProject = {
         id: 'proj-123',
+        workspace_id: 'test-workspace-id',
         name: 'Test Project',
         type: 'fiction',
         description: 'Test',
