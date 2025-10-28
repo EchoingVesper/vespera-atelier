@@ -1252,7 +1252,7 @@ export class BinderyService extends EventEmitter {
     }
   }
 
-  private async sendRequest<T>(method: string, params?: any): Promise<BinderyResult<T>> {
+  public async sendRequest<T>(method: string, params?: any): Promise<BinderyResult<T>> {
     // Reject immediately if shutting down
     if (this.isShuttingDown) {
       return {
@@ -1379,6 +1379,90 @@ export class BinderyService extends EventEmitter {
         return {
           success: true,
           data: [] as any
+        };
+
+      // Phase 17 Project Management Mock Handlers
+      case 'create_project':
+        return {
+          success: true,
+          data: {
+            id: `project-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            workspace_id: params?.workspace_id || 'mock-workspace',
+            name: params?.name || 'Untitled Project',
+            description: params?.description,
+            project_type: params?.project_type || 'general',
+            active_context_id: null,
+            settings: params?.settings || {},
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          } as any
+        };
+
+      case 'get_project':
+        return {
+          success: true,
+          data: {
+            id: params?.project_id || 'mock-project-id',
+            workspace_id: 'mock-workspace',
+            name: 'Mock Project',
+            description: 'A mock project for development',
+            project_type: 'general',
+            active_context_id: null,
+            settings: {},
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          } as any
+        };
+
+      case 'update_project':
+        return {
+          success: true,
+          data: {
+            id: params?.project_id || 'mock-project-id',
+            workspace_id: 'mock-workspace',
+            name: params?.name || 'Updated Mock Project',
+            description: params?.description || 'An updated mock project',
+            project_type: params?.project_type || 'general',
+            active_context_id: params?.active_context_id || null,
+            settings: params?.settings || {},
+            created_at: new Date(Date.now() - 86400000).toISOString(),
+            updated_at: new Date().toISOString()
+          } as any
+        };
+
+      case 'delete_project':
+        return {
+          success: true,
+          data: undefined as any
+        };
+
+      case 'list_projects':
+        return {
+          success: true,
+          data: [
+            {
+              id: 'mock-project-1',
+              workspace_id: params?.workspace_id || 'mock-workspace',
+              name: 'Sample Project 1',
+              description: 'First sample project',
+              project_type: 'fiction',
+              active_context_id: null,
+              settings: {},
+              created_at: new Date(Date.now() - 172800000).toISOString(),
+              updated_at: new Date(Date.now() - 86400000).toISOString()
+            },
+            {
+              id: 'mock-project-2',
+              workspace_id: params?.workspace_id || 'mock-workspace',
+              name: 'Sample Project 2',
+              description: 'Second sample project',
+              project_type: 'research',
+              active_context_id: null,
+              settings: {},
+              created_at: new Date(Date.now() - 259200000).toISOString(),
+              updated_at: new Date(Date.now() - 172800000).toISOString()
+            }
+          ] as any
         };
 
       default:

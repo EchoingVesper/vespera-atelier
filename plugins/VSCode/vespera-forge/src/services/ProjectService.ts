@@ -205,22 +205,19 @@ export class ProjectService implements DisposableResource {
       throw new Error('ProjectService is disposed');
     }
 
-    // TODO (Task F1): Call Bindery backend via JSON-RPC
-    // const result = await this.bindery.sendRequest('create_project', {
-    //   workspace_id: input.workspace_id,
-    //   name: input.name,
-    //   description: input.description,
-    //   project_type: input.project_type,
-    //   settings: input.settings
-    // });
-    //
-    // if (!result.success) {
-    //   throw new Error(`Failed to create project: ${result.error?.message}`);
-    // }
-    //
-    // return result.data;
+    const result = await this.bindery.sendRequest<IProject>('create_project', {
+      workspace_id: input.workspace_id,
+      name: input.name,
+      description: input.description,
+      project_type: input.project_type,
+      settings: input.settings
+    });
 
-    throw new Error('Not implemented - will call Bindery backend in Task F1');
+    if (!result.success) {
+      throw new Error(`Failed to create project: ${result.error?.message}`);
+    }
+
+    return result.data;
   }
 
   /**
@@ -239,21 +236,19 @@ export class ProjectService implements DisposableResource {
       throw new Error('ProjectService is disposed');
     }
 
-    // TODO (Task F1): Call Bindery backend
-    // const result = await this.bindery.sendRequest('get_project', {
-    //   project_id: projectId
-    // });
-    //
-    // if (!result.success) {
-    //   if (result.error?.code === -32602) { // Not found
-    //     return null;
-    //   }
-    //   throw new Error(`Failed to get project: ${result.error?.message}`);
-    // }
-    //
-    // return result.data;
+    const result = await this.bindery.sendRequest<IProject>('get_project', {
+      project_id: projectId
+    });
 
-    throw new Error('Not implemented - will call Bindery backend in Task F1');
+    if (!result.success) {
+      if (result.error?.code === -32602 || result.error?.code === 404) {
+        // Not found - return null instead of throwing
+        return null;
+      }
+      throw new Error(`Failed to get project: ${result.error?.message}`);
+    }
+
+    return result.data;
   }
 
   /**
@@ -277,19 +272,16 @@ export class ProjectService implements DisposableResource {
       throw new Error('ProjectService is disposed');
     }
 
-    // TODO (Task F1): Call Bindery backend
-    // const result = await this.bindery.sendRequest('update_project', {
-    //   project_id: projectId,
-    //   ...update
-    // });
-    //
-    // if (!result.success) {
-    //   throw new Error(`Failed to update project: ${result.error?.message}`);
-    // }
-    //
-    // return result.data;
+    const result = await this.bindery.sendRequest<IProject>('update_project', {
+      project_id: projectId,
+      ...update
+    });
 
-    throw new Error('Not implemented - will call Bindery backend in Task F1');
+    if (!result.success) {
+      throw new Error(`Failed to update project: ${result.error?.message}`);
+    }
+
+    return result.data;
   }
 
   /**
@@ -308,21 +300,18 @@ export class ProjectService implements DisposableResource {
       throw new Error('ProjectService is disposed');
     }
 
-    // TODO (Task F1): Call Bindery backend
-    // const result = await this.bindery.sendRequest('delete_project', {
-    //   project_id: projectId
-    // });
-    //
-    // if (!result.success) {
-    //   throw new Error(`Failed to delete project: ${result.error?.message}`);
-    // }
+    const result = await this.bindery.sendRequest<void>('delete_project', {
+      project_id: projectId
+    });
+
+    if (!result.success) {
+      throw new Error(`Failed to delete project: ${result.error?.message}`);
+    }
 
     // Clear active project if deleted
     if (this.activeProjectId === projectId) {
       this.activeProjectId = null;
     }
-
-    throw new Error('Not implemented - will call Bindery backend in Task F1');
   }
 
   /**
@@ -341,18 +330,15 @@ export class ProjectService implements DisposableResource {
       throw new Error('ProjectService is disposed');
     }
 
-    // TODO (Task F1): Call Bindery backend
-    // const result = await this.bindery.sendRequest('list_projects', {
-    //   workspace_id: workspaceId
-    // });
-    //
-    // if (!result.success) {
-    //   throw new Error(`Failed to list projects: ${result.error?.message}`);
-    // }
-    //
-    // return result.data;
+    const result = await this.bindery.sendRequest<IProject[]>('list_projects', {
+      workspace_id: workspaceId
+    });
 
-    throw new Error('Not implemented - will call Bindery backend in Task F1');
+    if (!result.success) {
+      throw new Error(`Failed to list projects: ${result.error?.message}`);
+    }
+
+    return result.data;
   }
 
   // =============================================================================
