@@ -53,7 +53,7 @@ function getDefaultAssistants(): AIAssistantType[] {
 function AIAssistantApp() {
   const defaultAssistants = getDefaultAssistants();
   const [assistants] = useState<AIAssistantType[]>(defaultAssistants);
-  const [currentAssistant, setCurrentAssistant] = useState<AIAssistantType>(defaultAssistants[0]);
+  const [currentAssistant, setCurrentAssistant] = useState<AIAssistantType>(defaultAssistants[0] || {} as AIAssistantType);
   const [activeCodex] = useState<Codex | undefined>();
   const [activeTemplate] = useState<Template | undefined>();
 

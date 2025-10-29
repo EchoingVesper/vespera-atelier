@@ -142,7 +142,7 @@ export class NotificationConfigManager implements vscode.Disposable {
 
   private constructor(
     private readonly context: vscode.ExtensionContext,
-    private readonly __coreServices: SecurityEnhancedVesperaCoreServices,
+    _coreServices: SecurityEnhancedVesperaCoreServices,
     private readonly logger: VesperaLogger,
     private readonly errorHandler: VesperaErrorHandler
   ) {

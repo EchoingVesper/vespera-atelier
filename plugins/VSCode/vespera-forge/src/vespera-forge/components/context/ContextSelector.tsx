@@ -101,7 +101,7 @@ export const ContextSelector: React.FC<ContextSelectorProps> = ({
           // Find another context to switch to (excluding the deleted one)
           const remainingContexts = contexts.filter(c => c.id !== context.id);
 
-          if (remainingContexts.length > 0) {
+          if (remainingContexts.length > 0 && remainingContexts[0]) {
             // Auto-switch to the first remaining context
             console.log('[ContextSelector] Auto-switching to:', remainingContexts[0].name);
             onContextSelect(remainingContexts[0]);

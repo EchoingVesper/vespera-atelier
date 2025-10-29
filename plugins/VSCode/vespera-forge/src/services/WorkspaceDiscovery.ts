@@ -358,7 +358,7 @@ export async function discoverVesperaWorkspace(): Promise<WorkspaceDiscoveryResu
 
   // Step 2: Search up directory tree from current workspace
   const workspaceFolders = vscode.workspace.workspaceFolders;
-  if (workspaceFolders && workspaceFolders.length > 0) {
+  if (workspaceFolders && workspaceFolders.length > 0 && workspaceFolders[0]) {
     const currentPath = workspaceFolders[0].uri.fsPath;
     const treeResult = await searchUpForVespera(currentPath, 5);
 

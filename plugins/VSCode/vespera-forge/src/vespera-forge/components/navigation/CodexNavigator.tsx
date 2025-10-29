@@ -181,8 +181,9 @@ export const CodexNavigator: React.FC<CodexNavigatorProps> = ({
   const getTemplateIcon = (templateId: string): React.ReactNode => {
     // Find template and use its icon if available
     const template = templates.find(t => t.id === templateId);
-    if (template?.icon) {
-      return <span className="text-sm">{template.icon}</span>;
+    // TODO: Add icon property to Template interface
+    if (template && 'icon' in template && template.icon) {
+      return <span className="text-sm">{template.icon as string}</span>;
     }
 
     // Fallback to generic file icon

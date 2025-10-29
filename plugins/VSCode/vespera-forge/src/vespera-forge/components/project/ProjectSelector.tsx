@@ -87,10 +87,10 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({
           // Find another project to switch to (excluding the deleted one)
           const remainingProjects = projects.filter(p => p.id !== project.id);
 
-          if (remainingProjects.length > 0) {
+          if (remainingProjects.length > 0 && remainingProjects[0]) {
             // Auto-switch to the first remaining project
             console.log('[ProjectSelector] Auto-switching to:', remainingProjects[0].name);
-            await setActiveProject(remainingProjects[0] as IProject);
+            await setActiveProject(remainingProjects[0] as unknown as IProject);
           } else {
             // No projects left, clear active project (shows WelcomeScreen)
             console.log('[ProjectSelector] No projects remaining, showing WelcomeScreen');
@@ -160,7 +160,7 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({
               {projects.map((project) => (
                 <ProjectListItem
                   key={project.id}
-                  project={project as IProject}
+                  project={project as unknown as IProject}
                   isActive={activeProject?.id === project.id}
                   onClick={handleProjectSelect}
                   onDelete={handleProjectDelete}
