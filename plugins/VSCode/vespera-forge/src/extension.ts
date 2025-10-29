@@ -79,6 +79,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       environment: isDevelopment() ? 'development' : 'production'
     });
 
+    // Phase 17 Cluster B: Initialize global registry
+    logger.info('Initializing global Vespera registry...');
+    const { initializeGlobalRegistry } = await import('./services/GlobalRegistry');
+    try {
+      const wasInitialized = await initializeGlobalRegistry();
+      if (wasInitialized) {
+        logger.info('Global Vespera registry initialized successfully');
+      } else {
+        logger.info('Global Vespera registry already exists');
+      }
+    } catch (error) {
+      logger.error('Failed to initialize global registry - continuing with limited functionality', error);
+    }
+
     // Phase 17 Cluster C: Discover Vespera workspace
     logger.info('Discovering Vespera workspace...');
     const { initializeWorkspaceDiscovery } = await import('./services/WorkspaceDiscovery');
