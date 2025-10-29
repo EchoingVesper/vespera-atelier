@@ -57,7 +57,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const [inputHistory, setInputHistory] = React.useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = React.useState(-1);
   const [isDraftSaved, setIsDraftSaved] = React.useState(false);
-  const draftTimeoutRef = React.useRef<NodeJS.Timeout | undefined>();
+  const draftTimeoutRef = React.useRef<NodeJS.Timeout | undefined>(undefined);
 
   // Load persisted draft and history on mount
   React.useEffect(() => {

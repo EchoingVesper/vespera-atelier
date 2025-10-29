@@ -4,7 +4,7 @@
  */
 
 export {
-  ProjectContext,
+  // ProjectContext, // Not exported from ProjectContext module
   ProjectProvider,
   useProjectContext,
   useActiveProject,

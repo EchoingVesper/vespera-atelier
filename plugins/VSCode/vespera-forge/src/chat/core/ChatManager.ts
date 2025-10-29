@@ -249,26 +249,23 @@ export class ChatManager {
       // TODO: Replace with Bindery backend provider management
       throw new Error('Legacy provider system removed. Use Bindery backend for LLM providers.');
 
-      // Legacy code removed:
+      // Legacy code removed - unreachable after throw:
       // const provider = ProviderFactory.createProvider(template, config, this.configManager);
       // await provider.connect();
       // this.providers.set(template.template_id, provider);
-
       // Set as active if no active provider
-      if (!this.activeProviderId) {
-        this.activeProviderId = template.template_id;
-      }
-
+      // if (!this.activeProviderId) {
+      //   this.activeProviderId = template.template_id;
+      // }
       // Emit provider connected event
-      this.eventRouter.emit({
-        type: 'chatProviderConnected',
-        data: {
-          providerId: template.template_id,
-          providerName: template.name
-        }
-      });
-      
-      console.log(`[ChatManager] Added provider: ${template.template_id}`);
+      // this.eventRouter.emit({
+      //   type: 'chatProviderConnected',
+      //   data: {
+      //     providerId: template.template_id,
+      //     providerName: template.name
+      //   }
+      // });
+      // console.log(`[ChatManager] Added provider: ${template.template_id}`);
     } catch (error) {
       console.error(`[ChatManager] Failed to add provider ${template.template_id}:`, error);
       throw error;

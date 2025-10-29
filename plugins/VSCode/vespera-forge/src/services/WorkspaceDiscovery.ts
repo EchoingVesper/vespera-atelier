@@ -89,6 +89,15 @@ export async function findWorkspaceVespera(): Promise<WorkspaceDiscoveryResult> 
     };
   }
 
+  // Add null-safety check
+  if (!workspaceFolders[0]) {
+    return {
+      found: false,
+      vesperaPath: undefined,
+      discoveryMethod: 'none'
+    };
+  }
+
   const workspaceRoot = workspaceFolders[0].uri.fsPath;
   const vesperaPath = path.join(workspaceRoot, '.vespera');
 

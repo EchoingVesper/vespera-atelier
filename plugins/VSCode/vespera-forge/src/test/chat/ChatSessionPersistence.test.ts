@@ -217,7 +217,8 @@ suite('ChatSessionPersistence Tests', () => {
   setup(() => {
     mockLogger = new MockVesperaLogger();
     mockPersistenceManager = new MockSecureSessionPersistenceManager();
-    chatSessionPersistence = new ChatSessionPersistence(mockPersistenceManager, mockLogger);
+    // Cast to any to bypass type checking for mock manager
+    chatSessionPersistence = new ChatSessionPersistence(mockPersistenceManager as any, mockLogger as any);
   });
 
   teardown(() => {
@@ -403,16 +404,22 @@ suite('ChatSessionPersistence Tests', () => {
       const mockServer: ServerState = {
         serverId: 'server1',
         serverName: 'Test Server',
+        serverType: 'regular',
+        createdAt: Date.now(),
         channels: [
           {
             channelId: 'channel1',
             channelName: 'General',
-            channelType: 'text'
+            channelType: 'general',
+            messageCount: 0,
+            lastActivity: Date.now()
           },
           {
             channelId: 'channel2',
             channelName: 'Random',
-            channelType: 'text'
+            channelType: 'general',
+            messageCount: 0,
+            lastActivity: Date.now()
           }
         ],
         archived: false,
@@ -438,6 +445,8 @@ suite('ChatSessionPersistence Tests', () => {
       const mockServer: ServerState = {
         serverId: 'server1',
         serverName: 'Empty Server',
+        serverType: 'regular',
+        createdAt: Date.now(),
         channels: [],
         archived: false,
         lastActivity: Date.now()
@@ -456,7 +465,9 @@ suite('ChatSessionPersistence Tests', () => {
         channelId: 'agent-channel',
         channelName: 'Agent Channel',
         channelType: 'agent',
-        agentRole: 'coder'
+        agentRole: 'coder',
+        messageCount: 0,
+        lastActivity: Date.now()
       };
 
       const agentState = chatSessionPersistence.initializeAgentProgressState(
@@ -480,7 +491,9 @@ suite('ChatSessionPersistence Tests', () => {
       const mockChannel: ChannelState = {
         channelId: 'text-channel',
         channelName: 'Text Channel',
-        channelType: 'text'
+        channelType: 'general',
+        messageCount: 0,
+        lastActivity: Date.now()
       };
 
       const agentState = chatSessionPersistence.initializeAgentProgressState(
@@ -496,8 +509,10 @@ suite('ChatSessionPersistence Tests', () => {
       const mockChannel: ChannelState = {
         channelId: 'agent-channel',
         channelName: 'Agent Channel',
-        channelType: 'agent'
-        // Missing agentRole
+        channelType: 'agent',
+        messageCount: 0,
+        lastActivity: Date.now()
+        // Missing agentRole intentionally for test
       };
 
       const agentState = chatSessionPersistence.initializeAgentProgressState(

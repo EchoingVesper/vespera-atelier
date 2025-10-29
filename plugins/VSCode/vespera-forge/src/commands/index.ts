@@ -817,7 +817,7 @@ export const deleteChatChannelCommand: CommandHandler = async (_context: Vespera
 
     const selected = await vscode.window.showQuickPick(items, {
       placeHolder: 'Select channel to delete'
-    });
+    }) as typeof items[0] | undefined;
 
     if (!selected) {
       return; // User cancelled

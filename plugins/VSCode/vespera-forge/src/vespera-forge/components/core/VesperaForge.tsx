@@ -11,7 +11,8 @@ import {
   Template,
   AIAssistant as AIAssistantType,
   Context,
-  UIState
+  UIState,
+  FieldType
 } from '../../core/types';
 import ThreePanelLayout from '../layout/ThreePanelLayout';
 import CodexNavigator from '../navigation/CodexNavigator';
@@ -49,7 +50,7 @@ export const VesperaForge: React.FC<VesperaForgeProps> = ({
   const [assistants, setAssistants] = useState<AIAssistantType[]>(initialData?.assistants || getDefaultAssistants());
   const [activeCodex, setActiveCodex] = useState<Codex | undefined>();
   const [activeTemplate, setActiveTemplate] = useState<Template | undefined>();
-  const [currentAssistant, setCurrentAssistant] = useState<AIAssistantType>(assistants[0] || getDefaultAssistants()[0]);
+  const [currentAssistant, setCurrentAssistant] = useState<AIAssistantType>(assistants[0] || getDefaultAssistants()[0] || {} as AIAssistantType);
   const [context, setContext] = useState<Context>(platformAdapter.getCurrentContext());
   const [uiState, setUiState] = useState<UIState>({
     currentViewMode: 'default',
@@ -69,7 +70,9 @@ export const VesperaForge: React.FC<VesperaForgeProps> = ({
     if (assistants.length === 0) {
       const defaultAssistants = getDefaultAssistants();
       setAssistants(defaultAssistants);
-      setCurrentAssistant(defaultAssistants[0]);
+      if (defaultAssistants[0]) {
+        setCurrentAssistant(defaultAssistants[0]);
+      }
     }
   }, [templates.length, assistants.length]);
 
@@ -203,7 +206,7 @@ export const VesperaForge: React.FC<VesperaForgeProps> = ({
   }, [activeCodex, onCodexDelete, platformAdapter]);
 
   // AI operations
-  const handleAIMessage = useCallback(async (_message: string, _assistant: AIAssistantType, _aiContext: any) => {
+  const handleAIMessage = useCallback(async (_message: string, _assistant: AIAssistantType, _aiContext: any): Promise<string> => {
     try {
       // Default AI response logic
       const responses = [
@@ -213,7 +216,7 @@ export const VesperaForge: React.FC<VesperaForgeProps> = ({
         "Let me provide some guidance on this topic."
       ];
 
-      return responses[Math.floor(Math.random() * responses.length)];
+      return responses[Math.floor(Math.random() * responses.length)] || '';
     } catch (error) {
       console.error('AI message failed:', error);
       return 'I apologize, but I encountered an error processing your request.';
@@ -296,19 +299,19 @@ function getDefaultTemplates(): Template[] {
         {
           id: 'name',
           name: 'Name',
-          type: 'text',
+          type: FieldType.TEXT,
           required: true
         },
         {
           id: 'description',
           name: 'Description',
-          type: 'rich_text',
+          type: FieldType.RICH_TEXT,
           required: false
         },
         {
           id: 'age',
           name: 'Age',
-          type: 'number',
+          type: FieldType.NUMBER,
           required: false
         }
       ],
@@ -345,19 +348,19 @@ function getDefaultTemplates(): Template[] {
         {
           id: 'title',
           name: 'Title',
-          type: 'text',
+          type: FieldType.TEXT,
           required: true
         },
         {
           id: 'description',
           name: 'Description',
-          type: 'rich_text',
+          type: FieldType.RICH_TEXT,
           required: false
         },
         {
           id: 'priority',
           name: 'Priority',
-          type: 'select',
+          type: FieldType.SELECT,
           required: false
         }
       ],
