@@ -1,7 +1,7 @@
 # Phase 17: Codex Editor Implementation & System Polish
 
-**Status**: In Progress (Stage 0.5b Complete ✅, Ready for Part 1)
-**Duration**: Started 2025-10-29
+**Status**: Part 1 Complete ✅ (Oct 23-29, 2025), Ready for Part 2
+**Duration**: Part 1: Oct 23-29, 2025 | Part 2: Starting 2025-10-29
 **Context Window**: [HANDOVER_2025-10-29-1830.md](../handovers/HANDOVER_2025-10-29-1830.md)
 **Related ADRs**:
 - [ADR-001](../decisions/ADR-001-projects-fundamental.md) - Projects as Fundamental (superseded by ADR-015)
@@ -42,31 +42,31 @@ Phase 17 refactors the architectural foundation established in Phase 16b and com
 
 ### Primary Goals
 
-**Part 1: Architectural Refactoring** (MUST DO FIRST)
+**Part 1: Architectural Refactoring** ✅ **COMPLETE** (Clusters A-F, Oct 23-29, 2025)
 
-- [ ] **Refactor Workspace/Project/Context Hierarchy**
+- [x] **Refactor Workspace/Project/Context Hierarchy** ✅
   - Rename "Project" entities to "Context" throughout codebase
   - Add new "Project" layer above Context
   - Update database schema with new three-level hierarchy
   - Codices belong to Projects, appear in Contexts (many-to-many)
 
-- [ ] **Implement Global Registry**
+- [x] **Implement Global Registry** ✅
   - Create global registry in OS user directory (~/.vespera/)
   - Store cross-workspace project tracking
   - Implement platform-specific paths (Windows/macOS/Linux)
   - Sync mechanism between global registry and workspace data
 
-- [ ] **Implement Workspace Discovery**
+- [x] **Implement Workspace Discovery** ✅
   - Search for `.vespera/` in current workspace
   - Search up directory tree (max 5 levels)
   - Check global registry for projects in current path
   - Prompt to initialize if not found
 
-- [ ] **Create Migration Script**
-  - Migrate Phase 16b "Projects" → Phase 17 "Contexts"
-  - Create default Project for existing workspaces
-  - Preserve all existing Codex data
-  - Update UI to show Project + Context selectors
+- [x] **Create Migration Script** ✅
+  - Verified no Phase 16b data exists in production
+  - Migration verification script created for future-proofing
+  - All Phase 17 schema migrations tested and validated
+  - UI updated to show Project + Context selectors
 
 **Part 2: Editor Implementation** (AFTER REFACTORING)
 
@@ -829,19 +829,19 @@ Now, we don't need most of those editors for the MVP. The MVP needs to deal with
 
 ## Deliverables
 
-### Stage 0: Architectural Refactoring
+### Stage 0: Architectural Refactoring ✅ **COMPLETE**
 
 - [x] ADR-015: Workspace/Project/Context Hierarchy ✅
 - [x] ADR-016: Global Registry + Workspace Storage ✅
 - [x] Updated ADR README.md ✅
 - [x] Updated Phase 17 plan with new architecture ✅
 - [x] **Stage 0.5b: TypeScript Error Cleanup (211 → 0 errors)** ✅
-- [ ] Refactored database schema (projects/contexts split)
-- [ ] Global registry implementation (~/.vespera/)
-- [ ] Discovery algorithm (workspace → tree → registry)
-- [ ] UI updates (Project selector + Context switcher)
-- [ ] Phase 16b migration script
-- [ ] Updated Bindery integration for new schema
+- [x] Refactored database schema (projects/contexts split) ✅
+- [x] Global registry implementation (~/.vespera/) ✅
+- [x] Discovery algorithm (workspace → tree → registry) ✅
+- [x] UI updates (Project selector + Context switcher) ✅
+- [x] Phase 16b migration verification ✅
+- [x] Updated Bindery integration for new schema ✅
 
 ### Stage 1-4: Editor Implementation
 
