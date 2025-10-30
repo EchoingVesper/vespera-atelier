@@ -18,7 +18,6 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Save,
-  Eye,
   Edit,
   Settings,
   GitBranch,
@@ -52,10 +51,11 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
   className
 }) => {
   const [activeViewMode, setActiveViewMode] = useState<string>('default');
-  const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [autoSaveDelay] = useState(3000); // 3 seconds default, TODO: make configurable
 
   // Initialize form data when codex changes
   useEffect(() => {
@@ -63,8 +63,10 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
       // Codex content is stored in content.fields, not directly in content
       const contentFields = codex.content?.['fields'] || {};
       setFormData({ ...contentFields, ...codex.metadata });
+      setHasUnsavedChanges(false);
     } else {
       setFormData({});
+      setHasUnsavedChanges(false);
     }
   }, [codex]);
 
@@ -82,10 +84,11 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
 
   const handleFieldChange = useCallback((fieldId: string, value: any) => {
     setFormData(prev => ({ ...prev, [fieldId]: value }));
+    setHasUnsavedChanges(true);
   }, []);
 
   const handleSave = useCallback(async () => {
-    if (!codex || !template) return;
+    if (!codex || !template || !hasUnsavedChanges) return;
 
     setIsSaving(true);
     try {
@@ -113,19 +116,30 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
 
       await onCodexUpdate(updatedCodex);
       setLastSaved(new Date());
-      setIsEditing(false);
-      platformAdapter.showNotification('Codex saved successfully', 'info');
+      setHasUnsavedChanges(false);
+      // No notification for autosave to avoid spam
     } catch (error) {
-      platformAdapter.showNotification('Failed to save codex', 'error');
-      console.error('Save failed:', error);
+      platformAdapter.showNotification('Failed to autosave codex', 'error');
+      console.error('Autosave failed:', error);
     } finally {
       setIsSaving(false);
     }
-  }, [codex, template, formData, onCodexUpdate, platformAdapter]);
+  }, [codex, template, formData, hasUnsavedChanges, onCodexUpdate, platformAdapter]);
+
+  // Autosave effect: save after user stops typing for autoSaveDelay milliseconds
+  useEffect(() => {
+    if (!hasUnsavedChanges || !codex) return;
+
+    const timeoutId = setTimeout(() => {
+      handleSave();
+    }, autoSaveDelay);
+
+    return () => clearTimeout(timeoutId);
+  }, [formData, hasUnsavedChanges, codex, autoSaveDelay, handleSave]);
 
   const renderField = useCallback((field: TemplateField) => {
     const value = formData[field.id] || field.defaultValue || '';
-    const isVisible = !field.visibility || 
+    const isVisible = !field.visibility ||
       field.visibility.contexts.includes('all') ||
       field.visibility.contexts.includes(context.workflowStage) ||
       field.visibility.contexts.includes(context.role);
@@ -144,7 +158,6 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
               id={field.id}
               value={value}
               onChange={(e) => handleFieldChange(field.id, e.target.value)}
-              disabled={!isEditing}
               placeholder={`Enter ${(field.label || field.name).toLowerCase()}`}
             />
           </div>
@@ -161,7 +174,6 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
               id={field.id}
               value={value}
               onChange={(e) => handleFieldChange(field.id, e.target.value)}
-              disabled={!isEditing}
               placeholder={`Enter ${(field.label || field.name).toLowerCase()}`}
               rows={6}
               className="min-h-[150px]"
@@ -181,7 +193,6 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
               type="number"
               value={value}
               onChange={(e) => handleFieldChange(field.id, Number(e.target.value))}
-              disabled={!isEditing}
               placeholder={`Enter ${(field.label || field.name).toLowerCase()}`}
             />
           </div>
@@ -200,7 +211,6 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
                 id={field.id}
                 value={value}
                 onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                disabled={!isEditing}
                 placeholder={`Enter ${(field.label || field.name).toLowerCase()}`}
               />
               <p className="text-xs text-muted-foreground">
@@ -219,7 +229,6 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
             <Select
               value={value || ''}
               onValueChange={(newValue) => handleFieldChange(field.id, newValue)}
-              disabled={!isEditing}
             >
               <SelectTrigger>
                 <SelectValue placeholder={`Select ${(field.label || field.name).toLowerCase()}`} />
@@ -246,7 +255,6 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
               id={field.id}
               checked={value}
               onCheckedChange={(checked) => handleFieldChange(field.id, checked)}
-              disabled={!isEditing}
             />
             <Label htmlFor={field.id} className="text-sm font-medium">
               {field.label || field.name}
@@ -266,7 +274,6 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
               type="date"
               value={value}
               onChange={(e) => handleFieldChange(field.id, e.target.value)}
-              disabled={!isEditing}
             />
           </div>
         );
@@ -282,7 +289,6 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
               id={field.id}
               value={value}
               onChange={(e) => handleFieldChange(field.id, e.target.value)}
-              disabled={!isEditing}
               placeholder={`Enter ${(field.label || field.name).toLowerCase()}`}
             />
             <p className="text-xs text-muted-foreground">
@@ -291,7 +297,7 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
           </div>
         );
     }
-  }, [formData, isEditing, context, handleFieldChange]);
+  }, [formData, context, handleFieldChange]);
 
   const renderDefaultView = () => {
     if (!template) {
@@ -344,32 +350,22 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
             </div>
             
             <div className="flex items-center gap-2">
-              {lastSaved && (
-                <span className="text-xs text-muted-foreground">
-                  Last saved: {lastSaved.toLocaleTimeString()}
+              {/* Autosave status indicator */}
+              {isSaving ? (
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Save className="w-3 h-3 animate-pulse" />
+                  Saving...
                 </span>
-              )}
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditing(!isEditing)}
-              >
-                {isEditing ? <Eye className="w-4 h-4 mr-1" /> : <Edit className="w-4 h-4 mr-1" />}
-                {isEditing ? 'Preview' : 'Edit'}
-              </Button>
-              
-              {isEditing && (
-                <Button
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={isSaving}
-                >
-                  <Save className="w-4 h-4 mr-1" />
-                  {isSaving ? 'Saving...' : 'Save'}
-                </Button>
-              )}
-              
+              ) : hasUnsavedChanges ? (
+                <span className="text-xs text-muted-foreground">
+                  Unsaved changes
+                </span>
+              ) : lastSaved ? (
+                <span className="text-xs text-muted-foreground">
+                  Saved {lastSaved.toLocaleTimeString()}
+                </span>
+              ) : null}
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm">
