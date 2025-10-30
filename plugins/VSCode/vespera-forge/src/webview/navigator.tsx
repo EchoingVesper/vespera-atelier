@@ -49,7 +49,7 @@ function NavigatorApp() {
 
   // Context state (contexts are what users select to organize their work)
   // TODO: Load contexts from backend when workspace is initialized
-  const [contexts] = useState<IContext[]>([]);
+  const [contexts, setContexts] = useState<IContext[]>([]);
   const [activeContext, setActiveContext] = useState<IContext | null>(null);
   const [contextsLoading] = useState(false);
 
@@ -84,6 +84,7 @@ function NavigatorApp() {
           console.log('[Navigator] Received initialState:', message.payload);
           setCodices(message.payload.codices || []);
           setTemplates(message.payload.templates || []);
+          setContexts(message.payload.contexts || []);
 
           // If we have initialState, workspace must be initialized
           setWorkspaceState('initialized');
