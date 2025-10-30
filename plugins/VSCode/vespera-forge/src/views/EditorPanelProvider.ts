@@ -80,8 +80,10 @@ export class EditorPanelProvider {
 
     EditorPanelProvider.currentPanel = new EditorPanelProvider(panel, context, binderyService, logger);
 
+    // Store the codex ID to be loaded when webview is ready
+    // Don't call setActiveCodex yet - webview needs to send 'ready' first
     if (codexId) {
-      EditorPanelProvider.currentPanel.setActiveCodex(codexId);
+      EditorPanelProvider.currentPanel._activeCodexId = codexId;
     }
 
     return EditorPanelProvider.currentPanel;
