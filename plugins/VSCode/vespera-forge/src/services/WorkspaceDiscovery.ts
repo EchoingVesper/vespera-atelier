@@ -43,6 +43,8 @@ export interface WorkspaceMetadata {
     /** Enable graph database */
     enable_graph?: boolean;
   };
+  /** Phase 17: Context types enabled for this workspace */
+  context_types?: string[];
 }
 
 /**

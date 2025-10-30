@@ -275,13 +275,57 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
       workspaceState = 'initialized';
       this.logger?.info('Workspace initialized:', { name: discoveryResult.metadata?.name });
 
+      // Phase 17: Load contexts from workspace metadata
+      const crypto = await import('crypto');
+      const { DEFAULT_CONTEXT_TYPES, ContextStatus } = await import('../types/context');
+
+      const contextTypes = discoveryResult.metadata?.context_types || ['general'];
+      const workspaceId = discoveryResult.metadata?.id || 'unknown';
+
+      // Create IContext objects from context types
+      const contexts = contextTypes.map((typeId: string) => {
+        const typeDef = DEFAULT_CONTEXT_TYPES.find(t => t.id === typeId);
+        const now = new Date();
+
+        return {
+          id: `ctx-${crypto.randomUUID()}`,
+          name: typeDef?.name || typeId,
+          project_id: workspaceId, // Phase 17: workspace ID is the project ID
+          type: typeId,
+          description: typeDef?.description,
+          status: ContextStatus.Active,
+          metadata: {
+            createdAt: now,
+            updatedAt: now,
+            version: '1.0.0',
+            tags: [],
+            icon: typeDef?.icon
+          },
+          settings: {
+            enabledAutomation: typeDef?.defaultSettings?.enabledAutomation || false,
+            color: typeDef?.defaultSettings?.customSettings?.['color'],
+            icon: typeDef?.icon,
+            customSettings: typeDef?.defaultSettings?.customSettings || {}
+          }
+        };
+      });
+
+      this.logger?.info('Loaded contexts from workspace.json', {
+        count: contexts.length,
+        types: contextTypes
+      });
+
       // Wait for connection to be ready (with 5 second timeout)
       const connected = await this.waitForConnection(5000);
       if (!connected) {
-        this.logger?.warn('Could not establish Bindery connection, sending empty state');
+        this.logger?.warn('Could not establish Bindery connection, sending contexts but empty codices');
         this._view.webview.postMessage({
           type: 'initialState',
-          payload: { codices: [], templates: [] }
+          payload: {
+            codices: [],
+            templates: [],
+            contexts // Send contexts even if Bindery not connected
+          }
         });
         return;
       }
@@ -363,7 +407,8 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
 
       const codexData = {
         codices,
-        templates
+        templates,
+        contexts // Phase 17: Include contexts from workspace.json
       };
 
       this._view.webview.postMessage({
@@ -400,27 +445,22 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
         }
       }
 
-      // Phase 16b Stage 3: Require projectId for all codex creation
-      const projectId = payload.projectId;
+      // Phase 17: contextId is optional (can be null for codices without a specific context)
+      const contextId = payload.contextId || null;
 
-      // CRITICAL: ProjectId is required - throw error if missing
-      if (!projectId) {
-        const errorMsg = `FATAL: Cannot create codex without projectId! Payload: ${JSON.stringify(payload)}`;
-        this.logger?.error(errorMsg);
-        throw new Error(errorMsg);
-      }
-
-      this.logger?.info('Creating codex with projectId', {
+      this.logger?.info('Creating codex', {
         title,
         templateId: payload.templateId,
-        projectId,
+        contextId,
         payloadReceived: payload
       });
 
+      // Phase 17: createCodex no longer requires projectId
+      // The workspace folder IS the project
       const result = await this.binderyService.createCodex(
         title,
         payload.templateId || 'default',
-        projectId  // Pass project ID to Bindery
+        contextId  // Pass context ID (optional)
       );
 
       if (this._view) {
