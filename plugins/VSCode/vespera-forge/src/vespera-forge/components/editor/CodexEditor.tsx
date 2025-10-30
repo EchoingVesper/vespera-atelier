@@ -92,6 +92,15 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
 
     setIsSaving(true);
     try {
+      console.log('[CodexEditor] ========== handleSave ==========');
+      console.log('[CodexEditor] Original codex:', {
+        id: codex.id,
+        name: codex.name,
+        templateId: codex.templateId,
+        contentFields: codex.content?.fields ? Object.keys(codex.content.fields) : []
+      });
+      console.log('[CodexEditor] Form data to save:', formData);
+
       // Build field values from formData
       const fieldValues = Object.fromEntries(
         template.fields.map(field => [field.id, formData[field.id] || ''])
@@ -113,6 +122,14 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
         },
         updatedAt: new Date()
       };
+
+      console.log('[CodexEditor] Updated codex to send:', {
+        id: updatedCodex.id,
+        name: updatedCodex.name,
+        templateId: updatedCodex.templateId,
+        contentFields: Object.keys(fieldValues),
+        fieldValues: fieldValues
+      });
 
       await onCodexUpdate(updatedCodex);
       setLastSaved(new Date());

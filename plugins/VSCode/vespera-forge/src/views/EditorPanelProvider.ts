@@ -357,6 +357,15 @@ export class EditorPanelProvider {
   }
 
   private async handleCodexUpdate(messageId: string, payload: any): Promise<void> {
+    console.log('[EditorPanelProvider] ========== handleCodexUpdate ==========');
+    console.log('[EditorPanelProvider] Payload received from webview:', {
+      id: payload.id,
+      name: payload.name,
+      templateId: payload.templateId,
+      hasContent: !!payload.content,
+      contentFields: payload.content?.fields ? Object.keys(payload.content.fields) : [],
+      hasMetadata: !!payload.metadata
+    });
     this.logger?.debug('Updating codex', { id: payload.id });
 
     try {
@@ -369,8 +378,18 @@ export class EditorPanelProvider {
         references: payload.metadata?.references || []
       };
 
+      console.log('[EditorPanelProvider] Sending to Bindery:', {
+        codexId: payload.id,
+        payload: binderyPayload
+      });
+
       // Update codex via Bindery
       const result = await this.binderyService.updateCodex(payload.id, binderyPayload);
+      console.log('[EditorPanelProvider] Bindery response:', {
+        success: result.success,
+        error: result.error,
+        data: result.data
+      });
 
       if (result.success) {
         this.logger?.info('Codex updated successfully', { id: payload.id });
