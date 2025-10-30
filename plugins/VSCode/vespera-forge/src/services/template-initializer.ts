@@ -13,7 +13,7 @@
  */
 import * as vscode from 'vscode';
 // import * as path from 'path'; // Unused - may be needed for future path operations
-import { parse as parseJSON5 } from 'json5';
+import JSON5 from 'json5';
 import { VesperaLogger } from '../core/logging/VesperaLogger';
 import { DEFAULT_TEMPLATES, type TemplateDefinition } from './templates';
 
@@ -180,7 +180,7 @@ export class TemplateInitializer {
                 const content = await vscode.workspace.fs.readFile(templateUri);
                 console.log(`[TemplateInitializer] Read ${content.length} bytes from ${filename}`);
 
-                const templateData = parseJSON5(Buffer.from(content).toString('utf8'));
+                const templateData = JSON5.parse(Buffer.from(content).toString('utf8'));
                 console.log(`[TemplateInitializer] Parsed template:`, templateData.template_id);
 
                 // Extract template metadata including icon
@@ -242,7 +242,7 @@ export class TemplateInitializer {
               try {
                 const templateUri = vscode.Uri.joinPath(subdirUri, filename);
                 const content = await vscode.workspace.fs.readFile(templateUri);
-                const templateData = parseJSON5(Buffer.from(content).toString('utf8'));
+                const templateData = JSON5.parse(Buffer.from(content).toString('utf8'));
 
                 // Transform to full Template object for UI
                 const template = {
