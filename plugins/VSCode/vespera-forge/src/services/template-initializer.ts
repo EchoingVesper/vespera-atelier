@@ -245,6 +245,16 @@ export class TemplateInitializer {
                 const templateData = JSON5.parse(Buffer.from(content).toString('utf8'));
 
                 // Transform to full Template object for UI
+                // Convert fields object to array format expected by UI
+                const fieldsArray = templateData.fields
+                  ? Object.entries(templateData.fields).map(([fieldName, fieldDef]: [string, any]) => ({
+                      id: fieldName,
+                      name: fieldName,
+                      ...fieldDef,
+                      label: fieldDef.label || fieldName.charAt(0).toUpperCase() + fieldName.slice(1)
+                    }))
+                  : [];
+
                 const template = {
                   id: templateData.template_id || filename.replace('.json5', ''),
                   name: templateData.name || templateData.template_id || filename.replace('.json5', ''),
@@ -252,11 +262,7 @@ export class TemplateInitializer {
                   version: templateData.metadata?.version || '1.0.0',
                   baseTemplate: undefined,
                   mixins: [],
-                  fields: (templateData.fields || []).map((field: any) => ({
-                    ...field,
-                    id: field.id || field.name, // Ensure id exists, fallback to name
-                    label: field.label || field.name.charAt(0).toUpperCase() + field.name.slice(1)
-                  })),
+                  fields: fieldsArray,
                   viewModes: [{
                     id: 'default',
                     name: 'Default View',
