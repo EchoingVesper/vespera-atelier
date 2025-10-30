@@ -1,17 +1,21 @@
 /**
  * React Navigator Entry Point
- * Phase 16b Stage 1 - Added ProjectSelector integration
- * Phase 17 Task D4 - Added ContextSelector for Project > Context hierarchy
- * Renders the Codex Navigator with project and context switching support
+ * Phase 17 Part 2 - Workspace-based architecture
+ *
+ * Renders the Codex Navigator with workspace initialization and context switching.
+ *
+ * Architecture Changes (Phase 17):
+ * - Workspace = VS Code folder (detected by .vespera/ directory)
+ * - Project = the workspace itself (not a database entity)
+ * - Contexts = selectable modes (Creative Writing, Software Dev, etc.)
+ * - Codices = individual content items within a context
  */
 import React, { useState, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { VSCodeAdapter } from '@/vespera-forge/core/adapters/vscode-adapter';
 import { CodexNavigator } from '@/vespera-forge/components/navigation/CodexNavigator';
-import { ProjectSelector } from '@/vespera-forge/components/project/ProjectSelector';
 import { ContextSelector } from '@/vespera-forge/components/context/ContextSelector';
-import { WelcomeScreen } from '@/vespera-forge/components/project/WelcomeScreen';
-import { ProjectProvider, useProjectContext } from '@/contexts/ProjectContext';
+import { WorkspaceInitializer, WorkspaceState } from '@/vespera-forge/components/workspace/WorkspaceInitializer';
 import { Codex, Template } from '@/vespera-forge/core/types';
 import { IContext } from '@/types/context';
 import '@/app/globals.css';
@@ -35,50 +39,36 @@ const vscodeApi = adapter.api;
 
 /**
  * Navigator App Component
+ * Phase 17 Part 2 - Workspace-based architecture
  */
 function NavigatorApp() {
+  // Core state
   const [codices, setCodices] = useState<Codex[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedCodexId, setSelectedCodexId] = useState<string | undefined>();
-  const [noWorkspace, setNoWorkspace] = useState<{ message: string; action: string } | null>(null);
 
-  // Phase 17 Task D4: Context state management (UI-only, backend wiring in Cluster F)
-  // TODO (Cluster F - Task F1): Wire to ContextService via ContextContext
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [contexts, _setContexts] = useState<IContext[]>([]);
+  // Workspace state (checked by backend WorkspaceDiscovery)
+  const [workspaceState, setWorkspaceState] = useState<WorkspaceState>('checking');
+
+  // Context state (contexts are what users select to organize their work)
+  const [contexts, setContexts] = useState<IContext[]>([]);
   const [activeContext, setActiveContext] = useState<IContext | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [contextsLoading, _setContextsLoading] = useState(false);
+  const [contextsLoading, setContextsLoading] = useState(false);
 
-  // Phase 16b Stage 2: Access project context for WelcomeScreen logic
-  // Phase 16b Stage 3: Access activeProject for codex filtering
-  const { projects, isLoading, activeProject } = useProjectContext();
-
-  // Phase 17 Task D4: Filter codices by active context (not just project)
-  // TODO (Cluster F - Task F1): Update backend to support context filtering
+  // Filter codices by active context
+  // Phase 17: No project filtering needed - workspace is the project
   const filteredCodices = React.useMemo(() => {
-    if (!activeProject) {
-      return [];
+    if (!activeContext) {
+      // No context selected - show all codices
+      return codices;
     }
 
-    // Filter by active context if one is selected
-    if (activeContext) {
-      // TODO (Cluster F): Filter by context_id when backend supports it
-      // For now, filter by project only (Phase 16b behavior)
-      return codices.filter(codex => {
-        const codexProjectId = codex.metadata.projectId || (codex.metadata as any).project_id;
-        const codexContextId = (codex.metadata as any).context_id || (codex.metadata as any).contextId;
-
-        return codexProjectId === activeProject.id && (!codexContextId || codexContextId === activeContext.id);
-      });
-    }
-
-    // If no context selected, show all codices in project (Phase 16b behavior)
+    // Filter by active context
     return codices.filter(codex => {
-      const codexProjectId = codex.metadata.projectId || (codex.metadata as any).project_id;
-      return codexProjectId === activeProject.id;
+      const codexContextId = (codex.metadata as any).context_id || (codex.metadata as any).contextId;
+      return codexContextId === activeContext.id;
     });
-  }, [codices, activeProject, activeContext]);
+  }, [codices, activeContext]);
 
   // Listen for messages from the extension
   React.useEffect(() => {
@@ -86,40 +76,30 @@ function NavigatorApp() {
       const message = event.data;
 
       switch (message.type) {
+        case 'workspaceState':
+          // Backend sends workspace state (no-folder, no-vespera, initialized)
+          console.log('[Navigator] Workspace state:', message.payload.state);
+          setWorkspaceState(message.payload.state);
+          break;
+
         case 'initialState':
           console.log('[Navigator] Received initialState:', message.payload);
           setCodices(message.payload.codices || []);
           setTemplates(message.payload.templates || []);
-          setNoWorkspace(null); // Clear no-workspace state
-          break;
 
-        case 'noWorkspace':
-          console.log('[Navigator] No workspace folder open:', message.payload);
-          setNoWorkspace(message.payload);
+          // If we have initialState, workspace must be initialized
+          setWorkspaceState('initialized');
           break;
 
         case 'codex.created':
           console.log('[Navigator] Codex created:', message.payload);
           // Select the newly created codex
           setSelectedCodexId(message.payload.id);
-          // TODO: Enter edit mode when UI supports it
           break;
 
         case 'response':
           // Handle response from extension
           console.log('[Navigator] Received response:', message);
-          break;
-
-        // Project-related messages are handled by ProjectContext, silently ignore here
-        case 'project:list:response':
-        case 'project:get:response':
-        case 'project:create:response':
-        case 'project:update:response':
-        case 'project:delete:response':
-        case 'project:setActive:response':
-        case 'project:projectsChanged':
-        case 'project:activeChanged':
-          // Handled by ProjectContext
           break;
 
         default:
@@ -141,15 +121,16 @@ function NavigatorApp() {
   }, []);
 
   const handleCodexCreate = useCallback(async (templateId: string) => {
-    // Phase 16b Stage 3: Include active project ID when creating codex
+    // Phase 17: No project ID needed - workspace is the project
+    // Include context ID if a context is selected
     adapter.sendMessage({
       type: 'codex.create',
       payload: {
         templateId,
-        projectId: activeProject?.id  // Pass active project ID to backend
+        contextId: activeContext?.id  // Optional context ID
       }
     });
-  }, [adapter, activeProject]);
+  }, [activeContext]);
 
   const handleCodexDelete = useCallback(async (codexId: string) => {
     adapter.sendMessage({
@@ -171,124 +152,89 @@ function NavigatorApp() {
   }, []);
 
   /**
-   * Handle project creation request
-   * Phase 16b Stage 2 will implement full creation wizard
+   * Handle workspace initialization
+   * Phase 17: Create .vespera/ directory with selected context types
    */
-  const handleCreateProject = useCallback(() => {
+  const handleInitializeWorkspace = useCallback((contextTypes: string[]) => {
+    console.log('[Navigator] Initialize workspace with contexts:', contextTypes);
     adapter.sendMessage({
-      type: 'project:createWizard',
-      payload: {}
+      type: 'workspace:initialize',
+      payload: { contextTypes }
     });
   }, []);
 
   /**
    * Handle context selection
-   * Phase 17 Task D4: UI-only implementation
-   * TODO (Cluster F - Task F1): Wire to backend ContextService
+   * Phase 17: Select active context to filter codices
    */
   const handleContextSelect = useCallback((context: IContext) => {
     console.log('[Navigator] Context selected:', context.name);
     setActiveContext(context);
 
-    // TODO (Cluster F): Notify backend to update active context
-    // adapter.sendMessage({
-    //   type: 'context:setActive',
-    //   payload: { contextId: context.id }
-    // });
+    // Notify backend
+    adapter.sendMessage({
+      type: 'context:setActive',
+      payload: { contextId: context.id }
+    });
   }, []);
 
   /**
    * Handle context creation request
-   * Phase 17 Task D4: Placeholder for context creation
-   * TODO (Cluster F - Task F1): Implement context creation wizard
+   * Phase 17: Add new context type to workspace
    */
   const handleCreateContext = useCallback(() => {
     console.log('[Navigator] Create context requested');
 
-    // TODO (Cluster F): Implement context creation wizard
-    // adapter.sendMessage({
-    //   type: 'context:createWizard',
-    //   payload: { projectId: activeProject?.id }
-    // });
-  }, [activeProject]);
+    adapter.sendMessage({
+      type: 'context:create',
+      payload: {}
+    });
+  }, []);
 
   /**
    * Handle context deletion
-   * Phase 17 Task D4: Placeholder for context deletion
-   * TODO (Cluster F - Task F1): Wire to backend ContextService
+   * Phase 17: Remove context from workspace
    */
   const handleDeleteContext = useCallback(async (contextId: string): Promise<boolean> => {
     console.log('[Navigator] Delete context requested:', contextId);
 
-    // TODO (Cluster F): Implement context deletion
-    // adapter.sendMessage({
-    //   type: 'context:delete',
-    //   payload: { contextId }
-    // });
+    adapter.sendMessage({
+      type: 'context:delete',
+      payload: { contextId }
+    });
 
-    return false; // Placeholder
+    return true;
   }, []);
 
-  // Show "Open Folder" prompt if no workspace
-  if (noWorkspace) {
+  // Phase 17 Part 2: Show WorkspaceInitializer if workspace not initialized
+  // States: checking, no-folder, no-vespera
+  if (workspaceState !== 'initialized') {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-        <div className="w-16 h-16 mb-4 text-muted-foreground">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-          </svg>
-        </div>
-        <h3 className="text-lg font-semibold mb-2">No Folder Open</h3>
-        <p className="text-sm text-muted-foreground mb-4 max-w-xs">
-          {noWorkspace.message}
-        </p>
-        <button
-          onClick={handleOpenFolder}
-          className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
-        >
-          Open Folder
-        </button>
-      </div>
+      <WorkspaceInitializer
+        workspaceState={workspaceState}
+        onOpenFolder={handleOpenFolder}
+        onInitializeWorkspace={handleInitializeWorkspace}
+      />
     );
   }
 
-  // Phase 16b Stage 2: Show WelcomeScreen when no projects exist
-  const shouldShowWelcome = !isLoading && projects.length === 0;
-
-  if (shouldShowWelcome) {
-    return <WelcomeScreen onCreateProject={handleCreateProject} />;
-  }
-
-  // Phase 17 Task D4: Navigator with Project > Context hierarchy
+  // Workspace is initialized - show Navigator with Context selector
   return (
     <div className="flex flex-col h-full">
-      {/* Project > Context Selector Hierarchy */}
-      <div className="flex-shrink-0 border-b border-border">
-        {/* Project Selector - top level */}
-        <div className="p-2 border-b border-border">
-          <ProjectSelector
-            onCreateProject={handleCreateProject}
-          />
-        </div>
-
-        {/* Context Selector - second level, below project */}
-        {/* Phase 17 Task D4: Shows contexts for active project */}
-        {/* TODO (Cluster F): Load contexts from backend ContextService */}
-        <div className="p-2 bg-muted/30">
-          <ContextSelector
-            activeContext={activeContext}
-            contexts={contexts}
-            isLoading={contextsLoading}
-            onContextSelect={handleContextSelect}
-            onCreateContext={handleCreateContext}
-            onDeleteContext={handleDeleteContext}
-            disabled={!activeProject}
-          />
-        </div>
+      {/* Context Selector */}
+      <div className="flex-shrink-0 border-b border-border p-2">
+        <ContextSelector
+          activeContext={activeContext}
+          contexts={contexts}
+          isLoading={contextsLoading}
+          onContextSelect={handleContextSelect}
+          onCreateContext={handleCreateContext}
+          onDeleteContext={handleDeleteContext}
+          disabled={false}
+        />
       </div>
 
       {/* Codex Navigator - main content area */}
-      {/* Phase 17 Task D4: Show filtered codices (by active context) */}
       <div className="flex-1 overflow-hidden">
         <CodexNavigator
           codices={filteredCodices}
@@ -318,13 +264,11 @@ function initializeNavigator(): void {
   adapter.applyVSCodeStyling();
 
   // Create React root and render
-  // Phase 16b Stage 1: Wrap in ProjectProvider for project context
+  // Phase 17: No ProjectProvider needed - workspace is the project
   const root = createRoot(rootElement);
   root.render(
     <React.StrictMode>
-      <ProjectProvider vscode={vscodeApi}>
-        <NavigatorApp />
-      </ProjectProvider>
+      <NavigatorApp />
     </React.StrictMode>
   );
 
