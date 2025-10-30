@@ -13,7 +13,7 @@
  */
 import * as vscode from 'vscode';
 // import * as path from 'path'; // Unused - may be needed for future path operations
-import * as JSON5 from 'json5';
+import { parse as parseJSON5 } from 'json5';
 import { VesperaLogger } from '../core/logging/VesperaLogger';
 import { DEFAULT_TEMPLATES, type TemplateDefinition } from './templates';
 
@@ -160,20 +160,28 @@ export class TemplateInitializer {
       const templatesDir = vscode.Uri.joinPath(workspaceUri, '.vespera', 'templates');
       const templates: Array<{ id: string; name: string; description: string; icon?: string }> = [];
 
+      console.log('[TemplateInitializer] Loading templates from:', templatesDir.fsPath);
+
       // Search all subdirectories: codex, providers, chat, agents
       const subdirs = ['codex', 'providers', 'chat', 'agents'];
 
       for (const subdir of subdirs) {
         const subdirUri = vscode.Uri.joinPath(templatesDir, subdir);
+        console.log('[TemplateInitializer] Checking subdirectory:', subdirUri.fsPath);
         try {
           const entries = await vscode.workspace.fs.readDirectory(subdirUri);
+          console.log(`[TemplateInitializer] Found ${entries.length} entries in ${subdir}`);
 
           for (const [filename, type] of entries) {
             if (type === vscode.FileType.File && filename.endsWith('.json5')) {
+              console.log(`[TemplateInitializer] Processing template file: ${filename}`);
               try {
                 const templateUri = vscode.Uri.joinPath(subdirUri, filename);
                 const content = await vscode.workspace.fs.readFile(templateUri);
-                const templateData = JSON5.parse(Buffer.from(content).toString('utf8'));
+                console.log(`[TemplateInitializer] Read ${content.length} bytes from ${filename}`);
+
+                const templateData = parseJSON5(Buffer.from(content).toString('utf8'));
+                console.log(`[TemplateInitializer] Parsed template:`, templateData.template_id);
 
                 // Extract template metadata including icon
                 templates.push({
@@ -182,7 +190,9 @@ export class TemplateInitializer {
                   description: templateData.description || '',
                   icon: templateData.icon || templateData.metadata?.icon || undefined
                 });
+                console.log(`[TemplateInitializer] Added template: ${templateData.template_id}`);
               } catch (error) {
+                console.error(`[TemplateInitializer] ERROR loading ${filename}:`, error);
                 this.logger?.warn('Failed to load template file', {
                   filename,
                   subdirectory: subdir,
@@ -196,6 +206,8 @@ export class TemplateInitializer {
           this.logger?.debug(`Template subdirectory not found: ${subdir}`);
         }
       }
+
+      console.log(`[TemplateInitializer] FINAL: Loaded ${templates.length} templates:`, templates.map(t => t.id));
 
       this.logger?.info('Loaded templates', {
         count: templates.length,
@@ -230,7 +242,7 @@ export class TemplateInitializer {
               try {
                 const templateUri = vscode.Uri.joinPath(subdirUri, filename);
                 const content = await vscode.workspace.fs.readFile(templateUri);
-                const templateData = JSON5.parse(Buffer.from(content).toString('utf8'));
+                const templateData = parseJSON5(Buffer.from(content).toString('utf8'));
 
                 // Transform to full Template object for UI
                 const template = {
