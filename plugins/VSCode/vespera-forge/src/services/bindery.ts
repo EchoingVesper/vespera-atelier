@@ -1325,6 +1325,7 @@ export class BinderyService extends EventEmitter {
       try {
         const requestJson = JSON.stringify(request);
         this.log('Sending request to Bindery:', method, 'ID:', requestId);
+        console.log('[BinderyService] Full JSON-RPC request:', requestJson);
         this.process!.stdin!.write(requestJson + '\n');
       } catch (error) {
         this.pendingRequests.delete(requestId);
