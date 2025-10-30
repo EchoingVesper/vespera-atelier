@@ -212,6 +212,42 @@ export const DEFAULT_CONTEXT_TYPES: ContextTypeDefinition[] = [
       customSettings: {}
     },
     templateCategories: [] // All categories available
+  },
+  {
+    id: "documentation",
+    name: "Documentation",
+    description: "Technical documentation and guides",
+    icon: "📚",
+    category: "Technical",
+    defaultSettings: {
+      enabledAutomation: false,
+      customSettings: {}
+    },
+    templateCategories: ["documentation", "guides", "reference", "notes"]
+  },
+  {
+    id: "fiction",
+    name: "Fiction",
+    description: "Creative fiction writing",
+    icon: "✍️",
+    category: "Creative",
+    defaultSettings: {
+      enabledAutomation: true,
+      customSettings: {}
+    },
+    templateCategories: ["creative-writing", "characters", "scenes", "worldbuilding", "plot"]
+  },
+  {
+    id: "software-project",
+    name: "Software Project",
+    description: "Software development and engineering",
+    icon: "⚙️",
+    category: "Technical",
+    defaultSettings: {
+      enabledAutomation: true,
+      customSettings: {}
+    },
+    templateCategories: ["code", "architecture", "tasks", "documentation", "testing"]
   }
 ];
 

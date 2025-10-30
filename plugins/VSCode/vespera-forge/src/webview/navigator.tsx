@@ -84,7 +84,15 @@ function NavigatorApp() {
           console.log('[Navigator] Received initialState:', message.payload);
           setCodices(message.payload.codices || []);
           setTemplates(message.payload.templates || []);
-          setContexts(message.payload.contexts || []);
+
+          const loadedContexts = message.payload.contexts || [];
+          setContexts(loadedContexts);
+
+          // Auto-select first context if none selected yet
+          if (loadedContexts.length > 0 && !activeContext) {
+            setActiveContext(loadedContexts[0]);
+            console.log('[Navigator] Auto-selected first context:', loadedContexts[0].name);
+          }
 
           // If we have initialState, workspace must be initialized
           setWorkspaceState('initialized');

@@ -351,27 +351,29 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
         // Transform codex objects to UI format (no need to fetch individually)
         codices = codicesResult.data.map((data: any) => {
           // Transform flat Bindery response to UI's expected structure
+          // Phase 17: project_id is now context_id (workspace IS the project)
+          const contextId = data.project_id || data.metadata?.project_id || data.metadata?.projectId || data.metadata?.context_id || data.metadata?.contextId;
+
           return {
             id: data.id,
             name: data.title,
             templateId: data.template_id,
-            // Phase 16b Stage 3: Include project_id for filtering
-            projectId: data.project_id || data.metadata?.project_id || data.metadata?.projectId,
-              tags: data.tags || [],
-              relationships: data.relationships || [],
-              createdAt: data.created_at ? new Date(data.created_at) : new Date(),
-              updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
-              metadata: {
-                id: data.id,
-                title: data.title,
-                template_id: data.template_id,
-                created_at: data.created_at,
-                updated_at: data.updated_at,
-                // Phase 16b Stage 3: Check all possible locations for project_id
-                projectId: data.project_id || data.metadata?.project_id || data.metadata?.projectId,
-                status: data.metadata?.status,
-                priority: data.metadata?.priority,
-                assignedTo: data.metadata?.assignedTo
+            tags: data.tags || [],
+            relationships: data.relationships || [],
+            createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+            updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
+            metadata: {
+              id: data.id,
+              title: data.title,
+              template_id: data.template_id,
+              created_at: data.created_at,
+              updated_at: data.updated_at,
+              // Phase 17: Use contextId (project_id field from backend stores the context ID)
+              contextId: contextId,
+              context_id: contextId, // Also include snake_case for compatibility
+              status: data.metadata?.status,
+              priority: data.metadata?.priority,
+              assignedTo: data.metadata?.assignedTo
               },
               content: data.content || { fields: {} }
             };
