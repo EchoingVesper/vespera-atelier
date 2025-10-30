@@ -38,39 +38,60 @@ function EditorApp() {
   React.useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       const message = event.data;
+      console.log('[Editor] Received message:', message.type);
 
       switch (message.type) {
         case 'setActiveCodex':
-          console.log('[Editor] Received setActiveCodex message:', JSON.stringify(message, null, 2));
-          console.log('[Editor] Current templates state:', templates);
-          console.log('[Editor] Payload templates:', message.payload.templates);
+          console.log('[Editor] ========== setActiveCodex MESSAGE ==========');
+          console.log('[Editor] Full message:', JSON.stringify(message, null, 2));
+          console.log('[Editor] Current templates state:', templates.length, 'templates');
+          console.log('[Editor] Payload templates:', message.payload.templates?.length || 0, 'templates');
 
           if (message.payload.codex) {
-            console.log('[Editor] Setting active codex:', message.payload.codex);
-            setActiveCodex(message.payload.codex);
+            const codex = message.payload.codex;
+            console.log('[Editor] Codex received:', {
+              id: codex.id,
+              name: codex.name,
+              templateId: codex.templateId,
+              hasContent: !!codex.content,
+              hasMetadata: !!codex.metadata
+            });
+
+            setActiveCodex(codex);
 
             // Update templates if provided in this message
             const templatesToUse = message.payload.templates || templates;
-            if (message.payload.templates) {
-              console.log('[Editor] Updating templates from payload:', message.payload.templates);
+            if (message.payload.templates && message.payload.templates.length > 0) {
+              console.log('[Editor] Updating templates from payload:', message.payload.templates.length, 'templates');
+              console.log('[Editor] Template IDs:', message.payload.templates.map((t: any) => t.id));
               setTemplates(message.payload.templates);
+            } else {
+              console.log('[Editor] Using existing templates:', templates.length);
             }
 
             // Load template
-            if (templatesToUse.length > 0 && message.payload.codex.templateId) {
-              console.log('[Editor] Looking for template with ID:', message.payload.codex.templateId);
+            if (templatesToUse.length > 0 && codex.templateId) {
+              console.log('[Editor] Searching for template with ID:', codex.templateId);
               console.log('[Editor] Available templates:', templatesToUse.map((t: any) => ({ id: t.id, name: t.name })));
-              const template = templatesToUse.find((t: any) => t.id === message.payload.codex.templateId);
+
+              const template = templatesToUse.find((t: any) => t.id === codex.templateId);
               if (template) {
-                console.log('[Editor] Found matching template:', template.name);
+                console.log('[Editor] ✓ Found matching template:', template.name);
+                console.log('[Editor] Template has', template.fields?.length || 0, 'fields');
                 setActiveTemplate(template);
               } else {
-                console.warn('[Editor] No matching template found for ID:', message.payload.codex.templateId);
+                console.error('[Editor] ✗ No matching template found for ID:', codex.templateId);
+                console.error('[Editor] Available template IDs:', templatesToUse.map((t: any) => t.id));
+                // Set codex even without template so we can show the error
+                setActiveTemplate(undefined);
               }
             } else {
-              console.warn('[Editor] Cannot load template - templates:', templatesToUse.length, 'templateId:', message.payload.codex.templateId);
+              console.error('[Editor] Cannot load template - templates:', templatesToUse.length, 'templateId:', codex.templateId);
             }
+          } else {
+            console.error('[Editor] No codex in payload!');
           }
+          console.log('[Editor] ========================================');
           break;
         case 'initialState':
           console.log('[Editor] Initial state received:', message.payload);

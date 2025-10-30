@@ -143,24 +143,35 @@ export class EditorPanelProvider {
   }
 
   public async setActiveCodex(codexId: string): Promise<void> {
+    console.log('[EditorPanelProvider] ========== setActiveCodex CALLED ==========');
+    console.log('[EditorPanelProvider] Codex ID:', codexId);
     this._activeCodexId = codexId;
 
     // Wait for Bindery connection to be ready
     const connected = await this.waitForConnection(5000);
     if (!connected) {
+      console.error('[EditorPanelProvider] ✗ Could not establish Bindery connection');
       this.logger?.error('Editor: Could not establish Bindery connection for loading Codex');
       vscode.window.showErrorMessage('Could not connect to Bindery service. Please try again.');
       return;
     }
+    console.log('[EditorPanelProvider] ✓ Bindery connection ready');
 
     // Fetch the actual codex data from Bindery
     try {
+      console.log('[EditorPanelProvider] Fetching codex from Bindery...');
       const result = await this.binderyService.getCodex(codexId);
-      console.log('[EditorPanelProvider] getCodex result:', JSON.stringify(result, null, 2));
+      console.log('[EditorPanelProvider] getCodex result success:', result.success);
 
       if (result.success) {
         const data = result.data as any;
-        console.log('[EditorPanelProvider] Codex data from Bindery:', JSON.stringify(data, null, 2));
+        console.log('[EditorPanelProvider] Codex data from Bindery:', {
+          id: data.id,
+          title: data.title,
+          template_id: data.template_id,
+          hasContent: !!data.content,
+          hasMetadata: !!data.metadata
+        });
 
         // Transform to UI format (same as Navigator)
         const codex = {
@@ -184,16 +195,33 @@ export class EditorPanelProvider {
         const workspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri;
         let templates: any[] = [];
         if (workspaceUri) {
+          console.log('[EditorPanelProvider] Loading templates from workspace:', workspaceUri.fsPath);
           templates = await this._templateInitializer.loadFullTemplates(workspaceUri);
-          console.log('[EditorPanelProvider] Loaded templates:', templates.map(t => ({ id: t.id, name: t.name })));
+          console.log('[EditorPanelProvider] ✓ Loaded', templates.length, 'templates');
+          console.log('[EditorPanelProvider] Template IDs:', templates.map(t => t.id));
+          console.log('[EditorPanelProvider] Looking for template:', codex.templateId);
+
+          const matchingTemplate = templates.find(t => t.id === codex.templateId);
+          if (matchingTemplate) {
+            console.log('[EditorPanelProvider] ✓ Found matching template:', matchingTemplate.name);
+          } else {
+            console.error('[EditorPanelProvider] ✗ No matching template for:', codex.templateId);
+          }
+        } else {
+          console.error('[EditorPanelProvider] No workspace folder - cannot load templates');
         }
 
         const message = {
           type: 'setActiveCodex',
           payload: { codex, templates }
         };
-        console.log('[EditorPanelProvider] Sending message to webview:', JSON.stringify(message, null, 2));
+        console.log('[EditorPanelProvider] Sending message to webview with:', {
+          codexId: codex.id,
+          codexName: codex.name,
+          templateCount: templates.length
+        });
         this._panel.webview.postMessage(message);
+        console.log('[EditorPanelProvider] ========================================');
 
         this.logger?.info('Set active codex in editor', { codexId });
       } else {

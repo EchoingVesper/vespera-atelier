@@ -295,6 +295,24 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
 
   const renderDefaultView = () => {
     if (!template) {
+      // If we have a codex but no template, show template error
+      if (codex) {
+        return (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold mb-2">Template Not Found</h3>
+              <p className="text-muted-foreground">
+                Template "{codex.templateId}" could not be loaded.
+              </p>
+              <p className="text-muted-foreground mt-2">
+                Codex: {codex.name}
+              </p>
+            </div>
+          </div>
+        );
+      }
+
+      // No codex and no template = nothing selected
       return (
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
