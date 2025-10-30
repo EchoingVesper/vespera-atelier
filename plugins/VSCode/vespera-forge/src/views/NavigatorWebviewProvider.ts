@@ -509,26 +509,83 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
    * Phase 17 Part 2: Workspace and Context message handlers
    */
 
-  private async handleWorkspaceInitialize(messageId: string, _payload: any): Promise<void> {
-    this.logger?.info('Initializing workspace with context types');
+  private async handleWorkspaceInitialize(messageId: string, payload: any): Promise<void> {
+    this.logger?.info('Initializing workspace with context types', { contextTypes: payload.contextTypes });
 
     try {
-      // TODO: Implement workspace initialization
-      // 1. Create .vespera/ directory structure
-      // 2. Create workspace.json with metadata
-      // 3. Create context configurations for selected types
-      // 4. Initialize template directories
-      // 5. Refresh Navigator to show initialized state
+      // Get workspace folder
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders || workspaceFolders.length === 0 || !workspaceFolders[0]) {
+        throw new Error('No workspace folder open');
+      }
 
-      this.logger?.warn('Workspace initialization not yet implemented');
+      const workspaceUri = workspaceFolders[0].uri;
+      const workspacePath = workspaceUri.fsPath;
+      const vesperaPath = vscode.Uri.joinPath(workspaceUri, '.vespera');
+
+      // Import required Node.js modules
+      const fs = await import('fs');
+      const path = await import('path');
+      const crypto = await import('crypto');
+
+      // 1. Create .vespera/ directory
+      this.logger?.debug('Creating .vespera directory', { path: vesperaPath.fsPath });
+      await fs.promises.mkdir(vesperaPath.fsPath, { recursive: true });
+
+      // 2. Generate workspace metadata
+      const workspaceName = path.basename(workspacePath);
+      const workspaceId = crypto.randomUUID();
+      const now = new Date().toISOString();
+
+      const metadata = {
+        id: workspaceId,
+        name: workspaceName,
+        version: '1.0.0',
+        created_at: now,
+        settings: {
+          auto_sync: true,
+          template_path: '.vespera/templates',
+          enable_rag: false,
+          enable_graph: false
+        },
+        // Phase 17: Store selected context types
+        context_types: payload.contextTypes || ['general']
+      };
+
+      // 3. Write workspace.json
+      const workspaceJsonPath = vscode.Uri.joinPath(vesperaPath, 'workspace.json');
+      this.logger?.debug('Writing workspace.json', { path: workspaceJsonPath.fsPath });
+      await fs.promises.writeFile(
+        workspaceJsonPath.fsPath,
+        JSON.stringify(metadata, null, 2),
+        'utf-8'
+      );
+
+      // 4. Initialize template directories
+      this.logger?.info('Initializing templates');
+      await this._templateInitializer.initializeTemplates(workspaceUri);
+
+      // 5. Send success response
+      this.logger?.info('Workspace initialized successfully', {
+        id: workspaceId,
+        name: workspaceName,
+        contextTypes: payload.contextTypes
+      });
 
       if (this._view) {
         this._view.webview.postMessage({
           type: 'response',
           id: messageId,
-          success: false,
-          error: 'Workspace initialization not yet implemented'
+          success: true,
+          result: {
+            workspaceId,
+            workspaceName,
+            vesperaPath: vesperaPath.fsPath
+          }
         });
+
+        // 6. Refresh Navigator to show initialized state
+        await this.sendInitialState();
       }
     } catch (error) {
       this.logger?.error('Error initializing workspace', error);
