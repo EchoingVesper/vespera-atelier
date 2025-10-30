@@ -13,7 +13,7 @@
  */
 import * as vscode from 'vscode';
 // import * as path from 'path'; // Unused - may be needed for future path operations
-import JSON5 from 'json5';
+import * as JSON5 from 'json5';
 import { VesperaLogger } from '../core/logging/VesperaLogger';
 import { DEFAULT_TEMPLATES, type TemplateDefinition } from './templates';
 
