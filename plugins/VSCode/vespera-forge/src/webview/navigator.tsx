@@ -48,24 +48,34 @@ function NavigatorApp() {
   const [workspaceState, setWorkspaceState] = useState<WorkspaceState>('checking');
 
   // Context state (contexts are what users select to organize their work)
-  // TODO: Load contexts from backend when workspace is initialized
   const [contexts, setContexts] = useState<IContext[]>([]);
   const [activeContext, setActiveContext] = useState<IContext | null>(null);
   const [contextsLoading] = useState(false);
+
+  // Track if we've done initial context auto-selection
+  const hasAutoSelectedContext = React.useRef(false);
 
   // Filter codices by active context
   // Phase 17: No project filtering needed - workspace is the project
   const filteredCodices = React.useMemo(() => {
     if (!activeContext) {
       // No context selected - show all codices
+      console.log('[Navigator] No active context, showing all', codices.length, 'codices');
       return codices;
     }
 
     // Filter by active context
-    return codices.filter(codex => {
+    const filtered = codices.filter(codex => {
       const codexContextId = (codex.metadata as any).context_id || (codex.metadata as any).contextId;
-      return codexContextId === activeContext.id;
+      const matches = codexContextId === activeContext.id;
+      if (!matches) {
+        console.log(`[Navigator] Codex ${codex.id} filtered out: contextId=${codexContextId} vs activeContext=${activeContext.id}`);
+      }
+      return matches;
     });
+
+    console.log(`[Navigator] Filtered ${filtered.length} of ${codices.length} codices for context ${activeContext.name}`);
+    return filtered;
   }, [codices, activeContext]);
 
   // Listen for messages from the extension
@@ -82,15 +92,23 @@ function NavigatorApp() {
 
         case 'initialState':
           console.log('[Navigator] Received initialState:', message.payload);
-          setCodices(message.payload.codices || []);
+
+          const receivedCodexes = message.payload.codices || [];
+          // Debug: Log first codex metadata to see contextId
+          if (receivedCodexes.length > 0) {
+            console.log('[Navigator] First codex metadata:', receivedCodexes[0].metadata);
+          }
+
+          setCodices(receivedCodexes);
           setTemplates(message.payload.templates || []);
 
           const loadedContexts = message.payload.contexts || [];
           setContexts(loadedContexts);
 
-          // Auto-select first context if none selected yet
-          if (loadedContexts.length > 0 && !activeContext) {
+          // Auto-select first context ONLY on initial load (not on refresh)
+          if (loadedContexts.length > 0 && !hasAutoSelectedContext.current) {
             setActiveContext(loadedContexts[0]);
+            hasAutoSelectedContext.current = true;
             console.log('[Navigator] Auto-selected first context:', loadedContexts[0].name);
           }
 
