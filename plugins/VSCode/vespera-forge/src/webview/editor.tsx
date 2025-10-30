@@ -115,10 +115,11 @@ function EditorApp() {
             console.log('[Editor] Save response received, updating codex with backend data');
             const updatedData = message.result;
 
-            // Transform backend response to UI format (matching setActiveCodex structure)
+            // Update active codex with backend response
             setActiveCodex(prevCodex => {
-              if (!prevCodex) return prevCodex;
+              if (!prevCodex) return undefined;
 
+              // Create new codex object maintaining all required fields
               return {
                 ...prevCodex,
                 name: updatedData.title,  // ✅ Sync name from backend's title field
@@ -128,7 +129,7 @@ function EditorApp() {
                   updated_at: updatedData.updated_at
                 },
                 content: updatedData.content || prevCodex.content
-              };
+              } as Codex;
             });
 
             console.log('[Editor] Codex updated with new title:', updatedData.title);
