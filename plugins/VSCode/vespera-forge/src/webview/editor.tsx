@@ -121,8 +121,13 @@ function EditorApp() {
 
   const handleCodexUpdate = useCallback(async (codex: Codex) => {
     setActiveCodex(codex);
+
+    // Generate message ID for tracking response
+    const messageId = `codex-update-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
     adapter.sendMessage({
       type: 'codex.update',
+      id: messageId,
       payload: codex
     });
   }, []);
