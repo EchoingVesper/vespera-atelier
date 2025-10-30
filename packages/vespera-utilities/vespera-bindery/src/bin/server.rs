@@ -812,12 +812,12 @@ async fn handle_update_codex(state: &AppState, params: &Option<Value>) -> Result
         .and_then(|v| v.as_str())
         .ok_or("Missing codex_id parameter")?;
 
-    let mut codices = state.codices.write().await;
-
-    // Get existing codex or return error
-    let mut codex = codices.get(codex_id)
-        .ok_or("Codex not found")?
-        .clone();
+    // Phase 17: Load from database (not in-memory HashMap)
+    let mut codex = match state.database.get_codex(codex_id).await {
+        Ok(Some(c)) => c,
+        Ok(None) => return Err("Codex not found".to_string()),
+        Err(e) => return Err(format!("Failed to get codex from database: {}", e)),
+    };
 
     // Update fields if provided
     if let Some(params_obj) = params.as_ref().and_then(|p| p.as_object()) {
@@ -853,8 +853,10 @@ async fn handle_update_codex(state: &AppState, params: &Option<Value>) -> Result
         codex_obj.insert("updated_at".to_string(), json!(now));
     }
 
-    // Store updated codex
-    codices.insert(codex_id.to_string(), codex.clone());
+    // Phase 17: Save to database (not in-memory HashMap)
+    state.database.update_codex(codex_id, &codex)
+        .await
+        .map_err(|e| format!("Failed to update codex in database: {}", e))?;
 
     Ok(codex)
 }

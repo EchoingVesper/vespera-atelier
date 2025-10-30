@@ -1967,6 +1967,57 @@ impl Database {
         }
     }
 
+    /// Update a codex
+    #[instrument(skip(self, codex), fields(codex_id = %id))]
+    pub async fn update_codex(&self, id: &str, codex: &serde_json::Value) -> Result<()> {
+        let now = Utc::now().to_rfc3339();
+
+        // Extract fields from the codex object
+        let title = codex.get("title")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Untitled");
+
+        let template_id = codex.get("template_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("default");
+
+        let content = codex.get("content")
+            .cloned()
+            .unwrap_or(serde_json::json!({"fields": {}}));
+
+        let metadata = codex.get("metadata")
+            .cloned()
+            .unwrap_or(serde_json::json!({}));
+
+        let content_str = serde_json::to_string(&content)?;
+        let metadata_str = serde_json::to_string(&metadata)?;
+
+        // Extract project_id from metadata for the separate column
+        let project_id = metadata.get("project_id")
+            .and_then(|v| v.as_str());
+
+        sqlx::query(
+            r#"
+            UPDATE codices
+            SET title = ?, template_id = ?, content = ?, metadata = ?, updated_at = ?, project_id = ?
+            WHERE id = ?
+            "#,
+        )
+        .bind(title)
+        .bind(template_id)
+        .bind(&content_str)
+        .bind(&metadata_str)
+        .bind(&now)
+        .bind(project_id)
+        .bind(id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to update codex: {}", e))?;
+
+        info!(codex_id = %id, title = %title, "Updated codex in database");
+        Ok(())
+    }
+
     /// List all codices (with project_id for filtering)
     #[instrument(skip(self))]
     pub async fn list_codices(&self) -> Result<Vec<serde_json::Value>> {
