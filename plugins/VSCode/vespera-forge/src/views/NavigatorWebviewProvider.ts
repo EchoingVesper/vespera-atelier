@@ -283,12 +283,22 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
       const workspaceId = discoveryResult.metadata?.id || 'unknown';
 
       // Create IContext objects from context types
+      // CRITICAL: Use deterministic IDs (workspace + type) so they're stable across reloads
       const contexts = contextTypes.map((typeId: string) => {
         const typeDef = DEFAULT_CONTEXT_TYPES.find(t => t.id === typeId);
         const now = new Date();
 
+        // Generate deterministic context ID from workspace ID + type
+        // This ensures the same context has the same ID across reloads
+        const deterministicId = crypto
+          .createHash('sha256')
+          .update(`${workspaceId}-${typeId}`)
+          .digest('hex')
+          .substring(0, 32);
+        const contextId = `ctx-${deterministicId}`;
+
         return {
-          id: `ctx-${crypto.randomUUID()}`,
+          id: contextId,
           name: typeDef?.name || typeId,
           project_id: workspaceId, // Phase 17: workspace ID is the project ID
           type: typeId,
