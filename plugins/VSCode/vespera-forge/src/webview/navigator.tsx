@@ -34,9 +34,6 @@ declare global {
 // Create platform adapter once (outside component to avoid re-acquiring VS Code API)
 const adapter = new VSCodeAdapter();
 
-// Use the adapter's existing VS Code API instance (already acquired in adapter constructor)
-const vscodeApi = adapter.api;
-
 /**
  * Navigator App Component
  * Phase 17 Part 2 - Workspace-based architecture
@@ -51,9 +48,10 @@ function NavigatorApp() {
   const [workspaceState, setWorkspaceState] = useState<WorkspaceState>('checking');
 
   // Context state (contexts are what users select to organize their work)
-  const [contexts, setContexts] = useState<IContext[]>([]);
+  // TODO: Load contexts from backend when workspace is initialized
+  const [contexts] = useState<IContext[]>([]);
   const [activeContext, setActiveContext] = useState<IContext | null>(null);
-  const [contextsLoading, setContextsLoading] = useState(false);
+  const [contextsLoading] = useState(false);
 
   // Filter codices by active context
   // Phase 17: No project filtering needed - workspace is the project

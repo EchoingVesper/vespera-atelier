@@ -9,8 +9,6 @@ import { AIAssistantWebviewProvider } from './ai-assistant';
 import { ChatChannelListProvider } from './ChatChannelListProvider';
 import { WelcomeViewProvider } from './WelcomeViewProvider';
 import { getBinderyService } from '../services/bindery';
-import { ProjectService } from '../services/ProjectService';
-import { ContextService } from '../services/ContextService';
 
 // Export view providers
 export { NavigatorWebviewProvider } from './NavigatorWebviewProvider';
@@ -38,25 +36,15 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
   // Get the global Bindery service instance
   const binderyService = getBinderyService();
 
-  // Phase 17: Initialize ProjectService (database-backed, no workspace URI needed)
-  // The new ProjectService uses Bindery backend instead of filesystem
-  let projectService: ProjectService | undefined;
-  let contextService: ContextService | undefined;
+  // Phase 17 Part 2: No ProjectService needed - workspace is the project
+  // ContextService may still be used for context management (TODO: implement)
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
   if (workspaceFolder) {
-    projectService = ProjectService.getInstance({ binderyService });
-    // Initialize asynchronously (non-blocking)
-    projectService.initialize().catch(err => {
-      console.error('[Vespera] Failed to initialize ProjectService:', err);
-    });
-
-    // Phase 17 Task F2: Initialize ContextService with ProjectService for validation
-    contextService = ContextService.getInstance(workspaceFolder.uri, { projectService });
-    contextService.initialize().catch(err => {
-      console.error('[Vespera] Failed to initialize ContextService:', err);
-    });
+    // TODO: Initialize ContextService when context management is implemented
+    // For now, context selection is UI-only (frontend filtering)
+    console.log('[Vespera] Workspace folder detected:', workspaceFolder.uri.fsPath);
   } else {
-    console.warn('[Vespera] No workspace folder open, ProjectService and ContextService not initialized');
+    console.warn('[Vespera] No workspace folder open - Navigator will prompt to open one');
   }
 
   // Create welcome view provider
@@ -72,7 +60,7 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
   (global as any).vesperaChatChannelProvider = chatChannelProvider;
 
   // Create navigator provider with callback to open editor when codex is selected
-  // Phase 16b: Pass ProjectService to navigator
+  // Phase 17 Part 2: No ProjectService needed - workspace-based architecture
   const navigatorProvider = new NavigatorWebviewProvider(
     context,
     binderyService,
@@ -80,10 +68,8 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
     (codexId: string) => {
       // When a codex is selected in navigator, open the editor panel
       EditorPanelProvider.createOrShow(context, binderyService, undefined, codexId);
-      // Optionally notify AI assistant about the selected codex
       console.log('[Vespera] Codex selected:', codexId);
-    },
-    projectService // Phase 16b: Project service for project management
+    }
   );
 
   // Register the welcome tree view provider in the vespera-forge sidebar

@@ -6,7 +6,6 @@
 import * as vscode from 'vscode';
 import { VesperaLogger } from '../core/logging/VesperaLogger';
 import { BinderyService } from '../services/bindery';
-import { ProjectService } from '../services/ProjectService';
 import { BinderyConnectionStatus, BinderyConnectionInfo } from '../types/bindery';
 import { TemplateInitializer } from '../services/template-initializer';
 
@@ -17,44 +16,15 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
   private _disposables: vscode.Disposable[] = [];
   private _sessionId: string;
   private _templateInitializer: TemplateInitializer;
-  private _projectService?: ProjectService;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly binderyService: BinderyService,
     private readonly logger?: VesperaLogger,
-    private readonly onCodexSelected?: (codexId: string) => void,
-    projectService?: ProjectService
+    private readonly onCodexSelected?: (codexId: string) => void
   ) {
     this._sessionId = `vespera_navigator_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     this._templateInitializer = new TemplateInitializer(logger);
-    this._projectService = projectService;
-  }
-
-  /**
-   * Get workspace ID for current workspace
-   *
-   * Phase 17 Cluster D - Temporary implementation
-   * TODO (Cluster F - Task F1): Replace with proper workspace ID from Bindery backend
-   * For now, derives ID from workspace folder path using simple hashing
-   */
-  private getWorkspaceId(): string {
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-    if (!workspaceFolder) {
-      // Return a default workspace ID if no folder is open
-      return 'default-workspace';
-    }
-
-    // Simple hash of workspace path to create consistent ID
-    // This will be replaced with proper UUID from Bindery in Cluster F
-    const path = workspaceFolder.uri.fsPath;
-    let hash = 0;
-    for (let i = 0; i < path.length; i++) {
-      const char = path.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-    return `ws-${Math.abs(hash).toString(36)}`;
   }
 
   public async resolveWebviewView(
@@ -194,30 +164,22 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
         }
         break;
 
-      // Phase 16b Stage 1: Project management messages
-      case 'project:list':
-        await this.handleProjectList(message.id);
+      // Phase 17: Workspace initialization
+      case 'workspace:initialize':
+        await this.handleWorkspaceInitialize(message.id, message.payload);
         break;
 
-      case 'project:get':
-        await this.handleProjectGet(message.id, message.payload);
+      // Phase 17: Context management
+      case 'context:setActive':
+        await this.handleContextSetActive(message.id, message.payload);
         break;
 
-      case 'project:setActive':
-        await this.handleProjectSetActive(message.id, message.payload);
+      case 'context:create':
+        await this.handleContextCreate(message.id, message.payload);
         break;
 
-      case 'project:create':
-        await this.handleProjectCreate(message.id, message.payload);
-        break;
-
-      case 'project:delete':
-        await this.handleProjectDelete(message.id, message.payload);
-        break;
-
-      case 'project:createWizard':
-        // Phase 16b Stage 2: Launch project creation wizard
-        await this.handleProjectCreateWizard();
+      case 'context:delete':
+        await this.handleContextDelete(message.id, message.payload);
         break;
 
       default:
@@ -284,19 +246,34 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
     if (!this._view) return;
 
     try {
-      // Check if workspace folder is open
-      const connectionInfo = this.binderyService.getConnectionInfo();
-      if (connectionInfo.status === BinderyConnectionStatus.NoWorkspace) {
-        this.logger?.info('No workspace folder open, prompting user');
+      // Phase 17: Check workspace state using WorkspaceDiscovery
+      const { findWorkspaceVespera } = await import('../services/WorkspaceDiscovery');
+      const discoveryResult = await findWorkspaceVespera();
+
+      // Determine workspace state
+      let workspaceState: 'no-folder' | 'no-vespera' | 'initialized';
+
+      if (!discoveryResult.found) {
+        // Check if it's because no folder is open vs .vespera/ doesn't exist
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders || workspaceFolders.length === 0) {
+          workspaceState = 'no-folder';
+        } else {
+          workspaceState = 'no-vespera';
+        }
+
+        // Send workspace state to frontend
+        this.logger?.info('Workspace not initialized, sending state:', { workspaceState });
         this._view.webview.postMessage({
-          type: 'noWorkspace',
-          payload: {
-            message: connectionInfo.last_error || 'Please open a folder to use Vespera Forge',
-            action: 'openFolder'
-          }
+          type: 'workspaceState',
+          payload: { state: workspaceState }
         });
         return;
       }
+
+      // Workspace is initialized (.vespera/ exists)
+      workspaceState = 'initialized';
+      this.logger?.info('Workspace initialized:', { name: discoveryResult.metadata?.name });
 
       // Wait for connection to be ready (with 5 second timeout)
       const connected = await this.waitForConnection(5000);
@@ -529,231 +506,119 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
   }
 
   /**
-   * Phase 16b Stage 1: Project message handlers
+   * Phase 17 Part 2: Workspace and Context message handlers
    */
 
-  private async handleProjectCreateWizard(): Promise<void> {
-    this.logger?.info('Launching project creation wizard...');
+  private async handleWorkspaceInitialize(messageId: string, _payload: any): Promise<void> {
+    this.logger?.info('Initializing workspace with context types');
 
     try {
-      // Execute the wizard command
-      // The wizard command will handle the entire flow and create the project
-      await vscode.commands.executeCommand('vespera-forge.createProjectWizard');
+      // TODO: Implement workspace initialization
+      // 1. Create .vespera/ directory structure
+      // 2. Create workspace.json with metadata
+      // 3. Create context configurations for selected types
+      // 4. Initialize template directories
+      // 5. Refresh Navigator to show initialized state
 
-      // After wizard completes, refresh the projects list in the webview
-      // The wizard will have already set the active project
-      if (this._view && this._projectService) {
-        const activeProject = this._projectService.getActiveProject();
+      this.logger?.warn('Workspace initialization not yet implemented');
 
-        // Notify webview that projects changed
-        this._view.webview.postMessage({
-          type: 'project:projectsChanged',
-          payload: {}
-        });
-
-        // Update active project in webview
-        if (activeProject) {
-          this._view.webview.postMessage({
-            type: 'project:activeChanged',
-            payload: { project: activeProject }
-          });
-        }
-
-        this.logger?.info('Project creation wizard completed, projects refreshed');
-      }
-    } catch (error) {
-      this.logger?.error('Error launching project creation wizard', error);
-    }
-  }
-
-  private async handleProjectList(messageId?: string): Promise<void> {
-    if (!this._projectService) {
-      this.logger?.warn('ProjectService not available');
-      if (this._view && messageId) {
-        this._view.webview.postMessage({
-          type: 'project:error',
-          id: messageId,
-          payload: { error: 'Project service not available' }
-        });
-      }
-      return;
-    }
-
-    try {
-      // Phase 17 Task D5: listProjects now requires workspace ID
-      const workspaceId = this.getWorkspaceId();
-      const projectList = await this._projectService.listProjects(workspaceId);
       if (this._view) {
         this._view.webview.postMessage({
-          type: 'project:list:response',
+          type: 'response',
           id: messageId,
-          payload: { projects: projectList }
+          success: false,
+          error: 'Workspace initialization not yet implemented'
         });
       }
     } catch (error) {
-      this.logger?.error('Error listing projects', error);
-      if (this._view && messageId) {
+      this.logger?.error('Error initializing workspace', error);
+      if (this._view) {
         this._view.webview.postMessage({
-          type: 'project:error',
+          type: 'response',
           id: messageId,
-          payload: { error: error instanceof Error ? error.message : 'Failed to list projects' }
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to initialize workspace'
         });
       }
     }
   }
 
-  private async handleProjectGet(messageId: string, payload: any): Promise<void> {
-    if (!this._projectService) {
-      if (this._view) {
-        this._view.webview.postMessage({
-          type: 'project:error',
-          id: messageId,
-          payload: { error: 'Project service not available' }
-        });
-      }
-      return;
+  private async handleContextSetActive(messageId: string, payload: any): Promise<void> {
+    this.logger?.debug('Setting active context:', { contextId: payload.contextId });
+
+    // TODO: Implement context activation
+    // For now, this is just for frontend filtering - no backend state needed yet
+
+    if (this._view) {
+      this._view.webview.postMessage({
+        type: 'response',
+        id: messageId,
+        success: true
+      });
     }
+  }
+
+  private async handleContextCreate(messageId: string, _payload: any): Promise<void> {
+    this.logger?.info('Creating new context');
 
     try {
-      const project = await this._projectService.getProject(payload.projectId);
+      // TODO: Implement context creation
+      // 1. Show context creation dialog
+      // 2. Add context to workspace.json
+      // 3. Create context-specific templates
+      // 4. Refresh Navigator
+
+      this.logger?.warn('Context creation not yet implemented');
+
       if (this._view) {
         this._view.webview.postMessage({
-          type: 'project:get:response',
+          type: 'response',
           id: messageId,
-          payload: { project: project || null }
+          success: false,
+          error: 'Context creation not yet implemented'
         });
       }
     } catch (error) {
-      this.logger?.error('Error getting project', error);
+      this.logger?.error('Error creating context', error);
       if (this._view) {
         this._view.webview.postMessage({
-          type: 'project:error',
+          type: 'response',
           id: messageId,
-          payload: { error: error instanceof Error ? error.message : 'Failed to get project' }
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to create context'
         });
       }
     }
   }
 
-  private async handleProjectSetActive(messageId: string, payload: any): Promise<void> {
-    if (!this._projectService) {
-      if (this._view) {
-        this._view.webview.postMessage({
-          type: 'project:error',
-          id: messageId,
-          payload: { error: 'Project service not available' }
-        });
-      }
-      return;
-    }
+  private async handleContextDelete(messageId: string, payload: any): Promise<void> {
+    this.logger?.info('Deleting context:', { contextId: payload.contextId });
 
     try {
-      const projectId = payload.projectId;
-      if (projectId) {
-        await this._projectService.setActiveProject(projectId);
-        const project = await this._projectService.getProject(projectId);
-        // Notify webview of active project change
-        if (this._view) {
-          this._view.webview.postMessage({
-            type: 'project:activeChanged',
-            payload: { project }
-          });
-        }
-      } else {
-        // Clear active project (Phase 17: new ProjectService uses null instead of separate clear method)
-        this._projectService.setActiveProject(null);
-        if (this._view) {
-          this._view.webview.postMessage({
-            type: 'project:activeChanged',
-            payload: { project: null }
-          });
-        }
-      }
-    } catch (error) {
-      this.logger?.error('Error setting active project', error);
+      // TODO: Implement context deletion
+      // 1. Confirm with user
+      // 2. Remove from workspace.json
+      // 3. Optionally archive codices
+      // 4. Refresh Navigator
+
+      this.logger?.warn('Context deletion not yet implemented');
+
       if (this._view) {
         this._view.webview.postMessage({
-          type: 'project:error',
+          type: 'response',
           id: messageId,
-          payload: { error: error instanceof Error ? error.message : 'Failed to set active project' }
-        });
-      }
-    }
-  }
-
-  private async handleProjectCreate(messageId: string, payload: any): Promise<void> {
-    if (!this._projectService) {
-      if (this._view) {
-        this._view.webview.postMessage({
-          type: 'project:error',
-          id: messageId,
-          payload: { error: 'Project service not available' }
-        });
-      }
-      return;
-    }
-
-    try {
-      const project = await this._projectService.createProject(payload);
-      if (this._view) {
-        this._view.webview.postMessage({
-          type: 'project:created',
-          id: messageId,
-          payload: { project }
-        });
-
-        // Notify that projects list changed
-        this._view.webview.postMessage({
-          type: 'project:projectsChanged',
-          payload: {}
+          success: false,
+          error: 'Context deletion not yet implemented'
         });
       }
     } catch (error) {
-      this.logger?.error('Error creating project', error);
+      this.logger?.error('Error deleting context', error);
       if (this._view) {
         this._view.webview.postMessage({
-          type: 'project:error',
+          type: 'response',
           id: messageId,
-          payload: { error: error instanceof Error ? error.message : 'Failed to create project' }
-        });
-      }
-    }
-  }
-
-  private async handleProjectDelete(messageId: string, payload: any): Promise<void> {
-    if (!this._projectService) {
-      if (this._view) {
-        this._view.webview.postMessage({
-          type: 'project:error',
-          id: messageId,
-          payload: { error: 'Project service not available' }
-        });
-      }
-      return;
-    }
-
-    try {
-      const success = await this._projectService.deleteProject(payload.projectId);
-      if (this._view) {
-        this._view.webview.postMessage({
-          type: 'project:deleted',
-          id: messageId,
-          payload: { success }
-        });
-
-        // Notify that projects list changed
-        this._view.webview.postMessage({
-          type: 'project:projectsChanged',
-          payload: {}
-        });
-      }
-    } catch (error) {
-      this.logger?.error('Error deleting project', error);
-      if (this._view) {
-        this._view.webview.postMessage({
-          type: 'project:error',
-          id: messageId,
-          payload: { error: error instanceof Error ? error.message : 'Failed to delete project' }
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to delete context'
         });
       }
     }
