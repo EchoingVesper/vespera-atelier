@@ -97,7 +97,7 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
         id: codex.id,
         name: codex.name,
         templateId: codex.templateId,
-        contentFields: codex.content?.fields ? Object.keys(codex.content.fields) : []
+        contentFields: codex.content?.['fields'] ? Object.keys(codex.content['fields']) : []
       });
       console.log('[CodexEditor] Form data to save:', formData);
 

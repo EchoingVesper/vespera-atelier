@@ -387,8 +387,8 @@ export class EditorPanelProvider {
       const result = await this.binderyService.updateCodex(payload.id, binderyPayload);
       console.log('[EditorPanelProvider] Bindery response:', {
         success: result.success,
-        error: result.error,
-        data: result.data
+        error: result.success ? undefined : result.error,
+        data: result.success ? result.data : undefined
       });
 
       if (result.success) {
