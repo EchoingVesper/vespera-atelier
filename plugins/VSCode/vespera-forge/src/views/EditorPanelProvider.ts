@@ -171,11 +171,21 @@ export class EditorPanelProvider {
           id: data.id,
           title: data.title,
           template_id: data.template_id,
+          project_id: data.project_id,  // DEBUG: Check if backend returns this
           hasContent: !!data.content,
-          hasMetadata: !!data.metadata
+          hasMetadata: !!data.metadata,
+          metadata: data.metadata  // DEBUG: Check metadata structure
         });
 
         // Transform to UI format (same as Navigator)
+        // CRITICAL: projectId must be in metadata for updates to work
+        const projectId = data.project_id || data.metadata?.projectId || data.metadata?.project_id;
+
+        console.log('[EditorPanelProvider] ⚠️ projectId for codex:', projectId);
+        if (!projectId) {
+          console.error('[EditorPanelProvider] ❌ WARNING: No project_id found! Updates will fail!');
+        }
+
         const codex = {
           id: data.id,
           name: data.title,
@@ -186,7 +196,7 @@ export class EditorPanelProvider {
             template_id: data.template_id,
             created_at: data.created_at,
             updated_at: data.updated_at,
-            projectId: data.project_id || data.metadata?.projectId,
+            projectId: projectId,  // ✅ Include in metadata so it's preserved during saves
             tags: data.tags || [],
             references: data.references || []
           },
