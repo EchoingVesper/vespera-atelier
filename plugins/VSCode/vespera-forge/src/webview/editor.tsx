@@ -109,6 +109,31 @@ function EditorApp() {
             }
           }
           break;
+        case 'response':
+          // Handle successful save response - update codex with backend data
+          if (message.success && message.result) {
+            console.log('[Editor] Save response received, updating codex with backend data');
+            const updatedData = message.result;
+
+            // Transform backend response to UI format (matching setActiveCodex structure)
+            setActiveCodex(prevCodex => {
+              if (!prevCodex) return prevCodex;
+
+              return {
+                ...prevCodex,
+                name: updatedData.title,  // ✅ Sync name from backend's title field
+                metadata: {
+                  ...prevCodex.metadata,
+                  title: updatedData.title,
+                  updated_at: updatedData.updated_at
+                },
+                content: updatedData.content || prevCodex.content
+              };
+            });
+
+            console.log('[Editor] Codex updated with new title:', updatedData.title);
+          }
+          break;
         case 'error':
           console.error('[Editor] Error from extension:', message.error);
           break;
