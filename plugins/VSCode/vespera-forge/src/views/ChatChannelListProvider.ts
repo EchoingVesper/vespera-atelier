@@ -54,19 +54,9 @@ export class ChatChannelListProvider implements vscode.TreeDataProvider<ChatChan
         return;
       }
 
-      const codexIds = listResult.data;
-      console.log('[ChatChannelList] Retrieved', codexIds.length, 'codex IDs');
-
-      // Fetch full codex objects for each ID
-      const codexPromises = codexIds.map(id => this.binderyService.getCodex(id));
-      const codexResults = await Promise.all(codexPromises);
-
-      // Extract successful results
-      const codices = codexResults
-        .filter((result): result is { success: true; data: any } => result.success)
-        .map(result => result.data);
-
-      console.log('[ChatChannelList] Fetched', codices.length, 'full codex objects');
+      // Phase 17: list_codices now returns full codex objects, not just IDs
+      const codices = listResult.data;
+      console.log('[ChatChannelList] Retrieved', codices.length, 'full codex objects');
 
       // DEBUG: Log first codex structure
       if (codices.length > 0) {

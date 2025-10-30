@@ -377,13 +377,8 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
         return;
       }
 
-      const codexIds = listResult.data;
-      const codexPromises = codexIds.map(id => this._binderyService!.getCodex(id));
-      const codexResults = await Promise.all(codexPromises);
-
-      const codices = codexResults
-        .filter((result): result is { success: true; data: any } => result.success)
-        .map(result => result.data);
+      // Phase 17: list_codices now returns full codex objects, not just IDs
+      const codices = listResult.data;
 
       this._channels = codices
         .filter((codex: any) => {
