@@ -370,13 +370,23 @@ export class EditorPanelProvider {
 
     try {
       // Transform UI format to Bindery format
-      const binderyPayload = {
-        title: payload.name || payload.metadata?.title,
+      // Use the template's 'title' field value as the codex title if available
+      // This syncs the "Character Name" (or similar) field to the codex's display name
+      const titleFieldValue = payload.content?.fields?.title;
+      const codexTitle = titleFieldValue || payload.name || payload.metadata?.title || 'Untitled';
+
+      const binderyPayload: any = {
+        title: codexTitle,
         content: payload.content,
         template_id: payload.templateId || payload.metadata?.template_id,
         tags: payload.metadata?.tags || [],
         references: payload.metadata?.references || []
       };
+
+      // Include project_id if available (required by backend)
+      if (payload.metadata?.projectId) {
+        binderyPayload.project_id = payload.metadata.projectId;
+      }
 
       console.log('[EditorPanelProvider] Sending to Bindery:', {
         codexId: payload.id,
