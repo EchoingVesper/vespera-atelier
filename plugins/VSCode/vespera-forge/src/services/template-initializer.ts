@@ -40,6 +40,7 @@ export class TemplateInitializer {
       // Create all expected subdirectories upfront to prevent ENOENT errors
       const requiredDirectories = [
         'templates',
+        'templates/codex',     // Codex content templates (note, scene, etc.)
         'templates/providers',
         'templates/chat',
         'templates/agents',
@@ -158,8 +159,8 @@ export class TemplateInitializer {
       const templatesDir = vscode.Uri.joinPath(workspaceUri, '.vespera', 'templates');
       const templates: Array<{ id: string; name: string; description: string; icon?: string }> = [];
 
-      // Search all subdirectories: providers, chat, agents
-      const subdirs = ['providers', 'chat', 'agents'];
+      // Search all subdirectories: codex, providers, chat, agents
+      const subdirs = ['codex', 'providers', 'chat', 'agents'];
 
       for (const subdir of subdirs) {
         const subdirUri = vscode.Uri.joinPath(templatesDir, subdir);
@@ -215,8 +216,8 @@ export class TemplateInitializer {
       const templatesDir = vscode.Uri.joinPath(workspaceUri, '.vespera', 'templates');
       const templates: any[] = [];
 
-      // Search all subdirectories: providers, chat, agents
-      const subdirs = ['providers', 'chat', 'agents'];
+      // Search all subdirectories: codex, providers, chat, agents
+      const subdirs = ['codex', 'providers', 'chat', 'agents'];
 
       for (const subdir of subdirs) {
         const subdirUri = vscode.Uri.joinPath(templatesDir, subdir);

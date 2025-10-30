@@ -13,6 +13,13 @@ import { ORCHESTRATOR_AGENT_PROMPT } from './prompts/orchestrator-agent.prompt';
 import { CODE_WRITER_SPECIALIST_PROMPT } from './prompts/code-writer-specialist.prompt';
 import { DOCS_WRITER_SPECIALIST_PROMPT } from './prompts/docs-writer-specialist.prompt';
 
+// Codex content templates
+import { NOTE_TEMPLATE } from './codex/note.template';
+import { SCENE_TEMPLATE } from './codex/scene.template';
+import { CHARACTER_TEMPLATE } from './codex/character.template';
+import { LOCATION_TEMPLATE } from './codex/location.template';
+import { TASK_TEMPLATE } from './codex/task.template';
+
 // Re-export for external consumers
 export {
   LLM_PROVIDER_TEMPLATE,
@@ -22,7 +29,12 @@ export {
   DEFAULT_ASSISTANT_PROMPT,
   ORCHESTRATOR_AGENT_PROMPT,
   CODE_WRITER_SPECIALIST_PROMPT,
-  DOCS_WRITER_SPECIALIST_PROMPT
+  DOCS_WRITER_SPECIALIST_PROMPT,
+  NOTE_TEMPLATE,
+  SCENE_TEMPLATE,
+  CHARACTER_TEMPLATE,
+  LOCATION_TEMPLATE,
+  TASK_TEMPLATE
 };
 
 /**
@@ -35,6 +47,33 @@ export interface TemplateDefinition {
 }
 
 export const DEFAULT_TEMPLATES: TemplateDefinition[] = [
+  // Codex content templates
+  {
+    filename: 'note.json5',
+    content: NOTE_TEMPLATE,
+    subdirectory: 'templates/codex'
+  },
+  {
+    filename: 'scene.json5',
+    content: SCENE_TEMPLATE,
+    subdirectory: 'templates/codex'
+  },
+  {
+    filename: 'character.json5',
+    content: CHARACTER_TEMPLATE,
+    subdirectory: 'templates/codex'
+  },
+  {
+    filename: 'location.json5',
+    content: LOCATION_TEMPLATE,
+    subdirectory: 'templates/codex'
+  },
+  {
+    filename: 'task.json5',
+    content: TASK_TEMPLATE,
+    subdirectory: 'templates/codex'
+  },
+
   // Provider templates
   {
     filename: 'llm-provider.json5',

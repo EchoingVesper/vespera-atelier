@@ -410,7 +410,6 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
         templates = [
           { id: 'note', name: 'Note', description: 'Simple note or document', icon: '📝' },
           { id: 'task', name: 'Task', description: 'Task or todo item', icon: '✓' },
-          { id: 'project', name: 'Project', description: 'Project container', icon: '📁' },
           { id: 'character', name: 'Character', description: 'Character profile', icon: '👤' },
           { id: 'scene', name: 'Scene', description: 'Scene or chapter', icon: '🎬' },
           { id: 'location', name: 'Location', description: 'Place or setting', icon: '🗺️' }
