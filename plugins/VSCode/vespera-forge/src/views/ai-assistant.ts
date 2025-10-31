@@ -403,6 +403,16 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
 
       console.log('[AIAssistant] Loaded', this._channels.length, 'channels:', this._channels);
       this.sendChannelsToWebview();
+
+      // Restore previously selected channel if any
+      const selectedChannelId = this._context.workspaceState.get<string>('vespera.aiAssistant.selectedChannelId');
+      if (selectedChannelId) {
+        const channel = this._channels.find(ch => ch.id === selectedChannelId);
+        if (channel) {
+          console.log('[AIAssistant] Restoring previously selected channel:', channel.title);
+          await this.switchChannel(channel);
+        }
+      }
     } catch (error) {
       console.error('[AIAssistant] Failed to load channels:', error);
       this._channels = [];
@@ -557,6 +567,10 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
   public async switchChannel(channel: any): Promise<void> {
     this._activeChannel = channel;
     console.log('[AIAssistant] Switched to channel:', channel.title);
+
+    // Persist selected channel ID to workspace state
+    await this._context.workspaceState.update('vespera.aiAssistant.selectedChannelId', channel.id);
+    console.log('[AIAssistant] Persisted selected channel ID to workspace state:', channel.id);
 
     // Clear current chat history UI
     this.sendMessageToWebview({

@@ -122,6 +122,12 @@ function NavigatorApp() {
           setSelectedCodexId(message.payload.id);
           break;
 
+        case 'restoreSelection':
+          console.log('[Navigator] Restoring selection:', message.payload.codexId);
+          // Restore previously selected codex from workspace state
+          setSelectedCodexId(message.payload.codexId);
+          break;
+
         case 'response':
           // Handle response from extension
           console.log('[Navigator] Received response:', message);

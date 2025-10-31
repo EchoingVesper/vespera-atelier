@@ -154,6 +154,9 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
         if (this.onCodexSelected) {
           this.onCodexSelected(message.payload.codexId);
         }
+        // Persist the selected codex ID to workspace state
+        await this.context.workspaceState.update('vespera.navigator.selectedCodexId', message.payload.codexId);
+        this.logger?.debug('Persisted selected codex ID to workspace state', { codexId: message.payload.codexId });
         // Also open the editor panel if not already open
         await vscode.commands.executeCommand('vespera-forge.openEditor');
         break;
@@ -437,6 +440,16 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
         type: 'initialState',
         payload: codexData
       });
+
+      // Restore previously selected codex if any
+      const selectedCodexId = this.context.workspaceState.get<string>('vespera.navigator.selectedCodexId');
+      if (selectedCodexId) {
+        this.logger?.debug('Restoring previously selected codex', { codexId: selectedCodexId });
+        this._view.webview.postMessage({
+          type: 'restoreSelection',
+          payload: { codexId: selectedCodexId }
+        });
+      }
     } catch (error) {
       this.logger?.error('Error loading initial state', error);
       this._view.webview.postMessage({

@@ -137,6 +137,9 @@ export function initializeViews(context: vscode.ExtensionContext): VesperaViewCo
 
   console.log('[Vespera] Codex Navigator framework initialized successfully');
 
+  // Restore Editor panel from workspace state if it was previously open
+  EditorPanelProvider.restoreFromWorkspaceState(context, binderyService);
+
   // Handle auto-opening views based on settings
   const config = vscode.workspace.getConfiguration('vesperaForge');
   const autoOpenNavigator = config.get<boolean>('views.autoOpenNavigator', false);

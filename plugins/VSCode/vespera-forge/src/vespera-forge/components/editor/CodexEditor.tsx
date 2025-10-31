@@ -409,7 +409,7 @@ export const CodexEditor: React.FC<CodexEditorProps> = ({
         </div>
 
         {/* Content */}
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           <div className="p-6">
             <div className="max-w-4xl mx-auto space-y-6">
               {template.fields.map(field => renderField(field))}

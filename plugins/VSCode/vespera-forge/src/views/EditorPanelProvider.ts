@@ -86,7 +86,31 @@ export class EditorPanelProvider {
       EditorPanelProvider.currentPanel._activeCodexId = codexId;
     }
 
+    // Persist panel open state
+    context.workspaceState.update('vespera.editor.panelOpen', true);
+    if (codexId) {
+      context.workspaceState.update('vespera.editor.activeCodexId', codexId);
+    }
+
     return EditorPanelProvider.currentPanel;
+  }
+
+  /**
+   * Restore Editor panel from workspace state if it was open
+   */
+  public static restoreFromWorkspaceState(
+    context: vscode.ExtensionContext,
+    binderyService: BinderyService,
+    logger?: VesperaLogger
+  ): void {
+    const panelWasOpen = context.workspaceState.get<boolean>('vespera.editor.panelOpen', false);
+    const activeCodexId = context.workspaceState.get<string>('vespera.editor.activeCodexId');
+
+    if (panelWasOpen && activeCodexId) {
+      logger?.info('Restoring Editor panel from workspace state', { codexId: activeCodexId });
+      // Restore the panel with the previously active codex
+      EditorPanelProvider.createOrShow(context, binderyService, logger, activeCodexId);
+    }
   }
 
   /**
@@ -148,6 +172,10 @@ export class EditorPanelProvider {
     console.log('[EditorPanelProvider] ========== setActiveCodex CALLED ==========');
     console.log('[EditorPanelProvider] Codex ID:', codexId);
     this._activeCodexId = codexId;
+
+    // Persist active codex ID to workspace state
+    await this.context.workspaceState.update('vespera.editor.activeCodexId', codexId);
+    this.logger?.debug('Persisted active codex ID to workspace state', { codexId });
 
     // Wait for Bindery connection to be ready
     const connected = await this.waitForConnection(5000);
@@ -492,6 +520,11 @@ export class EditorPanelProvider {
   public dispose(): void {
     this.logger?.info('Disposing Editor panel');
     EditorPanelProvider.currentPanel = undefined;
+
+    // Clear persisted panel state
+    this.context.workspaceState.update('vespera.editor.panelOpen', false);
+    this.context.workspaceState.update('vespera.editor.activeCodexId', undefined);
+    this.logger?.debug('Cleared editor panel state from workspace');
 
     // Remove all event listeners from Bindery service to prevent memory leaks
     this.binderyService.removeAllListeners('statusChanged');
