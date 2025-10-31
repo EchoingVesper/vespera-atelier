@@ -8,6 +8,7 @@ import { LLM_PROVIDER_TEMPLATE } from './providers/llm-provider.template';
 import { CLAUDE_CODE_CLI_PROVIDER_TEMPLATE } from './providers/claude-code-cli.template';
 import { OLLAMA_PROVIDER_TEMPLATE } from './providers/ollama.template';
 import { AI_CHAT_TEMPLATE } from './chat/ai-chat.template';
+import { MESSAGE_TEMPLATE } from './chat/message.template';
 import { TASK_ORCHESTRATOR_TEMPLATE } from './agents/task-orchestrator.template';
 import { TASK_CODE_WRITER_TEMPLATE } from './agents/task-code-writer.template';
 import { DEFAULT_ASSISTANT_PROMPT } from './prompts/default-assistant.prompt';
@@ -28,6 +29,7 @@ export {
   CLAUDE_CODE_CLI_PROVIDER_TEMPLATE,
   OLLAMA_PROVIDER_TEMPLATE,
   AI_CHAT_TEMPLATE,
+  MESSAGE_TEMPLATE,
   TASK_ORCHESTRATOR_TEMPLATE,
   TASK_CODE_WRITER_TEMPLATE,
   DEFAULT_ASSISTANT_PROMPT,
@@ -100,6 +102,11 @@ export const DEFAULT_TEMPLATES: TemplateDefinition[] = [
     filename: 'ai-chat.json5',
     content: AI_CHAT_TEMPLATE,
     subdirectory: 'templates/chat'
+  },
+  {
+    filename: 'message.json5',
+    content: MESSAGE_TEMPLATE,
+    subdirectory: 'templates/internal'
   },
 
   // Agent templates

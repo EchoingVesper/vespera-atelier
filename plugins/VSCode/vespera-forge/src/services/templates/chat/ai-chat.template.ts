@@ -19,12 +19,36 @@ export const AI_CHAT_TEMPLATE = `{
 
   // Template fields
   fields: {
+    provider_id: {
+      type: "text",
+      label: "Provider ID",
+      description: "ID of the selected LLM provider Codex",
+      required: false,
+      default: ""
+    },
+
+    model: {
+      type: "text",
+      label: "Model",
+      description: "Model to use with this provider (e.g., claude-sonnet-4, llama3.2:3b)",
+      required: false,
+      default: ""
+    },
+
+    system_prompt: {
+      type: "markdown",
+      label: "System Prompt",
+      description: "System prompt override for this channel",
+      required: false,
+      default: ""
+    },
+
     provider_ref: {
       type: "codex_reference",
-      label: "LLM Provider",
+      label: "LLM Provider (Legacy)",
       description: "Reference to LLM provider configuration",
-      required: true,
-      default: "codex://providers/default-claude-code",
+      required: false,
+      default: "",
       filter: {
         template_id: "llm-provider"
       }
@@ -32,10 +56,10 @@ export const AI_CHAT_TEMPLATE = `{
 
     system_prompt_ref: {
       type: "codex_reference",
-      label: "System Prompt",
+      label: "System Prompt Reference (Legacy)",
       description: "Reference to system prompt file (.md)",
       required: false,
-      default: "codex://prompts/default-assistant.md",
+      default: "",
       filter: {
         content_type: "text/markdown",
         tags: ["system-prompt"]

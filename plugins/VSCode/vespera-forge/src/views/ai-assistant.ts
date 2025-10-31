@@ -203,6 +203,16 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
         // Webview is now ready to receive messages - load channels
         await this.loadChannelsWhenReady();
         break;
+      case 'loadProviders':
+        await this.loadProviders();
+        break;
+      case 'updateChannelProvider':
+        await this.updateChannelProvider(
+          message.channelId,
+          message.providerId,
+          message.model
+        );
+        break;
     }
   }
 
@@ -397,7 +407,9 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
             type: isChat ? 'user-chat' : 'agent-task',
             status,
             lastActivity: codex.updated_at ? new Date(codex.updated_at) : undefined,
-            messageCount: this.getMessageCount(codex)
+            messageCount: this.getMessageCount(codex),
+            provider_id: codex.content?.provider_id || '',
+            model: codex.content?.model || ''
           } as ChatChannel;
         });
 
@@ -441,6 +453,123 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
       return Array.isArray(messages) ? messages.length : 0;
     } catch {
       return 0;
+    }
+  }
+
+  /**
+   * Load available providers from Bindery backend
+   */
+  private async loadProviders(): Promise<void> {
+    if (!this._binderyService) {
+      console.warn('[AIAssistant] Bindery service not available for loading providers');
+      return;
+    }
+
+    try {
+      console.log('[AIAssistant] Loading providers from Bindery...');
+      const result = await this._binderyService.sendRequest<any>('provider.list', {});
+
+      if (!result.success) {
+        console.warn('[AIAssistant] Failed to load providers:', result.error);
+        this.sendMessageToWebview({
+          command: 'updateProviderList',
+          providers: []
+        });
+        return;
+      }
+
+      if (!result.data) {
+        console.warn('[AIAssistant] No provider data returned');
+        this.sendMessageToWebview({
+          command: 'updateProviderList',
+          providers: []
+        });
+        return;
+      }
+
+      const providers = result.data.providers || [];
+      console.log('[AIAssistant] Loaded providers:', providers);
+
+      this.sendMessageToWebview({
+        command: 'updateProviderList',
+        providers: providers.map((p: any) => ({
+          id: p.codex_id,
+          name: p.display_name || p.provider_type,
+          type: p.provider_type
+        }))
+      });
+    } catch (error) {
+      console.error('[AIAssistant] Error loading providers:', error);
+      this.sendMessageToWebview({
+        command: 'updateProviderList',
+        providers: []
+      });
+    }
+  }
+
+  /**
+   * Update channel Codex with selected provider and model
+   */
+  private async updateChannelProvider(
+    channelId: string,
+    providerId: string,
+    model: string
+  ): Promise<void> {
+    if (!this._binderyService) {
+      console.warn('[AIAssistant] Bindery service not available for updating channel');
+      return;
+    }
+
+    try {
+      console.log('[AIAssistant] Updating channel provider:', { channelId, providerId, model });
+
+      // Get the current channel Codex
+      const getResult = await this._binderyService.getCodex(channelId);
+      if (!getResult.success) {
+        console.error('[AIAssistant] Failed to get channel Codex:', getResult.error);
+        return;
+      }
+
+      if (!getResult.data) {
+        console.error('[AIAssistant] No data returned for channel Codex');
+        return;
+      }
+
+      const codex = getResult.data;
+
+      // Update provider_id and model fields
+      const updatedContent = {
+        ...codex.content,
+        provider_id: providerId,
+        model: model
+      };
+
+      // Send update request
+      const updateResult = await this._binderyService.updateCodex(channelId, {
+        content: updatedContent
+      });
+
+      if (!updateResult.success) {
+        console.error('[AIAssistant] Failed to update channel provider:', updateResult.error);
+        vscode.window.showErrorMessage(
+          `Failed to update channel provider: ${updateResult.error?.message || 'Unknown error'}`
+        );
+        return;
+      }
+
+      console.log('[AIAssistant] Channel provider updated successfully');
+
+      // Update local channel data
+      const channel = this._channels.find(ch => ch.id === channelId);
+      if (channel) {
+        (channel as any).provider_id = providerId;
+        (channel as any).model = model;
+      }
+    } catch (error) {
+      console.error('[AIAssistant] Error updating channel provider:', error);
+      vscode.window.showErrorMessage(
+        `Error updating channel provider: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -754,11 +883,53 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
+                gap: 12px;
             }
 
             .chat-title {
                 font-weight: bold;
                 font-size: 14px;
+                flex-shrink: 0;
+            }
+
+            .chat-controls {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex: 1;
+            }
+
+            .control-group {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            .control-label {
+                font-size: 11px;
+                color: var(--vscode-descriptionForeground);
+                text-transform: uppercase;
+            }
+
+            .control-select {
+                background: var(--vscode-input-background);
+                color: var(--vscode-input-foreground);
+                border: 1px solid var(--vscode-input-border);
+                padding: 3px 6px;
+                font-size: 12px;
+                border-radius: 2px;
+                cursor: pointer;
+                min-width: 120px;
+            }
+
+            .control-select:focus {
+                outline: 1px solid var(--vscode-focusBorder);
+                outline-offset: -1px;
+            }
+
+            .control-select:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
             }
 
             .action-btn {
@@ -920,6 +1091,18 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
             <div class="chat-panel">
                 <div class="chat-header">
                     <div class="chat-title" id="channelTitle">🤖 ${channelName}</div>
+                    <div class="chat-controls">
+                        <div class="control-group">
+                            <label class="control-label">Provider:</label>
+                            <select class="control-select" id="providerSelect" onchange="onProviderChange()">
+                                <option value="">Loading...</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label">Model:</label>
+                            <input type="text" class="control-select" id="modelInput" placeholder="e.g., claude-sonnet-4" />
+                        </div>
+                    </div>
                     <button class="action-btn" onclick="clearHistory()">Clear</button>
                 </div>
 
@@ -949,9 +1132,13 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
             const messageInput = document.getElementById('messageInput');
             const sendBtn = document.getElementById('sendBtn');
             const channelsContainer = document.getElementById('channelsContainer');
+            const providerSelect = document.getElementById('providerSelect');
+            const modelInput = document.getElementById('modelInput');
 
             let channels = [];
             let selectedChannelId = null;
+            let providers = [];
+            let currentChannel = null;
 
             messageInput.addEventListener('input', function() {
                 this.style.height = 'auto';
@@ -1098,10 +1285,86 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
                 const channel = channels.find(ch => ch.id === channelId);
                 if (channel) {
                     selectedChannelId = channelId;
+                    currentChannel = channel;
                     vscode.postMessage({ command: 'selectChannel', channel: channel });
                     renderChannels();
+                    updateProviderControls();
                 }
             }
+
+            // Load providers from backend
+            function loadProviders() {
+                console.log('[Webview] Loading providers...');
+                vscode.postMessage({ command: 'loadProviders' });
+            }
+
+            // Update provider dropdown with loaded providers
+            function updateProviderList(providerList) {
+                console.log('[Webview] Received providers:', providerList);
+                providers = providerList;
+
+                providerSelect.innerHTML = '<option value="">-- Select Provider --</option>';
+                providers.forEach(provider => {
+                    const option = document.createElement('option');
+                    option.value = provider.id;
+                    option.textContent = provider.name || provider.id;
+                    providerSelect.appendChild(option);
+                });
+
+                // Restore current channel's provider if available
+                if (currentChannel && currentChannel.provider_id) {
+                    providerSelect.value = currentChannel.provider_id;
+                }
+            }
+
+            // Update controls when channel is selected
+            function updateProviderControls() {
+                if (!currentChannel) {
+                    providerSelect.value = '';
+                    modelInput.value = '';
+                    providerSelect.disabled = true;
+                    modelInput.disabled = true;
+                    return;
+                }
+
+                providerSelect.disabled = false;
+                modelInput.disabled = false;
+
+                // Load from channel data
+                providerSelect.value = currentChannel.provider_id || '';
+                modelInput.value = currentChannel.model || '';
+            }
+
+            // Handle provider selection change
+            function onProviderChange() {
+                const providerId = providerSelect.value;
+                console.log('[Webview] Provider changed to:', providerId);
+
+                if (currentChannel && selectedChannelId) {
+                    // Update channel with new provider_id
+                    vscode.postMessage({
+                        command: 'updateChannelProvider',
+                        channelId: selectedChannelId,
+                        providerId: providerId,
+                        model: modelInput.value
+                    });
+                }
+            }
+
+            // Handle model input change
+            modelInput.addEventListener('change', function() {
+                console.log('[Webview] Model changed to:', this.value);
+
+                if (currentChannel && selectedChannelId) {
+                    // Update channel with new model
+                    vscode.postMessage({
+                        command: 'updateChannelProvider',
+                        channelId: selectedChannelId,
+                        providerId: providerSelect.value,
+                        model: this.value
+                    });
+                }
+            });
 
             function createChannel() {
                 console.log('[Webview] Create channel button clicked');
@@ -1136,11 +1399,17 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
                     case 'updateChannelInfo':
                         updateChannelInfo(message.channelName, message.channelStatus);
                         break;
+                    case 'updateProviderList':
+                        updateProviderList(message.providers);
+                        break;
                     case 'updateChannels':
                         updateChannels(message.channels);
                         break;
                 }
             });
+
+            // Initialize: Load providers on webview startup
+            loadProviders();
 
             vscode.postMessage({ command: 'ready' });
         </script>
