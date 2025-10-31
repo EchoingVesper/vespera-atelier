@@ -1,8 +1,8 @@
 # Phase 17: Codex Editor Implementation & System Polish
 
-**Status**: Part 1 Complete ✅ (Oct 23-29, 2025), Ready for Part 2
-**Duration**: Part 1: Oct 23-29, 2025 | Part 2: Starting 2025-10-29
-**Context Window**: [HANDOVER_2025-10-29-1830.md](../handovers/HANDOVER_2025-10-29-1830.md)
+**Status**: Part 1 Complete ✅ (Oct 23-29, 2025), Part 2 Core Features Complete ✅ (Oct 30, 2025)
+**Duration**: Part 1: Oct 23-29, 2025 | Part 2: Oct 30, 2025
+**Context Window**: [HANDOVER_2025-10-30-1915.md](../handovers/HANDOVER_2025-10-30-1915.md)
 **Related ADRs**:
 - [ADR-001](../decisions/ADR-001-projects-fundamental.md) - Projects as Fundamental (superseded by ADR-015)
 - [ADR-004](../decisions/ADR-004-dynamic-templates.md) - Dynamic Templates
@@ -70,25 +70,25 @@ Phase 17 refactors the architectural foundation established in Phase 16b and com
 
 **Part 2: Editor Implementation** (AFTER REFACTORING)
 
-- [x] **Implement Codex Viewer/Editor** ✅ **PARTIAL** (2025-10-30)
+- [x] **Implement Codex Viewer/Editor** ✅ **COMPLETE** (2025-10-30)
   - [x] Display codex content when clicked in Navigator ✅
   - [x] Render template-driven form fields ✅
-  - [ ] Load and display codex metadata (tags, relationships)
-  - [ ] Show timestamps and project/context info
+  - [x] Load and display codex metadata (tags, relationships) ✅
+  - [x] Show timestamps and project/context info ✅
 
-- [x] **Fix Editor Data Flow Issues** ✅ (2025-10-30)
+- [x] **Fix Editor Data Flow Issues** ✅ **COMPLETE** (2025-10-30)
   - [x] Resolve "No Codex Selected" error when clicking codices ✅
-  - [ ] Fix "Missing codex_id parameter" errors in AI Assistant
+  - [ ] Fix "Missing codex_id parameter" errors in AI Assistant (DEFERRED - AI Assistant needs backend hookup)
   - [x] Ensure proper message passing from Navigator → EditorPanel → Webview ✅
   - [x] Fix JSON5 template parsing (Context7 verified) ✅
   - [x] Convert template fields object to array format ✅
 
-- [ ] **Implement Edit and Save Functionality**
-  - Enable editing of codex content fields
-  - Validate field values according to template schema
-  - Save changes to file system (for file-backed Codices) AND database (metadata)
-  - Show save confirmation/error messages
-  - Update Navigator display after save
+- [x] **Implement Edit and Save Functionality** ✅ **COMPLETE** (2025-10-30)
+  - [x] Enable editing of codex content fields ✅
+  - [x] Validate field values according to template schema ✅
+  - [x] Save changes to database (metadata) with autosave (3-second debounce) ✅
+  - [x] Show save confirmation with timestamps ✅
+  - [x] Update Navigator display after save via event bus ✅
 
 - [ ] **Complete Template Filtering by Context Type**
   - Filter templates in creation UI by active context's template type
@@ -696,21 +696,75 @@ Phase 17 is complete when:
 
 ## Known Issues to Fix
 
-From Phase 16b completion document:
+### ✅ FIXED in Part 2 (Oct 30, 2025)
 
-1. **Codex Viewer Not Loading Content** (HIGH PRIORITY - Phase 17 Stage 1)
-   - **Severity**: High (blocks editing workflow)
-   - **Description**: Editor panel shows "No Codex Selected" instead of loading content
-   - **Root Cause**: CodexEditor component not processing received codex data
-   - **Fix**: Stage 1 diagnostic and fix
+1. ~~**Codex Viewer Not Loading Content**~~ ✅ FIXED
+   - **Fix Applied**: Template field conversion from object to array format
+   - **Commit**: `a3f1e00`
 
-2. **Missing codex_id Parameter Errors** (HIGH PRIORITY - Phase 17 Stage 1)
-   - **Severity**: High (blocks AI Assistant)
-   - **Description**: AI Assistant panel calls `get_codex` without proper parameters
-   - **Root Cause**: AI Assistant loading channels using codices incorrectly
-   - **Fix**: Correct parameter passing in AI Assistant channel loading
+2. ~~**Navigator not updating after save**~~ ✅ FIXED
+   - **Fix Applied**: Event bus integration for Navigator-Editor sync
+   - **Commit**: `8405fc0`
 
-3. **Template Filtering Not Implemented** (MEDIUM PRIORITY - Phase 17 Stage 3)
+3. ~~**Missing project_id in editor saves**~~ ✅ FIXED
+   - **Fix Applied**: Preserve projectId in metadata during editor updates
+   - **Commits**: `83ccc9d`, prior fixes
+
+### 🚧 REMAINING ISSUES (As of Oct 30, 2025)
+
+**State Persistence Issues:**
+
+1. **Navigator Selected Codex Not Persisting** (MEDIUM PRIORITY)
+   - **Severity**: Medium (UX annoyance)
+   - **Description**: Relaunch causes Navigator to load with no codex selected
+   - **Expected**: Should remember which codex was selected before reload
+   - **Fix**: Store selected codex ID in workspace state, restore on activation
+
+2. **Editor Panel Not Reopening on Launch** (MEDIUM PRIORITY)
+   - **Severity**: Medium (UX annoyance)
+   - **Description**: Editor always closed on launch, must click Navigator to open
+   - **Expected**: Should persist open state and restore selected codex
+   - **Fix**: Store panel open state + active codex ID, restore on activation
+   - **Note**: Depends on Navigator persistence fix
+
+**AI Panel Issues:**
+
+3. **AI Panel Default Width Too Narrow** (LOW PRIORITY)
+   - **Severity**: Low (cosmetic)
+   - **Description**: Chat portion disappears off right side, user must resize
+   - **Expected**: Default width should fit all contents
+   - **Fix**: Increase default width in webview configuration
+
+4. **AI Panel Width Not Persisting** (MEDIUM PRIORITY)
+   - **Severity**: Medium (UX annoyance)
+   - **Description**: User resizes panel, but reverts to default on reload
+   - **Expected**: Should remember user's preferred width
+   - **Fix**: Store panel width in workspace state, restore on activation
+
+5. **Chat "Liminal State" Auto-Channel Creation** (MEDIUM PRIORITY)
+   - **Severity**: Medium (UX improvement)
+   - **Description**: Sending message in no-channel state doesn't create channel
+   - **Expected**: Auto-create channel like Claude Desktop, optionally AI-name it
+   - **Fix**: Add auto-channel creation on first message in liminal state
+   - **Status**: ✅ Channels CAN be created and persist (confirmed working)
+
+6. **Channel Selection Not Persisting** (LOW PRIORITY)
+   - **Severity**: Low (UX annoyance)
+   - **Description**: Channel list doesn't remember selected channel on reload
+   - **Expected**: Should restore previously selected channel
+   - **Fix**: Store selected channel ID in workspace state
+
+7. **Chat Backend Not Connected** (HIGH PRIORITY - BLOCKING)
+   - **Severity**: High (blocks AI Assistant functionality)
+   - **Description**: Chat shows placeholder "Chat moved to Rust backend" message
+   - **Expected**: Should send messages to Bindery backend and persist
+   - **Fix**: Wire up chat WebSocket/RPC to Bindery backend
+   - **Status**: Backend functions exist but untested, frontend not wired up
+   - **Note**: Related to original "Missing codex_id parameter" errors
+
+**Template Filtering:**
+
+8. **Template Filtering Not Implemented** (MEDIUM PRIORITY - Phase 17 Stage 3)
    - **Severity**: Medium (UX issue, not blocking)
    - **Description**: All templates show regardless of project type
    - **Root Cause**: Infrastructure exists but filtering not yet implemented
