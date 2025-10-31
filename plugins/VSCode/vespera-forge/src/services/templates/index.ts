@@ -5,6 +5,8 @@
 
 // Import templates and prompts so we can use them in DEFAULT_TEMPLATES array
 import { LLM_PROVIDER_TEMPLATE } from './providers/llm-provider.template';
+import { CLAUDE_CODE_CLI_PROVIDER_TEMPLATE } from './providers/claude-code-cli.template';
+import { OLLAMA_PROVIDER_TEMPLATE } from './providers/ollama.template';
 import { AI_CHAT_TEMPLATE } from './chat/ai-chat.template';
 import { TASK_ORCHESTRATOR_TEMPLATE } from './agents/task-orchestrator.template';
 import { TASK_CODE_WRITER_TEMPLATE } from './agents/task-code-writer.template';
@@ -23,6 +25,8 @@ import { TASK_TEMPLATE } from './codex/task.template';
 // Re-export for external consumers
 export {
   LLM_PROVIDER_TEMPLATE,
+  CLAUDE_CODE_CLI_PROVIDER_TEMPLATE,
+  OLLAMA_PROVIDER_TEMPLATE,
   AI_CHAT_TEMPLATE,
   TASK_ORCHESTRATOR_TEMPLATE,
   TASK_CODE_WRITER_TEMPLATE,
@@ -78,6 +82,16 @@ export const DEFAULT_TEMPLATES: TemplateDefinition[] = [
   {
     filename: 'llm-provider.json5',
     content: LLM_PROVIDER_TEMPLATE,
+    subdirectory: 'templates/providers'
+  },
+  {
+    filename: 'claude-code-cli.json5',
+    content: CLAUDE_CODE_CLI_PROVIDER_TEMPLATE,
+    subdirectory: 'templates/providers'
+  },
+  {
+    filename: 'ollama.json5',
+    content: OLLAMA_PROVIDER_TEMPLATE,
     subdirectory: 'templates/providers'
   },
 
