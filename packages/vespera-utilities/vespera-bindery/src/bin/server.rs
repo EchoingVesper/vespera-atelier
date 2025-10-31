@@ -31,6 +31,7 @@ use vespera_bindery::observability::{
     config::{ObservabilityConfig, LoggingConfig, FileLoggingConfig, LogRotation},
     init_observability,
 };
+use vespera_bindery::providers::ProviderManager;
 
 // Input types for JSON-RPC
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -146,6 +147,7 @@ struct AppState {
     database: Arc<Database>,
     roles: Arc<RwLock<Vec<Role>>>,
     codices: Arc<RwLock<HashMap<String, Value>>>,
+    provider_manager: Arc<ProviderManager>,
 }
 
 impl AppState {
@@ -191,10 +193,28 @@ impl AppState {
             capabilities: vec!["design".to_string(), "ui".to_string(), "mockup".to_string()],
         });
 
+        // Create provider manager and load providers
+        let database_arc = Arc::new(database);
+        let provider_manager = Arc::new(ProviderManager::new(Arc::clone(&database_arc)));
+
+        // Load providers in background (don't block startup)
+        let provider_manager_clone = Arc::clone(&provider_manager);
+        tokio::spawn(async move {
+            match provider_manager_clone.load_providers().await {
+                Ok(provider_ids) => {
+                    eprintln!("Debug: Loaded {} providers: {:?}", provider_ids.len(), provider_ids);
+                }
+                Err(e) => {
+                    eprintln!("Warning: Failed to load providers: {}", e);
+                }
+            }
+        });
+
         Ok(Self {
-            database: Arc::new(database),
+            database: database_arc,
             roles: Arc::new(RwLock::new(roles)),
             codices: Arc::new(RwLock::new(HashMap::new())),
+            provider_manager,
         })
     }
 }
@@ -571,6 +591,13 @@ async fn handle_json_rpc_method(state: &AppState, request: &JsonRpcRequest) -> J
         "get_codex" => handle_get_codex(state, &request.params).await,
         "update_codex" => handle_update_codex(state, &request.params).await,
         "delete_codex" => handle_delete_codex(state, &request.params).await,
+        // Provider endpoints
+        "provider.list" => handle_provider_list(state).await,
+        "provider.get" => handle_provider_get(state, &request.params).await,
+        "provider.test" => handle_provider_test(state, &request.params).await,
+        "provider.reload" => handle_provider_reload(state, &request.params).await,
+        // Chat endpoints
+        "chat.send_message" => handle_chat_send_message(state, &request.params).await,
         _ => Err(format!("Method '{}' not found", request.method)),
     };
     
@@ -873,6 +900,132 @@ async fn handle_delete_codex(state: &AppState, params: &Option<Value>) -> Result
         Some(_) => Ok(json!(true)),
         None => Err("Codex not found".to_string()),
     }
+}
+
+// Provider and Chat handlers
+
+async fn handle_provider_list(state: &AppState) -> Result<Value, String> {
+    let provider_ids = state
+        .provider_manager
+        .list_providers()
+        .await
+        .map_err(|e| format!("Failed to list providers: {}", e))?;
+
+    let mut providers = Vec::new();
+    for provider_id in provider_ids {
+        match state.provider_manager.get_provider_info(&provider_id).await {
+            Ok(info) => {
+                providers.push(json!({
+                    "id": info.id,
+                    "title": info.title,
+                    "provider_type": info.provider_type,
+                    "display_name": info.display_name,
+                }));
+            }
+            Err(e) => {
+                warn!("Failed to get provider info for {}: {}", provider_id, e);
+            }
+        }
+    }
+
+    Ok(json!({ "providers": providers }))
+}
+
+async fn handle_provider_get(state: &AppState, params: &Option<Value>) -> Result<Value, String> {
+    let provider_id = params
+        .as_ref()
+        .and_then(|p| p.get("provider_id"))
+        .and_then(|v| v.as_str())
+        .ok_or("Missing provider_id parameter")?;
+
+    let info = state
+        .provider_manager
+        .get_provider_info(provider_id)
+        .await
+        .map_err(|e| format!("Failed to get provider info: {}", e))?;
+
+    Ok(json!({
+        "id": info.id,
+        "title": info.title,
+        "provider_type": info.provider_type,
+        "display_name": info.display_name,
+    }))
+}
+
+async fn handle_provider_test(state: &AppState, params: &Option<Value>) -> Result<Value, String> {
+    let provider_id = params
+        .as_ref()
+        .and_then(|p| p.get("provider_id"))
+        .and_then(|v| v.as_str())
+        .ok_or("Missing provider_id parameter")?;
+
+    let is_healthy = state
+        .provider_manager
+        .health_check(provider_id)
+        .await
+        .map_err(|e| format!("Failed to health check provider: {}", e))?;
+
+    Ok(json!({
+        "provider_id": provider_id,
+        "healthy": is_healthy,
+    }))
+}
+
+async fn handle_provider_reload(state: &AppState, params: &Option<Value>) -> Result<Value, String> {
+    let provider_id = params
+        .as_ref()
+        .and_then(|p| p.get("provider_id"))
+        .and_then(|v| v.as_str())
+        .ok_or("Missing provider_id parameter")?;
+
+    state
+        .provider_manager
+        .reload_provider(provider_id)
+        .await
+        .map_err(|e| format!("Failed to reload provider: {}", e))?;
+
+    Ok(json!({
+        "provider_id": provider_id,
+        "reloaded": true,
+    }))
+}
+
+async fn handle_chat_send_message(state: &AppState, params: &Option<Value>) -> Result<Value, String> {
+    let provider_id = params
+        .as_ref()
+        .and_then(|p| p.get("provider_id"))
+        .and_then(|v| v.as_str())
+        .ok_or("Missing provider_id parameter")?;
+
+    let message = params
+        .as_ref()
+        .and_then(|p| p.get("message"))
+        .and_then(|v| v.as_str())
+        .ok_or("Missing message parameter")?;
+
+    let system_prompt = params
+        .as_ref()
+        .and_then(|p| p.get("system_prompt"))
+        .and_then(|v| v.as_str());
+
+    let stream = params
+        .as_ref()
+        .and_then(|p| p.get("stream"))
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+
+    let response = state
+        .provider_manager
+        .send_message(provider_id, message, system_prompt, stream)
+        .await
+        .map_err(|e| format!("Failed to send message: {}", e))?;
+
+    Ok(json!({
+        "text": response.text,
+        "session_id": response.session_id,
+        "usage": response.usage,
+        "metadata": response.metadata,
+    }))
 }
 
 // REST API handlers for MCP server integration

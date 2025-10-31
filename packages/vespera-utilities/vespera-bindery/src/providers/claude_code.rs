@@ -234,19 +234,36 @@ impl Provider for ClaudeCodeProvider {
             .take()
             .ok_or_else(|| anyhow!("Failed to capture stdout"))?;
 
-        let stream = BufReader::new(stdout)
-            .lines()
-            .filter_map(|line_result| async move {
-                match line_result {
-                    Ok(line) => match Self::parse_event(&line) {
-                        Ok(Some(event)) => Some(Self::event_to_chunk(event)),
-                        Ok(None) => None,
-                        Err(e) => Some(Err(e)),
-                    },
-                    Err(e) => Some(Err(e.into())),
+        let mut lines = BufReader::new(stdout).lines();
+
+        let stream = async_stream::stream! {
+            loop {
+                match lines.next_line().await {
+                    Ok(Some(line)) => {
+                        match Self::parse_event(&line) {
+                            Ok(Some(event)) => {
+                                match Self::event_to_chunk(event) {
+                                    Ok(chunk) => yield Ok(chunk),
+                                    Err(e) => yield Err(e),
+                                }
+                            }
+                            Ok(None) => {
+                                // Skip this line (e.g., "Tip:" message)
+                            }
+                            Err(e) => {
+                                yield Err(e);
+                            }
+                        }
+                    }
+                    Ok(None) => break,
+                    Err(e) => {
+                        yield Err(e.into());
+                        break;
+                    }
                 }
-            })
-            .boxed();
+            }
+        }
+        .boxed();
 
         Ok(Box::new(stream))
     }
@@ -342,14 +359,14 @@ enum ClaudeCodeEvent {
     },
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct AssistantMessage {
     content: Vec<ContentBlock>,
     #[serde(flatten)]
     extra: HashMap<String, Value>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct ContentBlock {
     r#type: String,
     text: Option<String>,

@@ -87,6 +87,7 @@ pub use chrono::{DateTime, Utc};
 pub mod crdt;
 pub mod codex;
 pub mod sync;
+pub mod providers;
 
 // New modules for task and role management
 pub mod task_management;

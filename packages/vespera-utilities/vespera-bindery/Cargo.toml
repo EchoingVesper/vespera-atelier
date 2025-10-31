@@ -29,6 +29,7 @@ tokio-util = { version = "0.7", features = ["io"] }
 tokio-stream = "0.1"
 futures = "0.3"
 async-trait = "0.1"
+async-stream = "0.3"
 
 # Serialization and formats
 serde = { version = "1.0", features = ["derive", "rc"] }
@@ -162,7 +163,7 @@ hook-system = []
 # Embedding features
 embeddings-local = ["candle-core", "candle-nn", "candle-transformers", "tokenizers", "hf-hub"]
 embeddings-onnx = ["ort", "tokenizers", "hf-hub"]
-embeddings-api = ["reqwest", "dotenvy"]
+embeddings-api = ["dotenvy"]
 embeddings-all = ["embeddings-local", "embeddings-onnx", "embeddings-api"]
 
 # Observability features

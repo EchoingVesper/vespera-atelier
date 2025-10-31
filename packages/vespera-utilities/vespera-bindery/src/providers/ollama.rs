@@ -146,29 +146,43 @@ impl OllamaProvider {
             .await
             .context("Failed to send streaming request to Ollama")?;
 
+        use futures::StreamExt as FuturesStreamExt;
         let stream = response.bytes_stream();
         let reader = tokio_util::io::StreamReader::new(stream.map(|result| {
             result.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
         }));
 
-        let lines = tokio::io::BufReader::new(reader).lines();
+        let mut lines = tokio::io::BufReader::new(reader).lines();
 
-        let stream = tokio_stream::wrappers::LinesStream::new(lines)
-            .filter_map(|line_result| async move {
-                match line_result {
-                    Ok(line) => match serde_json::from_str::<OllamaStreamChunk>(&line) {
-                        Ok(chunk) => Some(Ok(StreamChunk {
-                            chunk_type: "ollama".to_string(),
-                            text: Some(chunk.response),
-                            is_final: chunk.done,
-                            metadata: Some(serde_json::to_value(chunk).unwrap_or_default()),
-                        })),
-                        Err(e) => Some(Err(anyhow!("Failed to parse stream chunk: {}", e))),
-                    },
-                    Err(e) => Some(Err(e.into())),
+        let stream = async_stream::stream! {
+            loop {
+                match lines.next_line().await {
+                    Ok(Some(line)) => {
+                        match serde_json::from_str::<OllamaStreamChunk>(&line) {
+                            Ok(chunk) => {
+                                let response_text = chunk.response.clone();
+                                let is_done = chunk.done;
+                                yield Ok(StreamChunk {
+                                    chunk_type: "ollama".to_string(),
+                                    text: Some(response_text),
+                                    is_final: is_done,
+                                    metadata: Some(serde_json::to_value(chunk).unwrap_or_default()),
+                                });
+                            }
+                            Err(e) => {
+                                yield Err(anyhow!("Failed to parse stream chunk: {}", e));
+                            }
+                        }
+                    }
+                    Ok(None) => break,
+                    Err(e) => {
+                        yield Err(e.into());
+                        break;
+                    }
                 }
-            })
-            .boxed();
+            }
+        }
+        .boxed();
 
         Ok(Box::new(stream))
     }
