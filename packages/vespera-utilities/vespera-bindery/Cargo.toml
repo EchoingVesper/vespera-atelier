@@ -25,7 +25,10 @@ yrs = { version = "0.18", optional = true }
 
 # Async runtime
 tokio = { version = "1.0", features = ["full"] }
+tokio-util = { version = "0.7", features = ["io"] }
+tokio-stream = "0.1"
 futures = "0.3"
+async-trait = "0.1"
 
 # Serialization and formats
 serde = { version = "1.0", features = ["derive", "rc"] }
@@ -106,8 +109,8 @@ ort = { version = "2.0.0-rc.8", optional = true }
 tokenizers = { version = "0.20", optional = true }
 hf-hub = { version = "0.3", optional = true }
 
-# API clients for external embeddings
-reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false, optional = true }
+# API clients for external embeddings and provider HTTP communication
+reqwest = { version = "0.12", features = ["json", "rustls-tls", "stream"], default-features = false }
 
 # Environment variables for API keys
 dotenvy = { version = "0.15", optional = true }
