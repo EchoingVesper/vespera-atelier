@@ -414,6 +414,10 @@ export class EditorPanelProvider {
       if (result.success) {
         this.logger?.info('Codex updated successfully', { id: payload.id });
 
+        // Notify other components that codex was updated
+        const { VesperaEvents } = await import('../utils/events');
+        VesperaEvents.codexUpdated(payload.id, binderyPayload.title);
+
         this._panel.webview.postMessage({
           type: 'response',
           id: messageId,

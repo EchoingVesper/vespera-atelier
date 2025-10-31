@@ -25,6 +25,17 @@ export class NavigatorWebviewProvider implements vscode.WebviewViewProvider {
   ) {
     this._sessionId = `vespera_navigator_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     this._templateInitializer = new TemplateInitializer(logger);
+
+    // Listen for codex change events and refresh Navigator
+    import('../utils/events').then(({ VesperaEvents }) => {
+      VesperaEvents.onCodexChange(
+        () => {
+          this.logger?.debug('Codex change event received, refreshing Navigator');
+          this.sendInitialState();
+        },
+        'NavigatorWebviewProvider'
+      );
+    });
   }
 
   public async resolveWebviewView(
