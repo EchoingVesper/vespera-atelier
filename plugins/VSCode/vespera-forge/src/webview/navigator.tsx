@@ -120,6 +120,11 @@ function NavigatorApp() {
           console.log('[Navigator] Codex created:', message.payload);
           // Select the newly created codex
           setSelectedCodexId(message.payload.id);
+          // Also notify backend to open editor with this codex
+          adapter.sendMessage({
+            type: 'codex.selected',
+            payload: { codexId: message.payload.id }
+          });
           break;
 
         case 'restoreSelection':

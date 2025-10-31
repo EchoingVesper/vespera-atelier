@@ -453,7 +453,8 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
       console.log('[AIAssistant] Sending', channelData.length, 'channels to webview');
       this._view.webview.postMessage({
         command: 'updateChannels',
-        channels: channelData
+        channels: channelData,
+        selectedChannelId: this._activeChannel?.id // Include selected channel ID for visual highlighting
       });
     } else {
       console.warn('[AIAssistant] Cannot send channels to webview - view not available');
@@ -515,6 +516,14 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
 
       // Reload channels
       await this.loadChannels();
+
+      // Auto-select the newly created channel
+      const newChannel = this._channels.find(ch => ch.id === codexId);
+      if (newChannel) {
+        console.log('[AIAssistant] Auto-selecting newly created channel:', newChannel.title);
+        await this.switchChannel(newChannel);
+      }
+
       vscode.window.showInformationMessage(`Created channel: ${name}`);
     } catch (error) {
       console.error('[AIAssistant] Failed to create channel:', error);
