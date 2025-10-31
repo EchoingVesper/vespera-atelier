@@ -1899,14 +1899,18 @@ impl Database {
         let project_id = metadata.get("project_id")
             .and_then(|v| v.as_str());
 
+        // Extract parent_id from metadata for nesting support
+        let parent_id = metadata.get("parent_id")
+            .and_then(|v| v.as_str());
+
         // Content defaults to empty JSON object
         let content = serde_json::json!({"fields": {}});
         let content_str = serde_json::to_string(&content)?;
 
         sqlx::query(
             r#"
-            INSERT INTO codices (id, title, template_id, content, metadata, version, created_at, updated_at, project_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO codices (id, title, template_id, content, metadata, version, created_at, updated_at, project_id, parent_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             "#,
         )
         .bind(id)
@@ -1918,11 +1922,12 @@ impl Database {
         .bind(&now)
         .bind(&now)
         .bind(project_id)
+        .bind(parent_id)
         .execute(&self.pool)
         .await
         .map_err(|e| anyhow::anyhow!("Failed to create codex: {}", e))?;
 
-        info!(codex_id = %id, title = %title, "Created codex in database");
+        info!(codex_id = %id, title = %title, parent_id = ?parent_id, "Created codex in database");
         Ok(())
     }
 
@@ -1931,7 +1936,7 @@ impl Database {
     pub async fn get_codex(&self, id: &str) -> Result<Option<serde_json::Value>> {
         let row = sqlx::query(
             r#"
-            SELECT id, title, template_id, metadata, created_at, updated_at
+            SELECT id, title, template_id, content, metadata, created_at, updated_at, parent_id
             FROM codices
             WHERE id = ?
             "#,
@@ -1945,21 +1950,32 @@ impl Database {
             let id: String = row.get("id");
             let title: String = row.get("title");
             let template_id: String = row.get("template_id");
+            let content_str: String = row.get("content");
             let metadata_str: String = row.get("metadata");
             let created_at: String = row.get("created_at");
             let updated_at: String = row.get("updated_at");
+            let parent_id: Option<String> = row.get("parent_id");
+
+            let content: serde_json::Value = serde_json::from_str(&content_str)
+                .unwrap_or(serde_json::json!({"fields": {}}));
 
             let metadata: serde_json::Value = serde_json::from_str(&metadata_str)
                 .unwrap_or(serde_json::json!({}));
 
-            let codex = serde_json::json!({
+            let mut codex = serde_json::json!({
                 "id": id,
                 "title": title,
                 "template_id": template_id,
+                "content": content,
                 "metadata": metadata,
                 "created_at": created_at,
                 "updated_at": updated_at,
             });
+
+            // Add parent_id if it exists
+            if let Some(parent) = parent_id {
+                codex.as_object_mut().unwrap().insert("parent_id".to_string(), serde_json::json!(parent));
+            }
 
             Ok(Some(codex))
         } else {
@@ -1996,10 +2012,14 @@ impl Database {
         let project_id = metadata.get("project_id")
             .and_then(|v| v.as_str());
 
+        // Extract parent_id from metadata for nesting support
+        let parent_id = metadata.get("parent_id")
+            .and_then(|v| v.as_str());
+
         sqlx::query(
             r#"
             UPDATE codices
-            SET title = ?, template_id = ?, content = ?, metadata = ?, updated_at = ?, project_id = ?
+            SET title = ?, template_id = ?, content = ?, metadata = ?, updated_at = ?, project_id = ?, parent_id = ?
             WHERE id = ?
             "#,
         )
@@ -2009,13 +2029,71 @@ impl Database {
         .bind(&metadata_str)
         .bind(&now)
         .bind(project_id)
+        .bind(parent_id)
         .bind(id)
         .execute(&self.pool)
         .await
         .map_err(|e| anyhow::anyhow!("Failed to update codex: {}", e))?;
 
-        info!(codex_id = %id, title = %title, "Updated codex in database");
+        info!(codex_id = %id, title = %title, parent_id = ?parent_id, "Updated codex in database");
         Ok(())
+    }
+
+    /// List child codices for a given parent_id
+    #[instrument(skip(self), fields(parent_id = %parent_id))]
+    pub async fn list_children(&self, parent_id: &str) -> Result<Vec<serde_json::Value>> {
+        let rows = sqlx::query(
+            r#"
+            SELECT id, title, template_id, content, metadata, project_id, parent_id, created_at, updated_at
+            FROM codices
+            WHERE parent_id = ?
+            ORDER BY created_at ASC
+            "#,
+        )
+        .bind(parent_id)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to list child codices: {}", e))?;
+
+        let mut codices = Vec::new();
+        for row in rows {
+            let id: String = row.get("id");
+            let title: String = row.get("title");
+            let template_id: String = row.get("template_id");
+            let content_str: String = row.get("content");
+            let metadata_str: String = row.get("metadata");
+            let project_id: Option<String> = row.get("project_id");
+            let parent_id: Option<String> = row.get("parent_id");
+            let created_at: String = row.get("created_at");
+            let updated_at: String = row.get("updated_at");
+
+            let content: serde_json::Value = serde_json::from_str(&content_str)
+                .unwrap_or(serde_json::json!({"fields": {}}));
+
+            let metadata: serde_json::Value = serde_json::from_str(&metadata_str)
+                .unwrap_or(serde_json::json!({}));
+
+            let mut codex = serde_json::json!({
+                "id": id,
+                "title": title,
+                "template_id": template_id,
+                "content": content,
+                "metadata": metadata,
+                "project_id": project_id,
+                "created_at": created_at,
+                "updated_at": updated_at,
+            });
+
+            // Add parent_id if it exists
+            if let Some(parent) = parent_id {
+                codex.as_object_mut().unwrap().insert("parent_id".to_string(), serde_json::json!(parent));
+            }
+
+            codices.push(codex);
+        }
+
+        info!(parent_id = %parent_id, count = codices.len(), "Listed child codices");
+        Ok(codices)
     }
 
     /// List all codices (with project_id for filtering)
@@ -2023,7 +2101,7 @@ impl Database {
     pub async fn list_codices(&self) -> Result<Vec<serde_json::Value>> {
         let rows = sqlx::query(
             r#"
-            SELECT id, title, template_id, metadata, project_id, created_at, updated_at
+            SELECT id, title, template_id, content, metadata, project_id, parent_id, created_at, updated_at
             FROM codices
             ORDER BY created_at DESC
             "#,
@@ -2036,23 +2114,36 @@ impl Database {
             let id: String = row.get("id");
             let title: String = row.get("title");
             let template_id: String = row.get("template_id");
+            let content_str: String = row.get("content");
             let metadata_str: String = row.get("metadata");
             let project_id: Option<String> = row.get("project_id");
+            let parent_id: Option<String> = row.get("parent_id");
             let created_at: String = row.get("created_at");
             let updated_at: String = row.get("updated_at");
+
+            let content: serde_json::Value = serde_json::from_str(&content_str)
+                .unwrap_or(serde_json::json!({"fields": {}}));
 
             let metadata: serde_json::Value = serde_json::from_str(&metadata_str)
                 .unwrap_or(serde_json::json!({}));
 
-            codices.push(serde_json::json!({
+            let mut codex = serde_json::json!({
                 "id": id,
                 "title": title,
                 "template_id": template_id,
+                "content": content,
                 "metadata": metadata,
                 "project_id": project_id,
                 "created_at": created_at,
                 "updated_at": updated_at,
-            }));
+            });
+
+            // Add parent_id if it exists
+            if let Some(parent) = parent_id {
+                codex.as_object_mut().unwrap().insert("parent_id".to_string(), serde_json::json!(parent));
+            }
+
+            codices.push(codex);
         }
 
         Ok(codices)

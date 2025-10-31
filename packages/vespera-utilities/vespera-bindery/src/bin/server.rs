@@ -587,6 +587,7 @@ async fn handle_json_rpc_method(state: &AppState, request: &JsonRpcRequest) -> J
         "list_roles" => handle_list_roles(state).await,
         "assign_role_to_task" => handle_assign_role_to_task(state, &request.params).await,
         "list_codices" => handle_list_codices(state).await,
+        "list_children" => handle_list_children(state, &request.params).await,
         "create_codex" => handle_create_codex(state, &request.params).await,
         "get_codex" => handle_get_codex(state, &request.params).await,
         "update_codex" => handle_update_codex(state, &request.params).await,
@@ -785,6 +786,20 @@ async fn handle_list_codices(state: &AppState) -> Result<Value, String> {
         .map_err(|e| format!("Failed to list codices from database: {}", e))?;
 
     Ok(json!(codices))
+}
+
+async fn handle_list_children(state: &AppState, params: &Option<Value>) -> Result<Value, String> {
+    let parent_id = params
+        .as_ref()
+        .and_then(|p| p.get("parent_id"))
+        .and_then(|v| v.as_str())
+        .ok_or("Missing parent_id parameter")?;
+
+    let children = state.database.list_children(parent_id)
+        .await
+        .map_err(|e| format!("Failed to list child codices from database: {}", e))?;
+
+    Ok(json!(children))
 }
 
 async fn handle_create_codex(state: &AppState, params: &Option<Value>) -> Result<Value, String> {
