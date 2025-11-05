@@ -2148,6 +2148,29 @@ impl Database {
 
         Ok(codices)
     }
+
+    /// Delete a codex from the database
+    #[instrument(skip(self), fields(codex_id = %id))]
+    pub async fn delete_codex(&self, id: &str) -> Result<bool> {
+        let result = sqlx::query(
+            r#"
+            DELETE FROM codices
+            WHERE id = ?
+            "#,
+        )
+        .bind(id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to delete codex: {}", e))?;
+
+        let deleted = result.rows_affected() > 0;
+        if deleted {
+            info!(codex_id = %id, "Deleted codex from database");
+        } else {
+            warn!(codex_id = %id, "Codex not found for deletion");
+        }
+        Ok(deleted)
+    }
 }
 
 /// Report from database maintenance operations

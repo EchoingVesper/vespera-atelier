@@ -910,10 +910,20 @@ async fn handle_delete_codex(state: &AppState, params: &Option<Value>) -> Result
         .and_then(|v| v.as_str())
         .ok_or("Missing codex_id parameter")?;
 
-    let mut codices = state.codices.write().await;
-    match codices.remove(codex_id) {
-        Some(_) => Ok(json!(true)),
-        None => Err("Codex not found".to_string()),
+    // Delete from database
+    let deleted = state
+        .database
+        .delete_codex(codex_id)
+        .await
+        .map_err(|e| format!("Failed to delete codex from database: {}", e))?;
+
+    if deleted {
+        // Also remove from in-memory cache
+        let mut codices = state.codices.write().await;
+        codices.remove(codex_id);
+        Ok(json!(true))
+    } else {
+        Err("Codex not found".to_string())
     }
 }
 
