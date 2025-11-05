@@ -201,6 +201,11 @@
         "command": "vespera-forge.checkClaudeCodeAuth",
         "title": "Check Claude Code Authentication",
         "category": "Vespera Forge Settings"
+      },
+      {
+        "command": "vespera-forge.cleanupDuplicateProviders",
+        "title": "Cleanup Duplicate Providers",
+        "category": "Vespera Forge Settings"
       }
     ],
     "keybindings": [

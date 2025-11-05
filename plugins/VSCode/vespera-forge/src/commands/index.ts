@@ -958,6 +958,111 @@ export const checkClaudeCodeAuthCommand: CommandHandler = async (_context: Vespe
 };
 
 /**
+ * Cleanup duplicate provider codices command
+ */
+export const cleanupDuplicateProvidersCommand: CommandHandler = async (_context: VesperaForgeContext) => {
+  const binderyService = getBinderyService();
+
+  try {
+    log('[CleanupProviders] Starting duplicate provider cleanup...');
+
+    // Get all codices
+    const result = await binderyService.sendRequest<any>('list_codices', {});
+
+    if (!result.success || !result.data) {
+      const errorMsg = 'success' in result && !result.success ? (result as any).error?.message : 'Unknown error';
+      log('[CleanupProviders] Failed to list codices:', errorMsg);
+      await showError('Failed to list codices');
+      return;
+    }
+
+    // Handle both array directly and nested codices property
+    const codicesArray = Array.isArray(result.data) ? result.data : (result.data?.codices || []);
+
+    // Filter for provider Codices
+    const providerTemplates = ['claude-code-cli', 'ollama'];
+    const providerCodices = codicesArray.filter((codex: any) =>
+      providerTemplates.includes(codex.template_id)
+    );
+
+    log(`[CleanupProviders] Found ${providerCodices.length} provider codices`);
+
+    if (providerCodices.length === 0) {
+      await showInfo('No provider codices found');
+      return;
+    }
+
+    // Group by provider type
+    const byType: Record<string, any[]> = {};
+    for (const codex of providerCodices) {
+      const type = codex.template_id;
+      if (!byType[type]) {
+        byType[type] = [];
+      }
+      byType[type].push(codex);
+    }
+
+    // Count duplicates
+    let totalDuplicates = 0;
+    for (const [type, codices] of Object.entries(byType)) {
+      const duplicates = codices.length - 1; // Keep first, delete rest
+      if (duplicates > 0) {
+        log(`[CleanupProviders] Found ${duplicates} duplicate(s) of type: ${type}`);
+        totalDuplicates += duplicates;
+      }
+    }
+
+    if (totalDuplicates === 0) {
+      await showInfo('No duplicate providers found');
+      return;
+    }
+
+    // Confirm deletion
+    const confirmation = await vscode.window.showWarningMessage(
+      `Found ${totalDuplicates} duplicate provider(s). Delete them?`,
+      { modal: true },
+      'Delete Duplicates',
+      'Cancel'
+    );
+
+    if (confirmation !== 'Delete Duplicates') {
+      return;
+    }
+
+    // Delete duplicates (keep first of each type)
+    let deletedCount = 0;
+    for (const [type, codices] of Object.entries(byType)) {
+      // Sort by creation date or ID to ensure consistent selection
+      codices.sort((a, b) => a.id.localeCompare(b.id));
+
+      // Keep first, delete rest
+      const toDelete = codices.slice(1);
+
+      for (const codex of toDelete) {
+        log(`[CleanupProviders] Deleting duplicate ${type} provider: ${codex.id}`);
+        const deleteResult = await binderyService.deleteCodex(codex.id);
+
+        if (deleteResult.success) {
+          deletedCount++;
+        } else {
+          const errorMsg = 'success' in deleteResult && !deleteResult.success ? (deleteResult as any).error?.message : 'Unknown error';
+          log(`[CleanupProviders] Failed to delete ${codex.id}:`, errorMsg);
+        }
+      }
+    }
+
+    log(`[CleanupProviders] Deleted ${deletedCount} duplicate provider(s)`);
+    await showInfo(
+      `Cleanup complete! Deleted ${deletedCount} duplicate provider(s). Please reload the AI Assistant view.`
+    );
+
+  } catch (error) {
+    log('[CleanupProviders] Error during cleanup:', error);
+    await showError('Failed to cleanup providers', error as Error);
+  }
+};
+
+/**
  * Get the commands map following Roo Code pattern
  */
 const getCommandsMap = (vesperaContext: VesperaForgeContext) => ({
@@ -1101,6 +1206,10 @@ const getCommandsMap = (vesperaContext: VesperaForgeContext) => ({
   'vespera-forge.checkClaudeCodeAuth': async () => {
     log('[Command] Check Claude Code Auth command executed');
     await checkClaudeCodeAuthCommand(vesperaContext);
+  },
+  'vespera-forge.cleanupDuplicateProviders': async () => {
+    log('[Command] Cleanup Duplicate Providers command executed');
+    await cleanupDuplicateProvidersCommand(vesperaContext);
   }
 });
 
