@@ -821,6 +821,7 @@ export class BinderyService extends EventEmitter {
       template_id?: string;
       tags?: string[];
       references?: any[];
+      metadata?: any;
     }
   ): Promise<BinderyResult<Codex>> {
     return this.sendRequest('update_codex', {

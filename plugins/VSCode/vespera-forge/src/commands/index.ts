@@ -128,10 +128,9 @@ export const createContentCommand: CommandHandler = async (context: VesperaForge
             console.log(`[Commands] 📡 Emitting taskCreated event for task: ${result.data}`);
             VesperaEvents.taskCreated(result.data, title.trim());
             
-            // Refresh task views
-            log('Refreshing task views');
-            vscode.commands.executeCommand('vespera-forge.refreshTaskTree');
-            vscode.commands.executeCommand('vespera-forge.refreshTaskDashboard');
+            // Refresh Codex Navigator to show new task
+            log('Refreshing Codex Navigator after task creation');
+            vscode.commands.executeCommand('vespera-forge.refreshCodexList');
           } else {
             log(`Task creation failed: ${result.error.message}`);
             await showError(`Failed to create task: ${result.error.message}`);
@@ -1049,9 +1048,8 @@ const getCommandsMap = (vesperaContext: VesperaForgeContext) => ({
   },
   'vespera-forge.globalRefresh': async () => {
     log('[Command] Global Refresh command executed');
-    // Refresh all views
-    vscode.commands.executeCommand('vespera-forge.refreshTaskTree');
-    vscode.commands.executeCommand('vespera-forge.refreshTaskDashboard');
+    // Refresh Codex Navigator (tasks are now codices)
+    vscode.commands.executeCommand('vespera-forge.refreshCodexList');
   },
   // Codex management commands
   'vespera-forge.openCodexNavigator': async () => {

@@ -28,6 +28,7 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
   private _binderyService?: BinderyService;
 
   private _connectionCheckInterval?: NodeJS.Timeout;
+  private _isInitializingProviders = false; // Guard against concurrent initialization
 
   constructor(
     private readonly _extensionUri: vscode.Uri,
@@ -42,11 +43,33 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
 
     if (this._binderyService) {
       console.log('[AIAssistant] Bindery service provided at construction');
+      // Set up connection status listener to reload providers when connected
+      this.setupConnectionStatusListener();
     } else {
       console.log('[AIAssistant] Bindery service not yet available, will wait for connection');
       // Set up listener for when Bindery becomes available
       this.setupBinderyConnectionListener();
     }
+  }
+
+  /**
+   * Listen for Bindery connection status changes and reload providers when connected
+   */
+  private setupConnectionStatusListener() {
+    if (!this._binderyService) {
+      return;
+    }
+
+    this._binderyService.on('statusChanged', async (info: any) => {
+      console.log('[AIAssistant] Connection status changed:', info.status);
+
+      if (info.status === 'connected') {
+        console.log('[AIAssistant] Bindery connected, initializing providers...');
+        // Initialize default providers on first run, then load them
+        await this.initializeDefaultProvidersIfNeeded();
+        await this.loadProviders();
+      }
+    });
   }
 
   private setupBinderyConnectionListener() {
@@ -56,6 +79,9 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
       if (!this._binderyService && globalService) {
         this._binderyService = globalService;
         console.log('[AIAssistant] Bindery service now available from global');
+
+        // Set up connection status listener
+        this.setupConnectionStatusListener();
 
         // Try loading channels now that Bindery is available
         if (this._view?.visible) {
@@ -217,36 +243,111 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
   }
 
   private async handleSendMessage(text: string) {
-    if (!this._chatSystem || !text?.trim()) {
+    if (!this._binderyService || !text?.trim()) {
+      console.warn('[AIAssistant] Cannot send message - Bindery service not available or empty text');
+      return;
+    }
+
+    if (!this._activeChannel) {
+      vscode.window.showWarningMessage('Please select a channel first');
+      return;
+    }
+
+    const trimmedText = text.trim();
+    const channelId = this._activeChannel.id;
+    const providerId = (this._activeChannel as any).provider_id;
+    const model = (this._activeChannel as any).model;
+
+    if (!providerId) {
+      vscode.window.showWarningMessage('Please select a provider for this channel');
+      return;
+    }
+
+    if (!model) {
+      vscode.window.showWarningMessage('Please select a model for this channel');
       return;
     }
 
     try {
+      // Create user message Codex
+      const userMsgResult = await this._binderyService.createCodex(
+        `Message`,
+        'message',
+        undefined // Will set project_id from active project
+      );
+
+      if (!userMsgResult.success) {
+        throw new Error(`Failed to create user message Codex: ${userMsgResult.error?.message}`);
+      }
+
+      const userCodexId = userMsgResult.data;
+
+      // Update user message Codex with content and nest under channel
+      const userUpdateResult = await this._binderyService.updateCodex(userCodexId, {
+        content: {
+          role: 'user',
+          content: trimmedText,
+          timestamp: new Date().toISOString(),
+          provider_id: providerId,
+          model: model
+        },
+        metadata: {
+          parent_id: channelId
+        }
+      });
+
+      if (!userUpdateResult.success) {
+        throw new Error(`Failed to update user message: ${userUpdateResult.error?.message}`);
+      }
+
+      // Display user message in webview immediately
       this.sendMessageToWebview({
         command: 'addMessage',
         message: {
-          id: `user_${Date.now()}`,
+          id: userCodexId,
           role: 'user',
-          content: text.trim(),
+          content: trimmedText,
           timestamp: new Date().toISOString()
         }
       });
 
-      const userMessage = {
-        id: `user_${Date.now()}`,
-        role: 'user' as const,
-        content: text.trim(),
-        timestamp: new Date(),
-        threadId: 'default'
-      };
+      // Create assistant message Codex for streaming response
+      const assistantMsgResult = await this._binderyService.createCodex(
+        `Response`,
+        'message',
+        undefined
+      );
 
-      const responseId = `assistant_${Date.now()}`;
-      let responseContent = '';
+      if (!assistantMsgResult.success) {
+        throw new Error(`Failed to create assistant message Codex: ${assistantMsgResult.error?.message}`);
+      }
 
+      const assistantCodexId = assistantMsgResult.data;
+
+      // Initialize assistant message with empty content
+      const assistantInitResult = await this._binderyService.updateCodex(assistantCodexId, {
+        content: {
+          role: 'assistant',
+          content: '',
+          timestamp: new Date().toISOString(),
+          provider_id: providerId,
+          model: model,
+          streaming_complete: false
+        },
+        metadata: {
+          parent_id: channelId
+        }
+      });
+
+      if (!assistantInitResult.success) {
+        throw new Error(`Failed to initialize assistant message: ${assistantInitResult.error?.message}`);
+      }
+
+      // Display assistant message placeholder
       this.sendMessageToWebview({
         command: 'addMessage',
         message: {
-          id: responseId,
+          id: assistantCodexId,
           role: 'assistant',
           content: '',
           timestamp: new Date().toISOString(),
@@ -254,37 +355,67 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
         }
       });
 
-      for await (const chunk of this._chatSystem.streamMessage(userMessage)) {
-        if (chunk.content && !chunk.done) {
-          responseContent += chunk.content;
-          this.sendMessageToWebview({
-            command: 'updateMessage',
-            messageId: responseId,
-            content: responseContent,
-            streaming: true
-          });
-        } else if (chunk.done) {
-          if (chunk.content) {
-            responseContent += chunk.content;
-          }
-          this.sendMessageToWebview({
-            command: 'updateMessage',
-            messageId: responseId,
-            content: responseContent || 'No response received',
-            streaming: false
-          });
-          break;
-        }
+      // Get system prompt from channel if available
+      const systemPrompt = (this._activeChannel as any).system_prompt || undefined;
+
+      // Call chat.send_message endpoint (non-streaming for now)
+      console.log('[AIAssistant] Calling chat.send_message:', { providerId, model, message: trimmedText });
+      const chatResult = await this._binderyService.sendRequest<any>('chat.send_message', {
+        provider_id: providerId,
+        message: trimmedText,
+        system_prompt: systemPrompt,
+        stream: false
+      });
+
+      if (!chatResult.success) {
+        throw new Error(`Chat request failed: ${chatResult.error?.message}`);
       }
+
+      const responseText = chatResult.data.text || 'No response received';
+      const usage = chatResult.data.usage;
+
+      // Update assistant message Codex with response
+      const assistantFinalResult = await this._binderyService.updateCodex(assistantCodexId, {
+        content: {
+          role: 'assistant',
+          content: responseText,
+          timestamp: new Date().toISOString(),
+          provider_id: providerId,
+          model: model,
+          usage: usage || null,
+          streaming_complete: true
+        },
+        metadata: {
+          parent_id: channelId
+        }
+      });
+
+      if (!assistantFinalResult.success) {
+        console.error('[AIAssistant] Failed to update assistant message:', assistantFinalResult.error);
+      }
+
+      // Update webview with final response
+      this.sendMessageToWebview({
+        command: 'updateMessage',
+        messageId: assistantCodexId,
+        content: responseText,
+        streaming: false
+      });
+
+      console.log('[AIAssistant] Message exchange complete');
+
     } catch (error) {
       console.error('[AIAssistant] Error sending message:', error);
-      vscode.window.showErrorMessage(`Chat error: ${error}`);
+      vscode.window.showErrorMessage(`Chat error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   private sendMessageToWebview(message: any) {
     if (this._view) {
+      console.log(`[AIAssistant] Sending message to webview: ${message.command}`);
       this._view.webview.postMessage(message);
+    } else {
+      console.warn(`[AIAssistant] Cannot send message ${message.command} - webview not ready`);
     }
   }
 
@@ -467,19 +598,28 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
 
     try {
       console.log('[AIAssistant] Loading providers from Bindery...');
-      const result = await this._binderyService.sendRequest<any>('provider.list', {});
+
+      // Use list_codices since provider.list doesn't exist yet
+      const result = await this._binderyService.sendRequest<any>('list_codices', {});
 
       if (!result.success) {
-        console.warn('[AIAssistant] Failed to load providers:', result.error);
+        console.warn('[AIAssistant] Failed to load codices:', result.error);
         this.sendMessageToWebview({
           command: 'updateProviderList',
           providers: []
         });
         return;
       }
+
+      console.log('[AIAssistant] list_codices result:', {
+        hasData: !!result.data,
+        dataKeys: result.data ? Object.keys(result.data) : [],
+        codicesCount: result.data?.codices?.length || 0
+      });
+      console.log('[AIAssistant] Full result.data:', JSON.stringify(result.data, null, 2));
 
       if (!result.data) {
-        console.warn('[AIAssistant] No provider data returned');
+        console.warn('[AIAssistant] No data in result');
         this.sendMessageToWebview({
           command: 'updateProviderList',
           providers: []
@@ -487,16 +627,44 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
         return;
       }
 
-      const providers = result.data.providers || [];
-      console.log('[AIAssistant] Loaded providers:', providers);
+      // Check if result.data IS the array of codices
+      const codicesArray = Array.isArray(result.data) ? result.data : result.data.codices;
+
+      if (!codicesArray) {
+        console.warn('[AIAssistant] No codices data returned - data structure:', Object.keys(result.data));
+        this.sendMessageToWebview({
+          command: 'updateProviderList',
+          providers: []
+        });
+        return;
+      }
+
+      // Filter for provider Codices only (claude-code-cli, ollama templates)
+      const providerTemplates = ['claude-code-cli', 'ollama'];
+      const providerCodices = codicesArray.filter((codex: any) =>
+        providerTemplates.includes(codex.template_id)
+      );
+
+      console.log('[AIAssistant] Total codices:', codicesArray.length);
+      console.log('[AIAssistant] Found provider Codices:', providerCodices.length);
+      console.log('[AIAssistant] Provider Codices:', providerCodices.map((c: any) => ({
+        id: c.id,
+        title: c.title,
+        template_id: c.template_id,
+        project_id: c.project_id
+      })));
+
+      const providerList = providerCodices.map((codex: any) => ({
+        id: codex.id,
+        name: codex.title,
+        type: codex.content?.provider_type || codex.template_id
+      }));
+
+      console.log('[AIAssistant] Sending provider list to webview:', JSON.stringify(providerList, null, 2));
 
       this.sendMessageToWebview({
         command: 'updateProviderList',
-        providers: providers.map((p: any) => ({
-          id: p.codex_id,
-          name: p.display_name || p.provider_type,
-          type: p.provider_type
-        }))
+        providers: providerList
       });
     } catch (error) {
       console.error('[AIAssistant] Error loading providers:', error);
@@ -570,6 +738,112 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
       vscode.window.showErrorMessage(
         `Error updating channel provider: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
+    }
+  }
+
+  /**
+   * Initialize default provider Codices if none exist
+   */
+  private async initializeDefaultProvidersIfNeeded(): Promise<void> {
+    if (!this._binderyService) {
+      console.warn('[AIAssistant] Cannot initialize providers - Bindery service not available');
+      return;
+    }
+
+    // Guard against concurrent initialization
+    if (this._isInitializingProviders) {
+      console.log('[AIAssistant] Provider initialization already in progress, skipping');
+      return;
+    }
+
+    this._isInitializingProviders = true;
+
+    try {
+      // Check if any providers already exist using list_codices
+      const result = await this._binderyService.sendRequest<any>('list_codices', {});
+
+      if (!result.success) {
+        console.warn('[AIAssistant] Failed to check existing codices:', result.error);
+        return;
+      }
+
+      // Filter for existing provider Codices
+      // Handle both array directly and nested codices property
+      const codicesArray = Array.isArray(result.data) ? result.data : (result.data?.codices || []);
+      const providerTemplates = ['claude-code-cli', 'ollama'];
+      const existingProviders = codicesArray.filter((codex: any) =>
+        providerTemplates.includes(codex.template_id)
+      );
+
+      if (existingProviders.length > 0) {
+        console.log('[AIAssistant] Providers already exist, skipping initialization');
+        return;
+      }
+
+      console.log('[AIAssistant] No providers found, creating defaults...');
+
+      // Create Claude Code CLI provider
+      const claudeCodeResult = await this._binderyService.createCodex(
+        'Claude Code CLI',
+        'claude-code-cli',
+        undefined
+      );
+
+      if (claudeCodeResult.success && claudeCodeResult.data) {
+        const codexId = claudeCodeResult.data;
+        console.log('[AIAssistant] Created Claude Code CLI provider:', codexId);
+
+        // Update with default configuration
+        await this._binderyService.updateCodex(codexId, {
+          content: {
+            provider_type: 'claude-code-cli',
+            executable_path: 'claude',
+            transport: 'json-rpc',
+            headless_mode: true,
+            model: 'claude-sonnet-4',
+            max_tokens: 4096,
+            temperature: 0.7,
+            system_prompt: 'You are a helpful AI assistant.',
+            enable_thinking: false,
+            enable_tool_visibility: true,
+            allowed_tools: 'Read,Write,Bash,Grep,Glob',
+            max_turns: 5,
+            timeout: 120
+          }
+        });
+      }
+
+      // Create Ollama provider
+      const ollamaResult = await this._binderyService.createCodex(
+        'Ollama (Local)',
+        'ollama',
+        undefined
+      );
+
+      if (ollamaResult.success && ollamaResult.data) {
+        const codexId = ollamaResult.data;
+        console.log('[AIAssistant] Created Ollama provider:', codexId);
+
+        // Update with default configuration
+        await this._binderyService.updateCodex(codexId, {
+          content: {
+            provider_type: 'ollama',
+            base_url: 'http://localhost:11434',
+            model: 'llama3.2:3b',
+            api_endpoint: '/api/generate',
+            temperature: 0.7,
+            max_tokens: 2048,
+            top_p: 0.9,
+            top_k: 40
+          }
+        });
+      }
+
+      console.log('[AIAssistant] Default providers initialized successfully');
+    } catch (error) {
+      console.error('[AIAssistant] Error initializing default providers:', error);
+    } finally {
+      this._isInitializingProviders = false;
     }
   }
 
@@ -722,11 +996,64 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
       channelStatus: channel.status
     });
 
-    // TODO: Load messages from channel Codex
-    // const messages = await this.loadChannelMessages(channel.id);
-    // for (const msg of messages) {
-    //   this.sendMessageToWebview({ command: 'addMessage', message: msg });
-    // }
+    // Load message history from channel Codex
+    await this.loadChannelMessages(channel.id);
+  }
+
+  /**
+   * Load messages from a channel's nested message Codices
+   */
+  private async loadChannelMessages(channelId: string): Promise<void> {
+    if (!this._binderyService) {
+      console.warn('[AIAssistant] Cannot load messages - Bindery service not available');
+      return;
+    }
+
+    try {
+      console.log('[AIAssistant] Loading messages for channel:', channelId);
+
+      // Call list_children endpoint to get all message Codices nested under this channel
+      const result = await this._binderyService.sendRequest<any[]>('list_children', {
+        parent_id: channelId
+      });
+
+      if (!result.success) {
+        console.error('[AIAssistant] Failed to load channel messages:', result.error);
+        return;
+      }
+
+      const messageCodices = result.data || [];
+      console.log('[AIAssistant] Loaded', messageCodices.length, 'messages');
+
+      // Sort messages by timestamp (ascending - oldest first)
+      messageCodices.sort((a, b) => {
+        const aTime = a.content?.timestamp || a.created_at;
+        const bTime = b.content?.timestamp || b.created_at;
+        return new Date(aTime).getTime() - new Date(bTime).getTime();
+      });
+
+      // Send each message to the webview
+      for (const msgCodex of messageCodices) {
+        const content = msgCodex.content || {};
+        const role = content.role || 'user';
+        const text = content.content || '';
+        const timestamp = content.timestamp || msgCodex.created_at;
+        const streamingComplete = content.streaming_complete !== false;
+
+        this.sendMessageToWebview({
+          command: 'addMessage',
+          message: {
+            id: msgCodex.id,
+            role: role,
+            content: text,
+            timestamp: timestamp,
+            streaming: !streamingComplete
+          }
+        });
+      }
+    } catch (error) {
+      console.error('[AIAssistant] Error loading channel messages:', error);
+    }
   }
 
   /**
@@ -880,46 +1207,45 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
                 color: var(--vscode-sideBar-foreground);
                 padding: 10px 15px;
                 border-bottom: 1px solid var(--vscode-panel-border);
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                gap: 12px;
             }
 
             .chat-title {
                 font-weight: bold;
                 font-size: 14px;
-                flex-shrink: 0;
             }
 
-            .chat-controls {
+            .provider-controls {
+                background: var(--vscode-sideBar-background);
+                border-top: 1px solid var(--vscode-panel-border);
+                padding: 8px 15px;
                 display: flex;
+                gap: 12px;
                 align-items: center;
-                gap: 8px;
-                flex: 1;
             }
 
             .control-group {
                 display: flex;
                 align-items: center;
                 gap: 6px;
+                flex: 1;
             }
 
             .control-label {
                 font-size: 11px;
                 color: var(--vscode-descriptionForeground);
                 text-transform: uppercase;
+                white-space: nowrap;
             }
 
             .control-select {
                 background: var(--vscode-input-background);
                 color: var(--vscode-input-foreground);
                 border: 1px solid var(--vscode-input-border);
-                padding: 3px 6px;
+                padding: 4px 8px;
                 font-size: 12px;
                 border-radius: 2px;
                 cursor: pointer;
-                min-width: 120px;
+                flex: 1;
             }
 
             .control-select:focus {
@@ -930,20 +1256,6 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
             .control-select:disabled {
                 opacity: 0.5;
                 cursor: not-allowed;
-            }
-
-            .action-btn {
-                background: var(--vscode-button-background);
-                color: var(--vscode-button-foreground);
-                border: none;
-                padding: 4px 8px;
-                border-radius: 3px;
-                cursor: pointer;
-                font-size: 11px;
-            }
-
-            .action-btn:hover {
-                background: var(--vscode-button-hoverBackground);
             }
 
             .messages-container {
@@ -1091,19 +1403,6 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
             <div class="chat-panel">
                 <div class="chat-header">
                     <div class="chat-title" id="channelTitle">🤖 ${channelName}</div>
-                    <div class="chat-controls">
-                        <div class="control-group">
-                            <label class="control-label">Provider:</label>
-                            <select class="control-select" id="providerSelect" onchange="onProviderChange()">
-                                <option value="">Loading...</option>
-                            </select>
-                        </div>
-                        <div class="control-group">
-                            <label class="control-label">Model:</label>
-                            <input type="text" class="control-select" id="modelInput" placeholder="e.g., claude-sonnet-4" />
-                        </div>
-                    </div>
-                    <button class="action-btn" onclick="clearHistory()">Clear</button>
                 </div>
 
                 <div class="messages-container" id="messages">
@@ -1122,6 +1421,19 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
                         rows="1"
                     ></textarea>
                     <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
+                </div>
+
+                <div class="provider-controls">
+                    <div class="control-group">
+                        <label class="control-label">Provider:</label>
+                        <select class="control-select" id="providerSelect" onchange="onProviderChange()">
+                            <option value="">Loading...</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">Model:</label>
+                        <input type="text" class="control-select" id="modelInput" placeholder="e.g., claude-sonnet-4" />
+                    </div>
                 </div>
             </div>
         </div>
