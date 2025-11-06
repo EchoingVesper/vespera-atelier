@@ -36,6 +36,7 @@ impl ProviderManager {
     /// Load all provider Codices from the database
     pub async fn load_providers(&self) -> Result<Vec<String>> {
         info!("Loading providers from database");
+        eprintln!("Debug: ProviderManager loading providers from database");
 
         let mut provider_ids = Vec::new();
 
@@ -46,39 +47,40 @@ impl ProviderManager {
             .await
             .context("Failed to list codices")?;
 
-        debug!("Found {} total codices", codices.len());
+        eprintln!("Debug: Found {} total codices in database", codices.len());
 
         for codex in codices {
             let template_id_opt = codex.get("template_id").and_then(|v| v.as_str());
             let id_opt = codex.get("id").and_then(|v| v.as_str());
 
-            debug!("Checking codex: id={:?}, template_id={:?}", id_opt, template_id_opt);
+            eprintln!("Debug: Checking codex: id={:?}, template_id={:?}", id_opt, template_id_opt);
 
             if let Some(template_id) = template_id_opt {
                 // Check if this is a provider template
                 if template_id == "claude-code-cli" || template_id == "ollama" {
-                    debug!("Found provider codex with template_id: {}", template_id);
+                    eprintln!("Debug: Found provider codex with template_id: {}", template_id);
                     if let Some(id) = id_opt {
+                        eprintln!("Debug: Attempting to load provider: {}", id);
                         match self.load_provider(id).await {
                             Ok(_) => {
                                 provider_ids.push(id.to_string());
                                 info!("Loaded provider: {}", id);
+                                eprintln!("Debug: Successfully loaded provider: {}", id);
                             }
                             Err(e) => {
                                 error!("Failed to load provider {}: {}", id, e);
+                                eprintln!("Debug: Failed to load provider {}: {}", id, e);
                             }
                         }
                     } else {
                         warn!("Provider codex missing id field");
+                        eprintln!("Debug: Provider codex missing id field");
                     }
-                } else {
-                    debug!("Skipping non-provider codex: template_id={}", template_id);
                 }
-            } else {
-                debug!("Codex missing template_id field");
             }
         }
 
+        eprintln!("Debug: Loaded {} providers total", provider_ids.len());
         info!("Loaded {} providers", provider_ids.len());
         Ok(provider_ids)
     }
