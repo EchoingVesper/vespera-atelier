@@ -46,11 +46,19 @@ impl ProviderManager {
             .await
             .context("Failed to list codices")?;
 
+        debug!("Found {} total codices", codices.len());
+
         for codex in codices {
-            if let Some(template_id) = codex.get("template_id").and_then(|v| v.as_str()) {
+            let template_id_opt = codex.get("template_id").and_then(|v| v.as_str());
+            let id_opt = codex.get("id").and_then(|v| v.as_str());
+
+            debug!("Checking codex: id={:?}, template_id={:?}", id_opt, template_id_opt);
+
+            if let Some(template_id) = template_id_opt {
                 // Check if this is a provider template
                 if template_id == "claude-code-cli" || template_id == "ollama" {
-                    if let Some(id) = codex.get("id").and_then(|v| v.as_str()) {
+                    debug!("Found provider codex with template_id: {}", template_id);
+                    if let Some(id) = id_opt {
                         match self.load_provider(id).await {
                             Ok(_) => {
                                 provider_ids.push(id.to_string());
@@ -60,8 +68,14 @@ impl ProviderManager {
                                 error!("Failed to load provider {}: {}", id, e);
                             }
                         }
+                    } else {
+                        warn!("Provider codex missing id field");
                     }
+                } else {
+                    debug!("Skipping non-provider codex: template_id={}", template_id);
                 }
+            } else {
+                debug!("Codex missing template_id field");
             }
         }
 
