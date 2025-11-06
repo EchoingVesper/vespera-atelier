@@ -996,11 +996,13 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
       command: 'clearHistory'
     });
 
-    // Update header with channel name
+    // Update header with channel name and provider info
     this.sendMessageToWebview({
       command: 'updateChannelInfo',
       channelName: channel.title,
-      channelStatus: channel.status
+      channelStatus: channel.status,
+      providerId: channel.provider_id || '',
+      model: channel.model || ''
     });
 
     // Load message history from channel Codex
@@ -1539,13 +1541,23 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
                 vscode.postMessage({ command: 'requestClearHistory' });
             }
 
-            function updateChannelInfo(channelName, channelStatus) {
+            function updateChannelInfo(channelName, channelStatus, providerId, model) {
                 const titleEl = document.getElementById('channelTitle');
                 if (titleEl) {
                     const statusIcon = channelStatus === 'active' ? '🟢' :
                                      channelStatus === 'idle' ? '🟡' :
                                      channelStatus === 'archived' ? '⚪' : '';
                     titleEl.textContent = \`\${statusIcon} \${channelName}\`;
+                }
+
+                // Update provider and model dropdowns if values provided
+                if (providerId) {
+                    providerSelect.value = providerId;
+                    console.log('[Webview] Restored provider selection:', providerId);
+                }
+                if (model) {
+                    modelInput.value = model;
+                    console.log('[Webview] Restored model:', model);
                 }
             }
 
@@ -1716,7 +1728,7 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
                         \`;
                         break;
                     case 'updateChannelInfo':
-                        updateChannelInfo(message.channelName, message.channelStatus);
+                        updateChannelInfo(message.channelName, message.channelStatus, message.providerId, message.model);
                         break;
                     case 'updateProviderList':
                         updateProviderList(message.providers);
