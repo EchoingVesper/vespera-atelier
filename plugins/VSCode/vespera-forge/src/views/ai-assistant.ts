@@ -803,19 +803,14 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
         // Update with default configuration
         await this._binderyService.updateCodex(codexId, {
           content: {
-            provider_type: 'claude-code-cli',
-            executable_path: 'claude',
-            transport: 'json-rpc',
-            headless_mode: true,
-            model: 'claude-sonnet-4',
-            max_tokens: 4096,
-            temperature: 0.7,
-            system_prompt: 'You are a helpful AI assistant.',
-            enable_thinking: false,
-            enable_tool_visibility: true,
-            allowed_tools: 'Read,Write,Bash,Grep,Glob',
-            max_turns: 5,
-            timeout: 120
+            fields: {
+              executable_path: 'claude',
+              model: 'claude-sonnet-4',
+              max_tokens: 4096,
+              temperature: 0.7,
+              system_prompt: 'You are a helpful AI assistant.',
+              timeout: 120
+            }
           }
         });
       }
@@ -834,14 +829,14 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
         // Update with default configuration
         await this._binderyService.updateCodex(codexId, {
           content: {
-            provider_type: 'ollama',
-            base_url: 'http://localhost:11434',
-            model: 'llama3.2:3b',
-            api_endpoint: '/api/generate',
-            temperature: 0.7,
-            max_tokens: 2048,
-            top_p: 0.9,
-            top_k: 40
+            fields: {
+              base_url: 'http://localhost:11434',
+              model: 'llama3.2:3b',
+              api_endpoint: '/api/generate',
+              temperature: 0.7,
+              max_tokens: 2048,
+              timeout: 120
+            }
           }
         });
       }
