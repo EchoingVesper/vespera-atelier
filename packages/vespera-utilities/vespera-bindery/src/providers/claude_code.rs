@@ -95,6 +95,17 @@ impl ClaudeCodeProvider {
 
         let mut child = cmd.spawn().context("Failed to spawn Claude Code CLI process")?;
 
+        // Capture and log stderr for debugging
+        if let Some(stderr) = child.stderr.take() {
+            tokio::spawn(async move {
+                let mut reader = BufReader::new(stderr).lines();
+                while let Ok(Some(line)) = reader.next_line().await {
+                    eprintln!("Debug: Claude CLI stderr: {}", line);
+                    warn!("Claude CLI stderr: {}", line);
+                }
+            });
+        }
+
         // Write message to stdin
         if let Some(mut stdin) = child.stdin.take() {
             let message = message.to_string();
