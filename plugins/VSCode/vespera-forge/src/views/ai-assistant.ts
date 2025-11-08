@@ -740,6 +740,9 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
         (this._activeChannel as any).model = model;
         console.log('[AIAssistant] Updated active channel with provider:', { providerId, model });
       }
+
+      // Send updated channels to webview so UI reflects the changes
+      this.sendChannelsToWebview();
     } catch (error) {
       console.error('[AIAssistant] Error updating channel provider:', error);
       vscode.window.showErrorMessage(
