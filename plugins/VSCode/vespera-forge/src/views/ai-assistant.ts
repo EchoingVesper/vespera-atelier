@@ -16,6 +16,7 @@ interface ChatChannel {
   status: 'active' | 'idle' | 'archived';
   lastActivity?: Date;
   messageCount?: number;
+  content?: any; // Channel content including session_id, provider_id, model, etc.
 }
 
 export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
@@ -595,7 +596,8 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
             lastActivity: codex.updated_at ? new Date(codex.updated_at) : undefined,
             messageCount: this.getMessageCount(codex),
             provider_id: codex.content?.provider_id || '',
-            model: codex.content?.model || ''
+            model: codex.content?.model || '',
+            content: codex.content || {} // Preserve full content including session_id
           } as ChatChannel;
         });
 
@@ -1037,8 +1039,10 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
    * Switch to a different chat channel
    */
   public async switchChannel(channel: any): Promise<void> {
-    this._activeChannel = channel;
-    console.log('[AIAssistant] Switched to channel:', channel.title);
+    // Find the channel in our local array to get the latest data (including session_id)
+    const localChannel = this._channels.find(ch => ch.id === channel.id);
+    this._activeChannel = localChannel || channel;
+    console.log('[AIAssistant] Switched to channel:', this._activeChannel.title);
 
     // Persist selected channel ID to workspace state
     await this._context.workspaceState.update('vespera.aiAssistant.selectedChannelId', channel.id);
@@ -1047,10 +1051,10 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
     // Update header with channel name and provider info
     this.sendMessageToWebview({
       command: 'updateChannelInfo',
-      channelName: channel.title,
-      channelStatus: channel.status,
-      providerId: channel.provider_id || '',
-      model: channel.model || ''
+      channelName: this._activeChannel.title,
+      channelStatus: this._activeChannel.status,
+      providerId: this._activeChannel.provider_id || '',
+      model: this._activeChannel.model || ''
     });
 
     // Load message history from channel Codex (this will clear and repopulate)
