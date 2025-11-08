@@ -403,11 +403,23 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
         streaming: false
       });
 
+      // Re-enable send button after successful message send
+      this.sendMessageToWebview({
+        command: 'messageSendComplete',
+        error: false
+      });
+
       console.log('[AIAssistant] Message exchange complete');
 
     } catch (error) {
       console.error('[AIAssistant] Error sending message:', error);
       vscode.window.showErrorMessage(`Chat error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+
+      // Re-enable send button in webview after error
+      this.sendMessageToWebview({
+        command: 'messageSendComplete',
+        error: true
+      });
     }
   }
 
@@ -1564,6 +1576,17 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
                 console.log('[Webview] Received updateChannels:', channelData);
                 channels = channelData;
                 renderChannels();
+
+                // If we have an active channel, update its info in the UI
+                if (selectedChannelId) {
+                    const activeChannel = channels.find(ch => ch.id === selectedChannelId);
+                    if (activeChannel) {
+                        const providerId = activeChannel.content?.provider_id || activeChannel.provider_id || '';
+                        const model = activeChannel.content?.model || activeChannel.model || '';
+                        console.log('[Webview] Updating active channel info after channels update:', { providerId, model });
+                        updateChannelInfo(activeChannel.title, activeChannel.status, providerId, model);
+                    }
+                }
             }
 
             function renderChannels() {
@@ -1734,6 +1757,11 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
                         break;
                     case 'updateChannels':
                         updateChannels(message.channels);
+                        break;
+                    case 'messageSendComplete':
+                        // Re-enable send button after message send completes or errors
+                        sendBtn.disabled = false;
+                        sendBtn.textContent = 'Send';
                         break;
                 }
             });
