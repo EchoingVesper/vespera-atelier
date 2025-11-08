@@ -129,8 +129,16 @@ impl ClaudeCodeProvider {
             return Ok(None);
         }
 
+        // Skip empty lines
+        if line.trim().is_empty() {
+            return Ok(None);
+        }
+
         let event: ClaudeCodeEvent = serde_json::from_str(line)
-            .with_context(|| format!("Failed to parse event: {}", line))?;
+            .with_context(|| {
+                eprintln!("Debug: Failed to parse JSON from Claude CLI: {}", line);
+                format!("Failed to parse event: {}", line)
+            })?;
 
         Ok(Some(event))
     }
@@ -144,6 +152,7 @@ impl ClaudeCodeProvider {
         let mut metadata = HashMap::new();
 
         while let Some(line) = reader.next_line().await? {
+            eprintln!("Debug: Claude CLI stdout: {}", line);
             if let Some(event) = Self::parse_event(&line)? {
                 match event {
                     ClaudeCodeEvent::System { subtype, session_id: sid, .. } => {
