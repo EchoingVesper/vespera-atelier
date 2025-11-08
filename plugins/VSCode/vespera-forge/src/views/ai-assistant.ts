@@ -376,17 +376,17 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
 
       const responseText = chatResult.data.text || 'No response received';
       const usage = chatResult.data.usage;
-      const sessionId = chatResult.data.session_id;
+      const newSessionId = chatResult.data.session_id;
 
-      console.log('[AIAssistant] Received session_id from provider:', sessionId);
+      console.log('[AIAssistant] Received session_id from provider:', newSessionId);
 
       // Update channel with session_id for conversation continuity
-      if (sessionId) {
+      if (newSessionId) {
         const channel = this._channels.find(ch => ch.id === channelId);
         if (channel) {
           const updatedContent = {
-            ...(channel.content || {}),
-            session_id: sessionId,
+            ...((channel as any).content || {}),
+            session_id: newSessionId,
             last_updated: new Date().toISOString()
           };
 
@@ -397,7 +397,7 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
           console.log('[AIAssistant] Stored session_id in channel for conversation continuity');
 
           // Update local channel object
-          channel.content = updatedContent;
+          (channel as any).content = updatedContent;
           if (this._activeChannel && this._activeChannel.id === channelId) {
             (this._activeChannel as any).content = updatedContent;
           }
