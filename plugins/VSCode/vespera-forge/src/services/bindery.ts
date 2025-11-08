@@ -134,7 +134,7 @@ export class BinderyService extends EventEmitter {
         binderyPath: config.binderyPath || undefined,
         workspaceRoot: undefined,
         enableLogging: config.enableLogging ?? false,
-        connectionTimeout: config.connectionTimeout ?? 5000,
+        connectionTimeout: config.connectionTimeout ?? 180000, // 3 minutes for LLM responses
         maxRetries: config.maxRetries ?? 3,
         retryDelay: config.retryDelay ?? 1000,
         security: { ...defaultSecurity, ...config.security }
@@ -151,7 +151,7 @@ export class BinderyService extends EventEmitter {
       binderyPath: config.binderyPath || undefined,
       workspaceRoot: workspaceRoot,
       enableLogging: config.enableLogging ?? false, // Changed default to false to reduce console spam
-      connectionTimeout: config.connectionTimeout ?? 5000,
+      connectionTimeout: config.connectionTimeout ?? 180000, // 3 minutes for LLM responses
       maxRetries: config.maxRetries ?? 3,
       retryDelay: config.retryDelay ?? 1000,
       security: { ...defaultSecurity, ...config.security }

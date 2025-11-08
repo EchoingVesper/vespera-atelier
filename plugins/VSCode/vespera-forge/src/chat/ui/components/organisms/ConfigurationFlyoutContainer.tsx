@@ -72,15 +72,15 @@ export const ConfigurationFlyoutContainer: React.FC<ConfigurationFlyoutContainer
       });
       
       vscode.postMessage({ type, data, requestId });
-      
-      // Timeout after 30 seconds
+
+      // Timeout after 3 minutes for LLM responses
       setTimeout(() => {
         const callback = pendingRequestsRef.current.get(requestId);
         if (callback) {
           pendingRequestsRef.current.delete(requestId);
           reject(new Error('Request timeout'));
         }
-      }, 30000);
+      }, 180000);
     });
   };
   
