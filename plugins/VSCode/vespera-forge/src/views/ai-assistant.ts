@@ -268,6 +268,8 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
       return;
     }
 
+    let assistantCodexId: string | undefined;
+
     try {
       // Create user message Codex
       const userMsgResult = await this._binderyService.createCodex(
@@ -322,7 +324,7 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
         throw new Error(`Failed to create assistant message Codex: ${assistantMsgResult.error?.message}`);
       }
 
-      const assistantCodexId = assistantMsgResult.data;
+      assistantCodexId = assistantMsgResult.data;
 
       // Initialize assistant message with empty content
       const assistantInitResult = await this._binderyService.updateCodex(assistantCodexId, {
@@ -442,7 +444,18 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
 
     } catch (error) {
       console.error('[AIAssistant] Error sending message:', error);
-      vscode.window.showErrorMessage(`Chat error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      vscode.window.showErrorMessage(`Chat error: ${errorMessage}`);
+
+      // Update assistant message placeholder with error message
+      if (assistantCodexId) {
+        this.sendMessageToWebview({
+          command: 'updateMessage',
+          messageId: assistantCodexId,
+          content: `❌ Error: ${errorMessage}`,
+          streaming: false
+        });
+      }
 
       // Re-enable send button in webview after error
       this.sendMessageToWebview({
