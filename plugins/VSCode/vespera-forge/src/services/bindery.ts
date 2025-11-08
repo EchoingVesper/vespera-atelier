@@ -1025,9 +1025,9 @@ export class BinderyService extends EventEmitter {
       // Handle stderr (logging)
       this.process.stderr!.on('data', (data) => {
         const message = data.toString();
-        // Only log first line to avoid console spam
-        const firstLine = message.split('\n')[0];
-        this.log('Bindery stderr:', firstLine, message.length > firstLine.length ? '...' : '');
+        // Log all lines for debugging (previously only logged first line)
+        const lines = message.split('\n').filter((line: string) => line.trim());
+        lines.forEach((line: string) => this.log('Bindery stderr:', line));
       });
 
       // Give process time to start

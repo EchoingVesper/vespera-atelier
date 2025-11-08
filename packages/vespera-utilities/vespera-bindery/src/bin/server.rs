@@ -193,9 +193,13 @@ impl AppState {
             capabilities: vec!["design".to_string(), "ui".to_string(), "mockup".to_string()],
         });
 
+        eprintln!("Debug: About to create provider manager...");
+
         // Create provider manager and load providers
         let database_arc = Arc::new(database);
+        eprintln!("Debug: Created database Arc, creating ProviderManager...");
         let provider_manager = Arc::new(ProviderManager::new(Arc::clone(&database_arc)));
+        eprintln!("Debug: ProviderManager created successfully");
 
         // Load providers synchronously during startup to ensure they're available
         eprintln!("Debug: Loading providers during server startup...");

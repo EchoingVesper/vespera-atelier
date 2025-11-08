@@ -1,0 +1,975 @@
+localProcessExtensionHost.ts:350 [Extension Host] STOPPED on first line for debugging on port 53692
+_tryFindDebugPort @ localProcessExtensionHost.ts:350
+log.ts:440  INFO Started local extension host with pid 55904.
+log.ts:440  INFO Loading development extension at /home/aya/Development/vespera-atelier-worktrees/feat-codex-ui-framework/plugins/VSCode/vespera-forge
+languagesAssociations.ts:73 Overwriting extension <<copilot-instructions.md>> to now point to mime <<text/x-instructions>>
+(anonymous) @ languagesAssociations.ts:73
+languagesAssociations.ts:73 Overwriting extension <<.hbs>> to now point to mime <<text/x-handlebars>>
+(anonymous) @ languagesAssociations.ts:73
+languagesAssociations.ts:73 Overwriting extension <<.handlebars>> to now point to mime <<text/x-handlebars>>
+(anonymous) @ languagesAssociations.ts:73
+webviewElement.ts:489 An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing.
+mountTo @ webviewElement.ts:489
+webviewElement.ts:489 An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing.
+mountTo @ webviewElement.ts:489
+log.ts:460   ERR Cannot read properties of undefined (reading 'extensionId'): TypeError: Cannot read properties of undefined (reading 'extensionId')
+    at t (vscode-file://vscode-app/usr/share/codium/resources/app/out/vs/workbench/workbench.desktop.main.js:4070:2745)
+    at tIt.recommendRemoteExtensionIfNeeded (vscode-file://vscode-app/usr/share/codium/resources/app/out/vs/workbench/workbench.desktop.main.js:4070:3495)
+error @ log.ts:460
+open-vsx.org/vscode/gallery/vespera-atelier/vespera-forge/latest:1  Failed to load resource: the server responded with a status of 404 ()
+localProcessExtensionHost.ts:280 Extension Host
+localProcessExtensionHost.ts:281 Debugger attached.
+console.ts:137 [Extension Host] [Vespera] 🔥 EXTENSION FILE LOADED - extension.ts is being executed (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] 🚀 VESPERA FORGE: Extension activated with enhanced memory management! (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera Core] Initializing core services... (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] Initializing Vespera Forge security integration... (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] Initializing core security services... (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] Core security services initialized successfully (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] Initializing tool management security... (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] Initializing file operations security... (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] Initializing MCP validation... (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] McpMessageValidator initialized with SecurityEnhancedCoreServices (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] ToolOverrideSecurityManager initialized with SecurityEnhancedCoreServices (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] McpSecureFileTools initialized with full security stack (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] MCP secure file tools initialized (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Security services initialized for Bindery (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] Bindery service with security initialized (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] Validating security integration... (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] Security integration completed in 7.80ms (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera:WARN] Security integration initialized with degraded status (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+hvs @ console.ts:137
+console.ts:137 [Extension Host] [Vespera:WARN] Failed components:  (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+hvs @ console.ts:137
+console.ts:137 [Extension Host] [WorkspaceDiscovery] Found workspace: discord-chat-logs (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [WorkspaceDiscovery] Discovery method: workspace-root (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [WorkspaceDiscovery] Path: /home/aya/Projects/discord-chat-logs/.vespera (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Initializing content providers (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Using Bindery content provider (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Singleton instance already exists. Config parameter ignored. Use disposeBinderyService() first if you need to reinitialize with new config. (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+hvs @ console.ts:137
+console.ts:137 [Extension Host] [Vespera] Content providers initialized (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Initializing Codex Navigator framework... (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Workspace folder detected: /home/aya/Projects/discord-chat-logs (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Bindery service provided at construction (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering Welcome view provider (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Welcome view provider registered successfully (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering Navigator view provider with ID: vesperaForge.navigatorView (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Navigator view provider registered successfully (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering AI Assistant view provider with ID: vespera-forge.aiAssistant (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] AI Assistant view provider registered successfully (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Codex Navigator framework initialized successfully (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+webviewElement.ts:489 An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing.
+mountTo @ webviewElement.ts:489
+console.ts:137 [Extension Host] [Vespera] registerCommands called - using Roo Code registration pattern (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.initialize (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.createProjectWizard (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.createContent (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.testCommand (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.openTaskManager (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.configureBindery (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.inlineTest (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.activationCompleted (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.createChatSession (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.switchChatSession (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.exportChatSessions (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.importChatSessions (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.clearChatHistory (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.showChatStats (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.showAllViews (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.globalRefresh (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.openCodexNavigator (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.createCodex (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.searchCodex (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.deleteCodex (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.refreshCodexList (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.createChatChannel (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.selectChatChannel (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.deleteChatChannel (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.archiveChatChannel (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.refreshChatChannels (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.configureProviderKey (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.checkClaudeCodeAuth (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Registering command: vespera-forge.cleanupDuplicateProviders (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Successfully registered 29 commands (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] [EventBus] Registered listener for codexCreated: NavigatorWebviewProvider:codexCreated (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] [EventBus] Registered listener for codexUpdated: NavigatorWebviewProvider:codexUpdated (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] [EventBus] Registered listener for codexDeleted: NavigatorWebviewProvider:codexDeleted (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] [Command] Initialize command executed (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Initializing Vespera Forge... (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] Bindery connection status changed: Object (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Connection status changed: connecting (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Workspace root: /home/aya/Projects/discord-chat-logs (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Searching for Bindery in paths: Array(8) (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Checking path: /home/aya/Development/vespera-atelier-worktrees/feat-codex-ui-framework/packages/vespera-utilities/vespera-bindery/target/debug/bindery-server (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Found Bindery at: /home/aya/Development/vespera-atelier-worktrees/feat-codex-ui-framework/packages/vespera-utilities/vespera-bindery/target/debug/bindery-server (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Process isolation enabled - resource limits will be monitored (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] AI Assistant panel initialized (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Bindery stderr: Starting Vespera Bindery Server v0.1.0 ... (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+VM7:179 [Webview] Loading providers...
+console.ts:137 [Extension Host] [AIAssistant] Loading providers from Bindery... (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Sending request: list_codices, connected: false, status: connecting (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Request list_codices failed - not connected. Status: connecting (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Failed to load codices: Objectcode: -1message: "Not connected to Bindery"[[Prototype]]: Object (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+hvs @ console.ts:137
+console.ts:137 [Extension Host] [AIAssistant] Sending message to webview: updateProviderList (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+VM7:264 [Webview] Received message: updateProviderList
+VM7:185 [Webview] Received providers: Array(0)length: 0[[Prototype]]: Array(0)
+console.ts:137 [Extension Host] [AIAssistant] Webview ready, loading initial data (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Current connection status: connecting (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Bindery stderr: Debug: Database pool initialized - Status: Healthy, Connections: 3/20 ... (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Bindery stderr: Debug: Successfully loaded provider: f4f6e981-68a8-44fa-8c53-5f06e4b400ff ... (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [ConfigurationManager] Loading configuration... (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [ConfigurationManager] Default config: {
+  "providers": {},
+  "ui": {
+    "theme": "auto",
+    "layout": "embedded",
+    "position": "right",
+    "showTimestamps": true,
+    "compactMode": false,
+    "animationsEnabled": true
+  },
+  "interaction": {
+    "hotkeys": {
+      "send": "enter",
+      "newLine": "shift_enter",
+      "clearChat": "ctrl+l",
+      "switchProvider": "ctrl+shift+p"
+    },
+    "inputBehavior": {
+      "showCharacterCounter": true,
+      "sendOnPaste": false,
+      "enableCommandDetection": true,
+      "enableHistoryNavigation": true,
+      "enableDraftPersistence": false,
+      "maxHistorySize": 50,
+      "draftSaveDelay": 1000
+    },
+    "autoSave": true,
+    "showSendButton": true,
+    "streaming": true
+  },
+  "integration": {
+    "taskIntegration": true,
+    "taskKeywords": [
+      "task",
+      "todo",
+      "reminder",
+      "schedule"
+    ],
+    "autoSuggestTasks": true,
+    "linkToWorkspace": true
+  },
+  "advanced": {
+    "maxHistorySize": 1000,
+    "requestTimeout": 30000,
+    "retryAttempts": 3,
+    "debugMode": false
+  }
+} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [ConfigurationManager] Global VS Code config: {
+  "providers": {},
+  "ui": {
+    "layout": "embedded",
+    "position": "right",
+    "theme": "auto",
+    "showTimestamps": true,
+    "compactMode": false,
+    "animationsEnabled": true
+  },
+  "interaction": {
+    "hotkeys": {
+      "send": "enter",
+      "newLine": "shift_enter",
+      "clearChat": "ctrl+l",
+      "switchProvider": "ctrl+shift+p"
+    },
+    "inputBehavior": {
+      "showCharacterCounter": true,
+      "sendOnPaste": false,
+      "enableCommandDetection": true,
+      "enableHistoryNavigation": true,
+      "enableDraftPersistence": false,
+      "maxHistorySize": 50,
+      "draftSaveDelay": 1000
+    },
+    "autoSave": true,
+    "showSendButton": true,
+    "streaming": true
+  },
+  "integration": {
+    "taskIntegration": true,
+    "taskKeywords": [],
+    "autoSuggestTasks": true,
+    "linkToWorkspace": true
+  },
+  "advanced": {
+    "maxHistorySize": 1000,
+    "requestTimeout": 30000,
+    "retryAttempts": 3,
+    "debugMode": false
+  }
+} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [ConfigurationManager] Workspace config: {
+  "providers": {},
+  "ui": {
+    "layout": "embedded",
+    "position": "right",
+    "theme": "auto",
+    "showTimestamps": true,
+    "compactMode": false,
+    "animationsEnabled": true
+  },
+  "interaction": {
+    "hotkeys": {
+      "send": "enter",
+      "newLine": "shift_enter",
+      "clearChat": "ctrl+l",
+      "switchProvider": "ctrl+shift+p"
+    },
+    "inputBehavior": {
+      "showCharacterCounter": true,
+      "sendOnPaste": false,
+      "enableCommandDetection": true,
+      "enableHistoryNavigation": true,
+      "enableDraftPersistence": false,
+      "maxHistorySize": 50,
+      "draftSaveDelay": 1000
+    },
+    "autoSave": true,
+    "showSendButton": true,
+    "streaming": true
+  },
+  "integration": {
+    "taskIntegration": true,
+    "taskKeywords": [
+      "task",
+      "todo",
+      "reminder",
+      "schedule"
+    ],
+    "autoSuggestTasks": true,
+    "linkToWorkspace": true
+  },
+  "advanced": {
+    "maxHistorySize": 1000,
+    "requestTimeout": 30000,
+    "retryAttempts": 3,
+    "debugMode": false
+  }
+} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [ConfigurationManager] User config from globalState: {} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [ConfigurationManager] Final merged config: {
+  "providers": {},
+  "ui": {
+    "theme": "auto",
+    "layout": "embedded",
+    "position": "right",
+    "showTimestamps": true,
+    "compactMode": false,
+    "animationsEnabled": true
+  },
+  "interaction": {
+    "hotkeys": {
+      "send": "enter",
+      "newLine": "shift_enter",
+      "clearChat": "ctrl+l",
+      "switchProvider": "ctrl+shift+p"
+    },
+    "inputBehavior": {
+      "showCharacterCounter": true,
+      "sendOnPaste": false,
+      "enableCommandDetection": true,
+      "enableHistoryNavigation": true,
+      "enableDraftPersistence": false,
+      "maxHistorySize": 50,
+      "draftSaveDelay": 1000
+    },
+    "autoSave": true,
+    "showSendButton": true,
+    "streaming": true
+  },
+  "integration": {
+    "taskIntegration": true,
+    "taskKeywords": [
+      "task",
+      "todo",
+      "reminder",
+      "schedule"
+    ],
+    "autoSuggestTasks": true,
+    "linkToWorkspace": true
+  },
+  "advanced": {
+    "maxHistorySize": 1000,
+    "requestTimeout": 30000,
+    "retryAttempts": 3,
+    "debugMode": false
+  }
+} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [ConfigurationManager] Security integration initialized (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [ChatSessionManager] Loaded 0 sessions (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [VesperaChatSystem] Initializing chat system... Object (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [ChatEventRouter] Emitting event: chatProviderConnected Object (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] [EventBus] Emitting event: chatProviderConnected Object (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] [EventBus] Emitting event: chatProviderConnected Object (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [ChatEventRouter] Emitting event: chatProviderConnected Object (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] [EventBus] Emitting event: chatProviderConnected Object (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] [EventBus] Emitting event: chatProviderConnected Object (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [ChatEventRouter] Emitting event: chatProviderConnected Object (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] [EventBus] Emitting event: chatProviderConnected Object (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] [EventBus] Emitting event: chatProviderConnected Object (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Loading templates from: /home/aya/Projects/discord-chat-logs/.vespera/templates (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Checking subdirectory: /home/aya/Projects/discord-chat-logs/.vespera/templates/codex (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+editor.js:119949 Editor initialized successfully
+console.ts:137 [Extension Host] [ChatEventRouter] Emitting event: chatProviderConnected Object (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] [EventBus] Emitting event: chatProviderConnected Object (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] [EventBus] Emitting event: chatProviderConnected Object (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Found 5 entries in codex (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Processing template file: character.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [VesperaChatSystem] Template registry initialized (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [VesperaChatSystem] Skipped WebView provider registration (embedded mode) (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [VesperaChatSystem] Skipped command registration (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [VesperaChatSystem] Chat system initialized successfully (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Chat system initialized (providers managed by Bindery) (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+navigator.js:118651 Navigator initialized successfully
+console.ts:137 [Extension Host] [TemplateInitializer] Read 2319 bytes from character.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Parsed template: character (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Added template: character (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Processing template file: location.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+navigator.js:118455 [Navigator] No active context, showing all 0 codices
+navigator.js:118455 [Navigator] No active context, showing all 0 codices
+console.ts:137 [Extension Host] Created lock file at /home/aya/.claude/ide/60755.lock (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] Set CLAUDE_CODE_SSE_PORT=60755 in terminal environment (in-memory) (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] Set ENABLE_IDE_INTEGRATION=true in terminal environment (in-memory) (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Read 2423 bytes from location.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Parsed template: location (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Added template: location (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Processing template file: note.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Read 1174 bytes from note.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Parsed template: note (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Added template: note (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Processing template file: scene.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Read 2263 bytes from scene.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Parsed template: scene (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Added template: scene (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Processing template file: task.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Read 2471 bytes from task.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Parsed template: task (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Added template: task (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Checking subdirectory: /home/aya/Projects/discord-chat-logs/.vespera/templates/providers (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Found 3 entries in providers (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Processing template file: claude-code-cli.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Read 5844 bytes from claude-code-cli.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Parsed template: claude-code-cli (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Added template: claude-code-cli (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Processing template file: llm-provider.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Read 3686 bytes from llm-provider.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Parsed template: llm-provider (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Added template: llm-provider (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Processing template file: ollama.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Read 6514 bytes from ollama.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Parsed template: ollama (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Added template: ollama (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Checking subdirectory: /home/aya/Projects/discord-chat-logs/.vespera/templates/chat (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Found 1 entries in chat (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Processing template file: ai-chat.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Read 5499 bytes from ai-chat.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Parsed template: ai-chat (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Added template: ai-chat (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Checking subdirectory: /home/aya/Projects/discord-chat-logs/.vespera/templates/agents (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Found 2 entries in agents (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Processing template file: task-code-writer.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Read 7162 bytes from task-code-writer.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Parsed template: task-code-writer (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Added template: task-code-writer (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Processing template file: task-orchestrator.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Read 5758 bytes from task-orchestrator.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Parsed template: task-orchestrator (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Added template: task-orchestrator (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] FINAL: Loaded 11 templates: Array(11) (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [EditorPanelProvider] ========== setActiveCodex CALLED ========== (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [EditorPanelProvider] Codex ID: 99d15e6c-f483-485e-8bd0-6f396b770a0f (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Sending request: version_info, connected: true, status: connected (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Sending request to Bindery: version_info ID: 1 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Full JSON-RPC request: {"jsonrpc":"2.0","method":"version_info","params":{},"id":1} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Response successful for request 1 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] Bindery connection status changed: Object (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] Auto-sync started with interval: 30000 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Connection status changed: connected (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Bindery connected, initializing providers... (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Sending request: list_codices, connected: true, status: connected (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Connection status changed: connected (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Bindery connection established Object (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Sending request to Bindery: list_codices ID: 2 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Full JSON-RPC request: {"jsonrpc":"2.0","method":"list_codices","params":{},"id":2} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] Bindery service connected: Object (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Bindery connected, loading channels... (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Sending request: list_codices, connected: true, status: connected (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [EditorPanelProvider] ✓ Bindery connection ready (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [EditorPanelProvider] Fetching codex from Bindery... (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Sending request: get_codex, connected: true, status: connected (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Sending request to Bindery: list_codices ID: 3 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Full JSON-RPC request: {"jsonrpc":"2.0","method":"list_codices","params":{},"id":3} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Sending request to Bindery: get_codex ID: 4 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Full JSON-RPC request: {"jsonrpc":"2.0","method":"get_codex","params":{"codex_id":"99d15e6c-f483-485e-8bd0-6f396b770a0f"},"id":4} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera:WARN] Security alert generated | {"alertId":"alert_1762562064089_03evfqpiz","level":"critical","title":"Critical Security Event","event":"security_breach"} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+hvs @ console.ts:137
+notificationsAlerts.ts:42 Security Alert: Critical Security Event
+onDidChangeNotification @ notificationsAlerts.ts:42
+console.ts:137 [Extension Host] [BinderyService] Response successful for request 2 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Providers already exist, skipping initialization (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Loading providers from Bindery... (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Sending request: list_codices, connected: true, status: connected (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Sending request to Bindery: list_codices ID: 5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Full JSON-RPC request: {"jsonrpc":"2.0","method":"list_codices","params":{},"id":5} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera] [Command] Show All Views command executed (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera:WARN] Security alert generated | {"alertId":"alert_1762562064094_jgmoio8u0","level":"critical","title":"Critical Security Event","event":"security_breach"} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+hvs @ console.ts:137
+notificationsAlerts.ts:42 Security Alert: Critical Security Event
+onDidChangeNotification @ notificationsAlerts.ts:42
+console.ts:137 [Extension Host] [BinderyService] Response successful for request 3 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Response contains error for request 4 - Error: {"code":-32603,"message":"Internal error","data":{"details":"Codex not found"}} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] listCodeices result: Object (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Loaded 2 channels: Array(2) (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Sending 2 channels to webview (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+VM7:264 [Webview] Received message: updateChannels
+VM7:116 [Webview] Received updateChannels: Array(2)
+console.ts:137 [Extension Host] [AIAssistant] Restoring previously selected channel: test (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Switched to channel: test (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [EditorPanelProvider] getCodex result success: false (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera:WARN] Security alert generated | {"alertId":"alert_1762562064100_cgxvegza0","level":"critical","title":"Critical Security Event","event":"security_breach"} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+hvs @ console.ts:137
+VM7:122 [Webview] Rendering 2 channels
+editor.js:119802 [Editor] Received message: error
+editor.js:119896 [Editor] Error from extension: Failed to load codex: Internal error
+handleMessage @ editor.js:119896
+notificationsAlerts.ts:42 Security Alert: Critical Security Event
+onDidChangeNotification @ notificationsAlerts.ts:42
+console.ts:137 [Extension Host] [BinderyService] Response successful for request 5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] list_codices result: Object (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Full result.data: [
+  {
+    "content": {
+      "content": "",
+      "model": "claude-sonnet-4.5",
+      "provider_id": "f4f6e981-68a8-44fa-8c53-5f06e4b400ff",
+      "role": "assistant",
+      "streaming_complete": false,
+      "timestamp": "2025-11-08T00:23:32.201Z"
+    },
+    "created_at": "2025-11-08T00:23:32.200397400+00:00",
+    "id": "296e751c-c258-4027-9a74-0217aa490a47",
+    "metadata": {},
+    "project_id": null,
+    "template_id": "message",
+    "title": "Response",
+    "updated_at": "2025-11-08T00:23:32.202413901+00:00"
+  },
+  {
+    "content": {
+      "content": "test",
+      "model": "claude-sonnet-4.5",
+      "provider_id": "f4f6e981-68a8-44fa-8c53-5f06e4b400ff",
+      "role": "user",
+      "timestamp": "2025-11-08T00:23:32.197Z"
+    },
+    "created_at": "2025-11-08T00:23:32.195965460+00:00",
+    "id": "a2ce5614-4945-434b-b70b-efb59be28dd6",
+    "metadata": {},
+    "project_id": null,
+    "template_id": "message",
+    "title": "Message",
+    "updated_at": "2025-11-08T00:23:32.198302104+00:00"
+  },
+  {
+    "content": {
+      "channel_name": "test-2",
+      "channel_type": "user-chat",
+      "messages": [],
+      "status": "active",
+      "summary": ""
+    },
+    "created_at": "2025-11-08T00:22:45.701590270+00:00",
+    "id": "99879f6f-5024-4b5c-8c2e-33cb3362e1fc",
+    "metadata": {},
+    "project_id": null,
+    "template_id": "ai-chat",
+    "title": "test-2",
+    "updated_at": "2025-11-08T00:22:45.704338188+00:00"
+  },
+  {
+    "content": {
+      "channel_name": "test",
+      "channel_type": "user-chat",
+      "messages": [],
+      "model": "claude-sonnet-4.5",
+      "provider_id": "f4f6e981-68a8-44fa-8c53-5f06e4b400ff",
+      "status": "active",
+      "summary": ""
+    },
+    "created_at": "2025-11-08T00:22:38.812397230+00:00",
+    "id": "46ae02ae-8476-4ab1-865c-9ad8fa44f7ef",
+    "metadata": {},
+    "project_id": null,
+    "template_id": "ai-chat",
+    "title": "test",
+    "updated_at": "2025-11-08T00:23:20.175596615+00:00"
+  },
+  {
+    "content": {
+      "fields": {
+        "api_endpoint": "/api/generate",
+        "base_url": "http://localhost:11434",
+        "max_tokens": 2048,
+        "model": "llama3.2:3b",
+        "temperature": 0.7,
+        "timeout": 120
+      }
+    },
+    "created_at": "2025-11-08T00:22:16.961821170+00:00",
+    "id": "1c9a8531-e41c-47f0-8dc9-54c556a835ea",
+    "metadata": {},
+    "project_id": null,
+    "template_id": "ollama",
+    "title": "Ollama (Local)",
+    "updated_at": "2025-11-08T00:22:16.965365729+00:00"
+  },
+  {
+    "content": {
+      "fields": {
+        "executable_path": "claude",
+        "max_tokens": 4096,
+        "model": "claude-sonnet-4",
+        "system_prompt": "You are a helpful AI assistant.",
+        "temperature": 0.7,
+        "timeout": 120
+      }
+    },
+    "created_at": "2025-11-08T00:22:16.951300111+00:00",
+    "id": "f4f6e981-68a8-44fa-8c53-5f06e4b400ff",
+    "metadata": {},
+    "project_id": null,
+    "template_id": "claude-code-cli",
+    "title": "Claude Code CLI",
+    "updated_at": "2025-11-08T00:22:16.957720619+00:00"
+  }
+] (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Total codices: 6 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Found provider Codices: 2 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Provider Codices: Array(2) (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Sending provider list to webview: [
+  {
+    "id": "1c9a8531-e41c-47f0-8dc9-54c556a835ea",
+    "name": "Ollama (Local)",
+    "type": "ollama"
+  },
+  {
+    "id": "f4f6e981-68a8-44fa-8c53-5f06e4b400ff",
+    "name": "Claude Code CLI",
+    "type": "claude-code-cli"
+  }
+] (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Sending message to webview: updateProviderList (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+VM7:264 [Webview] Received message: updateProviderList
+VM7:185 [Webview] Received providers: Array(2)
+console.ts:137 [Extension Host] [AIAssistant] Persisted selected channel ID to workspace state: 46ae02ae-8476-4ab1-865c-9ad8fa44f7ef (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Sending message to webview: clearHistory (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+VM7:264 [Webview] Received message: clearHistory
+console.ts:137 [Extension Host] [AIAssistant] Sending message to webview: updateChannelInfo (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Loading messages for channel: 46ae02ae-8476-4ab1-865c-9ad8fa44f7ef (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+VM7:264 [Webview] Received message: updateChannelInfo
+console.ts:137 [Extension Host] [BinderyService] Sending request: list_children, connected: true, status: connected (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+VM7:107 [Webview] Restored provider selection: f4f6e981-68a8-44fa-8c53-5f06e4b400ff
+console.ts:137 [Extension Host] [BinderyService] Sending request to Bindery: list_children ID: 6 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+VM7:111 [Webview] Restored model: claude-sonnet-4.5
+console.ts:137 [Extension Host] [BinderyService] Full JSON-RPC request: {"jsonrpc":"2.0","method":"list_children","params":{"parent_id":"46ae02ae-8476-4ab1-865c-9ad8fa44f7ef"},"id":6} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Response successful for request 6 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [AIAssistant] Loaded 0 messages (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+log.ts:440  INFO [perf] Render performance baseline is 44ms
+console.ts:137 [Extension Host] [BinderyService] Sending request: list_codices, connected: true, status: connected (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Sending request to Bindery: list_codices ID: 7 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [BinderyService] Full JSON-RPC request: {"jsonrpc":"2.0","method":"list_codices","params":{},"id":7} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [Vespera:WARN] Security alert generated | {"alertId":"alert_1762562064333_y8g79era3","level":"critical","title":"Critical Security Event","event":"security_breach"} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+hvs @ console.ts:137
+notificationsAlerts.ts:42 Security Alert: Critical Security Event
+onDidChangeNotification @ notificationsAlerts.ts:42
+console.ts:137 [Extension Host] [BinderyService] Response successful for request 7 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Loading templates from: /home/aya/Projects/discord-chat-logs/.vespera/templates (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Checking subdirectory: /home/aya/Projects/discord-chat-logs/.vespera/templates/codex (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Found 5 entries in codex (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Processing template file: character.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Read 2319 bytes from character.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Parsed template: character (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Added template: character (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Processing template file: location.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Read 2423 bytes from location.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Parsed template: location (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Added template: location (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Processing template file: note.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Read 1174 bytes from note.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Parsed template: note (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Added template: note (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Processing template file: scene.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Read 2263 bytes from scene.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Parsed template: scene (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Added template: scene (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Processing template file: task.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Read 2471 bytes from task.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Parsed template: task (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Added template: task (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Checking subdirectory: /home/aya/Projects/discord-chat-logs/.vespera/templates/providers (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Found 3 entries in providers (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Processing template file: claude-code-cli.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Read 5844 bytes from claude-code-cli.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Parsed template: claude-code-cli (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Added template: claude-code-cli (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Processing template file: llm-provider.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Read 3686 bytes from llm-provider.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Parsed template: llm-provider (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Added template: llm-provider (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Processing template file: ollama.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Read 6514 bytes from ollama.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Parsed template: ollama (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Added template: ollama (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Checking subdirectory: /home/aya/Projects/discord-chat-logs/.vespera/templates/chat (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Found 1 entries in chat (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Processing template file: ai-chat.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Read 5499 bytes from ai-chat.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Parsed template: ai-chat (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Added template: ai-chat (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Checking subdirectory: /home/aya/Projects/discord-chat-logs/.vespera/templates/agents (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Found 2 entries in agents (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Processing template file: task-code-writer.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Read 7162 bytes from task-code-writer.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Parsed template: task-code-writer (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Added template: task-code-writer (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Processing template file: task-orchestrator.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Read 5758 bytes from task-orchestrator.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Parsed template: task-orchestrator (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] Added template: task-orchestrator (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+console.ts:137 [Extension Host] [TemplateInitializer] FINAL: Loaded 11 templates: Array(11) (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+navigator.js:118481 [Navigator] Received initialState: Object
+navigator.js:118485 [Navigator] First codex metadata: Object
+navigator.js:118495 [Navigator] Auto-selected first context: General
+navigator.js:118463 [Navigator] Codex 296e751c-c258-4027-9a74-0217aa490a47 filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+navigator.js:118463 [Navigator] Codex a2ce5614-4945-434b-b70b-efb59be28dd6 filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+navigator.js:118463 [Navigator] Codex 99879f6f-5024-4b5c-8c2e-33cb3362e1fc filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+navigator.js:118463 [Navigator] Codex 46ae02ae-8476-4ab1-865c-9ad8fa44f7ef filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+navigator.js:118463 [Navigator] Codex 1c9a8531-e41c-47f0-8dc9-54c556a835ea filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+navigator.js:118463 [Navigator] Codex f4f6e981-68a8-44fa-8c53-5f06e4b400ff filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+navigator.js:118467 [Navigator] Filtered 0 of 6 codices for context General
+navigator.js:118463 [Navigator] Codex 296e751c-c258-4027-9a74-0217aa490a47 filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+navigator.js:118463 [Navigator] Codex a2ce5614-4945-434b-b70b-efb59be28dd6 filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+navigator.js:118463 [Navigator] Codex 99879f6f-5024-4b5c-8c2e-33cb3362e1fc filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+navigator.js:118463 [Navigator] Codex 46ae02ae-8476-4ab1-865c-9ad8fa44f7ef filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+navigator.js:118463 [Navigator] Codex 1c9a8531-e41c-47f0-8dc9-54c556a835ea filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+navigator.js:118463 [Navigator] Codex f4f6e981-68a8-44fa-8c53-5f06e4b400ff filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+navigator.js:118467 [Navigator] Filtered 0 of 6 codices for context General
+navigator.js:33940 [Navigator] Auto-focused root element on mount
+navigator.js:33940 [Navigator] Auto-focused root element on mount
+navigator.js:118511 [Navigator] Restoring selection: 99d15e6c-f483-485e-8bd0-6f396b770a0f
+navigator.js:33956 [Navigator] Key pressed: Control selectedCodexId: 99d15e6c-f483-485e-8bd0-6f396b770a0f
+navigator.js:33956 [Navigator] Key pressed: Shift selectedCodexId: 99d15e6c-f483-485e-8bd0-6f396b770a0f
+navigator.js:33956 [Navigator] Key pressed: I selectedCodexId: 99d15e6c-f483-485e-8bd0-6f396b770a0f
+ [Extension Host] Synced content cache (cleared 0 items) (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] Synced content cache (cleared 0 items) (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] Synced content cache (cleared 0 items) (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [Vespera] [Command] Global Refresh command executed (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [Vespera] [Command] Refresh Codex List command executed (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+   ERR [Extension Host] Failed to initialize Bindery: {code: -1, message: 'Already connected'}
+error @ workbench.desktop.main.js:36
+error @ workbench.desktop.main.js:36
+error @ workbench.desktop.main.js:3770
+gvs @ workbench.desktop.main.js:526
+$logExtensionHostMessage @ workbench.desktop.main.js:526
+_doInvokeHandler @ workbench.desktop.main.js:3811
+_invokeHandler @ workbench.desktop.main.js:3811
+_receiveRequest @ workbench.desktop.main.js:3811
+_receiveOneMessage @ workbench.desktop.main.js:3811
+(anonymous) @ workbench.desktop.main.js:3811
+_deliver @ workbench.desktop.main.js:29
+fire @ workbench.desktop.main.js:29
+fire @ workbench.desktop.main.js:560
+l.onmessage @ workbench.desktop.main.js:3822
+ [Extension Host] Failed to initialize Bindery: {code: -1, message: 'Already connected'} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+hvs @ workbench.desktop.main.js:526
+$logExtensionHostMessage @ workbench.desktop.main.js:526
+_doInvokeHandler @ workbench.desktop.main.js:3811
+_invokeHandler @ workbench.desktop.main.js:3811
+_receiveRequest @ workbench.desktop.main.js:3811
+_receiveOneMessage @ workbench.desktop.main.js:3811
+(anonymous) @ workbench.desktop.main.js:3811
+_deliver @ workbench.desktop.main.js:29
+fire @ workbench.desktop.main.js:29
+fire @ workbench.desktop.main.js:560
+l.onmessage @ workbench.desktop.main.js:3822
+ [Extension Host] [Vespera] Legacy Bindery provider initialization failed, using new service (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [Vespera] Vespera Forge initialization completed (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Sending request: list_codices, connected: true, status: connected (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Sending request to Bindery: list_codices ID: 8 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Full JSON-RPC request: {"jsonrpc":"2.0","method":"list_codices","params":{},"id":8} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [Vespera:WARN] Security alert generated | {"alertId":"alert_1762562155145_tmw46lqcs","level":"critical","title":"Critical Security Event","event":"security_breach"} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+hvs @ workbench.desktop.main.js:526
+$logExtensionHostMessage @ workbench.desktop.main.js:526
+_doInvokeHandler @ workbench.desktop.main.js:3811
+_invokeHandler @ workbench.desktop.main.js:3811
+_receiveRequest @ workbench.desktop.main.js:3811
+_receiveOneMessage @ workbench.desktop.main.js:3811
+(anonymous) @ workbench.desktop.main.js:3811
+_deliver @ workbench.desktop.main.js:29
+fire @ workbench.desktop.main.js:29
+fire @ workbench.desktop.main.js:560
+l.onmessage @ workbench.desktop.main.js:3822
+ Security Alert: Critical Security Event
+onDidChangeNotification @ workbench.desktop.main.js:3767
+(anonymous) @ workbench.desktop.main.js:3767
+_deliver @ workbench.desktop.main.js:29
+_deliverQueue @ workbench.desktop.main.js:29
+fire @ workbench.desktop.main.js:29
+addNotification @ workbench.desktop.main.js:1354
+notify @ workbench.desktop.main.js:1354
+(anonymous) @ workbench.desktop.main.js:558
+_showMessage @ workbench.desktop.main.js:558
+$showMessage @ workbench.desktop.main.js:558
+_doInvokeHandler @ workbench.desktop.main.js:3811
+_invokeHandler @ workbench.desktop.main.js:3811
+_receiveRequest @ workbench.desktop.main.js:3811
+_receiveOneMessage @ workbench.desktop.main.js:3811
+(anonymous) @ workbench.desktop.main.js:3811
+_deliver @ workbench.desktop.main.js:29
+fire @ workbench.desktop.main.js:29
+fire @ workbench.desktop.main.js:560
+l.onmessage @ workbench.desktop.main.js:3822
+ [Extension Host] [BinderyService] Response successful for request 8 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Loading templates from: /home/aya/Projects/discord-chat-logs/.vespera/templates (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Checking subdirectory: /home/aya/Projects/discord-chat-logs/.vespera/templates/codex (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Found 5 entries in codex (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Processing template file: character.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Read 2319 bytes from character.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Parsed template: character (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Added template: character (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Processing template file: location.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Read 2423 bytes from location.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Parsed template: location (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Added template: location (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Processing template file: note.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Read 1174 bytes from note.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Parsed template: note (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Added template: note (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Processing template file: scene.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Read 2263 bytes from scene.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Parsed template: scene (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Added template: scene (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Processing template file: task.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Read 2471 bytes from task.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Parsed template: task (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Added template: task (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Checking subdirectory: /home/aya/Projects/discord-chat-logs/.vespera/templates/providers (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Found 3 entries in providers (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Processing template file: claude-code-cli.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Read 5844 bytes from claude-code-cli.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Parsed template: claude-code-cli (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Added template: claude-code-cli (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Processing template file: llm-provider.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Read 3686 bytes from llm-provider.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Parsed template: llm-provider (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Added template: llm-provider (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Processing template file: ollama.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Read 6514 bytes from ollama.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Parsed template: ollama (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Added template: ollama (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Checking subdirectory: /home/aya/Projects/discord-chat-logs/.vespera/templates/chat (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Found 1 entries in chat (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Processing template file: ai-chat.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Read 5499 bytes from ai-chat.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Parsed template: ai-chat (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Added template: ai-chat (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Checking subdirectory: /home/aya/Projects/discord-chat-logs/.vespera/templates/agents (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Found 2 entries in agents (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Processing template file: task-code-writer.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Read 7162 bytes from task-code-writer.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Parsed template: task-code-writer (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Added template: task-code-writer (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Processing template file: task-orchestrator.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Read 5758 bytes from task-orchestrator.json5 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Parsed template: task-orchestrator (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] Added template: task-orchestrator (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [TemplateInitializer] FINAL: Loaded 11 templates: (11) ['character', 'location', 'note', 'scene', 'task', 'claude-code-cli', 'llm-provider', 'ollama', 'ai-chat', 'task-code-writer', 'task-orchestrator'] (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Navigator] Received initialState: {codices: Array(6), templates: Array(11), contexts: Array(8)}
+ [Navigator] First codex metadata: {id: '296e751c-c258-4027-9a74-0217aa490a47', title: 'Response', template_id: 'message', created_at: '2025-11-08T00:23:32.200397400+00:00', updated_at: '2025-11-08T00:23:32.202413901+00:00'}
+ [Navigator] Codex 296e751c-c258-4027-9a74-0217aa490a47 filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+ [Navigator] Codex a2ce5614-4945-434b-b70b-efb59be28dd6 filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+ [Navigator] Codex 99879f6f-5024-4b5c-8c2e-33cb3362e1fc filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+ [Navigator] Codex 46ae02ae-8476-4ab1-865c-9ad8fa44f7ef filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+ [Extension Host] [Vespera] Refreshed Codex Navigator (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Navigator] Codex 1c9a8531-e41c-47f0-8dc9-54c556a835ea filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+ [Navigator] Codex f4f6e981-68a8-44fa-8c53-5f06e4b400ff filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+ [Navigator] Filtered 0 of 6 codices for context General
+ [Navigator] Codex 296e751c-c258-4027-9a74-0217aa490a47 filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+ [Extension Host] [BinderyService] Sending request: list_codices, connected: true, status: connected (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Navigator] Codex a2ce5614-4945-434b-b70b-efb59be28dd6 filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+ [Navigator] Codex 99879f6f-5024-4b5c-8c2e-33cb3362e1fc filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+ [Navigator] Codex 46ae02ae-8476-4ab1-865c-9ad8fa44f7ef filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+ [Extension Host] [BinderyService] Sending request to Bindery: list_codices ID: 9 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Navigator] Codex 1c9a8531-e41c-47f0-8dc9-54c556a835ea filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+ [Navigator] Codex f4f6e981-68a8-44fa-8c53-5f06e4b400ff filtered out: contextId=undefined vs activeContext=ctx-3c2339ae37198838c02401bb148a1bc9
+ [Navigator] Filtered 0 of 6 codices for context General
+ [Extension Host] [BinderyService] Full JSON-RPC request: {"jsonrpc":"2.0","method":"list_codices","params":{},"id":9} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [Vespera:WARN] Security alert generated | {"alertId":"alert_1762562155208_rij4vzuq3","level":"critical","title":"Critical Security Event","event":"security_breach"} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+hvs @ workbench.desktop.main.js:526
+$logExtensionHostMessage @ workbench.desktop.main.js:526
+_doInvokeHandler @ workbench.desktop.main.js:3811
+_invokeHandler @ workbench.desktop.main.js:3811
+_receiveRequest @ workbench.desktop.main.js:3811
+_receiveOneMessage @ workbench.desktop.main.js:3811
+(anonymous) @ workbench.desktop.main.js:3811
+_deliver @ workbench.desktop.main.js:29
+fire @ workbench.desktop.main.js:29
+fire @ workbench.desktop.main.js:560
+l.onmessage @ workbench.desktop.main.js:3822
+ Security Alert: Critical Security Event
+onDidChangeNotification @ workbench.desktop.main.js:3767
+(anonymous) @ workbench.desktop.main.js:3767
+_deliver @ workbench.desktop.main.js:29
+_deliverQueue @ workbench.desktop.main.js:29
+fire @ workbench.desktop.main.js:29
+addNotification @ workbench.desktop.main.js:1354
+notify @ workbench.desktop.main.js:1354
+(anonymous) @ workbench.desktop.main.js:558
+_showMessage @ workbench.desktop.main.js:558
+$showMessage @ workbench.desktop.main.js:558
+_doInvokeHandler @ workbench.desktop.main.js:3811
+_invokeHandler @ workbench.desktop.main.js:3811
+_receiveRequest @ workbench.desktop.main.js:3811
+_receiveOneMessage @ workbench.desktop.main.js:3811
+(anonymous) @ workbench.desktop.main.js:3811
+_deliver @ workbench.desktop.main.js:29
+fire @ workbench.desktop.main.js:29
+fire @ workbench.desktop.main.js:560
+l.onmessage @ workbench.desktop.main.js:3822
+ [Extension Host] [BinderyService] Response successful for request 9 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Navigator] Restoring selection: 99d15e6c-f483-485e-8bd0-6f396b770a0f
+ [Webview] Rendering 2 channels
+ [Extension Host] [AIAssistant] Switched to channel: test-2 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [AIAssistant] Persisted selected channel ID to workspace state: 99879f6f-5024-4b5c-8c2e-33cb3362e1fc (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [AIAssistant] Sending message to webview: clearHistory (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [AIAssistant] Sending message to webview: updateChannelInfo (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Webview] Received message: clearHistory
+ [Webview] Received message: updateChannelInfo
+ [Extension Host] [AIAssistant] Loading messages for channel: 99879f6f-5024-4b5c-8c2e-33cb3362e1fc (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Sending request: list_children, connected: true, status: connected (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Sending request to Bindery: list_children ID: 10 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Full JSON-RPC request: {"jsonrpc":"2.0","method":"list_children","params":{"parent_id":"99879f6f-5024-4b5c-8c2e-33cb3362e1fc"},"id":10} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Response successful for request 10 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [AIAssistant] Loaded 0 messages (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Webview] Rendering 2 channels
+ [Extension Host] [AIAssistant] Switched to channel: test-2 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [AIAssistant] Persisted selected channel ID to workspace state: 99879f6f-5024-4b5c-8c2e-33cb3362e1fc (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [AIAssistant] Sending message to webview: clearHistory (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [AIAssistant] Sending message to webview: updateChannelInfo (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [AIAssistant] Loading messages for channel: 99879f6f-5024-4b5c-8c2e-33cb3362e1fc (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Sending request: list_children, connected: true, status: connected (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Sending request to Bindery: list_children ID: 11 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Webview] Received message: clearHistory
+ [Extension Host] [BinderyService] Full JSON-RPC request: {"jsonrpc":"2.0","method":"list_children","params":{"parent_id":"99879f6f-5024-4b5c-8c2e-33cb3362e1fc"},"id":11} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Webview] Received message: updateChannelInfo
+ [Extension Host] [BinderyService] Response successful for request 11 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [AIAssistant] Loaded 0 messages (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Webview] Rendering 2 channels
+ [Extension Host] [AIAssistant] Switched to channel: test (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [AIAssistant] Persisted selected channel ID to workspace state: 46ae02ae-8476-4ab1-865c-9ad8fa44f7ef (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [AIAssistant] Sending message to webview: clearHistory (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [AIAssistant] Sending message to webview: updateChannelInfo (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Webview] Received message: clearHistory
+ [Webview] Received message: updateChannelInfo
+ [Extension Host] [AIAssistant] Loading messages for channel: 46ae02ae-8476-4ab1-865c-9ad8fa44f7ef (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Webview] Restored provider selection: f4f6e981-68a8-44fa-8c53-5f06e4b400ff
+ [Webview] Restored model: claude-sonnet-4.5
+ [Extension Host] [BinderyService] Sending request: list_children, connected: true, status: connected (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Sending request to Bindery: list_children ID: 12 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Full JSON-RPC request: {"jsonrpc":"2.0","method":"list_children","params":{"parent_id":"46ae02ae-8476-4ab1-865c-9ad8fa44f7ef"},"id":12} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Response successful for request 12 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [AIAssistant] Loaded 0 messages (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] createCodex called with: {title: 'Message', templateId: 'message', hasProjectId: false, payloadToBindery: '{"title":"Message","template_id":"message"}'} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Sending request: create_codex, connected: true, status: connected (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Sending request to Bindery: create_codex ID: 13 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Full JSON-RPC request: {"jsonrpc":"2.0","method":"create_codex","params":{"title":"Message","template_id":"message"},"id":13} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Response successful for request 13 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Sending request: update_codex, connected: true, status: connected (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Sending request to Bindery: update_codex ID: 14 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Full JSON-RPC request: {"jsonrpc":"2.0","method":"update_codex","params":{"codex_id":"8d7ac7fc-1aa2-42ad-a555-b8d2080a0a91","content":{"role":"user","content":"test","timestamp":"2025-11-08T00:36:13.263Z","provider_id":"f4f6e981-68a8-44fa-8c53-5f06e4b400ff","model":"claude-sonnet-4.5"},"metadata":{"parent_id":"46ae02ae-8476-4ab1-865c-9ad8fa44f7ef"}},"id":14} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Response successful for request 14 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [AIAssistant] Sending message to webview: addMessage (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] createCodex called with: {title: 'Response', templateId: 'message', hasProjectId: false, payloadToBindery: '{"title":"Response","template_id":"message"}'} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Webview] Received message: addMessage
+ [Extension Host] [BinderyService] Sending request: create_codex, connected: true, status: connected (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Sending request to Bindery: create_codex ID: 15 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Full JSON-RPC request: {"jsonrpc":"2.0","method":"create_codex","params":{"title":"Response","template_id":"message"},"id":15} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Response successful for request 15 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Sending request: update_codex, connected: true, status: connected (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Sending request to Bindery: update_codex ID: 16 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Full JSON-RPC request: {"jsonrpc":"2.0","method":"update_codex","params":{"codex_id":"4f014e2b-223f-4245-8df6-0e20badb81d1","content":{"role":"assistant","content":"","timestamp":"2025-11-08T00:36:13.272Z","provider_id":"f4f6e981-68a8-44fa-8c53-5f06e4b400ff","model":"claude-sonnet-4.5","streaming_complete":false},"metadata":{"parent_id":"46ae02ae-8476-4ab1-865c-9ad8fa44f7ef"}},"id":16} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Response successful for request 16 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [AIAssistant] Sending message to webview: addMessage (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [AIAssistant] Calling chat.send_message: {providerId: 'f4f6e981-68a8-44fa-8c53-5f06e4b400ff', model: 'claude-sonnet-4.5', message: 'test'} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Sending request: chat.send_message, connected: true, status: connected (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Sending request to Bindery: chat.send_message ID: 17 (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Extension Host] [BinderyService] Full JSON-RPC request: {"jsonrpc":"2.0","method":"chat.send_message","params":{"provider_id":"f4f6e981-68a8-44fa-8c53-5f06e4b400ff","message":"test","stream":false},"id":17} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+ [Webview] Received message: addMessage
+ [Extension Host] [BinderyService] Response contains error for request 17 - Error: {"code":-32603,"message":"Internal error","data":{"details":"Failed to send message: Claude Code CLI exited with error: exit status: 1"}} (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+   ERR [Extension Host] [AIAssistant] Error sending message: Error: Chat request failed: Internal error
+	at AIAssistantWebviewProvider.handleSendMessage (/home/aya/Development/vespera-atelier-worktrees/feat-codex-ui-framework/plugins/VSCode/vespera-forge/dist/extension.js:20916:23)
+	at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+	at async AIAssistantWebviewProvider.handleWebviewMessage (/home/aya/Development/vespera-atelier-worktrees/feat-codex-ui-framework/plugins/VSCode/vespera-forge/dist/extension.js:20781:17)
+	at async oh.value (/home/aya/Development/vespera-atelier-worktrees/feat-codex-ui-framework/plugins/VSCode/vespera-forge/dist/extension.js:20721:13)
+error @ workbench.desktop.main.js:36
+error @ workbench.desktop.main.js:36
+error @ workbench.desktop.main.js:3770
+gvs @ workbench.desktop.main.js:526
+$logExtensionHostMessage @ workbench.desktop.main.js:526
+_doInvokeHandler @ workbench.desktop.main.js:3811
+_invokeHandler @ workbench.desktop.main.js:3811
+_receiveRequest @ workbench.desktop.main.js:3811
+_receiveOneMessage @ workbench.desktop.main.js:3811
+(anonymous) @ workbench.desktop.main.js:3811
+_deliver @ workbench.desktop.main.js:29
+fire @ workbench.desktop.main.js:29
+fire @ workbench.desktop.main.js:560
+l.onmessage @ workbench.desktop.main.js:3822
+ [Extension Host] [AIAssistant] Error sending message: Error: Chat request failed: Internal error
+	at AIAssistantWebviewProvider.handleSendMessage (/home/aya/Development/vespera-atelier-worktrees/feat-codex-ui-framework/plugins/VSCode/vespera-forge/dist/extension.js:20916:23)
+	at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+	at async AIAssistantWebviewProvider.handleWebviewMessage (/home/aya/Development/vespera-atelier-worktrees/feat-codex-ui-framework/plugins/VSCode/vespera-forge/dist/extension.js:20781:17)
+	at async oh.value (/home/aya/Development/vespera-atelier-worktrees/feat-codex-ui-framework/plugins/VSCode/vespera-forge/dist/extension.js:20721:13) (at console.<anonymous> (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:203:33435))
+hvs @ workbench.desktop.main.js:526
+$logExtensionHostMessage @ workbench.desktop.main.js:526
+_doInvokeHandler @ workbench.desktop.main.js:3811
+_invokeHandler @ workbench.desktop.main.js:3811
+_receiveRequest @ workbench.desktop.main.js:3811
+_receiveOneMessage @ workbench.desktop.main.js:3811
+(anonymous) @ workbench.desktop.main.js:3811
+_deliver @ workbench.desktop.main.js:29
+fire @ workbench.desktop.main.js:29
+fire @ workbench.desktop.main.js:560
+l.onmessage @ workbench.desktop.main.js:3822
+ Chat error: Chat request failed: Internal error
+onDidChangeNotification @ workbench.desktop.main.js:3767
+(anonymous) @ workbench.desktop.main.js:3767
+_deliver @ workbench.desktop.main.js:29
+_deliverQueue @ workbench.desktop.main.js:29
+fire @ workbench.desktop.main.js:29
+addNotification @ workbench.desktop.main.js:1354
+notify @ workbench.desktop.main.js:1354
+(anonymous) @ workbench.desktop.main.js:558
+_showMessage @ workbench.desktop.main.js:558
+$showMessage @ workbench.desktop.main.js:558
+_doInvokeHandler @ workbench.desktop.main.js:3811
+_invokeHandler @ workbench.desktop.main.js:3811
+_receiveRequest @ workbench.desktop.main.js:3811
+_receiveOneMessage @ workbench.desktop.main.js:3811
+(anonymous) @ workbench.desktop.main.js:3811
+_deliver @ workbench.desktop.main.js:29
+fire @ workbench.desktop.main.js:29
+fire @ workbench.desktop.main.js:560
+l.onmessage @ workbench.desktop.main.js:3822
