@@ -64,6 +64,7 @@ pub trait Provider: Send + Sync {
         &self,
         message: &str,
         model: Option<&str>,  // Model override (uses provider default if None)
+        session_id: Option<&str>,  // Session ID for conversation continuity
         system_prompt: Option<&str>,
         stream: bool,
     ) -> Result<ProviderResponse, anyhow::Error>;
@@ -73,6 +74,7 @@ pub trait Provider: Send + Sync {
         &self,
         message: &str,
         model: Option<&str>,  // Model override (uses provider default if None)
+        session_id: Option<&str>,  // Session ID for conversation continuity
         system_prompt: Option<&str>,
     ) -> Result<Box<dyn futures::Stream<Item = Result<StreamChunk, anyhow::Error>> + Unpin + Send>, anyhow::Error>;
 

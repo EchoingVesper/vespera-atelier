@@ -355,15 +355,17 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
         }
       });
 
-      // Get system prompt from channel if available
+      // Get system prompt and session_id from channel if available
       const systemPrompt = (this._activeChannel as any).system_prompt || undefined;
+      const sessionId = (this._activeChannel as any).content?.session_id || undefined;
 
       // Call chat.send_message endpoint (non-streaming for now)
-      console.log('[AIAssistant] Calling chat.send_message:', { providerId, model, message: trimmedText });
+      console.log('[AIAssistant] Calling chat.send_message:', { providerId, model, sessionId, message: trimmedText });
       const chatResult = await this._binderyService.sendRequest<any>('chat.send_message', {
         provider_id: providerId,
         message: trimmedText,
         model: model, // Include model to override provider default
+        session_id: sessionId, // Include session_id for conversation continuity
         system_prompt: systemPrompt,
         stream: false
       });
@@ -374,6 +376,33 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
 
       const responseText = chatResult.data.text || 'No response received';
       const usage = chatResult.data.usage;
+      const sessionId = chatResult.data.session_id;
+
+      console.log('[AIAssistant] Received session_id from provider:', sessionId);
+
+      // Update channel with session_id for conversation continuity
+      if (sessionId) {
+        const channel = this._channels.find(ch => ch.id === channelId);
+        if (channel) {
+          const updatedContent = {
+            ...(channel.content || {}),
+            session_id: sessionId,
+            last_updated: new Date().toISOString()
+          };
+
+          await this._binderyService.updateCodex(channelId, {
+            content: updatedContent
+          });
+
+          console.log('[AIAssistant] Stored session_id in channel for conversation continuity');
+
+          // Update local channel object
+          channel.content = updatedContent;
+          if (this._activeChannel && this._activeChannel.id === channelId) {
+            (this._activeChannel as any).content = updatedContent;
+          }
+        }
+      }
 
       // Update assistant message Codex with response
       const assistantFinalResult = await this._binderyService.updateCodex(assistantCodexId, {
@@ -1002,11 +1031,6 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
     await this._context.workspaceState.update('vespera.aiAssistant.selectedChannelId', channel.id);
     console.log('[AIAssistant] Persisted selected channel ID to workspace state:', channel.id);
 
-    // Clear current chat history UI
-    this.sendMessageToWebview({
-      command: 'clearHistory'
-    });
-
     // Update header with channel name and provider info
     this.sendMessageToWebview({
       command: 'updateChannelInfo',
@@ -1016,7 +1040,7 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
       model: channel.model || ''
     });
 
-    // Load message history from channel Codex
+    // Load message history from channel Codex (this will clear and repopulate)
     await this.loadChannelMessages(channel.id);
   }
 
@@ -1039,11 +1063,21 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
 
       if (!result.success) {
         console.error('[AIAssistant] Failed to load channel messages:', result.error);
+        // Clear UI if no messages loaded
+        this.sendMessageToWebview({ command: 'clearHistory' });
         return;
       }
 
       const messageCodices = result.data || [];
       console.log('[AIAssistant] Loaded', messageCodices.length, 'messages');
+
+      // Clear UI first
+      this.sendMessageToWebview({ command: 'clearHistory' });
+
+      if (messageCodices.length === 0) {
+        console.log('[AIAssistant] No messages to display for this channel');
+        return;
+      }
 
       // Sort messages by timestamp (ascending - oldest first)
       messageCodices.sort((a, b) => {

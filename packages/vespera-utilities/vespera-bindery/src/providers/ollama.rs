@@ -195,6 +195,7 @@ impl Provider for OllamaProvider {
         &self,
         message: &str,
         model: Option<&str>,
+        _session_id: Option<&str>,  // Ollama doesn't support session IDs
         system_prompt: Option<&str>,
         stream: bool,
     ) -> Result<ProviderResponse> {
@@ -221,6 +222,7 @@ impl Provider for OllamaProvider {
         &self,
         message: &str,
         model: Option<&str>,
+        _session_id: Option<&str>,  // Ollama doesn't support session IDs
         system_prompt: Option<&str>,
     ) -> Result<Box<dyn Stream<Item = Result<StreamChunk>> + Unpin + Send>> {
         let model_to_use = model.unwrap_or(&self.config.model);

@@ -1035,6 +1035,11 @@ async fn handle_chat_send_message(state: &AppState, params: &Option<Value>) -> R
         .and_then(|p| p.get("model"))
         .and_then(|v| v.as_str());
 
+    let session_id = params
+        .as_ref()
+        .and_then(|p| p.get("session_id"))
+        .and_then(|v| v.as_str());
+
     let system_prompt = params
         .as_ref()
         .and_then(|p| p.get("system_prompt"))
@@ -1048,7 +1053,7 @@ async fn handle_chat_send_message(state: &AppState, params: &Option<Value>) -> R
 
     let response = state
         .provider_manager
-        .send_message(provider_id, message, model, system_prompt, stream)
+        .send_message(provider_id, message, model, session_id, system_prompt, stream)
         .await
         .map_err(|e| format!("Failed to send message: {}", e))?;
 
