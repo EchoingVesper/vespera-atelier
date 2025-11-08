@@ -232,6 +232,7 @@ impl ProviderManager {
         &self,
         provider_id: &str,
         message: &str,
+        model: Option<&str>,
         system_prompt: Option<&str>,
         stream: bool,
     ) -> Result<ProviderResponse> {
@@ -243,8 +244,8 @@ impl ProviderManager {
             .get(provider_id)
             .ok_or_else(|| anyhow!("Provider not found: {}", provider_id))?;
 
-        // Send message to provider
-        provider.send_message(message, system_prompt, stream).await
+        // Send message to provider with optional model override
+        provider.send_message(message, model, system_prompt, stream).await
     }
 
     /// Send a message with streaming to a specific provider
@@ -252,6 +253,7 @@ impl ProviderManager {
         &self,
         provider_id: &str,
         message: &str,
+        model: Option<&str>,
         system_prompt: Option<&str>,
     ) -> Result<Box<dyn Stream<Item = Result<StreamChunk>> + Unpin + Send>> {
         debug!("Sending message to provider with streaming: {}", provider_id);
@@ -266,8 +268,8 @@ impl ProviderManager {
         let provider = Arc::clone(provider);
         drop(providers);
 
-        // Send message to provider
-        provider.send_message_stream(message, system_prompt).await
+        // Send message to provider with optional model override
+        provider.send_message_stream(message, model, system_prompt).await
     }
 
     /// List all loaded providers

@@ -64,7 +64,7 @@ impl ClaudeCodeProvider {
     }
 
     /// Spawn Claude Code CLI process with stream-json output
-    fn spawn_process(&self, message: &str, system_prompt: Option<&str>) -> Result<Child> {
+    fn spawn_process(&self, message: &str, model_override: Option<&str>, system_prompt: Option<&str>) -> Result<Child> {
         let mut cmd = Command::new(&self.config.executable_path);
 
         cmd.arg("code")
@@ -73,9 +73,11 @@ impl ClaudeCodeProvider {
             .arg("stream-json")
             .arg("--verbose");
 
-        // Add model if specified
-        if let Some(ref model) = self.config.model {
-            cmd.arg("--model").arg(model);
+        // Use model override if provided, otherwise use config default
+        let model = model_override.or(self.config.model.as_deref());
+        if let Some(m) = model {
+            cmd.arg("--model").arg(m);
+            eprintln!("Debug: Using model: {}", m);
         }
 
         // Add system prompt if provided
@@ -210,12 +212,13 @@ impl Provider for ClaudeCodeProvider {
     async fn send_message(
         &self,
         message: &str,
+        model: Option<&str>,
         system_prompt: Option<&str>,
         _stream: bool, // TODO: Implement streaming
     ) -> Result<ProviderResponse> {
         info!("Sending message to Claude Code CLI");
 
-        let mut child = self.spawn_process(message, system_prompt)?;
+        let mut child = self.spawn_process(message, model, system_prompt)?;
 
         // Get stdout for reading response
         let stdout = child
@@ -243,11 +246,12 @@ impl Provider for ClaudeCodeProvider {
     async fn send_message_stream(
         &self,
         message: &str,
+        model: Option<&str>,
         system_prompt: Option<&str>,
     ) -> Result<Box<dyn Stream<Item = Result<StreamChunk>> + Unpin + Send>> {
         info!("Sending message to Claude Code CLI (streaming)");
 
-        let mut child = self.spawn_process(message, system_prompt)?;
+        let mut child = self.spawn_process(message, model, system_prompt)?;
 
         let stdout = child
             .stdout
@@ -293,7 +297,7 @@ impl Provider for ClaudeCodeProvider {
 
         // Simple ping test
         let test_message = "ping";
-        match self.send_message(test_message, None, false).await {
+        match self.send_message(test_message, None, None, false).await {
             Ok(_) => {
                 info!("Claude Code CLI health check passed");
                 Ok(true)

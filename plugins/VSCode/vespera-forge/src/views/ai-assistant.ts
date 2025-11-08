@@ -363,6 +363,7 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
       const chatResult = await this._binderyService.sendRequest<any>('chat.send_message', {
         provider_id: providerId,
         message: trimmedText,
+        model: model, // Include model to override provider default
         system_prompt: systemPrompt,
         stream: false
       });

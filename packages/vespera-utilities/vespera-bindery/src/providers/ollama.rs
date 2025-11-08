@@ -75,6 +75,7 @@ impl OllamaProvider {
     fn build_request_payload(
         &self,
         message: &str,
+        model: &str,
         system_prompt: Option<&str>,
         stream: bool,
     ) -> OllamaRequest {
@@ -88,7 +89,7 @@ impl OllamaProvider {
         }
 
         OllamaRequest {
-            model: self.config.model.clone(),
+            model: model.to_string(),
             prompt: message.to_string(),
             system: system_prompt.or(self.config.system_prompt.as_deref()).map(|s| s.to_string()),
             stream,
@@ -193,13 +194,15 @@ impl Provider for OllamaProvider {
     async fn send_message(
         &self,
         message: &str,
+        model: Option<&str>,
         system_prompt: Option<&str>,
         stream: bool,
     ) -> Result<ProviderResponse> {
-        info!("Sending message to Ollama (model: {})", self.config.model);
+        let model_to_use = model.unwrap_or(&self.config.model);
+        info!("Sending message to Ollama (model: {})", model_to_use);
 
         let url = format!("{}{}", self.config.base_url, self.config.api_endpoint);
-        let payload = self.build_request_payload(message, system_prompt, false);
+        let payload = self.build_request_payload(message, model_to_use, system_prompt, false);
 
         let response = if stream {
             // For streaming, we need to collect all chunks
@@ -217,12 +220,14 @@ impl Provider for OllamaProvider {
     async fn send_message_stream(
         &self,
         message: &str,
+        model: Option<&str>,
         system_prompt: Option<&str>,
     ) -> Result<Box<dyn Stream<Item = Result<StreamChunk>> + Unpin + Send>> {
-        info!("Sending message to Ollama with streaming (model: {})", self.config.model);
+        let model_to_use = model.unwrap_or(&self.config.model);
+        info!("Sending message to Ollama with streaming (model: {})", model_to_use);
 
         let url = format!("{}{}", self.config.base_url, self.config.api_endpoint);
-        let payload = self.build_request_payload(message, system_prompt, true);
+        let payload = self.build_request_payload(message, model_to_use, system_prompt, true);
 
         self.process_stream_response(url, payload).await
     }

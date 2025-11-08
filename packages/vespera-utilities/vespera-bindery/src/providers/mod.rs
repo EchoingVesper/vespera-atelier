@@ -63,6 +63,7 @@ pub trait Provider: Send + Sync {
     async fn send_message(
         &self,
         message: &str,
+        model: Option<&str>,  // Model override (uses provider default if None)
         system_prompt: Option<&str>,
         stream: bool,
     ) -> Result<ProviderResponse, anyhow::Error>;
@@ -71,6 +72,7 @@ pub trait Provider: Send + Sync {
     async fn send_message_stream(
         &self,
         message: &str,
+        model: Option<&str>,  // Model override (uses provider default if None)
         system_prompt: Option<&str>,
     ) -> Result<Box<dyn futures::Stream<Item = Result<StreamChunk, anyhow::Error>> + Unpin + Send>, anyhow::Error>;
 
