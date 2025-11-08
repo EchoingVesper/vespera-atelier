@@ -197,18 +197,16 @@ impl AppState {
         let database_arc = Arc::new(database);
         let provider_manager = Arc::new(ProviderManager::new(Arc::clone(&database_arc)));
 
-        // Load providers in background (don't block startup)
-        let provider_manager_clone = Arc::clone(&provider_manager);
-        tokio::spawn(async move {
-            match provider_manager_clone.load_providers().await {
-                Ok(provider_ids) => {
-                    eprintln!("Debug: Loaded {} providers: {:?}", provider_ids.len(), provider_ids);
-                }
-                Err(e) => {
-                    eprintln!("Warning: Failed to load providers: {}", e);
-                }
+        // Load providers synchronously during startup to ensure they're available
+        eprintln!("Debug: Loading providers during server startup...");
+        match provider_manager.load_providers().await {
+            Ok(provider_ids) => {
+                eprintln!("Debug: Loaded {} providers: {:?}", provider_ids.len(), provider_ids);
             }
-        });
+            Err(e) => {
+                eprintln!("Warning: Failed to load providers: {}", e);
+            }
+        }
 
         Ok(Self {
             database: database_arc,
