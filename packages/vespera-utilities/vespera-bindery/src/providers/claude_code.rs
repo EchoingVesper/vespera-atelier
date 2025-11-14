@@ -178,14 +178,25 @@ impl ClaudeCodeProvider {
                         }
                     }
                     ClaudeCodeEvent::Result {
+                        subtype,
                         result,
                         total_cost_usd,
                         usage: result_usage,
                         session_id: sid,
-                        ..
+                        extra,
                     } => {
-                        debug!("Final result received");
+                        debug!("Final result received with subtype: {}", subtype);
                         session_id = session_id.or(Some(sid));
+
+                        // Check if this is an error result
+                        let is_error = extra.get("is_error")
+                            .and_then(|v| v.as_bool())
+                            .unwrap_or(false);
+
+                        if is_error {
+                            // Return error with the result text as error message
+                            return Err(anyhow!("{}", result));
+                        }
 
                         // Use the result text as final response
                         response_text = result;
