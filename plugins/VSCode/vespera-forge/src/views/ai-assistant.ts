@@ -1086,7 +1086,8 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
       }
 
       const messageCodices = result.data || [];
-      console.log('[AIAssistant] Loaded', messageCodices.length, 'messages');
+      console.log('[AIAssistant] Loaded', messageCodices.length, 'messages for channel:', channelId);
+      console.log('[AIAssistant] Message IDs:', messageCodices.map((m: any) => m.id));
 
       // Clear UI first
       this.sendMessageToWebview({ command: 'clearHistory' });
@@ -1110,6 +1111,13 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
         const text = content.content || '';
         const timestamp = content.timestamp || msgCodex.created_at;
         const streamingComplete = content.streaming_complete !== false;
+
+        console.log('[AIAssistant] Sending message to webview:', {
+          id: msgCodex.id,
+          role,
+          contentLength: text.length,
+          timestamp
+        });
 
         this.sendMessageToWebview({
           command: 'addMessage',
@@ -1755,9 +1763,10 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
                 }
             }
 
-            // Handle model input change
-            modelInput.addEventListener('change', function() {
-                console.log('[Webview] Model changed to:', this.value);
+            // Handle model input change (both change and blur events)
+            function updateModelValue() {
+                const modelValue = modelInput.value;
+                console.log('[Webview] Model changed to:', modelValue);
 
                 if (currentChannel && selectedChannelId) {
                     // Update channel with new model
@@ -1765,10 +1774,13 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
                         command: 'updateChannelProvider',
                         channelId: selectedChannelId,
                         providerId: providerSelect.value,
-                        model: this.value
+                        model: modelValue
                     });
                 }
-            });
+            }
+
+            modelInput.addEventListener('change', updateModelValue);
+            modelInput.addEventListener('blur', updateModelValue);
 
             function createChannel() {
                 console.log('[Webview] Create channel button clicked');
