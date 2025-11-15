@@ -79,8 +79,28 @@ impl SecretManager {
     /// # }
     /// ```
     pub async fn resolve(&self, reference: &str) -> Result<String> {
-        // TODO: Implement vault reference resolution
-        unimplemented!("SecretManager::resolve - TDD stub: {}", reference)
+        // Validate vault:// prefix
+        const VAULT_PREFIX: &str = "vault://";
+
+        if !reference.starts_with(VAULT_PREFIX) {
+            anyhow::bail!(
+                "Invalid vault reference format: '{}'. Expected format: 'vault://provider/key_name'",
+                reference
+            );
+        }
+
+        // Extract the key by removing the vault:// prefix
+        let key = &reference[VAULT_PREFIX.len()..];
+
+        if key.is_empty() {
+            anyhow::bail!(
+                "Invalid vault reference: '{}'. Key cannot be empty after 'vault://'",
+                reference
+            );
+        }
+
+        // Retrieve the secret using the key
+        self.backend.get_secret(key).await
     }
 
     /// Store a secret (delegates to backend)

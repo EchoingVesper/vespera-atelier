@@ -4,6 +4,7 @@
 use super::SecretBackend;
 use anyhow::Result;
 use async_trait::async_trait;
+use keyring::Entry;
 
 /// System keyring backend
 ///
@@ -41,19 +42,44 @@ impl KeyringBackend {
 
 #[async_trait]
 impl SecretBackend for KeyringBackend {
-    async fn store_secret(&self, _key: &str, _value: &str) -> Result<()> {
-        // TODO: Implement actual keyring storage
-        unimplemented!("KeyringBackend::store_secret - TDD stub")
+    async fn store_secret(&self, key: &str, value: &str) -> Result<()> {
+        let service_name = self.service_name.clone();
+        let key = key.to_string();
+        let value = value.to_string();
+
+        // Run keyring operations in blocking thread pool to avoid tokio/dbus conflicts
+        tokio::task::spawn_blocking(move || {
+            let entry = Entry::new(&service_name, &key)?;
+            entry.set_password(&value)?;
+            Ok(())
+        })
+        .await?
     }
 
-    async fn get_secret(&self, _key: &str) -> Result<String> {
-        // TODO: Implement actual keyring retrieval
-        unimplemented!("KeyringBackend::get_secret - TDD stub")
+    async fn get_secret(&self, key: &str) -> Result<String> {
+        let service_name = self.service_name.clone();
+        let key = key.to_string();
+
+        // Run keyring operations in blocking thread pool to avoid tokio/dbus conflicts
+        tokio::task::spawn_blocking(move || {
+            let entry = Entry::new(&service_name, &key)?;
+            let password = entry.get_password()?;
+            Ok(password)
+        })
+        .await?
     }
 
-    async fn delete_secret(&self, _key: &str) -> Result<()> {
-        // TODO: Implement actual keyring deletion
-        unimplemented!("KeyringBackend::delete_secret - TDD stub")
+    async fn delete_secret(&self, key: &str) -> Result<()> {
+        let service_name = self.service_name.clone();
+        let key = key.to_string();
+
+        // Run keyring operations in blocking thread pool to avoid tokio/dbus conflicts
+        tokio::task::spawn_blocking(move || {
+            let entry = Entry::new(&service_name, &key)?;
+            entry.delete_credential()?;
+            Ok(())
+        })
+        .await?
     }
 
     async fn list_secrets(&self) -> Result<Vec<String>> {
@@ -67,8 +93,37 @@ impl SecretBackend for KeyringBackend {
     }
 
     async fn is_available(&self) -> bool {
-        // TODO: Implement availability check
-        // Try to create a test entry to see if keyring works
-        unimplemented!("KeyringBackend::is_available - TDD stub")
+        let service_name = self.service_name.clone();
+
+        // Run keyring operations in blocking thread pool to avoid tokio/dbus conflicts
+        let result = tokio::task::spawn_blocking(move || {
+            // Try to create a test entry to verify keyring functionality
+            let test_key = "__vespera_keyring_test__";
+            let test_value = "test";
+
+            // Attempt to store, retrieve, and delete a test credential
+            match Entry::new(&service_name, test_key) {
+                Ok(entry) => {
+                    // Try to set a password
+                    if entry.set_password(test_value).is_err() {
+                        return false;
+                    }
+
+                    // Try to retrieve it
+                    if entry.get_password().is_err() {
+                        return false;
+                    }
+
+                    // Try to delete it (cleanup)
+                    let _ = entry.delete_credential();
+
+                    true
+                }
+                Err(_) => false,
+            }
+        })
+        .await;
+
+        result.unwrap_or(false)
     }
 }
