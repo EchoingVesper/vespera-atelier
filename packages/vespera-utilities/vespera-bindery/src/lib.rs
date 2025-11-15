@@ -100,6 +100,12 @@ pub mod database;
 // RAG (Retrieval-Augmented Generation) module
 pub mod rag;
 
+// LLM provider integrations
+pub mod llm;
+
+// Secret storage system (Phase 17.5)
+pub mod secrets;
+
 // Conditional binding modules
 #[cfg(feature = "nodejs")]
 pub mod bindings;
