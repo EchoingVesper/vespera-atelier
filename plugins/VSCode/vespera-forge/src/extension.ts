@@ -9,7 +9,7 @@ import * as vscode from 'vscode';
 import { VesperaForgeContext } from '@/types';
 import { registerCommands } from '@/commands';
 import { initializeProviders } from '@/providers';
-import { initializeViews } from '@/views';
+import { initializeViews, VesperaViewContext } from '@/views';
 import { getConfig, isDevelopment } from '@/utils';
 import { 
   VesperaCoreServices, 
@@ -21,6 +21,9 @@ import { SecurityIntegrationManager } from './security-integration';
 // Core services instance - managed by VesperaCoreServices singleton
 let coreServices: Awaited<ReturnType<typeof VesperaCoreServices.initialize>> | undefined;
 let securityIntegration: SecurityIntegrationManager | undefined;
+
+// Global shutdown flag to prevent VS Code API calls after IPC channel closes
+let isExtensionShuttingDown = false;
 
 /**
  * Extension activation function with enhanced memory management
@@ -76,45 +79,67 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       environment: isDevelopment() ? 'development' : 'production'
     });
 
+    // Phase 17 Cluster B: Initialize global registry
+    logger.info('Initializing global Vespera registry...');
+    const { initializeGlobalRegistry } = await import('./services/GlobalRegistry');
+    try {
+      const wasInitialized = await initializeGlobalRegistry();
+      if (wasInitialized) {
+        logger.info('Global Vespera registry initialized successfully');
+      } else {
+        logger.info('Global Vespera registry already exists');
+      }
+    } catch (error) {
+      logger.error('Failed to initialize global registry - continuing with limited functionality', error);
+    }
+
+    // Phase 17 Cluster C: Discover Vespera workspace
+    logger.info('Discovering Vespera workspace...');
+    const { initializeWorkspaceDiscovery } = await import('./services/WorkspaceDiscovery');
+    const discoveryResult = await initializeWorkspaceDiscovery(context);
+
+    if (discoveryResult.found) {
+      logger.info('Workspace discovery successful', {
+        workspaceName: discoveryResult.metadata?.name,
+        discoveryMethod: discoveryResult.discoveryMethod,
+        vesperaPath: discoveryResult.vesperaPath
+      });
+    } else {
+      logger.info('No workspace found - extension will run in limited mode', {
+        discoveryMethod: discoveryResult.discoveryMethod
+      });
+    }
+
     // Initialize providers
     const { contentProvider } = initializeProviders(context);
-    
-    // Initialize views (task tree, dashboard, status bar)
-    const viewContext = initializeViews(context);
-    
+
+    // Get configuration
+    const config = getConfig();
+
+    // Initialize views using the new view system
+    logger.info('Initializing view providers');
+    const viewContext: VesperaViewContext = initializeViews(context);
+
+    // Store navigator provider globally for command access (similar to chat panel pattern)
+    (global as any).vesperaNavigatorProvider = viewContext.navigatorProvider;
+
     // Register view context with memory-safe context manager
     contextManager.setViewContext(context, viewContext);
-    
+
     // Register view providers as disposable resources
-    if (viewContext.chatPanelProvider) {
+    if (viewContext.navigatorProvider) {
       contextManager.registerResource(
-        viewContext.chatPanelProvider,
-        'ChatPanelProvider',
-        'main-chat-panel'
+        viewContext.navigatorProvider,
+        'NavigatorProvider',
+        'main-navigator'
       );
     }
-    
-    if (viewContext.taskDashboardProvider) {
+
+    if (viewContext.aiAssistantProvider) {
       contextManager.registerResource(
-        viewContext.taskDashboardProvider,
-        'TaskDashboardProvider',
-        'main-task-dashboard'
-      );
-    }
-    
-    if (viewContext.statusBarManager) {
-      contextManager.registerResource(
-        viewContext.statusBarManager,
-        'StatusBarManager',
-        'main-status-bar'
-      );
-    }
-    
-    if (viewContext.taskTreeProvider) {
-      contextManager.registerResource(
-        viewContext.taskTreeProvider,
-        'TaskTreeProvider',
-        'main-task-tree'
+        viewContext.aiAssistantProvider,
+        'AIAssistantProvider',
+        'main-ai-assistant'
       );
     }
 
@@ -122,7 +147,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const vesperaContext: VesperaForgeContext = {
       extensionContext: context,
       contentProvider,
-      config: getConfig(),
+      config,
       isInitialized: false,
       coreServices
     };
@@ -151,10 +176,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     disposalManager.addHook({
       beforeDispose: async () => {
         logger.info('Starting comprehensive extension cleanup');
-        
-        // Clear VS Code context flags
-        await vscode.commands.executeCommand('setContext', 'vespera-forge:enabled', false);
-        
+
+        // Clear VS Code context flags (only if not shutting down)
+        if (!isExtensionShuttingDown) {
+          try {
+            await vscode.commands.executeCommand('setContext', 'vespera-forge:enabled', false);
+          } catch (err) {
+            // Silently ignore errors during shutdown - IPC channel may be closed
+          }
+        }
+
         // Dispose view context and all providers
         await contextManager.disposeViewContext(context);
       },
@@ -184,9 +215,22 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           await vscode.commands.executeCommand('vespera-forge.initialize');
           logger.info('Auto-initialization completed successfully');
         } catch (error) {
+          // Silently ignore errors during shutdown - IPC channel may be closed
+          if (isExtensionShuttingDown) {
+            return;
+          }
+
           const errorToHandle = error instanceof Error ? error : new Error(String(error));
           logger.error('Auto-initialization failed', errorToHandle);
-          await errorHandler.handleError(errorToHandle);
+
+          try {
+            await errorHandler.handleError(errorToHandle);
+          } catch (handlerError) {
+            // Error handler may fail if channel is closed during shutdown
+            if (!isExtensionShuttingDown) {
+              console.error('Failed to handle auto-initialization error:', handlerError);
+            }
+          }
         }
       });
     } else {
@@ -225,13 +269,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
  * Called when extension is deactivated
  */
 export async function deactivate(): Promise<void> {
+  // Set shutdown flag FIRST to prevent error handlers from trying to use VS Code APIs
+  isExtensionShuttingDown = true;
+
   if (!coreServices) {
     console.log('[Vespera] Extension already deactivated or never fully activated');
     return;
   }
 
   const { logger, contextManager, disposalManager, errorHandler } = coreServices;
-  
+
   try {
     logger.info('Starting Vespera Forge extension deactivation with enhanced cleanup');
     
@@ -253,7 +300,15 @@ export async function deactivate(): Promise<void> {
     } catch (binderyError) {
       const errorToHandle = binderyError instanceof Error ? binderyError : new Error(String(binderyError));
       logger.error('Error disposing Bindery service', errorToHandle);
-      await errorHandler.handleError(errorToHandle);
+
+      // Only try to handle error if not shutting down (error handler may use VS Code APIs)
+      if (!isExtensionShuttingDown) {
+        try {
+          await errorHandler.handleError(errorToHandle);
+        } catch (handlerError) {
+          console.error('Failed to handle Bindery disposal error:', handlerError);
+        }
+      }
     }
     
     // Perform comprehensive cleanup via disposal manager

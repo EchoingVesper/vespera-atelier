@@ -1,0 +1,9 @@
+# Test artifacts - generated files from migration testing
+test_output.log
+test_*.db
+*.db-journal
+
+# But keep test scripts and SQL schemas
+!test_*.sh
+!test_*.sql
+!test_*.ts

@@ -82,11 +82,12 @@ export class BinderyService extends EventEmitter {
   private pendingRequests = new Map<number, PendingRequest>();
   private buffer = '';
   private isConnecting = false;
+  private isShuttingDown = false;
 
   // Security components
   private securityServices: SecurityEnhancedVesperaCoreServices | null = null;
   private securityAuditLog: BinderySecurityAudit[] = [];
-  private securityMetrics: BinderySecurityMetrics;
+  private securityMetrics!: BinderySecurityMetrics;
   private readonly MAX_AUDIT_LOG_SIZE = 5000;
 
   // Process security monitoring
@@ -107,9 +108,10 @@ export class BinderyService extends EventEmitter {
       enableJsonRpcValidation: true,
       enableContentProtection: true,
       maxProcessMemoryMB: 256,
-      maxExecutionTimeMs: 30000,
+      maxExecutionTimeMs: 300000, // 5 minutes for development (was 30000)
       allowedBinderyPaths: [
-        '/home/aya/dev/monorepo/vespera-atelier/packages/vespera-utilities/vespera-bindery'
+        '/home/aya/Development/vespera-atelier/packages/vespera-utilities/vespera-bindery',
+        '/home/aya/dev/monorepo/vespera-atelier/packages/vespera-utilities/vespera-bindery' // Legacy path
       ],
       blockedBinderyPaths: [
         '/etc', '/sys', '/proc', '/root'
@@ -123,11 +125,33 @@ export class BinderyService extends EventEmitter {
       }
     };
 
+    // Check if workspace folder is available
+    const workspaceRoot = config.workspaceRoot || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+
+    // Set NoWorkspace status if no workspace is open
+    if (!workspaceRoot) {
+      this.config = {
+        binderyPath: config.binderyPath || undefined,
+        workspaceRoot: undefined,
+        enableLogging: config.enableLogging ?? false,
+        connectionTimeout: config.connectionTimeout ?? 180000, // 3 minutes for LLM responses
+        maxRetries: config.maxRetries ?? 3,
+        retryDelay: config.retryDelay ?? 1000,
+        security: { ...defaultSecurity, ...config.security }
+      };
+      this.log('No workspace folder open - Bindery service will not initialize');
+      this.connectionInfo = {
+        status: BinderyConnectionStatus.NoWorkspace,
+        last_error: 'No workspace folder open. Please open a folder to use Vespera Forge.'
+      };
+      return; // Don't initialize further
+    }
+
     this.config = {
       binderyPath: config.binderyPath || undefined,
-      workspaceRoot: config.workspaceRoot || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd(),
-      enableLogging: config.enableLogging ?? true,
-      connectionTimeout: config.connectionTimeout ?? 5000,
+      workspaceRoot: workspaceRoot,
+      enableLogging: config.enableLogging ?? false, // Changed default to false to reduce console spam
+      connectionTimeout: config.connectionTimeout ?? 180000, // 3 minutes for LLM responses
       maxRetries: config.maxRetries ?? 3,
       retryDelay: config.retryDelay ?? 1000,
       security: { ...defaultSecurity, ...config.security }
@@ -458,6 +482,17 @@ export class BinderyService extends EventEmitter {
    * Initialize connection to Bindery backend
    */
   public async initialize(): Promise<BinderyResult<VersionInfo>> {
+    // Check if workspace is available
+    if (this.connectionInfo.status === BinderyConnectionStatus.NoWorkspace) {
+      return {
+        success: false,
+        error: {
+          code: -1,
+          message: this.connectionInfo.last_error || 'No workspace folder open. Please open a folder to use Vespera Forge.'
+        }
+      };
+    }
+
     if (this.isConnecting) {
       return { success: false, error: { code: -1, message: 'Already connecting' } };
     }
@@ -517,23 +552,45 @@ export class BinderyService extends EventEmitter {
    * Disconnect from Bindery backend
    */
   public async disconnect(): Promise<void> {
+    // Set shutdown flag to prevent new requests
+    this.isShuttingDown = true;
+    this.log('Bindery service shutting down...');
+
     if (this.process) {
-      // Cancel all pending requests
+      // Cancel all pending requests silently (errors during shutdown are expected)
       for (const [_id, request] of this.pendingRequests.entries()) {
         clearTimeout(request.timeout);
-        request.reject({ code: -1, message: 'Connection closed' });
+        try {
+          request.reject({ code: -1, message: 'Service shutting down' });
+        } catch (err) {
+          // Ignore errors during shutdown - channel may already be closed
+        }
       }
       this.pendingRequests.clear();
 
       // Terminate process gracefully
       this.process.kill('SIGTERM');
-      
-      // Force kill after timeout
-      setTimeout(() => {
-        if (this.process && !this.process.killed) {
-          this.process.kill('SIGKILL');
+
+      // Wait for process to exit, with force kill as fallback
+      await new Promise<void>((resolve) => {
+        const killTimer = setTimeout(() => {
+          if (this.process && !this.process.killed) {
+            this.log('Force killing Bindery process after timeout');
+            this.process.kill('SIGKILL');
+          }
+          resolve();
+        }, 3000);
+
+        if (this.process) {
+          this.process.once('exit', () => {
+            clearTimeout(killTimer);
+            resolve();
+          });
+        } else {
+          clearTimeout(killTimer);
+          resolve();
         }
-      }, 3000);
+      });
 
       this.process = null;
     }
@@ -541,8 +598,13 @@ export class BinderyService extends EventEmitter {
     this.connectionInfo = {
       status: BinderyConnectionStatus.Disconnected
     };
-    
-    this.emit('statusChanged', this.connectionInfo);
+
+    try {
+      this.emit('statusChanged', this.connectionInfo);
+    } catch (err) {
+      // Ignore errors during shutdown
+    }
+
     this.log('Bindery connection closed');
   }
 
@@ -714,12 +776,31 @@ export class BinderyService extends EventEmitter {
    */
   public async createCodex(
     title: string,
-    templateId: string
+    templateId: string,
+    projectId?: string
   ): Promise<BinderyResult<CodexId>> {
-    return this.sendRequest('create_codex', {
+    const payload: any = {
       title,
       template_id: templateId
+    };
+
+    // Add project_id to metadata if provided
+    if (projectId) {
+      payload.metadata = {
+        project_id: projectId
+      };
+    }
+
+    // Phase 16b Stage 3: Log what we're sending to Bindery
+    console.log('[BinderyService] createCodex called with:', {
+      title,
+      templateId,
+      projectId,
+      hasProjectId: !!projectId,
+      payloadToBindery: JSON.stringify(payload)
     });
+
+    return this.sendRequest('create_codex', payload);
   }
 
   /**
@@ -727,6 +808,26 @@ export class BinderyService extends EventEmitter {
    */
   public async getCodex(codexId: CodexId): Promise<BinderyResult<Codex>> {
     return this.sendRequest('get_codex', { codex_id: codexId });
+  }
+
+  /**
+   * Update Codex
+   */
+  public async updateCodex(
+    codexId: CodexId,
+    updates: {
+      title?: string;
+      content?: any;
+      template_id?: string;
+      tags?: string[];
+      references?: any[];
+      metadata?: any;
+    }
+  ): Promise<BinderyResult<Codex>> {
+    return this.sendRequest('update_codex', {
+      codex_id: codexId,
+      ...updates
+    });
   }
 
   /**
@@ -832,13 +933,20 @@ export class BinderyService extends EventEmitter {
 
   private async findBinderyExecutable(): Promise<string | null> {
     this.log(`Workspace root: ${this.config.workspaceRoot}`);
-    
+
     // Priority order for finding Bindery executable
     const searchPaths = [
       this.config.binderyPath,
+      // Try worktrees first (for feature branch development)
+      '/home/aya/Development/vespera-atelier-worktrees/feat-codex-ui-framework/packages/vespera-utilities/vespera-bindery/target/debug/bindery-server',
+      '/home/aya/Development/vespera-atelier-worktrees/feat-codex-ui-framework/packages/vespera-utilities/vespera-bindery/target/release/bindery-server',
+      // Try from current workspace (works if in main repo)
       path.join(this.config.workspaceRoot || '', '../../../packages/vespera-utilities/vespera-bindery/target/debug/bindery-server'),
       path.join(this.config.workspaceRoot || '', '../../../packages/vespera-utilities/vespera-bindery/target/release/bindery-server'),
-      // Also try from the monorepo root directly
+      // Direct paths to main monorepo (fallback)
+      '/home/aya/Development/vespera-atelier/packages/vespera-utilities/vespera-bindery/target/debug/bindery-server',
+      '/home/aya/Development/vespera-atelier/packages/vespera-utilities/vespera-bindery/target/release/bindery-server',
+      // Legacy path (kept for compatibility)
       '/home/aya/dev/monorepo/vespera-atelier/packages/vespera-utilities/vespera-bindery/target/debug/bindery-server',
       'bindery-server' // PATH lookup
     ].filter(Boolean);
@@ -865,8 +973,8 @@ export class BinderyService extends EventEmitter {
 
   private async startBinderyProcess(binderyPath: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      const args = ['--json-rpc'];
-      
+      const args = ['--json-rpc', '--workspace', this.config.workspaceRoot || process.cwd()];
+
       // Security-enhanced process spawn options
       const spawnOptions: any = {
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -916,7 +1024,10 @@ export class BinderyService extends EventEmitter {
 
       // Handle stderr (logging)
       this.process.stderr!.on('data', (data) => {
-        this.log('Bindery stderr:', data.toString());
+        const message = data.toString();
+        // Log all lines for debugging (previously only logged first line)
+        const lines = message.split('\n').filter((line: string) => line.trim());
+        lines.forEach((line: string) => this.log('Bindery stderr:', line));
       });
 
       // Give process time to start
@@ -934,31 +1045,45 @@ export class BinderyService extends EventEmitter {
 
   private handleProcessData(data: Buffer): void {
     this.buffer += data.toString();
-    
+
     // Process complete JSON lines
     const lines = this.buffer.split('\n');
     this.buffer = lines.pop() || ''; // Keep incomplete line in buffer
-    
+
     for (const line of lines) {
       if (line.trim()) {
         try {
-          const response: BinderyResponse = JSON.parse(line);
+          const parsed = JSON.parse(line);
+
+          // Filter out non-JSON-RPC messages (Bindery log messages sent to stdout)
+          // Valid JSON-RPC responses must have a 'jsonrpc' field
+          if (!parsed.jsonrpc) {
+            // This is a log message, not a JSON-RPC response - ignore it
+            // (Bindery should send logs to stderr, but sometimes they go to stdout)
+            continue;
+          }
+
+          const response: BinderyResponse = parsed;
           this.handleResponse(response).catch(error => {
             this.log('Failed to handle Bindery response:', error);
           });
         } catch (error) {
-          this.log('Failed to parse Bindery response:', line, error);
+          // Not valid JSON - this might be a partial message or non-JSON log
+          // Don't spam the console with every parse error
+          // this.log('Failed to parse Bindery response:', line, error);
         }
       }
     }
   }
 
   private async handleResponse(response: BinderyResponse): Promise<void> {
-    this.log('Received response:', JSON.stringify(response));
-    
+    // Don't log every response - too spammy
+    // this.log('Received response for request ID:', response.id);
+
     const request = this.pendingRequests.get(response.id);
     if (!request) {
-      this.log('Received response for unknown request ID:', response.id);
+      // Don't log unknown request IDs - these are filtered out now
+      // this.log('Received response for unknown request ID:', response.id);
       return;
     }
 
@@ -983,11 +1108,25 @@ export class BinderyService extends EventEmitter {
       const sanitizedResponse = responseValidation.sanitizedResponse || response;
 
       if (sanitizedResponse.error) {
-        this.log('Response contains error:', sanitizedResponse.error);
-        request.reject(sanitizedResponse.error);
+        this.log('Response contains error for request', response.id, '- Error:', JSON.stringify(sanitizedResponse.error));
+        try {
+          request.reject(sanitizedResponse.error);
+        } catch (err) {
+          // Ignore errors during promise rejection (channel may be closed during shutdown)
+          if (!this.isShuttingDown) {
+            this.log('Failed to reject request promise:', err);
+          }
+        }
       } else {
-        this.log('Response successful, result:', sanitizedResponse.result);
-        request.resolve(sanitizedResponse.result);
+        this.log('Response successful for request', response.id);
+        try {
+          request.resolve(sanitizedResponse.result);
+        } catch (err) {
+          // Ignore errors during promise resolution (channel may be closed during shutdown)
+          if (!this.isShuttingDown) {
+            this.log('Failed to resolve request promise:', err);
+          }
+        }
       }
 
     } catch (error) {
@@ -1058,15 +1197,19 @@ export class BinderyService extends EventEmitter {
         }
 
         // Check execution time limits
+        // NOTE: Disabled for long-running Bindery server process
+        // TODO: Implement per-request timeout instead of process lifetime timeout
+        /*
         const executionTime = Date.now() - this.processStartTime;
         if (executionTime > (this.config.security?.maxExecutionTimeMs || 30000)) {
           this.securityMetrics.processes.timeoutViolations++;
           this.log(`Process execution time limit exceeded: ${executionTime}ms`);
-          
+
           if (this.config.security?.requireSandbox) {
             this.terminateProcessForSecurity('timeout_exceeded');
           }
         }
+        */
 
       } catch (error) {
         this.log('Process monitoring error:', error);
@@ -1110,14 +1253,22 @@ export class BinderyService extends EventEmitter {
     }
   }
 
-  private async sendRequest<T>(method: string, params?: any): Promise<BinderyResult<T>> {
+  public async sendRequest<T>(method: string, params?: any): Promise<BinderyResult<T>> {
+    // Reject immediately if shutting down
+    if (this.isShuttingDown) {
+      return {
+        success: false,
+        error: { code: -1, message: 'Service is shutting down' }
+      };
+    }
+
     this.log(`Sending request: ${method}, connected: ${this.isConnected()}, status: ${this.connectionInfo.status}`);
-    
+
     if (!this.isConnected()) {
       this.log(`Request ${method} failed - not connected. Status: ${this.connectionInfo.status}`);
-      return { 
-        success: false, 
-        error: { code: -1, message: 'Not connected to Bindery' } 
+      return {
+        success: false,
+        error: { code: -1, message: 'Not connected to Bindery' }
       };
     }
 
@@ -1174,7 +1325,8 @@ export class BinderyService extends EventEmitter {
 
       try {
         const requestJson = JSON.stringify(request);
-        this.log('Writing to Bindery stdin:', requestJson);
+        this.log('Sending request to Bindery:', method, 'ID:', requestId);
+        console.log('[BinderyService] Full JSON-RPC request:', requestJson);
         this.process!.stdin!.write(requestJson + '\n');
       } catch (error) {
         this.pendingRequests.delete(requestId);
@@ -1231,6 +1383,90 @@ export class BinderyService extends EventEmitter {
           data: [] as any
         };
 
+      // Phase 17 Project Management Mock Handlers
+      case 'create_project':
+        return {
+          success: true,
+          data: {
+            id: `project-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            workspace_id: params?.workspace_id || 'mock-workspace',
+            name: params?.name || 'Untitled Project',
+            description: params?.description,
+            project_type: params?.project_type || 'general',
+            active_context_id: null,
+            settings: params?.settings || {},
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          } as any
+        };
+
+      case 'get_project':
+        return {
+          success: true,
+          data: {
+            id: params?.project_id || 'mock-project-id',
+            workspace_id: 'mock-workspace',
+            name: 'Mock Project',
+            description: 'A mock project for development',
+            project_type: 'general',
+            active_context_id: null,
+            settings: {},
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          } as any
+        };
+
+      case 'update_project':
+        return {
+          success: true,
+          data: {
+            id: params?.project_id || 'mock-project-id',
+            workspace_id: 'mock-workspace',
+            name: params?.name || 'Updated Mock Project',
+            description: params?.description || 'An updated mock project',
+            project_type: params?.project_type || 'general',
+            active_context_id: params?.active_context_id || null,
+            settings: params?.settings || {},
+            created_at: new Date(Date.now() - 86400000).toISOString(),
+            updated_at: new Date().toISOString()
+          } as any
+        };
+
+      case 'delete_project':
+        return {
+          success: true,
+          data: undefined as any
+        };
+
+      case 'list_projects':
+        return {
+          success: true,
+          data: [
+            {
+              id: 'mock-project-1',
+              workspace_id: params?.workspace_id || 'mock-workspace',
+              name: 'Sample Project 1',
+              description: 'First sample project',
+              project_type: 'fiction',
+              active_context_id: null,
+              settings: {},
+              created_at: new Date(Date.now() - 172800000).toISOString(),
+              updated_at: new Date(Date.now() - 86400000).toISOString()
+            },
+            {
+              id: 'mock-project-2',
+              workspace_id: params?.workspace_id || 'mock-workspace',
+              name: 'Sample Project 2',
+              description: 'Second sample project',
+              project_type: 'research',
+              active_context_id: null,
+              settings: {},
+              created_at: new Date(Date.now() - 259200000).toISOString(),
+              updated_at: new Date(Date.now() - 172800000).toISOString()
+            }
+          ] as any
+        };
+
       default:
         return {
           success: false,
@@ -1251,10 +1487,15 @@ let binderyServiceInstance: BinderyService | null = null;
 
 /**
  * Get or create the global Bindery service instance
+ *
+ * Note: This follows the singleton pattern. If an instance already exists,
+ * the config parameter will be ignored and a warning will be logged.
  */
 export function getBinderyService(config?: Partial<BinderyServiceConfig>): BinderyService {
   if (!binderyServiceInstance) {
     binderyServiceInstance = new BinderyService(config);
+  } else if (config) {
+    console.warn('[BinderyService] Singleton instance already exists. Config parameter ignored. Use disposeBinderyService() first if you need to reinitialize with new config.');
   }
   return binderyServiceInstance;
 }

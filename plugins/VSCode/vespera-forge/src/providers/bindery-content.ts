@@ -54,7 +54,7 @@ class BinderyContentProvider implements ContentProvider {
 
     this.bindery = getBinderyService({
       enableLogging: true,
-      workspaceRoot: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd()
+      workspaceRoot: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
     });
 
     this.setupEventListeners();

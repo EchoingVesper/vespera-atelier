@@ -1,23 +1,12 @@
 {
   "name": "Vespera Atelier Monorepo",
   "description": "Intelligent platform for document-centric orchestration and creative workflows",
-  "mcp": {
-    "servers": {
-      "vespera-scriptorium": {
-        "command": "/home/aya/dev/monorepo/vespera-atelier/packages/vespera-scriptorium/mcp_venv/bin/python",
-        "args": ["/home/aya/dev/monorepo/vespera-atelier/packages/vespera-scriptorium/vespera_server.py", "--mode", "mcp", "--cwd", "${workspaceFolder}"],
-        "cwd": "packages/vespera-scriptorium",
-        "env": {
-          "PYTHONPATH": "${workspaceFolder}/packages/vespera-scriptorium"
-        }
-      }
-    }
-  },
   "workspaces": {
     "packages": [
       "packages/vespera-scriptorium",
-      "packages/vespera-atelier", 
-      "packages/vespera-utilities"
+      "packages/vespera-atelier",
+      "packages/vespera-utilities",
+      "packages/vespera-penpot-bridge"
     ],
     "plugins": [
       "plugins/Obsidian/Vespera-Scriptorium"

@@ -110,7 +110,7 @@ export class SecureToolManager {
       manager.securityServices = SecurityEnhancedVesperaCoreServices.getInstance();
       manager.fileSecurityManager = await FileOperationsSecurityManager.initialize();
       
-      console.log('SecureToolManager initialized with policy:', finalPolicy);
+      // console.log('SecureToolManager initialized with policy:', JSON.stringify(finalPolicy));
     } catch (error) {
       console.warn('SecureToolManager initialized with reduced security:', error);
     }

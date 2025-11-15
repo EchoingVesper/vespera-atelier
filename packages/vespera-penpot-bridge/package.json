@@ -1,0 +1,79 @@
+{
+  "name": "@vespera/penpot-bridge",
+  "version": "0.1.0",
+  "description": "MCP server for Penpot with AI-driven design creation capabilities",
+  "license": "AGPL-3.0",
+  "author": "Vespera Atelier Contributors",
+  "contributors": [
+    {
+      "name": "Montevive AI Team",
+      "email": "info@montevive.ai",
+      "url": "https://github.com/montevive/penpot-mcp"
+    }
+  ],
+  "homepage": "https://github.com/yourusername/vespera-atelier/tree/main/packages/vespera-penpot-bridge",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/vespera-atelier.git",
+    "directory": "packages/vespera-penpot-bridge"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/vespera-atelier/issues"
+  },
+  "keywords": [
+    "penpot",
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "design",
+    "prototyping",
+    "claude",
+    "vespera",
+    "design-automation"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "LICENSE",
+    "LICENSE.MIT",
+    "ATTRIBUTION.md"
+  ],
+  "bin": {
+    "vespera-penpot": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/mcp-server.ts",
+    "start": "node dist/mcp-server.js",
+    "test": "vitest",
+    "test:watch": "vitest watch",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write 'src/**/*.ts'",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5",
+    "transit-js": "^0.8.874",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "@types/transit-js": "^0.8.4",
+    "@typescript-eslint/eslint-plugin": "^7.16.0",
+    "@typescript-eslint/parser": "^7.16.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.3.2",
+    "rimraf": "^5.0.7",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.3",
+    "vitest": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

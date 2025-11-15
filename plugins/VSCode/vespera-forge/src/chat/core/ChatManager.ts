@@ -5,10 +5,14 @@ import * as vscode from 'vscode';
 import { ChatTemplateRegistry } from './TemplateRegistry';
 import { ChatConfigurationManager } from './ConfigurationManager';
 import { ChatEventRouter } from '../events/ChatEventRouter';
-import { ProviderFactory } from '../providers/ProviderFactory';
-import { ChatProvider } from '../providers/BaseProvider';
+// Legacy provider imports - removed in Phase 14c
+// import { ProviderFactory } from '../providers/ProviderFactory';
+// import { ChatProvider } from '../providers/BaseProvider';
 import { ChatMessage, ChatResponse, ChatThread, ChatChunk } from '../types/chat';
 import { ProviderTemplate } from '../types/provider';
+
+// Temporary stub types for removed providers
+type ChatProvider = any;
 
 export interface StreamingCallback {
   onStart?: () => void;
@@ -240,31 +244,28 @@ export class ChatManager {
   /**
    * Add or update a provider
    */
-  async addProvider(template: ProviderTemplate, config: any): Promise<void> {
+  async addProvider(template: ProviderTemplate, _config: any): Promise<void> {
     try {
-      const provider = ProviderFactory.createProvider(template, config, this.configManager);
-      
-      // Connect the provider
-      await provider.connect();
-      
-      // Store provider
-      this.providers.set(template.template_id, provider);
-      
+      // TODO: Replace with Bindery backend provider management
+      throw new Error('Legacy provider system removed. Use Bindery backend for LLM providers.');
+
+      // Legacy code removed - unreachable after throw:
+      // const provider = ProviderFactory.createProvider(template, config, this.configManager);
+      // await provider.connect();
+      // this.providers.set(template.template_id, provider);
       // Set as active if no active provider
-      if (!this.activeProviderId) {
-        this.activeProviderId = template.template_id;
-      }
-      
+      // if (!this.activeProviderId) {
+      //   this.activeProviderId = template.template_id;
+      // }
       // Emit provider connected event
-      this.eventRouter.emit({
-        type: 'chatProviderConnected',
-        data: {
-          providerId: template.template_id,
-          providerName: template.name
-        }
-      });
-      
-      console.log(`[ChatManager] Added provider: ${template.template_id}`);
+      // this.eventRouter.emit({
+      //   type: 'chatProviderConnected',
+      //   data: {
+      //     providerId: template.template_id,
+      //     providerName: template.name
+      //   }
+      // });
+      // console.log(`[ChatManager] Added provider: ${template.template_id}`);
     } catch (error) {
       console.error(`[ChatManager] Failed to add provider ${template.template_id}:`, error);
       throw error;

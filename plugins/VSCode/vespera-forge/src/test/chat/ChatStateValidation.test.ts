@@ -12,8 +12,8 @@
 import * as assert from 'assert';
 import { suite, test } from 'mocha';
 import { ChatStateValidation } from '../../chat/state/ChatStateValidation';
-import { VesperaLogger } from '../../core/logging/VesperaLogger';
-import { 
+// Note: VesperaLogger type unused - using mock implementation
+import {
   MultiChatState,
   ServerNavigationState,
   ChannelViewState,
@@ -130,7 +130,8 @@ suite('ChatStateValidation Tests', () => {
 
   setup(() => {
     mockLogger = new MockVesperaLogger();
-    chatStateValidation = new ChatStateValidation(mockLogger);
+    // Cast to any to bypass type checking for mock logger
+    chatStateValidation = new ChatStateValidation(mockLogger as any);
   });
 
   suite('Complete State Validation', () => {
@@ -221,13 +222,16 @@ suite('ChatStateValidation Tests', () => {
         serverNavigationState: {
           serverOrder: null // This will cause issues in array operations
         }
-      };
-      
+      } as unknown as Partial<MultiChatState>;
+
       const result = chatStateValidation.validateState(problematicState);
-      
+
       assert.strictEqual(result.isValid, false, 'Should fail validation on exception');
       assert.ok(result.errors.length > 0, 'Should provide error information');
-      assert.ok(result.errors[0].message.includes('Validation failed'), 'Should indicate validation failure');
+      // Add null-safety guard before accessing array property
+      if (result.errors && result.errors.length > 0 && result.errors[0]) {
+        assert.ok(result.errors[0].message.includes('Validation failed'), 'Should indicate validation failure');
+      }
     });
   });
 
@@ -263,13 +267,13 @@ suite('ChatStateValidation Tests', () => {
 
     test('Should filter non-string IDs from server collections', () => {
       const navStateWithInvalidIds = {
-        expandedServers: new Set(['server1', 123, null, 'server2']),
-        collapsedServers: new Set([undefined, 'server3', '']),
+        expandedServers: new Set(['server1', 123, null, 'server2'] as any),
+        collapsedServers: new Set([undefined, 'server3', ''] as any),
         pinnedServers: ['server1', {}, 'server2', ''] as any,
-        serverOrder: ['server1', null, 'server2', 123, 'server3'],
-        navigationHistory: ['server1', undefined, 'server2']
-      };
-      
+        serverOrder: ['server1', null, 'server2', 123, 'server3'] as any,
+        navigationHistory: ['server1', undefined, 'server2'] as any
+      } as any;
+
       const result = chatStateValidation.validateState({ serverNavigationState: navStateWithInvalidIds });
       
       assert.strictEqual(result.isValid, true, 'Should filter invalid IDs');
@@ -285,13 +289,13 @@ suite('ChatStateValidation Tests', () => {
 
     test('Should limit navigation history length', () => {
       const navStateWithLongHistory = {
-        expandedServers: new Set(),
-        collapsedServers: new Set(),
-        pinnedServers: new Set(),
-        serverOrder: [],
+        expandedServers: new Set() as Set<string>,
+        collapsedServers: new Set() as Set<string>,
+        pinnedServers: new Set() as Set<string>,
+        serverOrder: [] as string[],
         navigationHistory: Array.from({ length: 20 }, (_, i) => `server${i}`)
-      };
-      
+      } as ServerNavigationState;
+
       const result = chatStateValidation.validateState({ serverNavigationState: navStateWithLongHistory });
       
       const sanitized = result.sanitizedState!.serverNavigationState!;
@@ -303,8 +307,8 @@ suite('ChatStateValidation Tests', () => {
         expandedServers: 'not a set',
         serverOrder: 'not an array',
         navigationHistory: 123
-      };
-      
+      } as any;
+
       const result = chatStateValidation.validateState({ serverNavigationState: invalidNavState });
       
       const errors = result.errors.filter(e => e.severity === 'error');
@@ -354,10 +358,10 @@ suite('ChatStateValidation Tests', () => {
 
     test('Should reject channel states with invalid structure', () => {
       const invalidChannelStates = new Map([
-        ['channel1', { channelId: 123, serverId: null }], // Invalid types
-        ['channel2', 'not an object'] // Invalid structure
-      ]);
-      
+        ['channel1', { channelId: 123, serverId: null } as any], // Invalid types
+        ['channel2', 'not an object' as any] // Invalid structure
+      ]) as any;
+
       const result = chatStateValidation.validateState({ channelStates: invalidChannelStates });
       
       const errors = result.errors.filter(e => e.severity === 'error');
@@ -401,10 +405,10 @@ suite('ChatStateValidation Tests', () => {
         lastUpdate: 'not a number' as any, // Should correct to timestamp
         messageQueue: 'not an array' as any, // Should correct to array
         errorMessages: null as any // Should correct to array
-      };
-      
-      const agentStates = new Map([['channel1', agentWithIssues]]);
-      
+      } as any;
+
+      const agentStates = new Map([['channel1', agentWithIssues]]) as any;
+
       const result = chatStateValidation.validateState({ agentProgressStates: agentStates });
       
       assert.strictEqual(result.isValid, true, 'Should sanitize agent state issues');
@@ -420,7 +424,7 @@ suite('ChatStateValidation Tests', () => {
 
     test('Should validate agent status values', () => {
       const validStatuses = ['idle', 'active', 'waiting', 'error', 'completed'];
-      
+
       validStatuses.forEach(status => {
         const agentState = {
           agentRole: 'coder',
@@ -431,10 +435,10 @@ suite('ChatStateValidation Tests', () => {
           lastUpdate: Date.now(),
           messageQueue: [],
           errorMessages: []
-        };
-        
+        } as any;
+
         const result = chatStateValidation.validateState({
-          agentProgressStates: new Map([['channel1', agentState]])
+          agentProgressStates: new Map([['channel1', agentState]]) as any
         });
         
         assert.strictEqual(result.isValid, true, `Status '${status}' should be valid`);
@@ -451,12 +455,12 @@ suite('ChatStateValidation Tests', () => {
         status: 'active',
         progressPercentage: 50,
         lastUpdate: Date.now(),
-        messageQueue: ['message1', 123, null, 'message2', undefined],
-        errorMessages: ['error1', {}, 'error2', '', 'error3']
-      };
-      
+        messageQueue: ['message1', 123, null, 'message2', undefined] as any,
+        errorMessages: ['error1', {}, 'error2', '', 'error3'] as any
+      } as any;
+
       const result = chatStateValidation.validateState({
-        agentProgressStates: new Map([['channel1', agentState]])
+        agentProgressStates: new Map([['channel1', agentState]]) as any
       });
       
       const sanitized = result.sanitizedState!.agentProgressStates!;
@@ -548,23 +552,23 @@ suite('ChatStateValidation Tests', () => {
     });
 
     test('Should validate theme and density enums', () => {
-      const validThemes = ['light', 'dark', 'auto'];
-      const validDensities = ['compact', 'comfortable', 'spacious'];
-      
+      const validThemes: Array<'light' | 'dark' | 'auto'> = ['light', 'dark', 'auto'];
+      const validDensities: Array<'compact' | 'comfortable' | 'spacious'> = ['compact', 'comfortable', 'spacious'];
+
       validThemes.forEach(theme => {
         const result = chatStateValidation.validateState({
           uiPreferences: { ...createValidUIPreferences(), theme }
         });
-        
+
         assert.strictEqual(result.isValid, true, `Theme '${theme}' should be valid`);
         assert.strictEqual(result.sanitizedState!.uiPreferences!.theme, theme, `Should preserve valid theme '${theme}'`);
       });
-      
+
       validDensities.forEach(density => {
         const result = chatStateValidation.validateState({
           uiPreferences: { ...createValidUIPreferences(), density }
         });
-        
+
         assert.strictEqual(result.isValid, true, `Density '${density}' should be valid`);
         assert.strictEqual(result.sanitizedState!.uiPreferences!.density, density, `Should preserve valid density '${density}'`);
       });

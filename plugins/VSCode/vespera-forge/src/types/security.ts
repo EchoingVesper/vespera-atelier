@@ -61,15 +61,30 @@ export interface AuditConfiguration {
 // ============================================================================
 
 export enum VesperaSecurityEvent {
+  // Security threats and violations
   RATE_LIMIT_EXCEEDED = 'rate_limit_exceeded',
-  CONSENT_GRANTED = 'consent_granted',
-  CONSENT_WITHDRAWN = 'consent_withdrawn',
   THREAT_DETECTED = 'threat_detected',
   CSP_VIOLATION = 'csp_violation',
-  SANITIZATION_APPLIED = 'sanitization_applied',
   SECURITY_BREACH = 'security_breach',
+
+  // System lifecycle events
+  SYSTEM_INITIALIZED = 'system_initialized',
+  SYSTEM_SHUTDOWN = 'system_shutdown',
+  COMPONENT_INITIALIZED = 'component_initialized',
+  INITIALIZATION_FAILED = 'initialization_failed',
+
+  // User consent and privacy
+  CONSENT_GRANTED = 'consent_granted',
+  CONSENT_WITHDRAWN = 'consent_withdrawn',
+
+  // Data protection
+  SANITIZATION_APPLIED = 'sanitization_applied',
+
+  // Circuit breaker and resilience
   CIRCUIT_BREAKER_OPENED = 'circuit_breaker_opened',
   CIRCUIT_BREAKER_CLOSED = 'circuit_breaker_closed',
+
+  // API and external access
   API_ACCESS = 'api_access',
   API_ERROR = 'api_error'
 }

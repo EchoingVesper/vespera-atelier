@@ -19,14 +19,27 @@ vespera-atelier/
 ├── PRPs/                        # Product Requirement Prompts
 ├── docs/                        # Comprehensive architecture documentation
 │   ├── README.md               # Documentation hub and navigation
-│   ├── technical/              # Core system architecture documents
-│   │   ├── DYNAMIC_AUTOMATION_ARCHITECTURE.md  # Revolutionary automation system
-│   │   ├── CODEX_ARCHITECTURE.md               # Universal content system
-│   │   ├── TEMPLATE_SYSTEM_ARCHITECTURE.md     # User-extensible templates
-│   │   ├── UI-Architecture-Three-Panel-Design.md # Interface design
-│   │   └── MULTI_PROJECT_VAULT_ORGANIZATION.md  # Multi-project management
-│   ├── examples/               # Automation rule examples
-│   └── user-guides/            # User documentation and scenarios
+│   ├── architecture/           # Core system architecture documents
+│   │   ├── core/              # Foundation architecture (9 docs)
+│   │   │   ├── PROJECT_CENTRIC_ARCHITECTURE.md      # Projects as fundamental
+│   │   │   ├── HIERARCHICAL_TEMPLATE_SYSTEM.md      # Dynamic template system
+│   │   │   ├── CODEX_NESTING.md                     # Scrivener-style folders
+│   │   │   ├── CODEX_ARCHITECTURE.md                # Universal content system
+│   │   │   ├── TEMPLATE_SYSTEM_ARCHITECTURE.md      # Template implementation
+│   │   │   ├── DYNAMIC_AUTOMATION_ARCHITECTURE.md   # Automation (planned)
+│   │   │   └── ...
+│   │   ├── subsystems/        # Specialized components (7 docs)
+│   │   ├── integration/       # API specifications
+│   │   └── testing/           # Test infrastructure
+│   ├── development/           # Development tracking and decisions
+│   │   ├── decisions/         # Architecture Decision Records (ADRs)
+│   │   ├── phases/            # Phase completion reports
+│   │   ├── reports/           # Technical investigations
+│   │   └── environment/       # Development setup
+│   ├── examples/              # Automation rule examples
+│   ├── guides/                # User and developer guides
+│   ├── reference/             # Glossary and references
+│   └── legacy/                # Aspirational/unimplemented docs
 └── .claude/                     # Claude Code configuration
 ```
 
@@ -77,54 +90,64 @@ pnpm scriptorium:dev # Run specific package
 
 ## 🔧 MCP Server Configuration
 
-### Vespera Scriptorium V2 (Task Orchestrator)
+### Vespera Scriptorium (Bindery Integration)
 
-The V2 MCP server is in `packages/vespera-scriptorium/` using FastMCP:
+The MCP server is in `packages/vespera-scriptorium/` using FastMCP as a translation layer to the Rust Bindery backend:
 
 ```bash
-# Install V2 dependencies
+# Install dependencies
 cd packages/vespera-scriptorium
 pip install -r requirements.txt
 
-# Run V2 MCP server directly (for testing)
-./mcp_venv/bin/python mcp_server_v2.py
+# Run MCP server directly (for testing)
+python3 mcp_server.py
 
-# Claude Code MCP integration (automatically configured in .claude/config.json)
-claude mcp restart vespera-scriptorium
-claude mcp list | grep vespera-scriptorium
+# Claude Code MCP integration (configured in user scope)
+# Add to user config:
+claude mcp add -s user vespera-scriptorium python3 /path/to/vespera-atelier/packages/vespera-scriptorium/mcp_server.py
+
+# Reconnect in active session:
+# Use the /mcp reconnect vespera-scriptorium command in Claude Code
 ```
 
-**V2 Features:**
-- **14 comprehensive MCP tools** for complete task lifecycle management
-- **Hierarchical task system** with parent-child relationships and dependencies
-- **Role-based execution** with capability restrictions and file pattern matching
+**MCP Features:**
+- **14 comprehensive MCP tools** for complete Bindery integration
+- **Task management**: create_task, get_task, update_task, list_tasks, delete_task, complete_task, execute_task
+- **Project management**: create_project
+- **Role system**: assign_role_to_task, list_roles
+- **Search & indexing**: search_entities, index_document
+- **Monitoring**: get_dashboard_stats, health_check
 - **FastMCP implementation** using official MCP Python SDK
-- **Real-time dashboard** with task metrics and progress tracking
+- **Translation layer** to Rust Bindery backend via HTTP
 
 ### Critical Directives from Original
 
-#### ***CRITICAL***: Task Orchestrator V2 Failure Protocol
+#### ***CRITICAL***: MCP Server Failure Protocol
 
-**If the MCP Task Orchestrator V2 ever fails to function:**
+**If the Vespera Scriptorium MCP server ever fails to function:**
 
 1. **STOP** - Do not proceed with current task
 2. **DIAGNOSE** - Check MCP connection and health:
    ```bash
-   claude mcp list | grep vespera-scriptorium
-   ./mcp_venv/bin/python mcp_server_v2.py  # Test server directly
+   # Check if server is configured
+   cat ~/.claude.json | grep -A 5 vespera-scriptorium
+
+   # Test server directly
+   cd packages/vespera-scriptorium
+   python3 mcp_server.py
    ```
-3. **FIX** - Restart MCP server:
-   ```bash
-   claude mcp restart vespera-scriptorium
-   ```
-4. **VERIFY** - Test with `mcp__vespera-scriptorium__get_task_dashboard` tool
+3. **FIX** - Ask user to reconnect MCP server:
+   - User must run `/mcp reconnect vespera-scriptorium` in Claude Code
+   - Claude Code cannot restart servers programmatically
+4. **VERIFY** - Test with `mcp__vespera-scriptorium__health_check` tool
 5. **RESUME** - Only continue after verification
 
-**V2 MCP Tools Available:**
-- Task management: create_task, get_task, update_task, delete_task
-- Task hierarchy: create_task_tree, get_task_tree, analyze_task_dependencies  
-- Task execution: execute_task, complete_task, assign_role_to_task
-- Dashboard: get_task_dashboard, list_tasks, list_roles
+**MCP Tools Available:**
+- Task management: create_task, get_task, update_task, delete_task, list_tasks
+- Task execution: complete_task, execute_task, assign_role_to_task
+- Project management: create_project
+- Search & indexing: search_entities, index_document
+- Monitoring: get_dashboard_stats, health_check, list_roles
 
 #### ***CRITICAL***: Architecture Documentation First
 
@@ -134,7 +157,7 @@ claude mcp list | grep vespera-scriptorium
 2. **READ** the required architectural documents for your component
 3. **UNDERSTAND** the template-driven, Codex-based system design
 4. **NEVER** hardcode content types - everything is template-driven
-5. **REFERENCE** docs/technical/ for technical specifications
+5. **REFERENCE** docs/architecture/ for technical specifications
 
 #### ***CRITICAL***: Git Commit After Every Task
 
@@ -145,26 +168,44 @@ claude mcp list | grep vespera-scriptorium
 3. Include package scope in commit: `feat(scriptorium): description`
 4. Never leave uncommitted changes between tasks
 
+#### ***CRITICAL***: Phase Handover Process
+
+**When completing a phase or handing over context:**
+
+1. **Use `/phase-complete`** command to create comprehensive phase documentation
+2. **Fill out PHASE_[N]_COMPLETE.md** using the template with ALL sections
+3. **Special focus on "Context for AI Assistant" section** - this is critical for next sessions
+4. **Create related ADRs** for significant decisions made during the phase
+5. **For context window transitions**, use `/handover` command for quick summaries
+
+**Custom Slash Commands Available**:
+- `/phase-start` - Start a new development phase with planning
+- `/phase-complete` - Complete current phase with documentation
+- `/handover` - Create context handover for next session
+- `/context` - Quick context snapshot of current state
+- `/adr` - Create new Architecture Decision Record
+
+**See**: [docs/development/phases/PHASE_TEMPLATE.md](docs/development/phases/PHASE_TEMPLATE.md) for the phase documentation template
+
 ## 📦 Package Management
 
-### Python Packages (vespera-scriptorium V2)
+### Python Packages (vespera-scriptorium)
 
 ```bash
-# V2 Development installation
+# Development installation
 cd packages/vespera-scriptorium
 pip install -r requirements.txt
 
-# Run V2 MCP server
-./mcp_venv/bin/python mcp_server_v2.py
+# Run MCP server
+python3 mcp_server.py
 
-# Test V2 task system
-python test_task_system.py
-python test_role_system.py
-python test_mcp_fastmcp.py
+# Run tests
+pytest
+python3 run_mcp_tests.py
 
 # Linting and formatting
-black roles/ tasks/ *.py
-isort roles/ tasks/ *.py
+black *.py
+isort *.py
 ```
 
 ### Node.js Packages (future)
@@ -182,33 +223,90 @@ pnpm --filter vespera-atelier dev
 
 ## 🏛️ Architecture Patterns
 
-### V2 Architecture
+### Vespera Scriptorium Architecture
 
-Vespera Scriptorium V2 implements a modular, FastMCP-based architecture:
+Vespera Scriptorium implements a FastMCP-based translation layer to the Rust Bindery backend:
 
 1. **MCP Server Mode**: FastMCP server with 14 comprehensive tools
-2. **Task System**: Hierarchical tasks with parent-child relationships
-3. **Role System**: Capability-restricted execution based on Roo Code patterns
-4. **Database Layer**: SQLite with task persistence and relationship management
+2. **Translation Layer**: Python MCP server translates calls to Rust Bindery HTTP API
+3. **Backend Integration**: Communicates with Rust Bindery backend for all operations
+4. **Security & Resilience**: Structured error handling, validation, and retry logic
 
-### V2 Core Components
+### Core Components
 
-**Task Management:**
-- `tasks/models.py`: Task, TaskStatus, TaskPriority, TaskRelation data models
-- `tasks/service.py`: SQLite persistence with relationships and constraints
-- `tasks/manager.py`: High-level task orchestration and lifecycle management
-- `tasks/executor.py`: Role integration and execution workflow
+**MCP Server:**
+- `mcp_server.py`: FastMCP server with 14 tools (single source of truth)
+- `models.py`: Pydantic models for task, project, search, and document entities
+- `bindery_client.py`: HTTP client for Rust Bindery backend communication
+- `backend_manager.py`: Backend lifecycle and health management
+- `security.py`: Input validation and error sanitization
+- `resilience.py`: Retry logic and fault tolerance
 
-**Role System:**
-- `roles/definitions.py`: ToolGroup enum and capability definitions
-- `roles/templates/enhanced_roles.yaml`: 10 predefined roles with file restrictions
-- `roles/execution.py`: Runtime validation and capability enforcement
-- `roles/manager.py`: Role assignment and validation
+**Testing:**
+- `conftest.py`: Pytest fixtures and test configuration
+- `test_*.py`: Unit and integration tests for MCP tools
+- `run_mcp_tests.py`: Test runner for MCP server functionality
 
-**MCP Integration:**
-- `mcp_server_v2.py`: FastMCP server with 14 tools
-- `mcp_venv/`: Isolated virtual environment with official MCP SDK
-- Pydantic validation for all tool inputs and outputs
+## 💡 Development Best Practices
+
+### Component Refactoring Strategy
+
+**IMPORTANT**: When encountering complex components that need refactoring:
+
+❌ **DO NOT** create simplified/alternative versions of existing components
+✅ **DO** modularize complex components by breaking them into smaller pieces
+
+**Rationale**:
+- Simplified versions create orphaned files that confuse future AI agents and developers
+- Multiple implementations of the same concept increase maintenance burden
+- Modularization preserves existing functionality while improving structure
+- Proper refactoring creates clearer architecture vs. duplicating components
+
+**Example**:
+```typescript
+// ❌ BAD: Creating simplified version
+// CodexEditor.tsx (existing complex component)
+// CodexEditorSimple.tsx (new simplified version) ← AVOID THIS
+
+// ✅ GOOD: Modularizing complex component
+// CodexEditor.tsx (main orchestrator)
+// ├── CodexEditorHeader.tsx (extracted module)
+// ├── CodexEditorFields.tsx (extracted module)
+// ├── CodexEditorToolbar.tsx (extracted module)
+// └── hooks/
+//     ├── useCodexState.ts (extracted logic)
+//     └── useCodexValidation.ts (extracted logic)
+```
+
+See [ADR-012: Codices as File Containers](docs/development/decisions/ADR-012-codices-as-file-containers.md) for architectural context.
+
+### Template Development Standards
+
+**Templates are the core of the system** and must be carefully constructed:
+
+1. **Standardize schemas first** before implementing features that depend on them
+2. **Create defined subcomponents** that templates are allowed to contain
+3. **Implement validation** with clear error messages for invalid structures
+4. **Add fallback behavior** for edge cases and missing data
+5. **Document template patterns** for consistency across template authors
+
+Template composition is essential for task automation - see [ADR-013: Template Composition](docs/development/decisions/ADR-013-template-composition.md).
+
+### Performance Considerations
+
+**Virtualization from the Start**:
+- Implement virtualized rendering for lists and large content areas from the beginning
+- Don't wait for performance issues to surface - build it right initially
+- Target: Handle 10k+ Codices in Navigator, 100k chars in Editor
+
+See [ADR-014: Content Chunking](docs/development/decisions/ADR-014-content-chunking.md) for size limit strategies.
+
+### Collaborative Editing
+
+When implementing save/sync features, consider the **Bindery CRDT infrastructure**:
+- The Bindery backend has CRDT (Conflict-free Replicated Data Type) support built-in
+- Future goal: Multi-user simultaneous editing like Google Docs
+- Design with eventual CRDT integration in mind rather than simple last-write-wins
 
 ## 📋 Development Commands
 
@@ -221,35 +319,36 @@ pnpm build               # Build all packages
 pnpm test                # Run all tests
 pnpm lint                # Lint all packages
 
-# V2 Package-specific operations
+# Package-specific operations
 cd packages/vespera-scriptorium
-pip install -r requirements.txt    # Install V2 dependencies
-./mcp_venv/bin/python mcp_server_v2.py  # Run V2 MCP server
-python test_task_system.py         # Test task system
-python test_role_system.py         # Test role system
-black roles/ tasks/ *.py           # Format V2 code
-isort roles/ tasks/ *.py           # Sort imports
+pip install -r requirements.txt    # Install dependencies
+python3 mcp_server.py              # Run MCP server
+pytest                             # Run unit tests
+python3 run_mcp_tests.py          # Run MCP integration tests
+black *.py                        # Format code
+isort *.py                        # Sort imports
 
 # Git operations
 git add packages/        # Stage package changes
 git commit -m "feat(scriptorium): description"
 ```
 
-### V2 Testing Commands
+### Testing Commands
 
 ```bash
-# V2 Core system tests
+# Core tests
 cd packages/vespera-scriptorium
-python test_task_system.py         # Task management tests
-python test_role_system.py         # Role system tests  
-python test_mcp_fastmcp.py         # MCP server tests
+pytest                             # Run all tests with pytest
+python3 run_mcp_tests.py          # Run MCP-specific tests
 
-# V2 MCP tool testing (create demo projects)
-./mcp_venv/bin/python mcp_server_v2.py  # Start server for testing
+# Specific test suites
+pytest test_bindery_tools_mock.py  # Test Bindery integration
+pytest test_mcp_server_complete.py # Test MCP server completeness
+pytest test_integrated_backend.py  # Test backend integration
+
+# MCP tool testing
+python3 mcp_server.py             # Start server
 # Use MCP tools via Claude Code to test functionality
-
-# V1 Legacy tests (if needed from backup)
-# python vespera-scriptorium-backup/tests/...
 ```
 
 ## 🔗 Cross-References
@@ -259,14 +358,17 @@ python test_mcp_fastmcp.py         # MCP server tests
 - **Vespera Scriptorium**: `packages/vespera-scriptorium/CLAUDE.md`
 - **PRPs Framework**: `PRPs/CLAUDE.md`
 - **Meta-PRP Transition**: `PRPs/vespera-scriptorium-transition/README.md`
-- **🔥 Dynamic Automation Architecture**: `docs/technical/DYNAMIC_AUTOMATION_ARCHITECTURE.md` (Revolutionary new system)
+- **⭐ Project-Centric Architecture**: `docs/architecture/core/PROJECT_CENTRIC_ARCHITECTURE.md` (Phase 15 foundation)
+- **⭐ Hierarchical Template System**: `docs/architecture/core/HIERARCHICAL_TEMPLATE_SYSTEM.md` (Phase 15 foundation)
+- **⭐ Codex Nesting**: `docs/architecture/core/CODEX_NESTING.md` (Phase 15 foundation)
 - **Architecture Documentation Hub**: `docs/README.md`
 
 ### Key Concepts
 
 - **🔥 Dynamic Automation System**: Revolutionary tag-driven automation with LLM-assisted rule creation
 - **Event-Driven Architecture**: Real-time reactive content workflows and cross-codex automation chains
-- **Task Orchestrator**: Core orchestration engine for AI agent coordination (V2 with triple database)
+- **Bindery Backend**: Rust-based backend for content management and task orchestration
+- **MCP Translation Layer**: FastMCP server bridging Claude Code to Bindery backend
 - **PRP Framework**: Product Requirement Prompts for systematic development
 - **Codex Protocol**: Virtual content organization with multiple viewing perspectives
 - **Executive Dysfunction Support**: Design patterns for momentum preservation
@@ -280,37 +382,36 @@ python test_mcp_fastmcp.py         # MCP server tests
    pnpm install
    ```
 
-2. **Install Vespera Scriptorium V2**:
+2. **Install Vespera Scriptorium**:
    ```bash
    cd packages/vespera-scriptorium
    pip install -r requirements.txt
    ```
 
-3. **Test V2 System**:
+3. **Test System**:
    ```bash
-   # Test core components
-   python test_task_system.py
-   python test_role_system.py
-   python test_mcp_fastmcp.py
+   # Run tests
+   pytest
+   python3 run_mcp_tests.py
    ```
 
-4. **Start V2 MCP Server**:
+4. **Configure MCP Server** (user scope):
    ```bash
-   # MCP server is automatically configured in .claude/config.json
-   claude mcp restart vespera-scriptorium
-   claude mcp list | grep vespera-scriptorium
-   
-   # Manual server testing
-   ./mcp_venv/bin/python mcp_server_v2.py
+   # Add to user config (one-time setup)
+   claude mcp add -s user vespera-scriptorium python3 /path/to/vespera-atelier/packages/vespera-scriptorium/mcp_server.py
+
+   # Test server directly
+   python3 mcp_server.py
    ```
 
-5. **Use V2 MCP Tools**:
+5. **Use MCP Tools**:
    ```bash
    # Available via Claude Code MCP integration:
-   # - create_task, get_task, update_task, delete_task
-   # - create_task_tree, get_task_tree, analyze_task_dependencies
-   # - execute_task, complete_task, assign_role_to_task
-   # - get_task_dashboard, list_tasks, list_roles
+   # - Task management: create_task, get_task, update_task, delete_task, list_tasks
+   # - Task execution: complete_task, execute_task, assign_role_to_task
+   # - Project management: create_project
+   # - Search & indexing: search_entities, index_document
+   # - Monitoring: get_dashboard_stats, health_check, list_roles
    ```
 
 ## 🎨 Vision: Revolutionary Automation Architecture
@@ -328,106 +429,107 @@ The Vespera Atelier is an ecosystem of intelligent tools for creative profession
 
 **📚 Comprehensive Documentation**: See `/docs/` directory for complete technical specifications:
 
+**Phase 15 Foundation Documents** (⭐ Start Here):
+- **[Project-Centric Architecture](docs/architecture/core/PROJECT_CENTRIC_ARCHITECTURE.md)**: Projects as fundamental entities - **READ THIS FIRST** for project context
+- **[Hierarchical Template System](docs/architecture/core/HIERARCHICAL_TEMPLATE_SYSTEM.md)**: Dynamic JSON5-based templates - **Essential** for template work
+- **[Codex Nesting](docs/architecture/core/CODEX_NESTING.md)**: Scrivener-style folder-documents - **Key** for content organization
+
 **Core System Architecture:**
-- **[Dynamic Automation Architecture](docs/technical/DYNAMIC_AUTOMATION_ARCHITECTURE.md)**: Revolutionary tag-driven automation system - **READ THIS FIRST** for any automation work
-- **[Codex Architecture](docs/technical/CODEX_ARCHITECTURE.md)**: Universal content system where everything is a Codex entry - **Essential** for content type work
-- **[Template System Architecture](docs/technical/TEMPLATE_SYSTEM_ARCHITECTURE.md)**: User-extensible templates via JSON5 files - **Required** for template development
-- **[Event System Specification](docs/technical/EVENT_SYSTEM_SPECIFICATION.md)**: Real-time event processing architecture - **Key** for reactive features
+- **[Codex Architecture](docs/architecture/core/CODEX_ARCHITECTURE.md)**: Universal content system where everything is a Codex entry
+- **[Template System Architecture](docs/architecture/core/TEMPLATE_SYSTEM_ARCHITECTURE.md)**: Template loading, validation, and rendering
+- **[UI Architecture Three-Panel Design](docs/architecture/core/UI-Architecture-Three-Panel-Design.md)**: Interface design with immersive environments
+- **[Multi-Project Vault Organization](docs/architecture/core/MULTI_PROJECT_VAULT_ORGANIZATION.md)**: Managing multiple projects in single vaults
 
-**UI and Organization:**
-- **[UI Architecture Three-Panel Design](docs/technical/UI-Architecture-Three-Panel-Design.md)**: Interface design with immersive environments - **Essential** for UI work
-- **[Multi-Project Vault Organization](docs/technical/MULTI_PROJECT_VAULT_ORGANIZATION.md)**: Managing multiple projects in single vaults - **Required** for project management features
+**Planned Features** (🔮 Not Yet Implemented):
+- **[Dynamic Automation Architecture](docs/architecture/core/DYNAMIC_AUTOMATION_ARCHITECTURE.md)**: Tag-driven automation (planned)
+- **[Event System Specification](docs/architecture/core/EVENT_SYSTEM_SPECIFICATION.md)**: Real-time event processing (planned)
 
-**Examples and User Guides:**
-- **[Automation Examples](docs/examples/AUTOMATION_RULE_EXAMPLES.md)**: Concrete automation rule examples
-- **[Real-World Integration Scenarios](docs/user-guides/REAL_WORLD_INTEGRATION_SCENARIOS.md)**: Comprehensive workflow examples
-- **[User Getting Started Guide](docs/user-guides/GETTING_STARTED_AUTOMATION.md)**: Step-by-step automation setup
+**Examples and Guides:**
+- **[Automation Examples](docs/examples/AUTOMATION_RULE_EXAMPLES.md)**: Automation rule examples (planned features)
+- **[Real-World Integration Scenarios](docs/legacy/future-features/REAL_WORLD_INTEGRATION_SCENARIOS.md)**: Aspirational use cases (⚠️ with warnings)
+- **[Getting Started with Automation](docs/legacy/future-features/GETTING_STARTED_AUTOMATION.md)**: Automation setup guide (⚠️ future features)
 
 ## 🧭 Component Development Guide
 
 **When working on specific components, ALWAYS reference the relevant architectural documents:**
 
-### Obsidian Plugin Development
+### VS Code Extension Development
 **Required Reading:**
-1. **[UI Architecture Three-Panel Design](docs/technical/UI-Architecture-Three-Panel-Design.md)** - Interface structure and immersive environments
-2. **[Codex Architecture](docs/technical/CODEX_ARCHITECTURE.md)** - Universal content system integration
-3. **[Template System Architecture](docs/technical/TEMPLATE_SYSTEM_ARCHITECTURE.md)** - Dynamic template rendering
+1. **[Project-Centric Architecture](docs/architecture/core/PROJECT_CENTRIC_ARCHITECTURE.md)** ⭐ - Projects as fundamental entities
+2. **[Hierarchical Template System](docs/architecture/core/HIERARCHICAL_TEMPLATE_SYSTEM.md)** ⭐ - Dynamic template filtering
+3. **[Codex Nesting](docs/architecture/core/CODEX_NESTING.md)** ⭐ - Navigator tree structure
+4. **[UI Architecture Three-Panel Design](docs/architecture/core/UI-Architecture-Three-Panel-Design.md)** - Interface structure
+5. **[Template System Architecture](docs/architecture/core/TEMPLATE_SYSTEM_ARCHITECTURE.md)** - Template rendering
 
 **Key Implementation Notes:**
-- Task Manager belongs in main editor area, not sidebar
-- Three-panel design: Left (navigation), Center (content), Right (context/chat)
-- Support immersive environment adaptation (music, lighting, themes)
+- Projects are mandatory - everything exists within a project
+- Templates filter by current project type
+- Navigator shows tree view with expand/collapse for nested Codices
+- Three-panel design: Left (Navigator), Center (Editor), Right (Chat/Context)
 - Template-driven UI components, not hardcoded types
 
-### Automation System Development
+### Automation System Development (🔮 Planned)
 **Required Reading:**
-1. **[Dynamic Automation Architecture](docs/technical/DYNAMIC_AUTOMATION_ARCHITECTURE.md)** - Complete automation system design
-2. **[Event System Specification](docs/technical/EVENT_SYSTEM_SPECIFICATION.md)** - Event processing implementation
-3. **[Automation Examples](docs/examples/AUTOMATION_RULE_EXAMPLES.md)** - Concrete rule examples
+1. **[Dynamic Automation Architecture](docs/architecture/core/DYNAMIC_AUTOMATION_ARCHITECTURE.md)** - Complete automation system design (planned)
+2. **[Event System Specification](docs/architecture/core/EVENT_SYSTEM_SPECIFICATION.md)** - Event processing implementation (planned)
+3. **[Automation Examples](docs/examples/AUTOMATION_RULE_EXAMPLES.md)** - Concrete rule examples (planned)
 
 **Key Implementation Notes:**
-- Tag changes trigger automation rules
+- ⚠️ **NOT YET IMPLEMENTED** - This is planned future work
+- Tag changes will trigger automation rules
 - LLM-assisted rule creation from natural language
 - Cross-codex automation chains (scene → character → task → music)
 - Real-time reactive UI updates
 
 ### Template System Development
 **Required Reading:**
-1. **[Template System Architecture](docs/technical/TEMPLATE_SYSTEM_ARCHITECTURE.md)** - Complete template system specification
-2. **[Codex Architecture](docs/technical/CODEX_ARCHITECTURE.md)** - Integration with universal content system
-3. **[Multi-Project Vault Organization](docs/technical/MULTI_PROJECT_VAULT_ORGANIZATION.md)** - Project-aware template switching
+1. **[Hierarchical Template System](docs/architecture/core/HIERARCHICAL_TEMPLATE_SYSTEM.md)** ⭐ - Dynamic template architecture
+2. **[Template System Architecture](docs/architecture/core/TEMPLATE_SYSTEM_ARCHITECTURE.md)** - Complete template specification
+3. **[Project-Centric Architecture](docs/architecture/core/PROJECT_CENTRIC_ARCHITECTURE.md)** - Project-aware template filtering
 
 **Key Implementation Notes:**
 - Everything is template-driven via JSON5 files
 - No hardcoded CodexType enums - dynamic type registration
-- Template inheritance and sharing via hash strings
-- Environmental adaptation configs in templates
+- Templates organized in hierarchical categories
+- Template inheritance via baseTemplate and mixins
+- Templates filter by current project type
 
 ### Content Management Development
 **Required Reading:**
-1. **[Codex Architecture](docs/technical/CODEX_ARCHITECTURE.md)** - Universal content system design
-2. **[Template System Architecture](docs/technical/TEMPLATE_SYSTEM_ARCHITECTURE.md)** - Template-driven content types
-3. **[Multi-Project Vault Organization](docs/technical/MULTI_PROJECT_VAULT_ORGANIZATION.md)** - Multi-project content organization
+1. **[Codex Architecture](docs/architecture/core/CODEX_ARCHITECTURE.md)** - Universal content system design
+2. **[Codex Nesting](docs/architecture/core/CODEX_NESTING.md)** ⭐ - Hierarchical organization
+3. **[Project-Centric Architecture](docs/architecture/core/PROJECT_CENTRIC_ARCHITECTURE.md)** ⭐ - Project boundaries
+4. **[Template System Architecture](docs/architecture/core/TEMPLATE_SYSTEM_ARCHITECTURE.md)** - Template-driven content
 
 **Key Implementation Notes:**
 - Everything is a Codex entry (.codex.md files)
+- All Codices must belong to a project
+- Codices can nest (parent-child relationships via metadata)
 - Virtual hierarchies via metadata, not file system structure
-- Cross-project references and template switching
-- Three-mode component behavior (programmatic/LLM/hybrid)
+- Scrivener-style folders with content
 
 ### MCP Server Development
 **Required Reading:**
-1. **[Event System Specification](docs/technical/EVENT_SYSTEM_SPECIFICATION.md)** - Event processing and MCP integration
-2. **[Dynamic Automation Architecture](docs/technical/DYNAMIC_AUTOMATION_ARCHITECTURE.md)** - Automation engine integration
+1. **[MCP Bindery Architecture](docs/architecture/subsystems/MCP_BINDERY_ARCHITECTURE.md)** - MCP server and Bindery integration
+2. **[Task Execution Architecture](docs/architecture/subsystems/TASK_EXECUTION_ARCHITECTURE.md)** - Task management system
+3. **[Event System Specification](docs/architecture/core/EVENT_SYSTEM_SPECIFICATION.md)** - Event processing (planned)
 
-**Current V2 Architecture:**
-- 14 comprehensive MCP tools for complete task lifecycle
+**Current Architecture:**
+- 14 comprehensive MCP tools for complete Bindery integration
 - FastMCP implementation with official Python SDK
-- Hierarchical task system with dependencies
-- Role-based execution with capability restrictions
+- Translation layer to Rust Bindery backend via HTTP
+- Structured error handling, validation, and retry logic
+- Security features including input sanitization and schema validation
 
 ## 📝 Important Notes
 
-- **V2 Migration Complete**: V1 orchestrator has been archived to `archive/v1-database-archives/`
-- **V1 Database Archive**: Original `.vespera_scriptorium` and `.task_orchestrator` directories archived
-- **FastMCP Integration**: V2 uses official MCP Python SDK with 14 comprehensive tools
+- **FastMCP Integration**: Uses official MCP Python SDK with 14 comprehensive tools
+- **Rust Bindery Backend**: Python MCP server acts as translation layer to Rust backend
 - **Monorepo Coordination**: Changes affecting multiple packages should be atomic commits
 - **Package Independence**: Each package should be independently installable
 - **Shared Dependencies**: Use workspace protocol for internal dependencies
 - **Version Management**: Coordinate versions across packages for releases
-
-### V1 to V2 Migration Notes
-
-**What Changed:**
-- Session-based tasks → Hierarchical task trees with dependencies
-- Individual capabilities → Tool groups with file pattern restrictions
-- Custom MCP implementation → Official FastMCP SDK
-- Single database → Structured task management with relationships
-
-**V1 Archive Locations:**
-- Main databases: `archive/v1-database-archives/20250818-044220/`
-- Legacy code: `packages/vespera-scriptorium/vespera-scriptorium-backup/`
-- V1 tests and documentation preserved for reference
+- **Legacy Archives**: Old implementation versions archived in `archive/` and `legacy/` directories
 
 ## 🔒 License
 

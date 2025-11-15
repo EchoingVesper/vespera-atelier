@@ -13,7 +13,8 @@ export function getConfig(): VesperaForgeConfig {
   const config = vscode.workspace.getConfiguration('vesperaForge');
   return {
     enableAutoStart: config.get('enableAutoStart', true),
-    rustBinderyPath: config.get('rustBinderyPath', '')
+    rustBinderyPath: config.get('rustBinderyPath', ''),
+    useNewFramework: config.get('ui.useNewFramework', false)
   };
 }
 
@@ -143,6 +144,3 @@ export function log(message: string, ...args: any[]): void {
   // Always log for debugging - will revert to isDevelopment() check later
   console.log(`[Vespera] ${message}`, ...args);
 }
-
-// Re-export the comprehensive unused variable cleanup system
-export * from './cleanup';

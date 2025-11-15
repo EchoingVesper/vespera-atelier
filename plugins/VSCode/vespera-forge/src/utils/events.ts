@@ -6,9 +6,9 @@
 import { EventEmitter } from 'events';
 import { log } from './index';
 
-export type VesperaEventType = 
+export type VesperaEventType =
   | 'taskCreated'
-  | 'taskUpdated' 
+  | 'taskUpdated'
   | 'taskDeleted'
   | 'taskCompleted'
   | 'taskFocused'
@@ -20,7 +20,10 @@ export type VesperaEventType =
   | 'chatProviderConnected'
   | 'chatProviderDisconnected'
   | 'chatProviderChanged'
-  | 'chatConfigurationChanged';
+  | 'chatConfigurationChanged'
+  | 'codexUpdated'
+  | 'codexCreated'
+  | 'codexDeleted';
 
 export interface VesperaEventData {
   taskCreated: { taskId: string; title: string };
@@ -37,6 +40,9 @@ export interface VesperaEventData {
   chatProviderDisconnected: { providerId: string; providerName?: string; error?: string };
   chatProviderChanged: { from?: string; to: string; providerName?: string };
   chatConfigurationChanged: { section: string; changes: any };
+  codexUpdated: { codexId: string; title: string };
+  codexCreated: { codexId: string; title: string };
+  codexDeleted: { codexId: string };
 }
 
 /**
@@ -244,5 +250,38 @@ export const VesperaEvents = {
     eventBus.offEvent('chatProviderConnected', refreshCallback);
     eventBus.offEvent('chatProviderDisconnected', refreshCallback);
     eventBus.offEvent('chatProviderChanged', refreshCallback);
+  },
+
+  /**
+   * Codex events
+   */
+  codexUpdated: (codexId: string, title: string) => {
+    eventBus.emitEvent('codexUpdated', { codexId, title });
+  },
+
+  codexCreated: (codexId: string, title: string) => {
+    eventBus.emitEvent('codexCreated', { codexId, title });
+  },
+
+  codexDeleted: (codexId: string) => {
+    eventBus.emitEvent('codexDeleted', { codexId });
+  },
+
+  /**
+   * Listen for codex change events
+   */
+  onCodexChange: (refreshCallback: () => void, componentName: string) => {
+    eventBus.onEvent('codexCreated', refreshCallback, `${componentName}:codexCreated`);
+    eventBus.onEvent('codexUpdated', refreshCallback, `${componentName}:codexUpdated`);
+    eventBus.onEvent('codexDeleted', refreshCallback, `${componentName}:codexDeleted`);
+  },
+
+  /**
+   * Remove codex change listeners
+   */
+  offCodexChange: (refreshCallback: () => void) => {
+    eventBus.offEvent('codexCreated', refreshCallback);
+    eventBus.offEvent('codexUpdated', refreshCallback);
+    eventBus.offEvent('codexDeleted', refreshCallback);
   }
 };

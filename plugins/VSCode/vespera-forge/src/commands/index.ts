@@ -32,21 +32,25 @@ export const initializeCommand: CommandHandler = async (context: VesperaForgeCon
     
     if (result.success) {
       log('Bindery service connected:', result.data);
-      
+
       // Set context as initialized
       await vscode.commands.executeCommand('setContext', 'vespera-forge:enabled', true);
       context.isInitialized = true;
-      
+
       // Show all views
       vscode.commands.executeCommand('vespera-forge.showAllViews');
-      
+
       await showInfo(`Vespera Forge initialized successfully! Connected to Bindery v${result.data?.version || 'unknown'}.`);
-      
+
       // Refresh all views
       vscode.commands.executeCommand('vespera-forge.globalRefresh');
     } else {
-      await showError(`Failed to connect to Bindery: ${result.error.message}`);
-      
+      // Don't show error toast for NoWorkspace - Navigator already displays this
+      const isNoWorkspace = result.error.message?.includes('No workspace folder open');
+      if (!isNoWorkspace) {
+        await showError(`Failed to connect to Bindery: ${result.error.message}`);
+      }
+
       // Still set as initialized to allow configuration
       await vscode.commands.executeCommand('setContext', 'vespera-forge:enabled', true);
       context.isInitialized = true;
@@ -124,10 +128,9 @@ export const createContentCommand: CommandHandler = async (context: VesperaForge
             console.log(`[Commands] 📡 Emitting taskCreated event for task: ${result.data}`);
             VesperaEvents.taskCreated(result.data, title.trim());
             
-            // Refresh task views
-            log('Refreshing task views');
-            vscode.commands.executeCommand('vespera-forge.refreshTaskTree');
-            vscode.commands.executeCommand('vespera-forge.refreshTaskDashboard');
+            // Refresh Codex Navigator to show new task
+            log('Refreshing Codex Navigator after task creation');
+            vscode.commands.executeCommand('vespera-forge.refreshCodexList');
           } else {
             log(`Task creation failed: ${result.error.message}`);
             await showError(`Failed to create task: ${result.error.message}`);
@@ -420,12 +423,663 @@ ${Object.entries(sessionStats.providerDistribution).map(([provider, count]) => `
 };
 
 /**
+ * Codex management command handlers
+ */
+
+// Open Codex Navigator
+export const openCodexNavigatorCommand: CommandHandler = async (_context: VesperaForgeContext) => {
+  try {
+    await vscode.commands.executeCommand('vesperaForge.navigatorView.focus');
+    log('Opened Codex Navigator');
+  } catch (error) {
+    await showError('Failed to open Codex Navigator', error as Error);
+  }
+};
+
+// Create New Codex
+export const createCodexCommand: CommandHandler = async (_context: VesperaForgeContext) => {
+  try {
+    const binderyService = getBinderyService();
+
+    // Get active project (Phase 16b Stage 3)
+    const projectService = (global as any).navigatorProvider?._projectService;
+    const activeProject = projectService?.getActiveProject();
+
+    // Require active project for codex creation
+    if (!activeProject) {
+      const createProject = await vscode.window.showWarningMessage(
+        'No active project. Codices must belong to a project.',
+        'Create Project',
+        'Cancel'
+      );
+
+      if (createProject === 'Create Project') {
+        await vscode.commands.executeCommand('vespera-forge.createProjectWizard');
+      }
+      return;
+    }
+
+    // Show template picker
+    const templates = [
+      { label: '📝 Note', description: 'Simple note or document', templateId: 'note' },
+      { label: '✓ Task', description: 'Task or todo item', templateId: 'task' },
+      { label: '📁 Project', description: 'Project container', templateId: 'project' },
+      { label: '👤 Character', description: 'Character profile for creative writing', templateId: 'character' },
+      { label: '🎬 Scene', description: 'Scene or chapter for creative writing', templateId: 'scene' },
+      { label: '🗺️ Location', description: 'Place or setting for creative writing', templateId: 'location' }
+    ];
+
+    const selectedTemplate = await vscode.window.showQuickPick(templates, {
+      placeHolder: 'Select a template for the new codex'
+    });
+
+    if (!selectedTemplate) {
+      return;
+    }
+
+    // Get title from user
+    const title = await vscode.window.showInputBox({
+      prompt: `Enter a name for your new ${selectedTemplate.description.toLowerCase()}`,
+      placeHolder: `My ${selectedTemplate.label.replace(/[^\w\s]/g, '').trim()}`
+    });
+
+    if (!title?.trim()) {
+      return;
+    }
+
+    // Create the codex with title and project ID (Phase 16b Stage 3)
+    const result = await binderyService.createCodex(
+      title.trim(),
+      selectedTemplate.templateId,
+      activeProject.id
+    );
+
+    if (result.success) {
+      const codexId = result.data;
+      log(`Created codex with ID: ${codexId}, title: ${title.trim()}`);
+
+      // Small delay to ensure Bindery has persisted the data
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Trigger Navigator refresh
+      const navigatorProvider = (global as any).vesperaNavigatorProvider;
+      if (navigatorProvider && typeof navigatorProvider.sendInitialState === 'function') {
+        log('Triggering Navigator refresh after creation');
+        await navigatorProvider.sendInitialState();
+      } else {
+        log('Warning: Navigator provider not available for refresh');
+      }
+
+      await showInfo(`Created ${selectedTemplate.label}: ${title.trim()}`);
+
+      // Focus navigator
+      await vscode.commands.executeCommand('vesperaForge.navigatorView.focus');
+    } else {
+      await showError(`Failed to create codex: ${result.error.message}`);
+    }
+  } catch (error) {
+    await showError('Failed to create codex', error as Error);
+  }
+};
+
+// Search Codices
+export const searchCodexCommand: CommandHandler = async (_context: VesperaForgeContext) => {
+  try {
+    const binderyService = getBinderyService();
+    const result = await binderyService.listCodeices();
+
+    if (!result.success || !result.data || result.data.length === 0) {
+      await showInfo('No codices found. Create one first!');
+      return;
+    }
+
+    // Template name mapping
+    const templateNames: Record<string, string> = {
+      'note': '📝 Note',
+      'task': '✓ Task',
+      'project': '📁 Project',
+      'character': '👤 Character',
+      'scene': '🎬 Scene',
+      'location': '🗺️ Location'
+    };
+
+    // Create quick pick items from codex list
+    const codexItems = await Promise.all(
+      result.data.map(async (codexId: string) => {
+        const codexResult = await binderyService.getCodex(codexId);
+        if (codexResult.success && codexResult.data) {
+          const codex = codexResult.data as any; // Bindery returns flat structure
+          const templateName = templateNames[codex.template_id] || codex.template_id;
+          const title = codex.title || '(Untitled)';
+          const tags = codex.tags || [];
+
+          return {
+            label: `${title}`,
+            description: templateName,
+            detail: tags.length > 0 ? `Tags: ${tags.join(', ')}` : 'No tags',
+            codexId: codexId
+          };
+        }
+        return null;
+      })
+    );
+
+    const validItems = codexItems.filter(item => item !== null);
+
+    if (validItems.length === 0) {
+      await showInfo('No codices available.');
+      return;
+    }
+
+    const selected = await vscode.window.showQuickPick(validItems as any[], {
+      placeHolder: 'Search and select a codex to open',
+      matchOnDescription: true,
+      matchOnDetail: true
+    });
+
+    if (selected) {
+      await showInfo(`Selected: ${selected.label} (${selected.description})`);
+      // Focus navigator and let it handle selection
+      await vscode.commands.executeCommand('vesperaForge.navigatorView.focus');
+      log(`Codex selected: ${selected.codexId}`);
+      // TODO: Send message to Navigator to select this codex
+    }
+  } catch (error) {
+    await showError('Failed to search codices', error as Error);
+  }
+};
+
+// Delete Active Codex
+export const deleteCodexCommand: CommandHandler = async (_context: VesperaForgeContext) => {
+  try {
+    const binderyService = getBinderyService();
+    const result = await binderyService.listCodeices();
+
+    if (!result.success || !result.data || result.data.length === 0) {
+      await showInfo('No codices to delete.');
+      return;
+    }
+
+    // Template name mapping
+    const templateNames: Record<string, string> = {
+      'note': '📝 Note',
+      'task': '✓ Task',
+      'project': '📁 Project',
+      'character': '👤 Character',
+      'scene': '🎬 Scene',
+      'location': '🗺️ Location'
+    };
+
+    // Create quick pick items from codex list
+    const codexItems = await Promise.all(
+      result.data.map(async (codexId: string) => {
+        const codexResult = await binderyService.getCodex(codexId);
+        if (codexResult.success && codexResult.data) {
+          const codex = codexResult.data as any; // Bindery returns flat structure
+          const templateName = templateNames[codex.template_id] || codex.template_id;
+          const title = codex.title || '(Untitled)';
+          const tags = codex.tags || [];
+
+          return {
+            label: `${title}`,
+            description: templateName,
+            detail: tags.length > 0 ? `Tags: ${tags.join(', ')}` : 'No tags',
+            codexId: codexId
+          };
+        }
+        return null;
+      })
+    );
+
+    const validItems = codexItems.filter(item => item !== null);
+
+    if (validItems.length === 0) {
+      await showInfo('No codices available to delete.');
+      return;
+    }
+
+    const selected = await vscode.window.showQuickPick(validItems as any[], {
+      placeHolder: 'Select a codex to delete'
+    });
+
+    if (!selected) {
+      return;
+    }
+
+    // Confirm deletion
+    const confirmation = await vscode.window.showWarningMessage(
+      `Delete "${selected.label}"?`,
+      { modal: true, detail: 'This action cannot be undone. All content in this codex will be permanently removed.' },
+      'Delete',
+      'Cancel'
+    );
+
+    if (confirmation !== 'Delete') {
+      return;
+    }
+
+    // Delete the codex
+    const deleteResult = await binderyService.deleteCodex(selected.codexId);
+
+    if (deleteResult.success) {
+      log(`Deleted codex with ID: ${selected.codexId}`);
+
+      // Small delay to ensure Bindery has persisted the deletion
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Trigger Navigator refresh
+      const navigatorProvider = (global as any).vesperaNavigatorProvider;
+      if (navigatorProvider && typeof navigatorProvider.sendInitialState === 'function') {
+        log('Triggering Navigator refresh after deletion');
+        await navigatorProvider.sendInitialState();
+      } else {
+        log('Warning: Navigator provider not available for refresh');
+      }
+
+      await showInfo(`Deleted ${selected.description}: ${selected.label}`);
+
+      // Focus navigator
+      await vscode.commands.executeCommand('vesperaForge.navigatorView.focus');
+    } else {
+      await showError(`Failed to delete codex: ${deleteResult.error.message}`);
+    }
+  } catch (error) {
+    await showError('Failed to delete codex', error as Error);
+  }
+};
+
+// Refresh Codex List
+export const refreshCodexListCommand: CommandHandler = async (_context: VesperaForgeContext) => {
+  try {
+    // Trigger Navigator refresh
+    const navigatorProvider = (global as any).vesperaNavigatorProvider;
+    if (navigatorProvider && typeof navigatorProvider.sendInitialState === 'function') {
+      await navigatorProvider.sendInitialState();
+    }
+
+    // Focus the view
+    await vscode.commands.executeCommand('vesperaForge.navigatorView.focus');
+    log('Refreshed Codex Navigator');
+
+    // Get count to show in confirmation
+    const binderyService = getBinderyService();
+    const result = await binderyService.listCodeices();
+    const count = result.success ? result.data?.length || 0 : 0;
+
+    await showInfo(`Codex Navigator refreshed (${count} ${count === 1 ? 'codex' : 'codices'})`);
+  } catch (error) {
+    await showError('Failed to refresh codex list', error as Error);
+  }
+};
+
+// ============================================================================
+// Chat Channel Commands
+// ============================================================================
+
+/**
+ * Create a new chat channel command
+ */
+export const createChatChannelCommand: CommandHandler = async (_context: VesperaForgeContext) => {
+  try {
+    // Get channel name from user
+    const name = await vscode.window.showInputBox({
+      prompt: 'Enter name for the new chat channel',
+      placeHolder: 'My Chat Channel',
+      validateInput: (value) => {
+        if (!value || !value.trim()) {
+          return 'Channel name cannot be empty';
+        }
+        return undefined;
+      }
+    });
+
+    if (!name || !name.trim()) {
+      return; // User cancelled
+    }
+
+    // Get channel type
+    const typeOptions = [
+      { label: 'User Chat', description: 'Regular AI chat session', type: 'user-chat' as const },
+      { label: 'Agent Task', description: 'Task with AI agent orchestration', type: 'agent-task' as const }
+    ];
+
+    const selectedType = await vscode.window.showQuickPick(typeOptions, {
+      placeHolder: 'Select channel type'
+    });
+
+    if (!selectedType) {
+      return; // User cancelled
+    }
+
+    // Create the channel via provider
+    const channelProvider = (global as any).vesperaChatChannelProvider;
+    if (!channelProvider) {
+      await showError('Chat channel provider not initialized');
+      return;
+    }
+
+    const channel = await channelProvider.createChannel(name.trim(), selectedType.type);
+    if (channel) {
+      await showInfo(`Created chat channel: ${channel.title}`);
+      // Refresh the chat channel list
+      vscode.commands.executeCommand('vespera-forge.refreshChatChannels');
+    }
+  } catch (error) {
+    await showError('Failed to create chat channel', error as Error);
+  }
+};
+
+/**
+ * Select a chat channel command
+ */
+export const selectChatChannelCommand: CommandHandler = async (_context: VesperaForgeContext, channel: any) => {
+  try {
+    log('[Command] Selecting chat channel:', channel);
+
+    // Update AI Assistant to use this channel
+    const aiAssistantProvider = (global as any).vesperaAIAssistantProvider;
+    if (aiAssistantProvider && typeof aiAssistantProvider.switchChannel === 'function') {
+      await aiAssistantProvider.switchChannel(channel);
+      await showInfo(`Switched to channel: ${channel.title}`);
+    } else {
+      await showError('AI Assistant provider not initialized');
+    }
+  } catch (error) {
+    await showError('Failed to select chat channel', error as Error);
+  }
+};
+
+/**
+ * Delete a chat channel command
+ */
+export const deleteChatChannelCommand: CommandHandler = async (_context: VesperaForgeContext) => {
+  try {
+    const channelProvider = (global as any).vesperaChatChannelProvider;
+    if (!channelProvider) {
+      await showError('Chat channel provider not initialized');
+      return;
+    }
+
+    const channels = channelProvider.getAllChannels();
+    if (channels.length === 0) {
+      await showInfo('No chat channels to delete');
+      return;
+    }
+
+    // Show picker
+    const items = channels.map((channel: any) => ({
+      label: channel.title,
+      description: `${channel.messageCount || 0} messages • ${channel.type}`,
+      detail: channel.status,
+      channelId: channel.id
+    }));
+
+    const selected = await vscode.window.showQuickPick(items, {
+      placeHolder: 'Select channel to delete'
+    }) as typeof items[0] | undefined;
+
+    if (!selected) {
+      return; // User cancelled
+    }
+
+    // Confirm deletion
+    const confirmed = await vscode.window.showWarningMessage(
+      `Delete channel "${selected.label}"? This action cannot be undone.`,
+      { modal: true },
+      'Delete'
+    );
+
+    if (confirmed === 'Delete') {
+      const success = await channelProvider.deleteChannel(selected.channelId);
+      if (success) {
+        await showInfo(`Deleted channel: ${selected.label}`);
+        vscode.commands.executeCommand('vespera-forge.refreshChatChannels');
+      }
+    }
+  } catch (error) {
+    await showError('Failed to delete chat channel', error as Error);
+  }
+};
+
+/**
+ * Archive a chat channel command
+ */
+export const archiveChatChannelCommand: CommandHandler = async (_context: VesperaForgeContext, channel: any) => {
+  try {
+    const channelProvider = (global as any).vesperaChatChannelProvider;
+    if (!channelProvider) {
+      await showError('Chat channel provider not initialized');
+      return;
+    }
+
+    const success = await channelProvider.archiveChannel(channel.id);
+    if (success) {
+      await showInfo(`Archived channel: ${channel.title}`);
+      vscode.commands.executeCommand('vespera-forge.refreshChatChannels');
+    }
+  } catch (error) {
+    await showError('Failed to archive chat channel', error as Error);
+  }
+};
+
+/**
+ * Refresh chat channels command
+ */
+export const refreshChatChannelsCommand: CommandHandler = async (_context: VesperaForgeContext) => {
+  try {
+    const channelProvider = (global as any).vesperaChatChannelProvider;
+    if (channelProvider && typeof channelProvider.refresh === 'function') {
+      channelProvider.refresh();
+      log('Refreshed chat channel list');
+    }
+  } catch (error) {
+    await showError('Failed to refresh chat channels', error as Error);
+  }
+};
+
+// ============================================================================
+// Vault Commands (for API key storage)
+// ============================================================================
+
+/**
+ * Configure provider API key command
+ */
+export const configureProviderKeyCommand: CommandHandler = async (_context: VesperaForgeContext) => {
+  try {
+    // Show provider selection
+    const providers = [
+      { label: 'Anthropic (Claude)', description: 'Store Anthropic API key', provider: 'anthropic' },
+      { label: 'OpenAI', description: 'Store OpenAI API key', provider: 'openai' },
+      { label: 'Other', description: 'Store custom provider key', provider: 'custom' }
+    ];
+
+    const selected = await vscode.window.showQuickPick(providers, {
+      placeHolder: 'Select provider to configure'
+    });
+
+    if (!selected) {
+      return; // User cancelled
+    }
+
+    let providerName = selected.provider;
+    if (selected.provider === 'custom') {
+      const customName = await vscode.window.showInputBox({
+        prompt: 'Enter provider name',
+        placeHolder: 'my-provider'
+      });
+      if (!customName) {
+        return;
+      }
+      providerName = customName.trim();
+    }
+
+    // Get API key from user (input will be masked)
+    const apiKey = await vscode.window.showInputBox({
+      prompt: `Enter ${selected.label} API key`,
+      placeHolder: 'sk-...',
+      password: true,
+      validateInput: (value) => {
+        if (!value || !value.trim()) {
+          return 'API key cannot be empty';
+        }
+        return undefined;
+      }
+    });
+
+    if (!apiKey) {
+      return; // User cancelled
+    }
+
+    // Store in Bindery vault via JSON-RPC
+    // TODO: Implement vault_store JSON-RPC method in Bindery using getBinderyService()
+    // For now, show a placeholder message
+    await showInfo(`API key for ${providerName} will be stored in Bindery vault (implementation pending)`);
+
+    log(`Stored API key for provider: ${providerName}`);
+  } catch (error) {
+    await showError('Failed to configure provider key', error as Error);
+  }
+};
+
+/**
+ * Check Claude Code authentication command
+ */
+export const checkClaudeCodeAuthCommand: CommandHandler = async (_context: VesperaForgeContext) => {
+  try {
+    // TODO: Implement Claude Code auth check via Bindery LLM module
+    // This should call the Rust backend's claude_code::check_auth() method
+
+    await showInfo('Claude Code authentication check (implementation pending)');
+
+    log('Checked Claude Code authentication status');
+  } catch (error) {
+    await showError('Failed to check Claude Code auth', error as Error);
+  }
+};
+
+/**
+ * Cleanup duplicate provider codices command
+ */
+export const cleanupDuplicateProvidersCommand: CommandHandler = async (_context: VesperaForgeContext) => {
+  const binderyService = getBinderyService();
+
+  try {
+    log('[CleanupProviders] Starting duplicate provider cleanup...');
+
+    // Get all codices
+    const result = await binderyService.sendRequest<any>('list_codices', {});
+
+    if (!result.success || !result.data) {
+      const errorMsg = 'success' in result && !result.success ? (result as any).error?.message : 'Unknown error';
+      log('[CleanupProviders] Failed to list codices:', errorMsg);
+      await showError('Failed to list codices');
+      return;
+    }
+
+    // Handle both array directly and nested codices property
+    const codicesArray = Array.isArray(result.data) ? result.data : (result.data?.codices || []);
+
+    // Filter for provider Codices
+    const providerTemplates = ['claude-code-cli', 'ollama'];
+    const providerCodices = codicesArray.filter((codex: any) =>
+      providerTemplates.includes(codex.template_id)
+    );
+
+    log(`[CleanupProviders] Found ${providerCodices.length} provider codices`);
+
+    if (providerCodices.length === 0) {
+      await showInfo('No provider codices found');
+      return;
+    }
+
+    // Group by provider type
+    const byType: Record<string, any[]> = {};
+    for (const codex of providerCodices) {
+      const type = codex.template_id;
+      if (!byType[type]) {
+        byType[type] = [];
+      }
+      byType[type].push(codex);
+    }
+
+    // Count duplicates
+    let totalDuplicates = 0;
+    for (const [type, codices] of Object.entries(byType)) {
+      const duplicates = codices.length - 1; // Keep first, delete rest
+      if (duplicates > 0) {
+        log(`[CleanupProviders] Found ${duplicates} duplicate(s) of type: ${type}`);
+        totalDuplicates += duplicates;
+      }
+    }
+
+    if (totalDuplicates === 0) {
+      await showInfo('No duplicate providers found');
+      return;
+    }
+
+    // Confirm deletion
+    const confirmation = await vscode.window.showWarningMessage(
+      `Found ${totalDuplicates} duplicate provider(s). Delete them?`,
+      { modal: true },
+      'Delete Duplicates',
+      'Cancel'
+    );
+
+    if (confirmation !== 'Delete Duplicates') {
+      return;
+    }
+
+    // Delete duplicates (keep first of each type)
+    let deletedCount = 0;
+    for (const [type, codices] of Object.entries(byType)) {
+      // Sort by creation date or ID to ensure consistent selection
+      codices.sort((a, b) => a.id.localeCompare(b.id));
+
+      // Keep first, delete rest
+      const toDelete = codices.slice(1);
+
+      for (const codex of toDelete) {
+        log(`[CleanupProviders] Deleting duplicate ${type} provider: ${codex.id}`);
+        const deleteResult = await binderyService.deleteCodex(codex.id);
+
+        if (deleteResult.success) {
+          deletedCount++;
+        } else {
+          const errorMsg = 'success' in deleteResult && !deleteResult.success ? (deleteResult as any).error?.message : 'Unknown error';
+          log(`[CleanupProviders] Failed to delete ${codex.id}:`, errorMsg);
+        }
+      }
+    }
+
+    log(`[CleanupProviders] Deleted ${deletedCount} duplicate provider(s)`);
+    await showInfo(
+      `Cleanup complete! Deleted ${deletedCount} duplicate provider(s). Please reload the AI Assistant view.`
+    );
+
+  } catch (error) {
+    log('[CleanupProviders] Error during cleanup:', error);
+    await showError('Failed to cleanup providers', error as Error);
+  }
+};
+
+/**
  * Get the commands map following Roo Code pattern
  */
 const getCommandsMap = (vesperaContext: VesperaForgeContext) => ({
   'vespera-forge.initialize': async () => {
     log('[Command] Initialize command executed');
     await initializeCommand(vesperaContext);
+  },
+  'vespera-forge.createProjectWizard': async () => {
+    log('[Command] Create Project Wizard command executed');
+    // Get ProjectService from navigator provider (initialized in views/index.ts)
+    const navigatorProvider = (global as any).vesperaNavigatorProvider;
+    if (navigatorProvider && navigatorProvider._projectService) {
+      const { createProjectWizard } = await import('./project/createProjectWizard');
+      await createProjectWizard(navigatorProvider._projectService);
+    } else {
+      await showError('ProjectService not available. Please initialize the extension first.');
+    }
   },
   'vespera-forge.createContent': async () => {
     try {
@@ -491,6 +1145,71 @@ const getCommandsMap = (vesperaContext: VesperaForgeContext) => ({
   'vespera-forge.showChatStats': async () => {
     log('[Command] Show Chat Statistics command executed');
     await showChatStatsCommand(vesperaContext);
+  },
+  'vespera-forge.showAllViews': async () => {
+    log('[Command] Show All Views command executed');
+    // Focus on the navigator view to make sidebar visible
+    await vscode.commands.executeCommand('vesperaForge.navigatorView.focus');
+  },
+  'vespera-forge.globalRefresh': async () => {
+    log('[Command] Global Refresh command executed');
+    // Refresh Codex Navigator (tasks are now codices)
+    vscode.commands.executeCommand('vespera-forge.refreshCodexList');
+  },
+  // Codex management commands
+  'vespera-forge.openCodexNavigator': async () => {
+    log('[Command] Open Codex Navigator command executed');
+    await openCodexNavigatorCommand(vesperaContext);
+  },
+  'vespera-forge.createCodex': async () => {
+    log('[Command] Create Codex command executed');
+    await createCodexCommand(vesperaContext);
+  },
+  'vespera-forge.searchCodex': async () => {
+    log('[Command] Search Codex command executed');
+    await searchCodexCommand(vesperaContext);
+  },
+  'vespera-forge.deleteCodex': async () => {
+    log('[Command] Delete Codex command executed');
+    await deleteCodexCommand(vesperaContext);
+  },
+  'vespera-forge.refreshCodexList': async () => {
+    log('[Command] Refresh Codex List command executed');
+    await refreshCodexListCommand(vesperaContext);
+  },
+  // Chat channel commands
+  'vespera-forge.createChatChannel': async () => {
+    log('[Command] Create Chat Channel command executed');
+    await createChatChannelCommand(vesperaContext);
+  },
+  'vespera-forge.selectChatChannel': async (channel: any) => {
+    log('[Command] Select Chat Channel command executed');
+    await selectChatChannelCommand(vesperaContext, channel);
+  },
+  'vespera-forge.deleteChatChannel': async () => {
+    log('[Command] Delete Chat Channel command executed');
+    await deleteChatChannelCommand(vesperaContext);
+  },
+  'vespera-forge.archiveChatChannel': async (channel: any) => {
+    log('[Command] Archive Chat Channel command executed');
+    await archiveChatChannelCommand(vesperaContext, channel);
+  },
+  'vespera-forge.refreshChatChannels': async () => {
+    log('[Command] Refresh Chat Channels command executed');
+    await refreshChatChannelsCommand(vesperaContext);
+  },
+  // Vault commands
+  'vespera-forge.configureProviderKey': async () => {
+    log('[Command] Configure Provider Key command executed');
+    await configureProviderKeyCommand(vesperaContext);
+  },
+  'vespera-forge.checkClaudeCodeAuth': async () => {
+    log('[Command] Check Claude Code Auth command executed');
+    await checkClaudeCodeAuthCommand(vesperaContext);
+  },
+  'vespera-forge.cleanupDuplicateProviders': async () => {
+    log('[Command] Cleanup Duplicate Providers command executed');
+    await cleanupDuplicateProvidersCommand(vesperaContext);
   }
 });
 

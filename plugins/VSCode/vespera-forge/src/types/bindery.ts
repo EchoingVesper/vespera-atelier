@@ -8,6 +8,7 @@
 export type CodexId = string; // UUID string representation
 export type TemplateId = string;
 export type ProjectId = string;
+export type WorkspaceId = string; // UUID string representation for workspaces
 export type UserId = string;
 export type OperationId = string;
 export type ContentHash = string;
@@ -291,7 +292,8 @@ export enum BinderyConnectionStatus {
   Disconnected = 'disconnected',
   Connecting = 'connecting',
   Connected = 'connected',
-  Error = 'error'
+  Error = 'error',
+  NoWorkspace = 'no_workspace'
 }
 
 export interface BinderyConnectionInfo {

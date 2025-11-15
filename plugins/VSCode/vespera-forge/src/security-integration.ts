@@ -17,7 +17,7 @@ import { FileOperationsSecurityManager, FileSecurityPolicy } from './security/fi
 import { RustFileOpsSecurityWrapper } from './rust-file-ops/security-wrapper';
 import { McpSecureFileTools } from './mcp/secure-file-tools';
 import { McpMessageValidator } from './security/mcp-validation';
-import { BinderyService } from './services/bindery';
+import { BinderyService, getBinderyService } from './services/bindery';
 import { 
   SecurityConfiguration,
   VesperaSecurityErrorCode,
@@ -171,9 +171,9 @@ export class SecurityIntegrationManager implements EnhancedDisposable {
       await this.performHealthCheck();
 
       console.log(`Security integration completed in ${this.status.performanceMetrics.initializationTime.toFixed(2)}ms`);
-      
+
       // Log successful initialization
-      await this.logSecurityEvent(VesperaSecurityEvent.SECURITY_BREACH, {
+      await this.logSecurityEvent(VesperaSecurityEvent.SYSTEM_INITIALIZED, {
         timestamp: Date.now(),
         metadata: {
           action: 'security_integration_initialized',
@@ -187,10 +187,10 @@ export class SecurityIntegrationManager implements EnhancedDisposable {
     } catch (error) {
       this.status.performanceMetrics.initializationTime = performance.now() - startTime;
       this.status.healthStatus.overall = 'failed';
-      
+
       console.error('Security integration initialization failed:', error);
-      
-      await this.logSecurityEvent(VesperaSecurityEvent.SECURITY_BREACH, {
+
+      await this.logSecurityEvent(VesperaSecurityEvent.INITIALIZATION_FAILED, {
         timestamp: Date.now(),
         metadata: {
           action: 'security_integration_failed',
@@ -300,14 +300,14 @@ export class SecurityIntegrationManager implements EnhancedDisposable {
     // Bindery Service with Security
     if (this.config.enableProcessIsolation) {
       try {
-        this.binderyService = new BinderyService({
+        this.binderyService = getBinderyService({
           enableLogging: true,
           security: {
             enableProcessIsolation: true,
             enableJsonRpcValidation: true,
             enableContentProtection: true,
             maxProcessMemoryMB: vscode.workspace.getConfiguration('vesperaForge').get('security.maxProcessMemoryMB', 256),
-            maxExecutionTimeMs: 30000,
+            maxExecutionTimeMs: 300000, // 5 minutes for development (was 30000)
             allowedBinderyPaths: [],
             blockedBinderyPaths: [],
             requireSandbox: this.config.securityLevel === 'strict',

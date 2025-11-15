@@ -663,6 +663,7 @@ impl Database {
     
     /// Initialize the database schema manually (fallback if migrations don't work)
     pub async fn init_schema(&self) -> Result<()> {
+        // Create tasks table
         sqlx::query(
             r#"
             CREATE TABLE IF NOT EXISTS tasks (
@@ -674,21 +675,61 @@ impl Database {
                 parent_id TEXT,
                 project_id TEXT,
                 assignee TEXT,
-                tags TEXT, -- JSON array of strings
-                labels TEXT, -- JSON object
+                tags TEXT,
+                labels TEXT,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
                 due_date TEXT,
                 FOREIGN KEY(parent_id) REFERENCES tasks(id) ON DELETE CASCADE
-            );
-            
-            CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
-            CREATE INDEX IF NOT EXISTS idx_tasks_priority ON tasks(priority);
-            CREATE INDEX IF NOT EXISTS idx_tasks_parent ON tasks(parent_id);
-            CREATE INDEX IF NOT EXISTS idx_tasks_created ON tasks(created_at);
+            )
             "#
         ).execute(&self.pool).await?;
-        
+
+        // Create tasks indexes
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)")
+            .execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_tasks_priority ON tasks(priority)")
+            .execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_tasks_parent ON tasks(parent_id)")
+            .execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_tasks_created ON tasks(created_at)")
+            .execute(&self.pool).await?;
+
+        // Create codices table
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS codices (
+                id TEXT PRIMARY KEY,
+                template_id TEXT NOT NULL,
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
+                metadata TEXT NOT NULL,
+                crdt_state TEXT,
+                version INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                created_by TEXT,
+                project_id TEXT,
+                parent_id TEXT,
+                FOREIGN KEY(parent_id) REFERENCES codices(id) ON DELETE SET NULL
+            )
+            "#
+        ).execute(&self.pool).await?;
+
+        // Create codices indexes
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_codices_template_id ON codices(template_id)")
+            .execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_codices_project_id ON codices(project_id)")
+            .execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_codices_parent_id ON codices(parent_id)")
+            .execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_codices_created_at ON codices(created_at)")
+            .execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_codices_updated_at ON codices(updated_at)")
+            .execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_codices_created_by ON codices(created_by)")
+            .execute(&self.pool).await?;
+
         Ok(())
     }
     
@@ -1836,6 +1877,299 @@ impl Database {
     /// Get the underlying pool for advanced operations (use with caution)
     pub fn get_pool(&self) -> &Pool<Sqlite> {
         &self.pool
+    }
+
+    // ============================================================================
+    // Codex Management Methods
+    // ============================================================================
+
+    /// Create a new codex in the database
+    #[instrument(skip(self), fields(codex_id = %id))]
+    pub async fn create_codex(
+        &self,
+        id: &str,
+        title: &str,
+        template_id: &str,
+        metadata: &serde_json::Value,
+    ) -> Result<()> {
+        let now = Utc::now().to_rfc3339();
+        let metadata_str = serde_json::to_string(metadata)?;
+
+        // Extract project_id from metadata for the separate column
+        let project_id = metadata.get("project_id")
+            .and_then(|v| v.as_str());
+
+        // Extract parent_id from metadata for nesting support
+        let parent_id = metadata.get("parent_id")
+            .and_then(|v| v.as_str());
+
+        // Content defaults to empty JSON object
+        let content = serde_json::json!({"fields": {}});
+        let content_str = serde_json::to_string(&content)?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO codices (id, title, template_id, content, metadata, version, created_at, updated_at, project_id, parent_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            "#,
+        )
+        .bind(id)
+        .bind(title)
+        .bind(template_id)
+        .bind(&content_str)
+        .bind(&metadata_str)
+        .bind(1) // version
+        .bind(&now)
+        .bind(&now)
+        .bind(project_id)
+        .bind(parent_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to create codex: {}", e))?;
+
+        info!(codex_id = %id, title = %title, parent_id = ?parent_id, "Created codex in database");
+        Ok(())
+    }
+
+    /// Get a codex by ID
+    #[instrument(skip(self), fields(codex_id = %id))]
+    pub async fn get_codex(&self, id: &str) -> Result<Option<serde_json::Value>> {
+        let row = sqlx::query(
+            r#"
+            SELECT id, title, template_id, content, metadata, created_at, updated_at, parent_id
+            FROM codices
+            WHERE id = ?
+            "#,
+        )
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to get codex: {}", e))?;
+
+        if let Some(row) = row {
+            let id: String = row.get("id");
+            let title: String = row.get("title");
+            let template_id: String = row.get("template_id");
+            let content_str: String = row.get("content");
+            let metadata_str: String = row.get("metadata");
+            let created_at: String = row.get("created_at");
+            let updated_at: String = row.get("updated_at");
+            let parent_id: Option<String> = row.get("parent_id");
+
+            let content: serde_json::Value = serde_json::from_str(&content_str)
+                .unwrap_or(serde_json::json!({"fields": {}}));
+
+            let metadata: serde_json::Value = serde_json::from_str(&metadata_str)
+                .unwrap_or(serde_json::json!({}));
+
+            let mut codex = serde_json::json!({
+                "id": id,
+                "title": title,
+                "template_id": template_id,
+                "content": content,
+                "metadata": metadata,
+                "created_at": created_at,
+                "updated_at": updated_at,
+            });
+
+            // Add parent_id if it exists
+            if let Some(parent) = parent_id {
+                codex.as_object_mut().unwrap().insert("parent_id".to_string(), serde_json::json!(parent));
+            }
+
+            Ok(Some(codex))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Update a codex
+    #[instrument(skip(self, codex), fields(codex_id = %id))]
+    pub async fn update_codex(&self, id: &str, codex: &serde_json::Value) -> Result<()> {
+        let now = Utc::now().to_rfc3339();
+
+        // Extract fields from the codex object
+        let title = codex.get("title")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Untitled");
+
+        let template_id = codex.get("template_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("default");
+
+        let content = codex.get("content")
+            .cloned()
+            .unwrap_or(serde_json::json!({"fields": {}}));
+
+        let metadata = codex.get("metadata")
+            .cloned()
+            .unwrap_or(serde_json::json!({}));
+
+        let content_str = serde_json::to_string(&content)?;
+        let metadata_str = serde_json::to_string(&metadata)?;
+
+        // Extract project_id from metadata for the separate column
+        let project_id = metadata.get("project_id")
+            .and_then(|v| v.as_str());
+
+        // Extract parent_id from metadata for nesting support
+        let parent_id = metadata.get("parent_id")
+            .and_then(|v| v.as_str());
+
+        sqlx::query(
+            r#"
+            UPDATE codices
+            SET title = ?, template_id = ?, content = ?, metadata = ?, updated_at = ?, project_id = ?, parent_id = ?
+            WHERE id = ?
+            "#,
+        )
+        .bind(title)
+        .bind(template_id)
+        .bind(&content_str)
+        .bind(&metadata_str)
+        .bind(&now)
+        .bind(project_id)
+        .bind(parent_id)
+        .bind(id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to update codex: {}", e))?;
+
+        info!(codex_id = %id, title = %title, parent_id = ?parent_id, "Updated codex in database");
+        Ok(())
+    }
+
+    /// List child codices for a given parent_id
+    #[instrument(skip(self), fields(parent_id = %parent_id))]
+    pub async fn list_children(&self, parent_id: &str) -> Result<Vec<serde_json::Value>> {
+        let rows = sqlx::query(
+            r#"
+            SELECT id, title, template_id, content, metadata, project_id, parent_id, created_at, updated_at
+            FROM codices
+            WHERE parent_id = ?
+            ORDER BY created_at ASC
+            "#,
+        )
+        .bind(parent_id)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to list child codices: {}", e))?;
+
+        let mut codices = Vec::new();
+        for row in rows {
+            let id: String = row.get("id");
+            let title: String = row.get("title");
+            let template_id: String = row.get("template_id");
+            let content_str: String = row.get("content");
+            let metadata_str: String = row.get("metadata");
+            let project_id: Option<String> = row.get("project_id");
+            let parent_id: Option<String> = row.get("parent_id");
+            let created_at: String = row.get("created_at");
+            let updated_at: String = row.get("updated_at");
+
+            let content: serde_json::Value = serde_json::from_str(&content_str)
+                .unwrap_or(serde_json::json!({"fields": {}}));
+
+            let metadata: serde_json::Value = serde_json::from_str(&metadata_str)
+                .unwrap_or(serde_json::json!({}));
+
+            let mut codex = serde_json::json!({
+                "id": id,
+                "title": title,
+                "template_id": template_id,
+                "content": content,
+                "metadata": metadata,
+                "project_id": project_id,
+                "created_at": created_at,
+                "updated_at": updated_at,
+            });
+
+            // Add parent_id if it exists
+            if let Some(parent) = parent_id {
+                codex.as_object_mut().unwrap().insert("parent_id".to_string(), serde_json::json!(parent));
+            }
+
+            codices.push(codex);
+        }
+
+        info!(parent_id = %parent_id, count = codices.len(), "Listed child codices");
+        Ok(codices)
+    }
+
+    /// List all codices (with project_id for filtering)
+    #[instrument(skip(self))]
+    pub async fn list_codices(&self) -> Result<Vec<serde_json::Value>> {
+        let rows = sqlx::query(
+            r#"
+            SELECT id, title, template_id, content, metadata, project_id, parent_id, created_at, updated_at
+            FROM codices
+            ORDER BY created_at DESC
+            "#,
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to list codices: {}", e))?;
+        let mut codices = Vec::new();
+        for row in rows {
+            let id: String = row.get("id");
+            let title: String = row.get("title");
+            let template_id: String = row.get("template_id");
+            let content_str: String = row.get("content");
+            let metadata_str: String = row.get("metadata");
+            let project_id: Option<String> = row.get("project_id");
+            let parent_id: Option<String> = row.get("parent_id");
+            let created_at: String = row.get("created_at");
+            let updated_at: String = row.get("updated_at");
+
+            let content: serde_json::Value = serde_json::from_str(&content_str)
+                .unwrap_or(serde_json::json!({"fields": {}}));
+
+            let metadata: serde_json::Value = serde_json::from_str(&metadata_str)
+                .unwrap_or(serde_json::json!({}));
+
+            let mut codex = serde_json::json!({
+                "id": id,
+                "title": title,
+                "template_id": template_id,
+                "content": content,
+                "metadata": metadata,
+                "project_id": project_id,
+                "created_at": created_at,
+                "updated_at": updated_at,
+            });
+
+            // Add parent_id if it exists
+            if let Some(parent) = parent_id {
+                codex.as_object_mut().unwrap().insert("parent_id".to_string(), serde_json::json!(parent));
+            }
+
+            codices.push(codex);
+        }
+
+        Ok(codices)
+    }
+
+    /// Delete a codex from the database
+    #[instrument(skip(self), fields(codex_id = %id))]
+    pub async fn delete_codex(&self, id: &str) -> Result<bool> {
+        let result = sqlx::query(
+            r#"
+            DELETE FROM codices
+            WHERE id = ?
+            "#,
+        )
+        .bind(id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to delete codex: {}", e))?;
+
+        let deleted = result.rows_affected() > 0;
+        if deleted {
+            info!(codex_id = %id, "Deleted codex from database");
+        } else {
+            warn!(codex_id = %id, "Codex not found for deletion");
+        }
+        Ok(deleted)
     }
 }
 

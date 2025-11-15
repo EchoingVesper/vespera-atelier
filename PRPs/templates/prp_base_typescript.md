@@ -201,11 +201,11 @@ bash
 
 # Run these FIRST - fix any errors before proceeding
 
-npm run lint                    
+pnpm lint
 # ESLint checks
-npx tsc --noEmit               
+pnpm exec tsc --noEmit
 # TypeScript type checking
-npm run format                 
+pnpm format
 # Prettier formatting
 
 # Expected: No errors. If errors, READ the error and fix.
@@ -247,7 +247,7 @@ bash
 
 # Run and iterate until passing:
 
-npm test new-feature.test.tsx
+pnpm test new-feature.test.tsx
 
 # If failing: Read error, understand root cause, fix code, re-run (never mock to pass)
 
@@ -260,7 +260,7 @@ npm test new-feature.test.tsx
 
 # Start the dev server
 
-npm run dev
+pnpm dev
 
 # Test the page loads
 
@@ -288,7 +288,7 @@ bash
 
 # Production build check
 
-npm run build
+pnpm build
 
 # Expected: Successful build with no errors
 
@@ -302,7 +302,7 @@ npm run build
 
 # Test production build
 
-npm run start
+pnpm start
 
 # Creative validation methods:
 
@@ -324,11 +324,11 @@ npm run start
 #
 # Final validation Checklist
 
-- [ ] All tests pass: `npm test`
+- [ ] All tests pass: `pnpm test`
 
-- [ ] No linting errors: `npm run lint`
+- [ ] No linting errors: `pnpm lint`
 
-- [ ] No type errors: `npx tsc --noEmit`
+- [ ] No type errors: `pnpm exec tsc --noEmit`
 
 - [ ] Manual test successful: [specific curl/command]
 

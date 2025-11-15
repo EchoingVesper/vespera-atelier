@@ -142,7 +142,7 @@ export class NotificationConfigManager implements vscode.Disposable {
 
   private constructor(
     private readonly context: vscode.ExtensionContext,
-    private readonly coreServices: SecurityEnhancedVesperaCoreServices,
+    _coreServices: SecurityEnhancedVesperaCoreServices,
     private readonly logger: VesperaLogger,
     private readonly errorHandler: VesperaErrorHandler
   ) {
@@ -894,21 +894,11 @@ export class NotificationConfigManager implements vscode.Disposable {
     previousConfig: any,
     newConfig: any
   ): Promise<void> {
-    try {
-      await this.coreServices.securityAuditLogger.logSecurityEvent(
-        'security_breach' as any, // Using as generic event
-        {
-          timestamp: Date.now(),
-          metadata: {
-            action: 'notification_config_changed',
-            configType: type,
-            hasChanges: JSON.stringify(previousConfig) !== JSON.stringify(newConfig)
-          }
-        }
-      );
-    } catch (error) {
-      this.logger.warn('Failed to track configuration change', { error });
-    }
+    // Normal configuration tracking - not a security event
+    this.logger.debug('Notification config changed', {
+      configType: type,
+      hasChanges: JSON.stringify(previousConfig) !== JSON.stringify(newConfig)
+    });
   }
 
   /**

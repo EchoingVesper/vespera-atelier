@@ -1,0 +1,111 @@
+/**
+ * ProjectSelector Component Styles
+ * Phase 16a - Foundation scaffolding
+ *
+ * Uses VS Code CSS variables for theming consistency
+ */
+
+/* Container */
+.project-selector {
+  padding: 8px;
+  border-bottom: 1px solid var(--vscode-panel-border, var(--border));
+  background: var(--vscode-sideBar-background, var(--sidebar));
+}
+
+/* Active project display */
+.project-selector__active {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.project-selector__active:hover {
+  background: var(--vscode-list-hoverBackground, var(--accent));
+}
+
+.project-selector__active:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder, var(--ring));
+  outline-offset: 2px;
+}
+
+/* Project list item */
+.project-list-item {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  min-height: 44px; /* Touch-friendly target */
+}
+
+.project-list-item:hover {
+  background: var(--vscode-list-hoverBackground, var(--accent));
+}
+
+.project-list-item:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder, var(--ring));
+  outline-offset: -2px;
+}
+
+.project-list-item.active {
+  background: var(--vscode-list-activeSelectionBackground, var(--primary));
+  color: var(--vscode-list-activeSelectionForeground, var(--primary-foreground));
+}
+
+.project-list-item.active:hover {
+  background: var(--vscode-list-activeSelectionBackground, var(--primary));
+  opacity: 0.9;
+}
+
+.project-list-item__name {
+  font-weight: 500;
+  display: block;
+  color: var(--vscode-foreground, var(--foreground));
+}
+
+.project-list-item.active .project-list-item__name {
+  color: var(--vscode-list-activeSelectionForeground, var(--primary-foreground));
+}
+
+.project-list-item__type {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.75rem;
+  color: var(--vscode-descriptionForeground, var(--muted-foreground));
+}
+
+.project-list-item.active .project-list-item__type {
+  color: var(--vscode-list-activeSelectionForeground, var(--primary-foreground));
+  opacity: 0.8;
+}
+
+/* TODO: Phase 16b - Add dropdown menu styles */
+/* TODO: Phase 16b - Add project icon/color indicator styles */
+/* TODO: Phase 16b - Add loading spinner styles */
+/* TODO: Phase 16b - Add search input styles */
+/* TODO: Phase 16b - Add keyboard navigation focus styles */
+
+/* Dark mode adjustments (if needed beyond VS Code variables) */
+.dark .project-selector {
+  /* VS Code variables handle dark mode, but we can add overrides if needed */
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .project-selector__active,
+  .project-list-item {
+    transition: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .project-list-item.active {
+    border: 2px solid var(--vscode-contrastActiveBorder, currentColor);
+  }
+}

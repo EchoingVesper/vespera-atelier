@@ -397,30 +397,30 @@ export class ChatConfigurationManager {
     
     this.disposables.push(templateWatcher);
     
-    // Watch workspace template changes
+    // Watch workspace template changes in .vespera folder (Bindery convention)
     if (vscode.workspace.workspaceFolders) {
       for (const folder of vscode.workspace.workspaceFolders) {
         const workspacePattern = new vscode.RelativePattern(
-          vscode.Uri.joinPath(folder.uri, '.vscode', 'vespera-templates'),
+          vscode.Uri.joinPath(folder.uri, '.vespera', 'templates'),
           '*.json5'
         );
         const workspaceWatcher = vscode.workspace.createFileSystemWatcher(workspacePattern);
-        
+
         workspaceWatcher.onDidChange(() => {
           this.loadConfiguration();
           this.notifyWatchers('workspace-templates', this.config);
         });
-        
+
         workspaceWatcher.onDidCreate(() => {
           this.loadConfiguration();
           this.notifyWatchers('workspace-templates', this.config);
         });
-        
+
         workspaceWatcher.onDidDelete(() => {
           this.loadConfiguration();
           this.notifyWatchers('workspace-templates', this.config);
         });
-        
+
         this.disposables.push(workspaceWatcher);
       }
     }

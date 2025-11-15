@@ -1,0 +1,165 @@
+# Architecture Decision Records (ADRs)
+
+This directory contains Architecture Decision Records (ADRs) documenting significant architectural decisions made during the development of Vespera Atelier.
+
+## What is an ADR?
+
+An Architecture Decision Record captures an important architectural decision along with its context and consequences. ADRs help teams:
+- Understand why decisions were made
+- Avoid revisiting settled decisions
+- Onboard new team members
+- Track decision evolution over time
+
+## ADR Format
+
+We use a lightweight ADR format adapted from Michael Nygard's proposal. See [ADR-TEMPLATE.md](./ADR-TEMPLATE.md) for the template.
+
+## Status Definitions
+
+- **Proposed**: Decision under consideration
+- **Accepted**: Decision approved and being implemented
+- **Deprecated**: Decision no longer recommended
+- **Superseded**: Decision replaced by another ADR
+
+---
+
+## ADR Index
+
+### Phase 15: Project-Centric Architecture (October 2025)
+
+#### Core Architecture
+
+- **[ADR-001: Projects as Fundamental Entities](./ADR-001-projects-fundamental.md)** ✅
+  - Status: Accepted
+  - Summary: Make projects mandatory foundational entities rather than optional metadata
+  - Impact: Breaking change, requires migration, provides clear context boundaries
+
+- **[ADR-002: Project Context Switching](./ADR-002-project-context-switching.md)** 🚧
+  - Status: Proposed
+  - Summary: How users switch between projects and how context affects UI
+  - Impact: Navigator filtering, template availability, task visibility
+
+- **[ADR-003: Template Filtering by Project Type](./ADR-003-template-filtering.md)** 🚧
+  - Status: Proposed
+  - Summary: Templates shown in UI based on current project type
+  - Impact: Cleaner template menus, project-specific workflows
+
+#### Template System
+
+- **[ADR-004: Dynamic Template System](./ADR-004-dynamic-templates.md)** ✅
+  - Status: Accepted
+  - Summary: Replace hardcoded CodexType enum with JSON5-based dynamic templates
+  - Impact: User extensibility, template sharing, loss of compile-time safety
+
+- **[ADR-005: Template Inheritance Model](./ADR-005-template-inheritance.md)** 🚧
+  - Status: Proposed
+  - Summary: Single inheritance with multiple mixins for template reuse
+  - Impact: DRY template definitions, easier maintenance
+
+- **[ADR-006: Hierarchical Menu Structure](./ADR-006-hierarchical-menus.md)** 🚧
+  - Status: Proposed
+  - Summary: Multi-level category organization for template menus
+  - Impact: Reduced menu clutter, better template organization
+
+#### Codex Nesting
+
+- **[ADR-007: Codex-Based Folders](./ADR-007-codex-folders.md)** ✅
+  - Status: Accepted
+  - Summary: Implement Scrivener-style folders where any Codex can have children
+  - Impact: Unified model, folders with content, flexible hierarchies
+
+- **[ADR-008: Unlimited Nesting Depth](./ADR-008-unlimited-nesting.md)** 🚧
+  - Status: Proposed
+  - Summary: Allow unlimited parent-child nesting with virtualized rendering
+  - Impact: Flexible organization, performance considerations
+
+- **[ADR-009: Content in Folder-Codices](./ADR-009-folder-content.md)** 🚧
+  - Status: Proposed
+  - Summary: Folder-Codices can contain their own content in addition to children
+  - Impact: Chapter summaries, folder notes, enhanced organization
+
+#### Context Management
+
+- **[ADR-010: Phase Handover Methodology](./ADR-010-phase-handover-methodology.md)** ✅
+  - Status: Accepted
+  - Summary: Standardized phase documentation with slash commands for context handover
+  - Impact: Minimizes context loss between sessions, eventually automatable
+
+#### Development Process
+
+- **[ADR-011: Surgical Cleanup Before Architecture](./ADR-011-surgical-cleanup-before-architecture.md)** ✅
+  - Status: Accepted
+  - Summary: Hybrid approach - targeted technical debt cleanup before implementing project-centric architecture
+  - Impact: Clean foundation for critical features, manages scope while reducing mental overhead
+
+---
+
+### Phase 17: Codex Editor & System Polish (October 2025)
+
+#### Codex System Architecture
+
+- **[ADR-012: Codices as Universal File Containers](./ADR-012-codices-as-file-containers.md)** ✅
+  - Status: Accepted
+  - Summary: Codices are metadata wrappers for any file type (documents, media, code) linked into database for task/RAG system management
+  - Impact: Universal project support, enables "chameleon" behavior, requires file synchronization
+
+#### Template System Enhancements
+
+- **[ADR-013: Template Composition and Nesting](./ADR-013-template-composition.md)** ✅
+  - Status: Accepted
+  - Summary: Templates can reference other templates for automatic creation of nested Codex structures
+  - Impact: Powerful workflow automation, captures organizational best practices, essential for task system
+
+- **[ADR-014: Content Chunking via Template Size Limits](./ADR-014-content-chunking.md)** ✅
+  - Status: Accepted
+  - Summary: Templates define optional max content sizes to optimize RAG chunking and encourage good organization
+  - Impact: Better search results, improved AI context, forces modular structure, user guidance
+
+#### Workspace & Project Organization
+
+- **[ADR-015: Workspace/Project/Context Hierarchy](./ADR-015-workspace-project-context-hierarchy.md)** ✅
+  - Status: Accepted
+  - Summary: Three-level hierarchy (Workspace → Project → Context) where Projects are real-world endeavors with multiple organizational modes
+  - Impact: Supports multi-faceted projects, content reuse across contexts, clear conceptual boundaries
+
+- **[ADR-016: Global Registry + Workspace Storage Architecture](./ADR-016-global-registry-storage.md)** ✅
+  - Status: Accepted
+  - Summary: Global registry in OS user directory tracks all projects, workspace storage isolates data per workspace
+  - Impact: Cross-workspace awareness, workspace isolation, discovery from anywhere, follows Git/VS Code patterns
+
+---
+
+## How to Create an ADR
+
+1. Copy `ADR-TEMPLATE.md` to new file with format `ADR-XXX-short-title.md`
+2. Assign next available ADR number
+3. Fill in all sections:
+   - Context and problem statement
+   - Decision drivers
+   - Considered options with pros/cons
+   - Decision outcome with consequences
+4. Update this index with ADR summary
+5. Link ADR from relevant architecture documents
+6. Create PR for review and discussion
+7. Update status to "Accepted" when approved
+
+## ADR Lifecycle
+
+```
+Proposed → [Discussion] → Accepted → [Time passes] → Deprecated/Superseded
+                ↓
+            Rejected
+```
+
+## Related Documentation
+
+- [Architecture Documentation](../../architecture/) - Core system architecture
+- [Phase Tracking](../phases/) - Development progress reports
+- [Development Reports](../reports/) - Technical investigations and summaries
+
+---
+
+**Legend**:
+- ✅ Documented
+- 🚧 Needs documentation
+- ❌ Rejected/Superseded

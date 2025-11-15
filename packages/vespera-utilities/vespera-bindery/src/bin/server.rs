@@ -4,7 +4,7 @@
 //! for integration with various clients like VS Code extensions, web applications, etc.
 
 use std::collections::HashMap;
-use std::io::{self, BufRead, Write};
+use std::io::{self, Write};
 use std::sync::Arc;
 use std::path::PathBuf;
 
@@ -31,6 +31,7 @@ use vespera_bindery::observability::{
     config::{ObservabilityConfig, LoggingConfig, FileLoggingConfig, LogRotation},
     init_observability,
 };
+use vespera_bindery::providers::ProviderManager;
 
 // Input types for JSON-RPC
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -146,6 +147,7 @@ struct AppState {
     database: Arc<Database>,
     roles: Arc<RwLock<Vec<Role>>>,
     codices: Arc<RwLock<HashMap<String, Value>>>,
+    provider_manager: Arc<ProviderManager>,
 }
 
 impl AppState {
@@ -161,9 +163,9 @@ impl AppState {
 
         // Create optimized database pool configuration for high-throughput
         let pool_config = vespera_bindery::database::DatabasePoolConfig::builder()
-            .max_connections(8)? // Optimized for SQLite with WAL mode
-            .min_connections(2)   // Keep some connections warm
-            .acquire_timeout(std::time::Duration::from_secs(3))? // Fast timeout for responsiveness
+            .max_connections(20)? // Increased for concurrent VS Code extension requests
+            .min_connections(3)   // Keep some connections warm
+            .acquire_timeout(std::time::Duration::from_secs(10))? // Longer timeout for safety
             .idle_timeout(std::time::Duration::from_secs(300))? // 5 minutes idle timeout
             .max_connection_lifetime(std::time::Duration::from_secs(3600))? // 1 hour lifetime
             .test_before_acquire(true)
@@ -191,10 +193,30 @@ impl AppState {
             capabilities: vec!["design".to_string(), "ui".to_string(), "mockup".to_string()],
         });
 
+        eprintln!("Debug: About to create provider manager...");
+
+        // Create provider manager and load providers
+        let database_arc = Arc::new(database);
+        eprintln!("Debug: Created database Arc, creating ProviderManager...");
+        let provider_manager = Arc::new(ProviderManager::new(Arc::clone(&database_arc)));
+        eprintln!("Debug: ProviderManager created successfully");
+
+        // Load providers synchronously during startup to ensure they're available
+        eprintln!("Debug: Loading providers during server startup...");
+        match provider_manager.load_providers().await {
+            Ok(provider_ids) => {
+                eprintln!("Debug: Loaded {} providers: {:?}", provider_ids.len(), provider_ids);
+            }
+            Err(e) => {
+                eprintln!("Warning: Failed to load providers: {}", e);
+            }
+        }
+
         Ok(Self {
-            database: Arc::new(database),
+            database: database_arc,
             roles: Arc::new(RwLock::new(roles)),
             codices: Arc::new(RwLock::new(HashMap::new())),
+            provider_manager,
         })
     }
 }
@@ -267,7 +289,7 @@ enum Commands {
     },
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread", worker_threads = 4)]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
@@ -403,6 +425,8 @@ async fn run_migration_command(
 
 /// Run JSON-RPC server using stdin/stdout for VS Code extension
 async fn run_json_rpc_stdio(workspace: Option<PathBuf>) -> Result<()> {
+    use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+
     // For stdio mode, log to stderr instead of stdout to avoid interfering with JSON-RPC
     eprintln!("Running in JSON-RPC stdio mode");
 
@@ -411,23 +435,31 @@ async fn run_json_rpc_stdio(workspace: Option<PathBuf>) -> Result<()> {
     });
     eprintln!("Debug: Using workspace directory: {:?}", workspace_root);
     let state = Arc::new(AppState::new(workspace_root).await?);
-    let stdin = io::stdin();
-    let stdout = io::stdout();
-    let mut stdout_lock = stdout.lock();
-    
-    for line in stdin.lock().lines() {
-        let line = line.context("Failed to read line from stdin")?;
+
+    let stdin = tokio::io::stdin();
+    let mut reader = BufReader::new(stdin);
+    let mut stdout = tokio::io::stdout();
+    let mut line = String::new();
+
+    loop {
+        line.clear();
+        let bytes_read = reader.read_line(&mut line).await?;
+        if bytes_read == 0 {
+            break; // EOF
+        }
+
         if line.trim().is_empty() {
             continue;
         }
-        
+
         let response = handle_json_rpc_request(&state, &line).await;
         let response_json = serde_json::to_string(&response)?;
-        
-        writeln!(stdout_lock, "{}", response_json)?;
-        stdout_lock.flush()?;
+
+        stdout.write_all(response_json.as_bytes()).await?;
+        stdout.write_all(b"\n").await?;
+        stdout.flush().await?;
     }
-    
+
     Ok(())
 }
 
@@ -557,9 +589,18 @@ async fn handle_json_rpc_method(state: &AppState, request: &JsonRpcRequest) -> J
         "list_roles" => handle_list_roles(state).await,
         "assign_role_to_task" => handle_assign_role_to_task(state, &request.params).await,
         "list_codices" => handle_list_codices(state).await,
+        "list_children" => handle_list_children(state, &request.params).await,
         "create_codex" => handle_create_codex(state, &request.params).await,
         "get_codex" => handle_get_codex(state, &request.params).await,
+        "update_codex" => handle_update_codex(state, &request.params).await,
         "delete_codex" => handle_delete_codex(state, &request.params).await,
+        // Provider endpoints
+        "provider.list" => handle_provider_list(state).await,
+        "provider.get" => handle_provider_get(state, &request.params).await,
+        "provider.test" => handle_provider_test(state, &request.params).await,
+        "provider.reload" => handle_provider_reload(state, &request.params).await,
+        // Chat endpoints
+        "chat.send_message" => handle_chat_send_message(state, &request.params).await,
         _ => Err(format!("Method '{}' not found", request.method)),
     };
     
@@ -575,8 +616,8 @@ async fn handle_json_rpc_method(state: &AppState, request: &JsonRpcRequest) -> J
             result: None,
             error: Some(JsonRpcError {
                 code: -32603,
-                message: "Internal error".to_string(),
-                data: Some(json!({"details": e})),
+                message: format!("{}", e), // Use actual error message instead of generic "Internal error"
+                data: Some(json!({"details": format!("{:?}", e)})),
             }),
             id: request.id.clone(),
         },
@@ -741,9 +782,26 @@ async fn handle_assign_role_to_task(_state: &AppState, params: &Option<Value>) -
 }
 
 async fn handle_list_codices(state: &AppState) -> Result<Value, String> {
-    let codices = state.codices.read().await;
-    let codex_ids: Vec<String> = codices.keys().cloned().collect();
-    Ok(serde_json::to_value(codex_ids).map_err(|e| e.to_string())?)
+    // Phase 16b: Load from database
+    let codices = state.database.list_codices()
+        .await
+        .map_err(|e| format!("Failed to list codices from database: {}", e))?;
+
+    Ok(json!(codices))
+}
+
+async fn handle_list_children(state: &AppState, params: &Option<Value>) -> Result<Value, String> {
+    let parent_id = params
+        .as_ref()
+        .and_then(|p| p.get("parent_id"))
+        .and_then(|v| v.as_str())
+        .ok_or("Missing parent_id parameter")?;
+
+    let children = state.database.list_children(parent_id)
+        .await
+        .map_err(|e| format!("Failed to list child codices from database: {}", e))?;
+
+    Ok(json!(children))
 }
 
 async fn handle_create_codex(state: &AppState, params: &Option<Value>) -> Result<Value, String> {
@@ -752,27 +810,27 @@ async fn handle_create_codex(state: &AppState, params: &Option<Value>) -> Result
         .and_then(|p| p.get("title"))
         .and_then(|v| v.as_str())
         .ok_or("Missing title parameter")?;
-    
+
     let template_id = params
         .as_ref()
         .and_then(|p| p.get("template_id"))
         .and_then(|v| v.as_str())
         .unwrap_or("default");
-    
+
+    // Phase 16b: Extract metadata (including project_id)
+    let metadata = params
+        .as_ref()
+        .and_then(|p| p.get("metadata"))
+        .cloned()
+        .unwrap_or(json!({}));
+
     let codex_id = Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
-    
-    let codex = json!({
-        "id": codex_id,
-        "title": title,
-        "template_id": template_id,
-        "created_at": now,
-        "updated_at": now
-    });
-    
-    let mut codices = state.codices.write().await;
-    codices.insert(codex_id.clone(), codex);
-    
+
+    // Phase 16b: Persist to database
+    state.database.create_codex(&codex_id, title, template_id, &metadata)
+        .await
+        .map_err(|e| format!("Failed to create codex in database: {}", e))?;
+
     Ok(json!(codex_id))
 }
 
@@ -782,12 +840,74 @@ async fn handle_get_codex(state: &AppState, params: &Option<Value>) -> Result<Va
         .and_then(|p| p.get("codex_id"))
         .and_then(|v| v.as_str())
         .ok_or("Missing codex_id parameter")?;
-    
-    let codices = state.codices.read().await;
-    match codices.get(codex_id) {
-        Some(codex) => Ok(codex.clone()),
-        None => Err("Codex not found".to_string()),
+
+    // Phase 16b: Load from database
+    match state.database.get_codex(codex_id).await {
+        Ok(Some(codex)) => Ok(codex),
+        Ok(None) => Err("Codex not found".to_string()),
+        Err(e) => Err(format!("Failed to get codex from database: {}", e)),
     }
+}
+
+async fn handle_update_codex(state: &AppState, params: &Option<Value>) -> Result<Value, String> {
+    let codex_id = params
+        .as_ref()
+        .and_then(|p| p.get("codex_id"))
+        .and_then(|v| v.as_str())
+        .ok_or("Missing codex_id parameter")?;
+
+    // Phase 17: Load from database (not in-memory HashMap)
+    let mut codex = match state.database.get_codex(codex_id).await {
+        Ok(Some(c)) => c,
+        Ok(None) => return Err("Codex not found".to_string()),
+        Err(e) => return Err(format!("Failed to get codex from database: {}", e)),
+    };
+
+    // Update fields if provided
+    if let Some(params_obj) = params.as_ref().and_then(|p| p.as_object()) {
+        let codex_obj = codex.as_object_mut().ok_or("Invalid codex format")?;
+
+        // Update title if provided
+        if let Some(title) = params_obj.get("title") {
+            codex_obj.insert("title".to_string(), title.clone());
+        }
+
+        // Update content if provided
+        if let Some(content) = params_obj.get("content") {
+            codex_obj.insert("content".to_string(), content.clone());
+        }
+
+        // Update template_id if provided
+        if let Some(template_id) = params_obj.get("template_id") {
+            codex_obj.insert("template_id".to_string(), template_id.clone());
+        }
+
+        // Update tags if provided
+        if let Some(tags) = params_obj.get("tags") {
+            codex_obj.insert("tags".to_string(), tags.clone());
+        }
+
+        // Update references if provided
+        if let Some(references) = params_obj.get("references") {
+            codex_obj.insert("references".to_string(), references.clone());
+        }
+
+        // Update metadata if provided (includes parent_id and project_id)
+        if let Some(metadata) = params_obj.get("metadata") {
+            codex_obj.insert("metadata".to_string(), metadata.clone());
+        }
+
+        // Update the updated_at timestamp
+        let now = chrono::Utc::now().to_rfc3339();
+        codex_obj.insert("updated_at".to_string(), json!(now));
+    }
+
+    // Phase 17: Save to database (not in-memory HashMap)
+    state.database.update_codex(codex_id, &codex)
+        .await
+        .map_err(|e| format!("Failed to update codex in database: {}", e))?;
+
+    Ok(codex)
 }
 
 async fn handle_delete_codex(state: &AppState, params: &Option<Value>) -> Result<Value, String> {
@@ -797,11 +917,157 @@ async fn handle_delete_codex(state: &AppState, params: &Option<Value>) -> Result
         .and_then(|v| v.as_str())
         .ok_or("Missing codex_id parameter")?;
 
-    let mut codices = state.codices.write().await;
-    match codices.remove(codex_id) {
-        Some(_) => Ok(json!(true)),
-        None => Err("Codex not found".to_string()),
+    // Delete from database
+    let deleted = state
+        .database
+        .delete_codex(codex_id)
+        .await
+        .map_err(|e| format!("Failed to delete codex from database: {}", e))?;
+
+    if deleted {
+        // Also remove from in-memory cache
+        let mut codices = state.codices.write().await;
+        codices.remove(codex_id);
+        Ok(json!(true))
+    } else {
+        Err("Codex not found".to_string())
     }
+}
+
+// Provider and Chat handlers
+
+async fn handle_provider_list(state: &AppState) -> Result<Value, String> {
+    let provider_ids = state
+        .provider_manager
+        .list_providers()
+        .await
+        .map_err(|e| format!("Failed to list providers: {}", e))?;
+
+    let mut providers = Vec::new();
+    for provider_id in provider_ids {
+        match state.provider_manager.get_provider_info(&provider_id).await {
+            Ok(info) => {
+                providers.push(json!({
+                    "id": info.id,
+                    "title": info.title,
+                    "provider_type": info.provider_type,
+                    "display_name": info.display_name,
+                }));
+            }
+            Err(e) => {
+                warn!("Failed to get provider info for {}: {}", provider_id, e);
+            }
+        }
+    }
+
+    Ok(json!({ "providers": providers }))
+}
+
+async fn handle_provider_get(state: &AppState, params: &Option<Value>) -> Result<Value, String> {
+    let provider_id = params
+        .as_ref()
+        .and_then(|p| p.get("provider_id"))
+        .and_then(|v| v.as_str())
+        .ok_or("Missing provider_id parameter")?;
+
+    let info = state
+        .provider_manager
+        .get_provider_info(provider_id)
+        .await
+        .map_err(|e| format!("Failed to get provider info: {}", e))?;
+
+    Ok(json!({
+        "id": info.id,
+        "title": info.title,
+        "provider_type": info.provider_type,
+        "display_name": info.display_name,
+    }))
+}
+
+async fn handle_provider_test(state: &AppState, params: &Option<Value>) -> Result<Value, String> {
+    let provider_id = params
+        .as_ref()
+        .and_then(|p| p.get("provider_id"))
+        .and_then(|v| v.as_str())
+        .ok_or("Missing provider_id parameter")?;
+
+    let is_healthy = state
+        .provider_manager
+        .health_check(provider_id)
+        .await
+        .map_err(|e| format!("Failed to health check provider: {}", e))?;
+
+    Ok(json!({
+        "provider_id": provider_id,
+        "healthy": is_healthy,
+    }))
+}
+
+async fn handle_provider_reload(state: &AppState, params: &Option<Value>) -> Result<Value, String> {
+    let provider_id = params
+        .as_ref()
+        .and_then(|p| p.get("provider_id"))
+        .and_then(|v| v.as_str())
+        .ok_or("Missing provider_id parameter")?;
+
+    state
+        .provider_manager
+        .reload_provider(provider_id)
+        .await
+        .map_err(|e| format!("Failed to reload provider: {}", e))?;
+
+    Ok(json!({
+        "provider_id": provider_id,
+        "reloaded": true,
+    }))
+}
+
+async fn handle_chat_send_message(state: &AppState, params: &Option<Value>) -> Result<Value, String> {
+    let provider_id = params
+        .as_ref()
+        .and_then(|p| p.get("provider_id"))
+        .and_then(|v| v.as_str())
+        .ok_or("Missing provider_id parameter")?;
+
+    let message = params
+        .as_ref()
+        .and_then(|p| p.get("message"))
+        .and_then(|v| v.as_str())
+        .ok_or("Missing message parameter")?;
+
+    let model = params
+        .as_ref()
+        .and_then(|p| p.get("model"))
+        .and_then(|v| v.as_str());
+
+    let session_id = params
+        .as_ref()
+        .and_then(|p| p.get("session_id"))
+        .and_then(|v| v.as_str());
+
+    let system_prompt = params
+        .as_ref()
+        .and_then(|p| p.get("system_prompt"))
+        .and_then(|v| v.as_str());
+
+    let stream = params
+        .as_ref()
+        .and_then(|p| p.get("stream"))
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+
+    let response = state
+        .provider_manager
+        .send_message(provider_id, message, model, session_id, system_prompt, stream)
+        .await
+        .map_err(|e| format!("Failed to send message: {}", e))?;
+
+    Ok(json!({
+        "text": response.text,
+        "session_id": response.session_id,
+        "usage": response.usage,
+        "metadata": response.metadata,
+    }))
 }
 
 // REST API handlers for MCP server integration

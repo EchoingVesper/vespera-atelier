@@ -50,14 +50,14 @@ export class ProjectAwareServerLauncher {
             const pathObj = path.parse(currentPath);
             
             // Check for project markers
-            const markers = ['.git', '.vespera_v2', '.vespera', 'package.json', 'pyproject.toml'];
-            
+            const markers = ['.git', '.vespera', 'package.json', 'pyproject.toml'];
+
             for (const marker of markers) {
                 const markerPath = path.join(currentPath, marker);
                 try {
                     if (require('fs').existsSync(markerPath)) {
                         const projectName = path.basename(currentPath);
-                        const vesperaDir = path.join(currentPath, '.vespera_v2');
+                        const vesperaDir = path.join(currentPath, '.vespera');
                         
                         return {
                             name: projectName,
@@ -83,7 +83,7 @@ export class ProjectAwareServerLauncher {
         
         // Fallback: use vault directory as project root
         const projectName = path.basename(this.config.vaultPath);
-        const vesperaDir = path.join(this.config.vaultPath, '.vespera_v2');
+        const vesperaDir = path.join(this.config.vaultPath, '.vespera');
         
         return {
             name: projectName,

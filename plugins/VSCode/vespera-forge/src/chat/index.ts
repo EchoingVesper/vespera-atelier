@@ -12,8 +12,8 @@ export { ChatSessionManager } from './core/ChatSessionManager';
 // Event system
 export { ChatEventRouter } from './events/ChatEventRouter';
 
-// Provider system
-export * from './providers';
+// Provider system - REMOVED: Migrated to Bindery backend
+// See: PHASE_14_LLM_ARCHITECTURE.md for details
 
 // UI components
 export { ChatWebViewProvider } from './ui/webview/ChatWebViewProvider';
@@ -41,7 +41,14 @@ import { ChatHistoryManager } from './core/ChatHistoryManager';
 import { ChatSessionManager } from './core/ChatSessionManager';
 import { ChatEventRouter } from './events/ChatEventRouter';
 import { ChatWebViewProvider } from './ui/webview/ChatWebViewProvider';
-import { ChatMessage, ChatSession, SessionSummary } from './types/chat';
+import { ChatSession, SessionSummary } from './types/chat';
+
+export interface VesperaChatSystemOptions {
+  /** Skip webview registration (useful when embedding in another webview) */
+  skipWebviewRegistration?: boolean;
+  /** Skip command registration (useful when commands are registered elsewhere) */
+  skipCommandRegistration?: boolean;
+}
 
 export class VesperaChatSystem {
   private templateRegistry: ChatTemplateRegistry;
@@ -53,8 +60,11 @@ export class VesperaChatSystem {
   private disposables: vscode.Disposable[] = [];
   private activeProvider?: any;
   private providers: Map<string, any> = new Map();
+  private options: VesperaChatSystemOptions;
 
-  constructor(_extensionUri: vscode.Uri, private _context: vscode.ExtensionContext) {
+  constructor(_extensionUri: vscode.Uri, private _context: vscode.ExtensionContext, options?: VesperaChatSystemOptions) {
+    this.options = options || {};
+
     // Initialize core components in dependency order
     this.eventRouter = new ChatEventRouter();
     this.templateRegistry = new ChatTemplateRegistry(this._context.extensionUri, this.eventRouter);
@@ -68,30 +78,38 @@ export class VesperaChatSystem {
    * Initialize the chat system
    */
   async initialize(): Promise<void> {
-    console.log('[VesperaChatSystem] Initializing chat system...');
+    console.log('[VesperaChatSystem] Initializing chat system...', { options: this.options });
 
     try {
       // Initialize template registry first
       await this.templateRegistry.initialize();
       console.log('[VesperaChatSystem] Template registry initialized');
 
-      // Register WebView provider
-      this.disposables.push(
-        vscode.window.registerWebviewViewProvider(
-          ChatWebViewProvider.viewType,
-          this.webViewProvider,
-          {
-            webviewOptions: {
-              retainContextWhenHidden: true
+      // Register WebView provider only if not skipped
+      if (!this.options.skipWebviewRegistration) {
+        this.disposables.push(
+          vscode.window.registerWebviewViewProvider(
+            ChatWebViewProvider.viewType,
+            this.webViewProvider,
+            {
+              webviewOptions: {
+                retainContextWhenHidden: true
+              }
             }
-          }
-        )
-      );
-      console.log('[VesperaChatSystem] WebView provider registered');
+          )
+        );
+        console.log('[VesperaChatSystem] WebView provider registered');
+      } else {
+        console.log('[VesperaChatSystem] Skipped WebView provider registration (embedded mode)');
+      }
 
-      // Register commands
-      this.registerCommands();
-      console.log('[VesperaChatSystem] Commands registered');
+      // Register commands only if not skipped
+      if (!this.options.skipCommandRegistration) {
+        this.registerCommands();
+        console.log('[VesperaChatSystem] Commands registered');
+      } else {
+        console.log('[VesperaChatSystem] Skipped command registration');
+      }
 
       console.log('[VesperaChatSystem] Chat system initialized successfully');
     } catch (error) {
@@ -275,35 +293,31 @@ export class VesperaChatSystem {
 
   /**
    * Create a provider with proper event listener setup
+   *
+   * @deprecated Legacy provider system removed. Providers are now managed by Bindery backend.
+   * See PHASE_14_LLM_ARCHITECTURE.md for the new architecture.
+   *
+   * TODO: Replace with Bindery Codex-based provider creation
    */
-  async createAndRegisterProvider(providerId: string, template: any, config: any): Promise<any> {
-    // Import ProviderFactory dynamically to avoid circular dependencies
-    const { ProviderFactory } = await import('./providers/ProviderFactory');
-    
-    console.log(`[VesperaChatSystem] Creating provider: ${providerId}`);
-    const provider = ProviderFactory.createProvider(template, config);
-    
-    // Set up event listener to connect provider config changes to ConfigurationManager
-    if (provider && typeof provider.on === 'function') {
-      provider.on('configUpdated', async (updatedConfig: any) => {
-        try {
-          console.log(`[VesperaChatSystem] Provider ${providerId} config updated, persisting...`);
-          console.log(`[VesperaChatSystem] Updated config:`, JSON.stringify(updatedConfig, null, 2));
-          console.log(`[VesperaChatSystem] Calling configurationManager.configureProvider...`);
-          await this.configurationManager.configureProvider(providerId, updatedConfig, 'user');
-          console.log(`[VesperaChatSystem] configureProvider completed successfully`);
-        } catch (error) {
-          console.error(`[VesperaChatSystem] Failed to persist config for provider ${providerId}:`, error);
-          console.error(`[VesperaChatSystem] Error details:`, error instanceof Error ? error.message : String(error));
-          console.error(`[VesperaChatSystem] Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
-        }
-      });
-    }
-    
-    // Register the provider
-    this.providers.set(providerId, provider);
-    
-    return provider;
+  async createAndRegisterProvider(providerId: string, _template: any, _config: any): Promise<any> {
+    console.warn(`[VesperaChatSystem] createAndRegisterProvider is deprecated - providers managed by Bindery`);
+    console.log(`[VesperaChatSystem] Provider ID: ${providerId}`);
+
+    // TODO: Create Codex instance via Bindery API
+    // const provider = await binderyClient.createCodex({
+    //   template_id: 'llm-provider',
+    //   template_fields: { provider_type: providerId, ...config }
+    // });
+
+    // Stub for now - returns a minimal provider object
+    const stubProvider = {
+      id: providerId,
+      status: 'not-configured',
+      // TODO: Implement Bindery integration
+    };
+
+    this.providers.set(providerId, stubProvider);
+    return stubProvider;
   }
 
   /**
@@ -315,130 +329,78 @@ export class VesperaChatSystem {
 
   /**
    * Set active provider
+   *
+   * @deprecated Legacy provider system removed. Providers are now managed by Bindery backend.
+   * TODO: Replace with Bindery Codex reference
    */
   async setActiveProvider(providerId: string, provider: any): Promise<void> {
+    console.warn(`[VesperaChatSystem] setActiveProvider is deprecated - providers managed by Bindery`);
     console.log(`[VesperaChatSystem] Setting active provider: ${providerId}`);
+
+    // TODO: Set active provider via Bindery API
+    // await binderyClient.setActiveProvider(providerId);
+
     this.providers.set(providerId, provider);
     this.activeProvider = provider;
-    
-    // Set up event listener to connect provider config changes to ConfigurationManager
-    // (This handles cases where the provider is created externally)
-    if (provider && typeof provider.on === 'function') {
-      provider.on('configUpdated', async (config: any) => {
-        try {
-          console.log(`[VesperaChatSystem] Provider ${providerId} config updated, persisting...`);
-          await this.configurationManager.configureProvider(providerId, config, 'user');
-        } catch (error) {
-          console.error(`[VesperaChatSystem] Failed to persist config for provider ${providerId}:`, error);
-        }
-      });
-    }
-
-    // Inject history manager for conversation context
-    if (provider && typeof provider.setHistoryManager === 'function') {
-      provider.setHistoryManager(this.historyManager);
-      console.log(`[VesperaChatSystem] History manager injected into provider ${providerId}`);
-    }
   }
 
   /**
    * Stream a message through the active provider with session context
+   *
+   * @deprecated Legacy provider system removed. Messages are now streamed via Bindery backend.
+   * TODO: Replace with Bindery LLM streaming API
    */
-  async *streamMessage(message: any): AsyncIterable<any> {
-    if (!this.activeProvider) {
-      throw new Error('No active provider configured');
-    }
-    
-    console.log('[VesperaChatSystem] Streaming message through active provider');
-    
-    // Ensure we have an active session
-    let activeSession = this.sessionManager.getActiveSession();
-    if (!activeSession) {
-      // Create a new session if none exists
-      activeSession = await this.sessionManager.createSession(
-        'claude-code', 
-        undefined, 
-        { autoCreated: true }
-      );
-      await this.sessionManager.switchToSession(activeSession.id);
-    }
+  async *streamMessage(_message: any): AsyncIterable<any> {
+    console.warn('[VesperaChatSystem] streamMessage is deprecated - use Bindery LLM API');
 
-    // Add sessionId to the message
-    const contextualMessage = {
-      ...message,
-      sessionId: activeSession.id
+    // TODO: Replace with Bindery streaming
+    // const stream = await binderyClient.llmSendMessageStreaming({
+    //   codex_ref: activeProviderCodexRef,
+    //   messages: [...history, message],
+    //   system_prompt_ref: systemPromptCodexRef
+    // });
+    //
+    // for await (const chunk of stream) {
+    //   yield chunk;
+    // }
+
+    // Stub: yield a mock response to prevent errors
+    yield {
+      role: 'assistant',
+      content: 'Provider system has been migrated to Bindery backend. Chat functionality will be restored in Phase 14c.',
+      done: false
     };
-
-    // Add message to history before streaming response
-    await this.historyManager.addMessage(contextualMessage);
-
-    // Stream the response with enhanced context
-    let responseContent = '';
-    const responseId = `assistant_${Date.now()}`;
-    
-    // Use enhanced streaming method if available (for ClaudeCodeProvider)
-    const streamMethod = typeof this.activeProvider.streamMessageWithContext === 'function' 
-      ? this.activeProvider.streamMessageWithContext.bind(this.activeProvider)
-      : this.activeProvider.streamMessage.bind(this.activeProvider);
-    
-    for await (const chunk of await streamMethod(contextualMessage)) {
-      if (chunk.content && !chunk.done) {
-        responseContent += chunk.content;
-      }
-      yield chunk;
-    }
-
-    // Save assistant response to history
-    if (responseContent) {
-      const assistantMessage: ChatMessage = {
-        id: responseId,
-        role: 'assistant',
-        content: responseContent,
-        timestamp: new Date(),
-        threadId: contextualMessage.threadId || 'default',
-        sessionId: activeSession.id,
-        metadata: {
-          provider: this.activeProvider.template?.id || 'unknown',
-          model: this.activeProvider.config?.model || 'unknown'
-        }
-      };
-      
-      await this.historyManager.addMessage(assistantMessage);
-      await this.sessionManager.updateSessionMessageCount(activeSession.id);
-    }
+    yield {
+      role: 'assistant',
+      content: '',
+      done: true
+    };
   }
 
   /**
    * Update configuration
+   *
+   * @deprecated Legacy provider system removed.
+   * TODO: Update Codex configuration via Bindery API
    */
-  async updateConfiguration(config: any): Promise<void> {
-    console.log('[VesperaChatSystem] Updating configuration');
-    if (this.activeProvider) {
-      await this.activeProvider.configure(config);
-    }
+  async updateConfiguration(_config: any): Promise<void> {
+    console.warn('[VesperaChatSystem] updateConfiguration is deprecated - use Bindery Codex API');
+    // TODO: Update provider Codex via Bindery
+    // await binderyClient.updateCodex(activeProviderCodexRef, config);
   }
 
   /**
    * Test connection for a provider
+   *
+   * @deprecated Legacy provider system removed.
+   * TODO: Test connection via Bindery validate_config API
    */
-  async testConnection(providerId?: string): Promise<boolean> {
-    console.log(`[VesperaChatSystem] Testing connection for provider: ${providerId || 'active'}`);
-    
-    let provider = this.activeProvider;
-    if (providerId && this.providers.has(providerId)) {
-      provider = this.providers.get(providerId);
-    }
-    
-    if (!provider) {
-      return false;
-    }
-    
-    if (typeof provider.testConnection === 'function') {
-      return await provider.testConnection();
-    }
-    
-    // Fallback: check if provider is connected
-    return provider.getStatus() === 'connected';
+  async testConnection(_providerId?: string): Promise<boolean> {
+    console.warn('[VesperaChatSystem] testConnection is deprecated - use Bindery validate_config');
+    // TODO: Test provider via Bindery
+    // const provider = await binderyClient.getCodex(providerId);
+    // return await binderyClient.llmValidateConfig(provider);
+    return false;
   }
 
   /**
@@ -541,27 +503,23 @@ export class VesperaChatSystem {
 
   /**
    * Show provider configuration dialog
+   *
+   * @deprecated Legacy provider system removed.
+   * TODO: Replace with Codex-based provider configuration UI
    */
   private async showProviderConfigurationDialog(): Promise<void> {
-    try {
-      const availableProviders = [
-        { label: 'Anthropic Claude', value: 'anthropic' },
-        { label: 'OpenAI GPT', value: 'openai' },
-        { label: 'LM Studio (Local)', value: 'lmstudio' },
-        { label: 'Claude Code (Integrated)', value: 'claude-code' }
-      ];
+    console.warn('[VesperaChatSystem] showProviderConfigurationDialog is deprecated');
 
-      const selectedProvider = await vscode.window.showQuickPick(availableProviders, {
-        placeHolder: 'Select a chat provider to configure'
-      });
+    await vscode.window.showInformationMessage(
+      'Provider configuration has been migrated to Codex templates. ' +
+      'See .vespera/templates/llm-provider.json5 for configuration options.',
+      'OK'
+    );
 
-      if (selectedProvider) {
-        await this.configurationManager.showProviderConfiguration(selectedProvider.value);
-      }
-    } catch (error) {
-      console.error('[VesperaChatSystem] Error showing provider configuration:', error);
-      await vscode.window.showErrorMessage('Failed to open provider configuration');
-    }
+    // TODO: Show Codex-based provider configuration UI
+    // - List existing provider Codices
+    // - Allow creating/editing provider Codices
+    // - Integrate with Bindery backend
   }
 
   /**
