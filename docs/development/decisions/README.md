@@ -129,6 +129,24 @@ We use a lightweight ADR format adapted from Michael Nygard's proposal. See [ADR
 
 ---
 
+### Phase 17.5: Provider System Reconciliation & Security Hardening (November 2025)
+
+#### Provider Architecture
+
+- **[ADR-017: Provider System Unification](./ADR-017-provider-system-unification.md)** ✅
+  - Status: Accepted
+  - Summary: Hybrid merge of Phase 17 (`src/providers/`) and PR #85 (`src/llm/`) provider systems, preserving working code while adopting improved abstractions
+  - Impact: Single canonical provider system, Codex-based configuration only (no hardcoded enums), tool calling support, zero regression for AI Assistant
+
+#### Security & Infrastructure
+
+- **[ADR-018: Secret Storage Architecture](./ADR-018-secret-storage-architecture.md)** ✅
+  - Status: Accepted
+  - Summary: Pluggable secret backend system supporting system keyring (priority), age encryption, and AES-256-GCM; replaces insecure Base64 encoding
+  - Impact: Secure API key storage, cross-platform support, no plaintext secrets, gradual backend implementation (keyring first)
+
+---
+
 ## How to Create an ADR
 
 1. Copy `ADR-TEMPLATE.md` to new file with format `ADR-XXX-short-title.md`
