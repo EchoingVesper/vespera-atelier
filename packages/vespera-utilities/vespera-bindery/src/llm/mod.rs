@@ -14,7 +14,6 @@ pub mod streaming;
 pub mod types;
 pub mod claude_code;
 pub mod ollama;
-pub mod vault;
 
 pub use provider::{LlmProvider, ProviderType};
 pub use streaming::{StreamingResponse, ChatChunk};
@@ -24,4 +23,3 @@ pub use types::{
 };
 pub use claude_code::ClaudeCodeProvider;
 pub use ollama::OllamaProvider;
-pub use vault::SecretVault;
