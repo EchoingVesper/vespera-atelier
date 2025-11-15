@@ -616,8 +616,8 @@ async fn handle_json_rpc_method(state: &AppState, request: &JsonRpcRequest) -> J
             result: None,
             error: Some(JsonRpcError {
                 code: -32603,
-                message: "Internal error".to_string(),
-                data: Some(json!({"details": e})),
+                message: format!("{}", e), // Use actual error message instead of generic "Internal error"
+                data: Some(json!({"details": format!("{:?}", e)})),
             }),
             id: request.id.clone(),
         },
@@ -890,6 +890,11 @@ async fn handle_update_codex(state: &AppState, params: &Option<Value>) -> Result
         // Update references if provided
         if let Some(references) = params_obj.get("references") {
             codex_obj.insert("references".to_string(), references.clone());
+        }
+
+        // Update metadata if provided (includes parent_id and project_id)
+        if let Some(metadata) = params_obj.get("metadata") {
+            codex_obj.insert("metadata".to_string(), metadata.clone());
         }
 
         // Update the updated_at timestamp

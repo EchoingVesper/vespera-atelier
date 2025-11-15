@@ -16,7 +16,10 @@ interface ChatChannel {
   status: 'active' | 'idle' | 'archived';
   lastActivity?: Date;
   messageCount?: number;
+  provider_id?: string; // Provider ID for LLM provider
+  model?: string; // Model name for LLM
   content?: any; // Channel content including session_id, provider_id, model, etc.
+  project_id?: string; // Project ID for message context
 }
 
 export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
@@ -27,6 +30,7 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
   private _activeChannel?: any; // Current active channel
   private _channels: ChatChannel[] = [];
   private _binderyService?: BinderyService;
+  private _workspaceProjectId?: string; // Workspace folder as project ID
 
   private _connectionCheckInterval?: NodeJS.Timeout;
   private _isInitializingProviders = false; // Guard against concurrent initialization
@@ -38,6 +42,16 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
   ) {
     // Store reference globally for commands
     (global as any).vesperaAIAssistantProvider = this;
+
+    // Get workspace folder as project ID
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    if (workspaceFolder) {
+      // Use the first workspace folder URI as project ID
+      this._workspaceProjectId = workspaceFolder.uri.fsPath;
+      console.log('[AIAssistant] Workspace project ID:', this._workspaceProjectId);
+    } else {
+      console.warn('[AIAssistant] No workspace folder found - messages may not persist');
+    }
 
     // Use provided bindery service instance
     this._binderyService = binderyService;
@@ -272,11 +286,15 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
     let assistantCodexId: string | undefined;
 
     try {
+      // Get project_id from active channel, fallback to workspace project_id
+      const projectId = (this._activeChannel as any).project_id || this._workspaceProjectId;
+      console.log('[AIAssistant] Creating message with project_id:', projectId);
+
       // Create user message Codex
       const userMsgResult = await this._binderyService.createCodex(
         `Message`,
         'message',
-        undefined // Will set project_id from active project
+        projectId // Use channel's project_id for proper context
       );
 
       if (!userMsgResult.success) {
@@ -318,7 +336,7 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
       const assistantMsgResult = await this._binderyService.createCodex(
         `Response`,
         'message',
-        undefined
+        projectId // Use same project_id as user message
       );
 
       if (!assistantMsgResult.success) {
@@ -597,21 +615,50 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
             messageCount: this.getMessageCount(codex),
             provider_id: codex.content?.provider_id || '',
             model: codex.content?.model || '',
-            content: codex.content || {} // Preserve full content including session_id
+            content: codex.content || {}, // Preserve full content including session_id
+            project_id: codex.metadata?.project_id || codex.project_id // Project ID for message context
           } as ChatChannel;
         });
 
       console.log('[AIAssistant] Loaded', this._channels.length, 'channels:', this._channels);
-      this.sendChannelsToWebview();
 
-      // Restore previously selected channel if any
+      // Restore previously selected channel BEFORE sending channels to webview
+      // This ensures selectedChannelId is set when we send the channels
       const selectedChannelId = this._context.workspaceState.get<string>('vespera.aiAssistant.selectedChannelId');
       if (selectedChannelId) {
         const channel = this._channels.find(ch => ch.id === selectedChannelId);
         if (channel) {
           console.log('[AIAssistant] Restoring previously selected channel:', channel.title);
-          await this.switchChannel(channel);
+          console.log('[AIAssistant] Channel data before setting active:', {
+            provider_id: (channel as any).provider_id,
+            model: (channel as any).model,
+            content: (channel as any).content
+          });
+          // Set active channel first so sendChannelsToWebview will include it
+          this._activeChannel = channel;
         }
+      }
+
+      // Now send channels with the correct selectedChannelId
+      this.sendChannelsToWebview();
+
+      // If we restored a channel, load its messages and send updateChannelInfo
+      if (this._activeChannel) {
+        const providerId = this._activeChannel.provider_id || '';
+        const model = this._activeChannel.model || '';
+        console.log('[AIAssistant] Sending initial updateChannelInfo after restore:', {
+          channelName: this._activeChannel.title,
+          providerId,
+          model
+        });
+        this.sendMessageToWebview({
+          command: 'updateChannelInfo',
+          channelName: this._activeChannel.title,
+          channelStatus: this._activeChannel.status,
+          providerId,
+          model
+        });
+        await this.loadChannelMessages(this._activeChannel.id);
       }
     } catch (error) {
       console.error('[AIAssistant] Failed to load channels:', error);
@@ -957,7 +1004,9 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
 
     try {
       const templateId = type === 'user-chat' ? 'ai-chat' : 'task-orchestrator';
-      const result = await this._binderyService.createCodex(name, templateId);
+
+      // Pass workspace project_id when creating channel
+      const result = await this._binderyService.createCodex(name, templateId, this._workspaceProjectId);
 
       if (!result.success) {
         const error = 'error' in result ? result.error : { message: 'Unknown error' };
@@ -979,15 +1028,39 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
 
       console.log('[AIAssistant] Updated codex content');
 
-      // Reload channels
-      await this.loadChannels();
+      // Create channel object and add to channels array
+      const newChannel: ChatChannel = {
+        id: codexId,
+        title: name,
+        templateId,
+        type: type as 'user-chat' | 'agent-task',
+        status: 'active',
+        lastActivity: new Date(),
+        messageCount: 0,
+        provider_id: '',
+        model: '',
+        content: {
+          messages: [],
+          summary: '',
+          channel_name: name,
+          channel_type: type,
+          status: 'active'
+        },
+        project_id: this._workspaceProjectId
+      };
 
-      // Auto-select the newly created channel
-      const newChannel = this._channels.find(ch => ch.id === codexId);
-      if (newChannel) {
-        console.log('[AIAssistant] Auto-selecting newly created channel:', newChannel.title);
-        await this.switchChannel(newChannel);
-      }
+      this._channels.unshift(newChannel);
+      console.log('[AIAssistant] Added new channel to top of local array');
+
+      // Set as active channel immediately
+      this._activeChannel = newChannel;
+
+      // Send updated channels to webview with new channel selected
+      this.sendChannelsToWebview();
+
+      // Now switch to the new channel to load messages and update UI
+      console.log('[AIAssistant] Auto-selecting newly created channel:', newChannel.title);
+      await this.switchChannel(newChannel);
 
       vscode.window.showInformationMessage(`Created channel: ${name}`);
     } catch (error) {
@@ -1049,12 +1122,20 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
     console.log('[AIAssistant] Persisted selected channel ID to workspace state:', channel.id);
 
     // Update header with channel name and provider info
+    const providerId = this._activeChannel.provider_id || '';
+    const model = this._activeChannel.model || '';
+    console.log('[AIAssistant] Sending updateChannelInfo to webview:', {
+      channelName: this._activeChannel.title,
+      providerId,
+      model,
+      activeChannel: this._activeChannel
+    });
     this.sendMessageToWebview({
       command: 'updateChannelInfo',
       channelName: this._activeChannel.title,
       channelStatus: this._activeChannel.status,
-      providerId: this._activeChannel.provider_id || '',
-      model: this._activeChannel.model || ''
+      providerId,
+      model
     });
 
     // Load message history from channel Codex (this will clear and repopulate)
@@ -1087,9 +1168,15 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
 
       const messageCodices = result.data || [];
       console.log('[AIAssistant] Loaded', messageCodices.length, 'messages for channel:', channelId);
-      console.log('[AIAssistant] Message IDs:', messageCodices.map((m: any) => m.id));
+      console.log('[AIAssistant] Message details:', messageCodices.map((m: any) => ({
+        id: m.id,
+        parent_id: m.metadata?.parent_id || m.parent_id,
+        project_id: m.metadata?.project_id || m.project_id,
+        role: m.content?.role
+      })));
 
-      // Clear UI first
+      // Clear UI first - CRITICAL for proper channel isolation
+      console.log('[AIAssistant] Clearing webview history before loading channel messages');
       this.sendMessageToWebview({ command: 'clearHistory' });
 
       if (messageCodices.length === 0) {
@@ -1612,6 +1699,15 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
             }
 
             function updateChannelInfo(channelName, channelStatus, providerId, model) {
+                console.log('[Webview] updateChannelInfo called with:', {
+                    channelName,
+                    channelStatus,
+                    providerId,
+                    model,
+                    providerIdType: typeof providerId,
+                    modelType: typeof model
+                });
+
                 const titleEl = document.getElementById('channelTitle');
                 if (titleEl) {
                     const statusIcon = channelStatus === 'active' ? '🟢' :
@@ -1620,20 +1716,37 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
                     titleEl.textContent = \`\${statusIcon} \${channelName}\`;
                 }
 
-                // Update provider and model dropdowns if values provided
-                if (providerId) {
+                // Update provider and model dropdowns if values provided (including empty strings)
+                if (providerId !== undefined) {
                     providerSelect.value = providerId;
-                    console.log('[Webview] Restored provider selection:', providerId);
+                    console.log('[Webview] Set provider selection to:', providerId || '(empty)');
+                } else {
+                    console.warn('[Webview] No providerId parameter provided');
                 }
-                if (model) {
+                if (model !== undefined) {
                     modelInput.value = model;
-                    console.log('[Webview] Restored model:', model);
+                    console.log('[Webview] Set model to:', model || '(empty)');
+                } else {
+                    console.warn('[Webview] No model parameter provided');
                 }
             }
 
-            function updateChannels(channelData) {
-                console.log('[Webview] Received updateChannels:', channelData);
+            function updateChannels(channelData, newSelectedChannelId) {
+                console.log('[Webview] Received updateChannels:', {
+                    channelCount: channelData.length,
+                    newSelectedChannelId,
+                    currentSelectedChannelId: selectedChannelId
+                });
+
                 channels = channelData;
+
+                // Update selected channel ID if provided from backend
+                if (newSelectedChannelId !== undefined) {
+                    console.log('[Webview] Updating selectedChannelId from', selectedChannelId, 'to', newSelectedChannelId);
+                    selectedChannelId = newSelectedChannelId;
+                    currentChannel = channels.find(ch => ch.id === selectedChannelId) || null;
+                }
+
                 renderChannels();
 
                 // If we have an active channel, update its info in the UI
@@ -1715,6 +1828,9 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
                 console.log('[Webview] Received providers:', providerList);
                 providers = providerList;
 
+                // Save currently selected provider before rebuilding dropdown
+                const currentProviderId = providerSelect.value;
+
                 providerSelect.innerHTML = '<option value="">-- Select Provider --</option>';
                 providers.forEach(provider => {
                     const option = document.createElement('option');
@@ -1723,9 +1839,11 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
                     providerSelect.appendChild(option);
                 });
 
-                // Restore current channel's provider if available
-                if (currentChannel && currentChannel.provider_id) {
-                    providerSelect.value = currentChannel.provider_id;
+                // Restore provider selection (try current channel first, then fall back to previous selection)
+                const providerIdToRestore = (currentChannel && currentChannel.provider_id) || currentProviderId;
+                if (providerIdToRestore) {
+                    providerSelect.value = providerIdToRestore;
+                    console.log('[Webview] Restored provider after list update:', providerIdToRestore);
                 }
             }
 
@@ -1819,7 +1937,7 @@ export class AIAssistantWebviewProvider implements vscode.WebviewViewProvider {
                         updateProviderList(message.providers);
                         break;
                     case 'updateChannels':
-                        updateChannels(message.channels);
+                        updateChannels(message.channels, message.selectedChannelId);
                         break;
                     case 'messageSendComplete':
                         // Re-enable send button after message send completes or errors
