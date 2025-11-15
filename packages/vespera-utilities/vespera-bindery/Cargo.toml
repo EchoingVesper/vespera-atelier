@@ -94,7 +94,6 @@ regex = "1.10"
 
 # LLM provider dependencies
 which = "6.0"
-async-trait = "0.1"
 base64 = "0.22"
 
 # CLI parsing
