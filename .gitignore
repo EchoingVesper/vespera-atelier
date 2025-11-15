@@ -55,3 +55,7 @@ server.log
 # Rust build artifacts
 **/target/
 Cargo.lock
+
+# Debug artifacts and temporary files
+.snapshots/
+temp/
