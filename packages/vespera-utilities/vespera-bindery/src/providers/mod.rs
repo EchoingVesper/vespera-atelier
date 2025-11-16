@@ -13,6 +13,7 @@
 pub mod claude_code;
 pub mod ollama;
 pub mod manager;
+pub mod adapters;
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
