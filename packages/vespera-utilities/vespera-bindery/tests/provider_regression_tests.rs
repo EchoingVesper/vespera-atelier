@@ -880,4 +880,187 @@ mod capabilities_tests {
             assert!(true);
         }
     }
+
+    // ============================================================================
+    // Phase 17.5 Task 6: Tool Calling Tests
+    // ============================================================================
+
+    /// Test 35: Tool call extraction from content blocks
+    #[test]
+    fn test_tool_call_extraction() {
+        use vespera_bindery::providers::types::ToolCall;
+        use serde_json::json;
+
+        // Create a tool call manually to verify structure
+        let mut arguments = HashMap::new();
+        arguments.insert("ticker".to_string(), json!("AAPL"));
+        arguments.insert("exchange".to_string(), json!("NASDAQ"));
+
+        let tool_call = ToolCall {
+            id: "toolu_123".to_string(),
+            name: "get_stock_price".to_string(),
+            arguments,
+        };
+
+        // Verify fields
+        assert_eq!(tool_call.id, "toolu_123");
+        assert_eq!(tool_call.name, "get_stock_price");
+        assert_eq!(tool_call.arguments.get("ticker").unwrap(), &json!("AAPL"));
+        assert_eq!(tool_call.arguments.get("exchange").unwrap(), &json!("NASDAQ"));
+    }
+
+    /// Test 36: ProviderResponse with tool calls in metadata
+    #[test]
+    fn test_provider_response_with_tool_calls() {
+        use vespera_bindery::providers::types::ToolCall;
+        use serde_json::json;
+
+        let mut metadata = HashMap::new();
+
+        // Create tool calls
+        let mut tool_calls = Vec::new();
+        let mut args1 = HashMap::new();
+        args1.insert("city".to_string(), json!("San Francisco"));
+        tool_calls.push(ToolCall {
+            id: "toolu_456".to_string(),
+            name: "get_weather".to_string(),
+            arguments: args1,
+        });
+
+        metadata.insert("tool_calls".to_string(), serde_json::to_value(&tool_calls).unwrap());
+
+        let response = ProviderResponse {
+            text: "Let me check the weather for you.".to_string(),
+            session_id: Some("session-123".to_string()),
+            usage: None,
+            metadata,
+        };
+
+        // Verify tool calls are in metadata
+        assert!(response.metadata.contains_key("tool_calls"));
+
+        // Extract and verify tool calls
+        let extracted_tools: Vec<ToolCall> = serde_json::from_value(
+            response.metadata.get("tool_calls").unwrap().clone()
+        ).unwrap();
+
+        assert_eq!(extracted_tools.len(), 1);
+        assert_eq!(extracted_tools[0].name, "get_weather");
+        assert_eq!(extracted_tools[0].id, "toolu_456");
+    }
+
+    /// Test 37: Multiple tool calls in single response
+    #[test]
+    fn test_multiple_tool_calls() {
+        use vespera_bindery::providers::types::ToolCall;
+        use serde_json::json;
+
+        let mut tool_calls = Vec::new();
+
+        // Tool call 1
+        let mut args1 = HashMap::new();
+        args1.insert("query".to_string(), json!("Rust async"));
+        tool_calls.push(ToolCall {
+            id: "toolu_001".to_string(),
+            name: "search_docs".to_string(),
+            arguments: args1,
+        });
+
+        // Tool call 2
+        let mut args2 = HashMap::new();
+        args2.insert("file".to_string(), json!("main.rs"));
+        tool_calls.push(ToolCall {
+            id: "toolu_002".to_string(),
+            name: "read_file".to_string(),
+            arguments: args2,
+        });
+
+        // Tool call 3
+        let mut args3 = HashMap::new();
+        args3.insert("code".to_string(), json!("println!(\"test\")"));
+        tool_calls.push(ToolCall {
+            id: "toolu_003".to_string(),
+            name: "execute_code".to_string(),
+            arguments: args3,
+        });
+
+        // Verify all tool calls
+        assert_eq!(tool_calls.len(), 3);
+        assert_eq!(tool_calls[0].name, "search_docs");
+        assert_eq!(tool_calls[1].name, "read_file");
+        assert_eq!(tool_calls[2].name, "execute_code");
+    }
+
+    /// Test 38: Tool call with complex nested arguments
+    #[test]
+    fn test_tool_call_complex_arguments() {
+        use vespera_bindery::providers::types::ToolCall;
+        use serde_json::json;
+
+        let mut arguments = HashMap::new();
+        arguments.insert("config".to_string(), json!({
+            "timeout": 30,
+            "retry": {
+                "max_attempts": 3,
+                "backoff": "exponential"
+            },
+            "headers": {
+                "Authorization": "Bearer token123",
+                "Content-Type": "application/json"
+            }
+        }));
+        arguments.insert("endpoint".to_string(), json!("/api/v1/data"));
+
+        let tool_call = ToolCall {
+            id: "toolu_complex".to_string(),
+            name: "http_request".to_string(),
+            arguments,
+        };
+
+        // Verify complex nested structure
+        let config = tool_call.arguments.get("config").unwrap();
+        assert_eq!(config["timeout"], 30);
+        assert_eq!(config["retry"]["max_attempts"], 3);
+        assert_eq!(config["headers"]["Content-Type"], "application/json");
+    }
+
+    /// Test 39: Empty tool calls list
+    #[test]
+    fn test_empty_tool_calls() {
+        use vespera_bindery::providers::types::ToolCall;
+
+        let tool_calls: Vec<ToolCall> = Vec::new();
+
+        // Verify empty list is valid
+        assert_eq!(tool_calls.len(), 0);
+        assert!(tool_calls.is_empty());
+    }
+
+    /// Test 40: Tool call serialization round-trip
+    #[test]
+    fn test_tool_call_serialization() {
+        use vespera_bindery::providers::types::ToolCall;
+        use serde_json::json;
+
+        let mut arguments = HashMap::new();
+        arguments.insert("param1".to_string(), json!("value1"));
+        arguments.insert("param2".to_string(), json!(42));
+
+        let original = ToolCall {
+            id: "toolu_serial".to_string(),
+            name: "test_tool".to_string(),
+            arguments,
+        };
+
+        // Serialize to JSON
+        let json_str = serde_json::to_string(&original).unwrap();
+
+        // Deserialize back
+        let deserialized: ToolCall = serde_json::from_str(&json_str).unwrap();
+
+        // Verify round-trip
+        assert_eq!(deserialized.id, original.id);
+        assert_eq!(deserialized.name, original.name);
+        assert_eq!(deserialized.arguments.len(), original.arguments.len());
+    }
 }

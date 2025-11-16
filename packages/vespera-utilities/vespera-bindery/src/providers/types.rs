@@ -8,18 +8,16 @@
 //! 2. Future tasks: Gradually migrate call sites to use structured types
 //! 3. Eventually: Deprecate simple parameter methods in favor of structured types
 //!
-//! ## Provider Feature Matrix (Phase 17.5 Task 5)
+//! ## Provider Feature Matrix (Phase 17.5 Tasks 5-6)
 //!
 //! | Provider          | Streaming | Tools | System Prompt | Max Tokens | Context Length |
 //! |-------------------|-----------|-------|---------------|------------|----------------|
-//! | ClaudeCodeProvider| ✅        | ✅ *  | ✅            | 4096-8192  | 200,000        |
+//! | ClaudeCodeProvider| ✅        | ✅    | ✅            | 4096-8192  | 200,000        |
 //! | OllamaProvider    | ✅        | ❌    | ✅            | 2048-4096  | 4,096-8,192    |
-//!
-//! *Tool support exists but parsing not yet implemented (see Task 6)
 //!
 //! ### Claude Code CLI (ClaudeCodeProvider)
 //! - **Streaming**: Full support via stream-json format
-//! - **Tools**: Protocol supports tools, but parsing TODO in claude_code.rs:285
+//! - **Tools**: Full support - extracts tool_use content blocks to ToolCall structs
 //! - **System Prompt**: Supported via --system-prompt flag
 //! - **Max Tokens**: Configurable, defaults to 4096
 //! - **Context**: 200K tokens (Claude Sonnet 4.5)
