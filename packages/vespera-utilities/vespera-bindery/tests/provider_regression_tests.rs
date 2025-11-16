@@ -8,10 +8,12 @@
 //! 2. Provider initialization and configuration
 //! 3. Mock provider implementation (validates trait contract)
 //! 4. Error handling and fallback behavior
+//! 5. NEW in Task 4: Structured type methods (send_chat_request, send_chat_request_stream)
 //!
 //! These tests focus on the Phase 17 Provider API surface, not the PR #85 LlmProvider.
 
 use vespera_bindery::providers::{Provider, ProviderResponse, ProviderUsage, StreamChunk};
+use vespera_bindery::providers::types::{ChatRequest, ChatMessage, ChatResponse, ChatRole, FinishReason, UsageStats};
 use async_trait::async_trait;
 use anyhow::{anyhow, Result};
 use futures::{Stream, stream};
@@ -539,5 +541,205 @@ mod provider_instantiation_tests {
 
         let provider = OllamaProvider::new(config);
         assert_eq!(provider.provider_type(), "ollama");
+    }
+}
+
+// ==================== Structured Type Methods Tests (Task 4) ====================
+// Tests for new send_chat_request and send_chat_request_stream methods
+
+#[cfg(test)]
+mod structured_type_tests {
+    use super::*;
+    use futures::StreamExt;
+
+    /// Test 22: send_chat_request with default implementation
+    #[tokio::test]
+    async fn test_send_chat_request_basic() {
+        let provider = MockPhase17Provider::new("Response from chat request".to_string());
+
+        let request = ChatRequest {
+            messages: vec![ChatMessage::user("Hello")],
+            system_prompt: None,
+            tools: Vec::new(),
+            max_tokens: None,
+            temperature: None,
+            stop_sequences: None,
+        };
+
+        let response = provider
+            .send_chat_request(request, None)
+            .await
+            .expect("send_chat_request should succeed");
+
+        assert_eq!(response.content, "Response from chat request");
+        assert_eq!(response.finish_reason, FinishReason::Stop);
+        assert!(response.tool_calls.is_empty());
+    }
+
+    /// Test 23: send_chat_request with system prompt
+    #[tokio::test]
+    async fn test_send_chat_request_with_system_prompt() {
+        let provider = MockPhase17Provider::new("Response".to_string());
+
+        let request = ChatRequest {
+            messages: vec![ChatMessage::user("Test")],
+            system_prompt: Some("Be helpful".to_string()),
+            tools: Vec::new(),
+            max_tokens: Some(100),
+            temperature: Some(0.7),
+            stop_sequences: None,
+        };
+
+        let response = provider
+            .send_chat_request(request, Some("session-456"))
+            .await
+            .expect("send_chat_request should succeed");
+
+        // Default implementation extracts message and calls send_message
+        assert!(response.content.contains("Response"));
+        assert_eq!(response.usage.prompt_tokens, 10);
+        assert_eq!(response.usage.completion_tokens, 5);
+    }
+
+    /// Test 24: send_chat_request with multi-turn conversation
+    #[tokio::test]
+    async fn test_send_chat_request_multi_turn() {
+        let provider = MockPhase17Provider::new("Reply".to_string());
+
+        let request = ChatRequest {
+            messages: vec![
+                ChatMessage::user("First message"),
+                ChatMessage::assistant("First response"),
+                ChatMessage::user("Second message"),
+            ],
+            system_prompt: None,
+            tools: Vec::new(),
+            max_tokens: None,
+            temperature: None,
+            stop_sequences: None,
+        };
+
+        let response = provider
+            .send_chat_request(request, None)
+            .await
+            .expect("send_chat_request should succeed");
+
+        // Default implementation should extract the last user message
+        assert_eq!(response.content, "Reply");
+    }
+
+    /// Test 25: send_chat_request_stream basic
+    #[tokio::test]
+    async fn test_send_chat_request_stream_basic() {
+        let provider = MockPhase17Provider::new("Streaming response".to_string());
+
+        let request = ChatRequest {
+            messages: vec![ChatMessage::user("Stream test")],
+            system_prompt: None,
+            tools: Vec::new(),
+            max_tokens: None,
+            temperature: None,
+            stop_sequences: None,
+        };
+
+        let streaming_response = provider
+            .send_chat_request_stream(request, None)
+            .await
+            .expect("send_chat_request_stream should succeed");
+
+        // Verify metadata
+        assert!(streaming_response.metadata.provider.contains("mock-phase17"));
+
+        // Collect chunks from stream
+        let chunks: Vec<_> = streaming_response.stream
+            .collect()
+            .await;
+
+        assert!(!chunks.is_empty(), "Should have at least one chunk");
+
+        // First chunk should have content
+        let first_chunk = chunks[0].as_ref().expect("First chunk should be Ok");
+        assert!(!first_chunk.delta.is_empty());
+    }
+
+    /// Test 26: send_chat_request_stream with system prompt
+    #[tokio::test]
+    async fn test_send_chat_request_stream_with_system() {
+        let provider = MockPhase17Provider::new("Response".to_string());
+
+        let request = ChatRequest {
+            messages: vec![ChatMessage::user("Test")],
+            system_prompt: Some("Be concise".to_string()),
+            tools: Vec::new(),
+            max_tokens: Some(50),
+            temperature: Some(0.5),
+            stop_sequences: None,
+        };
+
+        let streaming_response = provider
+            .send_chat_request_stream(request, Some("session-789"))
+            .await
+            .expect("send_chat_request_stream should succeed");
+
+        // Collect all chunks
+        let chunks: Vec<_> = streaming_response.stream
+            .collect()
+            .await;
+
+        assert!(!chunks.is_empty());
+
+        // At least one chunk should have content
+        let has_content = chunks.iter().any(|chunk| {
+            chunk.as_ref().map(|c| !c.delta.is_empty()).unwrap_or(false)
+        });
+        assert!(has_content, "At least one chunk should have content");
+    }
+
+    /// Test 27: ChatRequest with empty messages list
+    #[tokio::test]
+    async fn test_send_chat_request_empty_messages() {
+        let provider = MockPhase17Provider::new("Default".to_string());
+
+        let request = ChatRequest {
+            messages: vec![], // Empty messages
+            system_prompt: Some("System only".to_string()),
+            tools: Vec::new(),
+            max_tokens: None,
+            temperature: None,
+            stop_sequences: None,
+        };
+
+        let response = provider
+            .send_chat_request(request, None)
+            .await
+            .expect("send_chat_request should succeed with empty messages");
+
+        // Default implementation should handle empty messages gracefully
+        assert!(!response.content.is_empty());
+    }
+
+    /// Test 28: Verify UsageStats conversion
+    #[tokio::test]
+    async fn test_send_chat_request_usage_stats() {
+        let provider = MockPhase17Provider::new("Test".to_string());
+
+        let request = ChatRequest {
+            messages: vec![ChatMessage::user("Usage test")],
+            system_prompt: None,
+            tools: Vec::new(),
+            max_tokens: None,
+            temperature: None,
+            stop_sequences: None,
+        };
+
+        let response = provider
+            .send_chat_request(request, None)
+            .await
+            .expect("send_chat_request should succeed");
+
+        // Verify usage stats are properly converted
+        assert_eq!(response.usage.prompt_tokens, 10);
+        assert_eq!(response.usage.completion_tokens, 5);
+        assert_eq!(response.usage.total_tokens, 15);
     }
 }
