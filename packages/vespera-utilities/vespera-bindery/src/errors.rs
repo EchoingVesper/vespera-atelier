@@ -374,6 +374,51 @@ impl From<sqlx::Error> for BinderyError {
     }
 }
 
+impl From<anyhow::Error> for BinderyError {
+    fn from(err: anyhow::Error) -> Self {
+        // Try to downcast to specific error types we know about
+        if let Some(io_err) = err.downcast_ref::<std::io::Error>() {
+            return BinderyError::IoError(io_err.to_string());
+        }
+        if let Some(json_err) = err.downcast_ref::<serde_json::Error>() {
+            return BinderyError::SerializationError(json_err.to_string());
+        }
+        if let Some(yaml_err) = err.downcast_ref::<serde_yaml::Error>() {
+            return BinderyError::SerializationError(format!("YAML error: {}", yaml_err));
+        }
+        // For sqlx::Error, we can't clone it, so we convert via Display trait
+        if let Some(sqlx_err) = err.downcast_ref::<sqlx::Error>() {
+            // Match on the error type using pattern matching on the reference
+            return match sqlx_err {
+                sqlx::Error::RowNotFound => {
+                    BinderyError::NotFound("Database row not found".to_string())
+                }
+                sqlx::Error::Database(db_err) => {
+                    BinderyError::DatabaseQueryError(format!("Database error: {}", db_err))
+                }
+                sqlx::Error::Io(io_err) => {
+                    BinderyError::DatabaseConnectionError(format!("I/O error: {}", io_err))
+                }
+                sqlx::Error::PoolTimedOut => {
+                    BinderyError::DatabaseConnectionError("Connection pool timed out".to_string())
+                }
+                sqlx::Error::PoolClosed => {
+                    BinderyError::DatabaseConnectionError("Connection pool is closed".to_string())
+                }
+                sqlx::Error::WorkerCrashed => {
+                    BinderyError::DatabaseConnectionError("Database worker crashed".to_string())
+                }
+                _ => {
+                    BinderyError::DatabaseError(format!("SQLx error: {}", sqlx_err))
+                }
+            };
+        }
+
+        // If we can't downcast to a specific type, treat as InternalError
+        BinderyError::InternalError(err.to_string())
+    }
+}
+
 #[cfg(feature = "regex")]
 impl From<regex::Error> for BinderyError {
     fn from(err: regex::Error) -> Self {

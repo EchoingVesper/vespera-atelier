@@ -1,0 +1,341 @@
+{
+  // Vespera Template Definition: Claude Code CLI Provider
+  // This template defines how Claude Code CLI provider configurations are structured
+  // Templates enable dynamic provider types without hardcoding
+
+  // ========================================================================
+  // TEMPLATE METADATA
+  // ========================================================================
+
+  template_id: "vespera.templates.provider.claude_code_cli",
+  template_version: "1.0.0",
+  template_name: "Claude Code CLI Provider",
+  content_type: "vespera.provider",
+
+  created_by: "vespera_system",
+  created_at: "2025-01-16T00:00:00.000Z",
+  updated_at: "2025-01-16T09:00:00.000Z",
+
+  description: "Provider configuration for Claude Code CLI integration. Uses claude CLI for accessing Claude models via Claude Max subscription.",
+
+  // Template inheritance
+  extends: ["vespera.templates.base_provider"],
+  mixins: [
+    "vespera.mixins.provider_capabilities",
+    "vespera.mixins.streaming_support"
+  ],
+
+  // ========================================================================
+  // PROVIDER METADATA
+  // ========================================================================
+
+  provider_info: {
+    provider_name: "Claude Code CLI",
+    provider_type: "claude-code-cli",
+    vendor: "Anthropic",
+    authentication_method: "cli_session",  // Uses `claude login`
+    requires_api_key: false,
+    requires_local_installation: true,
+
+    capabilities: {
+      supports_streaming: true,
+      supports_tools: true,
+      supports_system_prompt: true,
+      supports_vision: true,
+      supports_multi_turn: true,
+      max_tokens: 8192,
+      max_context_length: 200000,
+    },
+
+    models: [
+      "claude-sonnet-4",
+      "claude-sonnet-4.5-20250929",
+      "claude-opus-4",
+      "claude-haiku-4"
+    ],
+
+    priority_level: "primary",  // Preferred over API key methods
+    cost_model: "subscription",  // Part of Claude Max subscription
+  },
+
+  // ========================================================================
+  // FIELD DEFINITIONS
+  // ========================================================================
+
+  fields: {
+    // CLI executable path
+    executable_path: {
+      type: "string",
+      default: "/usr/local/bin/claude",
+      required: true,
+
+      ui_hints: {
+        display_name: "CLI Executable Path",
+        widget: "file_path_picker",
+        primary_field: true,
+        file_type_filter: "executable",
+        help_text: "Path to the claude CLI executable. Install via: brew install claude"
+      },
+
+      validation: {
+        path_exists: true,
+        is_executable: true,
+        binary_name_pattern: "claude"
+      }
+    },
+
+    // Model selection
+    model: {
+      type: "enum",
+      values: [
+        "claude-sonnet-4",
+        "claude-sonnet-4.5-20250929",
+        "claude-opus-4",
+        "claude-haiku-4"
+      ],
+      default: "claude-sonnet-4",
+      optional: true,  // CLI will use its default if not specified
+
+      ui_hints: {
+        display_name: "Model",
+        widget: "model_selector",
+        primary_field: true,
+        help_text: "Claude model to use. Leave empty for CLI default."
+      },
+
+      automation_triggers: [
+        {
+          on_change: { to: "claude-opus-4" },
+          actions: [
+            "warn_user:higher_cost",
+            "update_capability_metadata"
+          ]
+        }
+      ]
+    },
+
+    // System prompt override
+    system_prompt: {
+      type: "text",
+      optional: true,
+
+      ui_hints: {
+        display_name: "System Prompt Override",
+        widget: "textarea",
+        secondary_field: true,
+        rows: 5,
+        help_text: "Custom system prompt. Overrides default role behavior."
+      },
+
+      validation: {
+        max_length: 10000,
+        no_control_chars: true
+      }
+    },
+
+    // Token limit
+    max_tokens: {
+      type: "integer",
+      default: 4096,
+      optional: true,
+
+      ui_hints: {
+        display_name: "Max Tokens",
+        widget: "number_input",
+        secondary_field: true,
+        min: 1,
+        max: 8192,
+        help_text: "Maximum tokens in response. Higher = longer responses."
+      },
+
+      validation: {
+        range: [1, 8192],
+        recommended_range: [1024, 4096]
+      }
+    },
+
+    // Temperature
+    temperature: {
+      type: "float",
+      default: 0.7,
+      optional: true,
+
+      ui_hints: {
+        display_name: "Temperature",
+        widget: "slider",
+        secondary_field: true,
+        min: 0.0,
+        max: 1.0,
+        step: 0.1,
+        help_text: "Randomness in responses. Lower = more focused, Higher = more creative."
+      },
+
+      validation: {
+        range: [0.0, 1.0]
+      }
+    },
+
+    // Request timeout
+    timeout: {
+      type: "integer",
+      default: 120,
+      optional: true,
+
+      ui_hints: {
+        display_name: "Timeout (seconds)",
+        widget: "number_input",
+        tertiary_field: true,
+        min: 10,
+        max: 600,
+        help_text: "Request timeout in seconds. Increase for complex tasks."
+      },
+
+      validation: {
+        range: [10, 600]
+      }
+    }
+  },
+
+  // ========================================================================
+  // UI CONFIGURATION
+  // ========================================================================
+
+  ui_configuration: {
+    field_groups: {
+      "Provider Setup": {
+        fields: ["executable_path"],
+        layout: "vertical",
+        primary: true,
+        description: "Claude CLI must be installed and authenticated"
+      },
+
+      "Model Configuration": {
+        fields: ["model", "system_prompt"],
+        layout: "vertical",
+        primary: true
+      },
+
+      "Generation Parameters": {
+        fields: ["max_tokens", "temperature"],
+        layout: "horizontal",
+        secondary: true
+      },
+
+      "Advanced Settings": {
+        fields: ["timeout"],
+        layout: "vertical",
+        tertiary: true,
+        collapsible: true
+      }
+    },
+
+    layout_modes: {
+      compact: {
+        visible_groups: ["Provider Setup", "Model Configuration"],
+        field_size: "small"
+      },
+
+      standard: {
+        visible_groups: ["Provider Setup", "Model Configuration", "Generation Parameters"],
+        field_size: "medium"
+      },
+
+      detailed: {
+        visible_groups: "all",
+        field_size: "large"
+      }
+    }
+  },
+
+  // ========================================================================
+  // INTEGRATION CONFIGURATION
+  // ========================================================================
+
+  integrations: {
+    authentication: {
+      method: "cli_session",
+      setup_instructions: [
+        "1. Install Claude CLI: brew install claude",
+        "2. Authenticate: claude login",
+        "3. Verify: claude --version"
+      ],
+      requires_internet: true,
+      session_persistence: "persistent"  // Stays logged in
+    },
+
+    backend_integration: {
+      provider_manager: {
+        instantiation_class: "ClaudeCodeProvider",
+        config_struct: "ClaudeCodeConfig",
+        supports_hot_reload: true
+      }
+    }
+  },
+
+  // ========================================================================
+  // VALIDATION & HEALTH CHECKS
+  // ========================================================================
+
+  health_checks: {
+    cli_installed: {
+      check: "executable_exists",
+      path_field: "executable_path",
+      severity: "critical"
+    },
+
+    cli_authenticated: {
+      check: "cli_auth_status",
+      command: "claude --version",
+      expected_pattern: "Claude CLI v\\d+\\.\\d+\\.\\d+",
+      severity: "critical"
+    },
+
+    model_available: {
+      check: "model_access",
+      severity: "warning"
+    }
+  },
+
+  // ========================================================================
+  // USAGE EXAMPLES
+  // ========================================================================
+
+  examples: [
+    {
+      name: "Default Configuration",
+      description: "Minimal setup using CLI defaults",
+      configuration: {
+        executable_path: "/usr/local/bin/claude"
+      }
+    },
+
+    {
+      name: "Custom Model & Settings",
+      description: "Specific model with custom parameters",
+      configuration: {
+        executable_path: "/usr/local/bin/claude",
+        model: "claude-opus-4",
+        max_tokens: 8192,
+        temperature: 0.3,
+        system_prompt: "You are an expert software architect."
+      }
+    }
+  ]
+}
+
+/*
+This template definition shows:
+
+1. **Provider Metadata**: Complete provider info including capabilities
+2. **Field Definitions**: All configuration fields with validation and UI hints
+3. **UI Configuration**: Grouped fields for different editing contexts
+4. **Integration Info**: How this provider connects to backend systems
+5. **Health Checks**: Validation rules for provider setup
+6. **Examples**: Common configuration patterns
+
+This enables the ProviderManager to:
+- Load provider configurations dynamically from Codex entries
+- Validate configurations against the template schema
+- Generate UI for provider configuration
+- Perform health checks before instantiation
+*/

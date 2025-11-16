@@ -14,10 +14,11 @@ use tokio::time::sleep;
 use chrono::{DateTime, Utc, TimeZone};
 use uuid::Uuid;
 use serde_json::json;
+use sha2::{Sha256, Digest};
 
 use crate::{
     CodexManager, BinderyConfig, BinderyResult,
-    observability::{MetricsCollector, BinderyMetrics},
+    observability::MetricsCollector,
     database::{Database, DatabasePoolConfig},
     crdt::VesperaCRDT,
     types::{CodexId, UserId},
@@ -52,7 +53,7 @@ pub struct AuditLogEntry {
 /// Mock audit logger for testing
 pub struct MockAuditLogger {
     entries: Arc<tokio::sync::RwLock<Vec<AuditLogEntry>>>,
-    metrics: Arc<MetricsCollector>,
+    _metrics: Arc<MetricsCollector>,
     tamper_detection_enabled: bool,
 }
 
@@ -60,7 +61,7 @@ impl MockAuditLogger {
     pub fn new() -> Self {
         Self {
             entries: Arc::new(tokio::sync::RwLock::new(Vec::new())),
-            metrics: Arc::new(MetricsCollector::new()),
+            _metrics: Arc::new(MetricsCollector::new("audit_logger")),
             tamper_detection_enabled: true,
         }
     }
@@ -79,7 +80,7 @@ impl MockAuditLogger {
         // Calculate integrity hash
         let content = format!("{:?}|{}|{:?}|{:?}|{}",
             event_type, timestamp.timestamp(), user_id, codex_id, payload);
-        let integrity_hash = format!("{:x}", sha2::Sha256::digest(content.as_bytes()));
+        let integrity_hash = format!("{:x}", Sha256::digest(content.as_bytes()));
 
         // Get previous hash for chain verification
         let previous_hash = {
@@ -103,8 +104,8 @@ impl MockAuditLogger {
             entries.push(entry);
         }
 
-        // Update metrics
-        self.metrics.record_audit_event().await;
+        // Note: In a real implementation, this would record audit metrics
+        // For now, we skip the metric recording since the API doesn't support it directly
 
         Ok(id)
     }
@@ -118,7 +119,7 @@ impl MockAuditLogger {
             let content = format!("{:?}|{}|{:?}|{:?}|{}",
                 entry.event_type, entry.timestamp.timestamp(),
                 entry.user_id, entry.codex_id, entry.payload);
-            let expected_hash = format!("{:x}", sha2::Sha256::digest(content.as_bytes()));
+            let expected_hash = format!("{:x}", Sha256::digest(content.as_bytes()));
 
             if entry.integrity_hash != expected_hash {
                 return Ok(false);

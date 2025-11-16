@@ -13,6 +13,7 @@
 pub mod claude_code;
 pub mod ollama;
 pub mod manager;
+pub mod types;
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
@@ -59,6 +60,9 @@ pub struct StreamChunk {
 /// Provider trait - all providers must implement this
 #[async_trait]
 pub trait Provider: Send + Sync {
+    // ==================== Legacy Methods (Phase 17) ====================
+    // These use simple string parameters for backward compatibility
+
     /// Send a message to the provider and get a response
     async fn send_message(
         &self,
@@ -78,6 +82,100 @@ pub trait Provider: Send + Sync {
         system_prompt: Option<&str>,
     ) -> Result<Box<dyn futures::Stream<Item = Result<StreamChunk, anyhow::Error>> + Unpin + Send>, anyhow::Error>;
 
+    // ==================== New Methods (PR #85 Integration) ====================
+    // These use structured types for richer functionality
+
+    /// Send a structured chat request (new in Phase 17.5)
+    ///
+    /// This method uses the richer ChatRequest/ChatResponse types from PR #85,
+    /// enabling features like multi-turn conversations, tool calling, etc.
+    ///
+    /// Default implementation converts to simple parameters and calls send_message().
+    /// Providers can override for native support.
+    async fn send_chat_request(
+        &self,
+        request: types::ChatRequest,
+        session_id: Option<&str>,
+    ) -> Result<types::ChatResponse, anyhow::Error> {
+        // Default implementation: Convert ChatRequest to simple parameters
+        // Extract the last user message
+        let user_message = request.messages.iter()
+            .rev()
+            .find(|msg| matches!(msg.role, types::ChatRole::User))
+            .map(|msg| msg.content.as_str())
+            .unwrap_or("");
+
+        // Call legacy send_message
+        let response = self.send_message(
+            user_message,
+            None, // No model override in ChatRequest
+            session_id,
+            request.system_prompt.as_deref(),
+            false, // Non-streaming
+        ).await?;
+
+        // Convert ProviderResponse back to ChatResponse
+        Ok(types::ChatResponse {
+            content: response.text,
+            finish_reason: types::FinishReason::Stop, // Assume stop for legacy
+            tool_calls: Vec::new(), // No tool calls in legacy
+            usage: types::UsageStats {
+                prompt_tokens: response.usage.as_ref().map(|u| u.input_tokens as u32).unwrap_or(0),
+                completion_tokens: response.usage.as_ref().map(|u| u.output_tokens as u32).unwrap_or(0),
+                total_tokens: response.usage.as_ref().map(|u| (u.input_tokens + u.output_tokens) as u32).unwrap_or(0),
+            },
+        })
+    }
+
+    /// Send a structured chat request with streaming (new in Phase 17.5)
+    ///
+    /// This method uses the richer streaming types from PR #85.
+    ///
+    /// Default implementation converts to simple parameters and calls send_message_stream().
+    /// Providers can override for native support.
+    async fn send_chat_request_stream(
+        &self,
+        request: types::ChatRequest,
+        session_id: Option<&str>,
+    ) -> Result<types::StreamingResponse, anyhow::Error> {
+        // Default implementation: Convert ChatRequest to simple parameters
+        let user_message = request.messages.iter()
+            .rev()
+            .find(|msg| matches!(msg.role, types::ChatRole::User))
+            .map(|msg| msg.content.as_str())
+            .unwrap_or("");
+
+        // Call legacy send_message_stream
+        let stream = self.send_message_stream(
+            user_message,
+            None,
+            session_id,
+            request.system_prompt.as_deref(),
+        ).await?;
+
+        // Convert StreamChunk stream to ChatChunk stream
+        use futures::StreamExt;
+        let chat_stream = stream.map(|result| {
+            result.map(|chunk| types::ChatChunk {
+                delta: chunk.text.unwrap_or_default(),
+                finish_reason: if chunk.is_final { Some(types::FinishReason::Stop) } else { None },
+                tool_calls: Vec::new(),
+                usage: None,
+            })
+        });
+
+        Ok(types::StreamingResponse {
+            stream: Box::pin(chat_stream),
+            metadata: types::ResponseMetadata {
+                model: "unknown".to_string(),
+                provider: self.provider_type().to_string(),
+                request_id: None,
+            },
+        })
+    }
+
+    // ==================== Common Methods ====================
+
     /// Health check - returns true if provider is operational
     async fn health_check(&self) -> Result<bool, anyhow::Error>;
 
@@ -86,6 +184,23 @@ pub trait Provider: Send + Sync {
 
     /// Get provider display name
     fn display_name(&self) -> &str;
+
+    /// Get provider capabilities (new in Phase 17.5 Task 5)
+    ///
+    /// Returns information about what features this provider supports,
+    /// enabling runtime feature detection and graceful degradation.
+    ///
+    /// Default implementation returns conservative defaults (no special features).
+    /// Providers should override to report their actual capabilities.
+    fn capabilities(&self) -> types::ProviderCapabilities {
+        types::ProviderCapabilities {
+            supports_streaming: false,
+            supports_tools: false,
+            supports_system_prompt: true, // Most providers support this
+            max_tokens: 4096,
+            max_context_length: 8192,
+        }
+    }
 }
 
 /// Provider configuration loaded from Codex entry

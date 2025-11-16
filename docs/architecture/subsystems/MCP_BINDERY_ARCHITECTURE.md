@@ -125,7 +125,123 @@ Lifecycle management for the Rust Bindery server:
 - **Health Monitoring**: HTTP health endpoint checking
 - **Graceful Shutdown**: SIGTERM with fallback to SIGKILL
 
-### 5. Rust Bindery Backend (`server.rs`)
+### 5. Provider System Architecture (`src/providers/`)
+
+**Phase 17.5**: Unified LLM provider system supporting multiple backends with tool calling.
+
+#### Provider Trait Architecture
+
+All providers implement a common `Provider` trait with dual API support:
+
+**Legacy Methods** (Phase 17 compatibility):
+- `send_message()`: Simple string-based messaging
+- `send_message_stream()`: Streaming with string parameters
+
+**Structured Methods** (PR #85 integration):
+- `send_chat_request()`: Full ChatRequest/ChatResponse support
+- `send_chat_request_stream()`: Streaming with structured types
+- `capabilities()`: Runtime feature detection
+
+#### Supported Providers
+
+**ClaudeCodeProvider** (`src/providers/claude_code.rs`):
+- **Streaming**: Full support via stream-json format
+- **Tools**: Full support - extracts tool_use content blocks to ToolCall structs
+- **System Prompt**: Supported via --system-prompt flag
+- **Max Tokens**: Configurable, defaults to 4096
+- **Context**: 200K tokens (Claude Sonnet 4.5)
+- **Secret Storage**: API keys via system keyring backend
+
+**OllamaProvider** (`src/providers/ollama.rs`):
+- **Streaming**: Full support via newline-delimited JSON
+- **Tools**: Not supported (model-dependent)
+- **System Prompt**: Supported via system field in API
+- **Max Tokens**: Configurable, defaults to 2048
+- **Context**: Configurable context_window, defaults to 4096
+- **Deployment**: Local LLM server, no authentication
+
+#### Tool Calling Support
+
+ClaudeCodeProvider extracts tool calls from Claude's stream-json format:
+
+```rust
+// ContentBlock with tool_use support
+struct ContentBlock {
+    r#type: String,
+    // For text blocks
+    text: Option<String>,
+    // For tool_use blocks
+    id: Option<String>,
+    name: Option<String>,
+    input: Option<Value>,
+}
+
+// Extracted to ToolCall struct
+pub struct ToolCall {
+    pub id: String,
+    pub name: String,
+    pub arguments: HashMap<String, serde_json::Value>,
+}
+```
+
+Tool calls are extracted during streaming and included in both streaming chunks and final responses.
+
+#### Template-Driven Configuration
+
+Providers are configured via JSON5 template files (`templates/providers/`):
+
+**Template Structure**:
+```json5
+{
+  templateId: "provider.claude-code-cli",
+  name: "Claude Code CLI Provider",
+  category: "providers",
+  fields: {
+    executable_path: { type: "string", default: "/usr/local/bin/claude" },
+    model: { type: "enum", values: ["claude-sonnet-4", ...] },
+    api_key: { type: "secret", backend: "system-keyring" },
+    max_tokens: { type: "integer", default: 4096 }
+  },
+  health_check: {
+    command: ["{{executable_path}}", "--version"],
+    expected_pattern: "claude"
+  }
+}
+```
+
+This enables:
+- Adding new providers without code changes
+- Consistent configuration UI across providers
+- Secure secret storage via system keyring
+- Health checks and validation
+
+#### Secret Storage Backend
+
+API keys and sensitive credentials use the system keyring backend:
+
+**Storage**: Platform-specific secure storage
+- Linux: Secret Service API (GNOME Keyring, KWallet)
+- macOS: Keychain
+- Windows: Credential Manager
+
+**Access Pattern**:
+```rust
+// Store secret during setup
+keyring.set_secret("claude_api_key", api_key)?;
+
+// Retrieve at runtime
+let api_key = keyring.get_secret("claude_api_key")?;
+```
+
+Secrets are never stored in:
+- Configuration files
+- Environment variables (runtime only)
+- Git repositories
+- Log files
+
+See [SECRET_STORAGE_SETUP.md](../../guides/SECRET_STORAGE_SETUP.md) for setup instructions.
+
+### 6. Rust Bindery Backend (`server.rs`)
 
 High-performance Rust server with optimized database handling:
 
@@ -277,12 +393,19 @@ RUST_LOG=info                # Rust logging level
 
 ## Future Enhancements
 
+### Recently Implemented (Phase 17.5)
+1. ✅ **Tool Calling Support**: Full tool extraction from Claude's stream-json format
+2. ✅ **Template-Driven Providers**: JSON5 configuration for extensibility
+3. ✅ **Unified Provider System**: Merged PR #85 and Phase 17 architectures
+4. ✅ **Secret Storage**: System keyring backend integration
+
 ### Planned Improvements
 1. **Distributed Caching**: Redis integration for multi-instance deployments
 2. **Metrics Export**: Prometheus/OpenTelemetry support
 3. **WebSocket Support**: Real-time updates for long-running operations
 4. **Database Migration**: PostgreSQL support for larger deployments
 5. **Rate Limiting**: Per-client request throttling
+6. **Additional Providers**: OpenAI, Anthropic API direct, Gemini support
 
 ### Scalability Path
 1. **Horizontal Scaling**: Multiple MCP server instances

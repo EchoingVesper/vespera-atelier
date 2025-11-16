@@ -897,13 +897,13 @@ mod tests {
 
         // Test successful operation
         let result = breaker.execute(|| {
-            Box::pin(async { Ok::<i32, anyhow::Error>(42) })
+            Box::pin(async { Ok::<i32, BinderyError>(42) })
         }).await;
 
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), 42);
 
-        let metrics = breaker.get_metrics().await.unwrap();
+        let metrics = breaker.get_metrics().await;
         assert_eq!(metrics.state, CircuitState::Closed);
         assert_eq!(metrics.total_requests, 1);
         assert_eq!(metrics.failed_requests, 0);
@@ -926,26 +926,26 @@ mod tests {
 
         // First failure
         let result1 = breaker.execute(|| {
-            Box::pin(async { Err::<i32, anyhow::Error>(anyhow::anyhow!("test error")) })
+            Box::pin(async { Err::<i32, BinderyError>(BinderyError::InternalError("test error".to_string())) })
         }).await;
         assert!(result1.is_err());
 
-        let metrics = breaker.get_metrics().await.unwrap();
+        let metrics = breaker.get_metrics().await;
         assert_eq!(metrics.state, CircuitState::Closed);
         assert_eq!(metrics.failure_count, 1);
 
         // Second failure - should open circuit
         let result2 = breaker.execute(|| {
-            Box::pin(async { Err::<i32, anyhow::Error>(anyhow::anyhow!("test error")) })
+            Box::pin(async { Err::<i32, BinderyError>(BinderyError::InternalError("test error".to_string())) })
         }).await;
         assert!(result2.is_err());
 
-        let metrics = breaker.get_metrics().await.unwrap();
+        let metrics = breaker.get_metrics().await;
         assert_eq!(metrics.state, CircuitState::Open);
 
         // Third request should be rejected immediately
         let result3 = breaker.execute(|| {
-            Box::pin(async { Ok::<i32, anyhow::Error>(42) })
+            Box::pin(async { Ok::<i32, BinderyError>(42) })
         }).await;
         assert!(result3.is_err());
         assert!(result3.unwrap_err().to_string().contains("Circuit breaker is OPEN"));
@@ -968,10 +968,10 @@ mod tests {
 
         // Cause failure to open circuit
         let _ = breaker.execute(|| {
-            Box::pin(async { Err::<i32, anyhow::Error>(anyhow::anyhow!("test error")) })
+            Box::pin(async { Err::<i32, BinderyError>(BinderyError::InternalError("test error".to_string())) })
         }).await;
 
-        let metrics = breaker.get_metrics().await.unwrap();
+        let metrics = breaker.get_metrics().await;
         assert_eq!(metrics.state, CircuitState::Open);
 
         // Wait for recovery timeout
@@ -979,11 +979,11 @@ mod tests {
 
         // Next request should transition to half-open and succeed
         let result = breaker.execute(|| {
-            Box::pin(async { Ok::<i32, anyhow::Error>(42) })
+            Box::pin(async { Ok::<i32, BinderyError>(42) })
         }).await;
         assert!(result.is_ok());
 
-        let metrics = breaker.get_metrics().await.unwrap();
+        let metrics = breaker.get_metrics().await;
         assert_eq!(metrics.state, CircuitState::Closed);
     }
 
@@ -1028,7 +1028,7 @@ mod tests {
 
         // This should take at least 10 + 20 + 40 = 70ms due to backoff
         let result = breaker.execute(|| {
-            Box::pin(async { Err::<i32, anyhow::Error>(anyhow::anyhow!("test error")) })
+            Box::pin(async { Err::<i32, BinderyError>(BinderyError::InternalError("test error".to_string())) })
         }).await;
 
         let elapsed = start_time.elapsed();
@@ -1055,7 +1055,7 @@ mod tests {
         let result = breaker.execute(|| {
             Box::pin(async {
                 sleep(Duration::from_millis(100)).await;
-                Ok::<i32, anyhow::Error>(42)
+                Ok::<i32, BinderyError>(42)
             })
         }).await;
 

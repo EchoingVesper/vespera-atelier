@@ -19,11 +19,11 @@ use crate::{
     CodexManager, BinderyConfig, BinderyResult,
     crdt::VesperaCRDT,
     database::{Database, DatabasePoolConfig, TaskInput},
-    observability::{MetricsCollector, BinderyMetrics, AuditLogger, AuditConfig, AuditEvent, UserContext, Operation},
+    observability::{BinderyMetrics, AuditLogger, AuditConfig, AuditEvent, UserContext, Operation, OperationOutcome, SecurityContext},
     task_management::{TaskManager, TaskStatus, TaskPriority},
     role_management::{RoleManager, RoleExecutor},
     types::{CodexId, UserId},
-    tests::utils::{create_test_crdt, TestDataGenerator},
+    tests::utils::{create_test_crdt, TestDataGenerator, set_text_field},
     GarbageCollectionConfig,
 };
 
@@ -110,7 +110,6 @@ pub struct E2EPerformanceHarness {
     codex_manager: Arc<CodexManager>,
     database: Arc<Database>,
     audit_logger: Option<Arc<AuditLogger>>,
-    metrics_collector: Arc<MetricsCollector>,
     task_manager: Arc<TaskManager>,
     role_manager: Arc<RoleManager>,
 }
@@ -158,14 +157,12 @@ impl E2EPerformanceHarness {
         let codex_manager = Arc::new(CodexManager::with_config(bindery_config)?);
         let task_manager = codex_manager.get_task_manager();
         let role_manager = Arc::new(RoleManager::default());
-        let metrics_collector = Arc::new(MetricsCollector::new());
 
         Ok(Self {
             config,
             codex_manager,
             database,
             audit_logger,
-            metrics_collector,
             task_manager,
             role_manager,
         })
@@ -192,7 +189,6 @@ impl E2EPerformanceHarness {
             let codex_manager = self.codex_manager.clone();
             let database = self.database.clone();
             let audit_logger = self.audit_logger.clone();
-            let metrics_collector = self.metrics_collector.clone();
             let task_manager = self.task_manager.clone();
             let user_id = user_id.clone();
             let operations_count = self.config.operations_per_user;
@@ -212,7 +208,6 @@ impl E2EPerformanceHarness {
                         &codex_manager,
                         &database,
                         &audit_logger,
-                        &metrics_collector,
                         &task_manager,
                     ).await {
                         Ok(_) => {
@@ -239,7 +234,6 @@ impl E2EPerformanceHarness {
 
         // Monitor system during test
         let monitor_handle = tokio::spawn({
-            let metrics_collector = self.metrics_collector.clone();
             let test_duration = Duration::from_secs(self.config.duration_seconds);
 
             async move {
@@ -249,7 +243,7 @@ impl E2EPerformanceHarness {
                 while start.elapsed() < test_duration {
                     let memory_usage = Self::get_memory_usage_mb();
                     memory_samples.push(memory_usage);
-                    metrics_collector.record_memory_usage(memory_usage).await;
+                    BinderyMetrics::set_memory_usage(memory_usage as u64);
 
                     sleep(Duration::from_secs(1)).await;
                 }
@@ -295,7 +289,6 @@ impl E2EPerformanceHarness {
         codex_manager: &Arc<CodexManager>,
         database: &Arc<Database>,
         audit_logger: &Option<Arc<AuditLogger>>,
-        metrics_collector: &Arc<MetricsCollector>,
         task_manager: &Arc<TaskManager>,
     ) -> BinderyResult<()> {
         // Randomize operation type based on worker and operation ID
@@ -309,10 +302,9 @@ impl E2EPerformanceHarness {
                     "test_template"
                 ).await?;
 
-                if let Some(crdt) = codex_manager.get_codex(&codex_id).await {
-                    // Simulate CRDT operations
-                    // Note: In real implementation, these would be actual CRDT operations
-                    metrics_collector.record_operation("codex_creation", 1.0).await;
+                if let Some(_crdt) = codex_manager.get_codex(&codex_id).await {
+                    // Record metrics using static method
+                    BinderyMetrics::record_task_created("codex_creation");
                 }
             },
             1 => {
@@ -329,39 +321,57 @@ impl E2EPerformanceHarness {
                 };
 
                 let _task_id = database.create_task(&task_input).await?;
-                metrics_collector.record_operation("task_creation", 1.0).await;
+                BinderyMetrics::record_task_created("task_creation");
             },
             2 => {
                 // Audit logging
                 if let Some(audit_logger) = audit_logger {
                     let user_context = UserContext {
-                        user_id: user_id.clone(),
-                        session_id: format!("session_{}_{}", worker_id, operation_id),
-                        ip_address: Some("127.0.0.1".to_string()),
+                        user_id: Some(user_id.clone()),
+                        session_id: Some(format!("session_{}_{}", worker_id, operation_id)),
+                        source_ip: Some("127.0.0.1".to_string()),
                         user_agent: Some("E2E Performance Test".to_string()),
                     };
 
+                    let mut details = HashMap::new();
+                    details.insert("worker_id".to_string(), json!(worker_id));
+                    details.insert("operation_id".to_string(), json!(operation_id));
+                    details.insert("test_type".to_string(), json!("e2e_performance"));
+
                     let operation = Operation {
                         operation_type: "performance_test".to_string(),
-                        resource_type: "test_resource".to_string(),
-                        resource_id: Some(format!("resource_{}_{}", worker_id, operation_id)),
-                        details: Some(json!({
-                            "worker_id": worker_id,
-                            "operation_id": operation_id,
-                            "test_type": "e2e_performance"
-                        })),
+                        action: "test_operation".to_string(),
+                        resource: format!("test_resource_{}_{}", worker_id, operation_id),
+                        details,
+                    };
+
+                    let security_context = crate::observability::SecurityContext {
+                        roles: vec!["tester".to_string()],
+                        permissions: vec!["test:execute".to_string()],
+                        security_level: Some("standard".to_string()),
+                        auth_method: None,
                     };
 
                     let audit_event = AuditEvent {
+                        id: Uuid::new_v4().to_string(),
                         user_context,
                         operation,
-                        outcome: crate::observability::OperationOutcome::Success,
+                        outcome: OperationOutcome {
+                            success: true,
+                            result_code: Some(200),
+                            error_message: None,
+                            duration_ms: 1,
+                            records_affected: Some(1),
+                        },
                         timestamp: Utc::now(),
-                        security_context: None,
+                        security_context,
+                        event_hash: "test_hash".to_string(),
+                        metadata: HashMap::new(),
+                        previous_hash: None,
                     };
 
                     audit_logger.log_event(audit_event).await?;
-                    metrics_collector.record_operation("audit_logging", 1.0).await;
+                    BinderyMetrics::record_task_created("audit_logging");
                 }
             },
             3 => {
@@ -374,7 +384,7 @@ impl E2EPerformanceHarness {
                 for i in 0..50 {
                     let field_name = format!("temp_field_{}", i);
                     let field_value = format!("temp_value_{}_{}", i, "x".repeat(20));
-                    temp_crdt.set_text_field(&field_name, &field_value);
+                    set_text_field(&mut temp_crdt, &field_name, &field_value);
                 }
 
                 // Trigger garbage collection
@@ -384,7 +394,7 @@ impl E2EPerformanceHarness {
                     10,
                 );
 
-                metrics_collector.record_operation("gc_operations", 1.0).await;
+                BinderyMetrics::record_task_created("gc_operations");
             },
             4 => {
                 // Query operations
@@ -392,7 +402,7 @@ impl E2EPerformanceHarness {
                 let _pool_metrics = database.get_pool_metrics().await;
                 let _memory_stats = codex_manager.memory_stats().await;
 
-                metrics_collector.record_operation("query_operations", 1.0).await;
+                BinderyMetrics::record_task_created("query_operations");
             },
             _ => unreachable!(),
         }
@@ -420,7 +430,7 @@ impl E2EPerformanceHarness {
 
         let operations_per_second = total_operations as f64 / total_duration.as_secs_f64();
         let average_response_time_ms = if !all_response_times.is_empty() {
-            all_response_times.iter().map(|d| d.as_millis() as f64).sum::<f64>() / all_response_times.len() as f64
+            all_response_times.iter().map(|d: &Duration| d.as_millis() as f64).sum::<f64>() / all_response_times.len() as f64
         } else {
             0.0
         };
@@ -447,14 +457,9 @@ impl E2EPerformanceHarness {
             memory_usage_mb: 0.0, // Would need actual measurement
         });
 
-        // Metrics component stats
-        let metrics = self.metrics_collector.get_metrics().await;
-        let total_metric_operations: usize = metrics.values()
-            .map(|values| values.len())
-            .sum();
-
+        // Metrics component stats (stubbed since metrics is push-based)
         component_stats.insert("metrics".to_string(), ComponentStats {
-            operation_count: total_metric_operations,
+            operation_count: total_operations,
             average_duration_ms: 0.0, // Would need actual measurement
             error_count: 0,
             memory_usage_mb: 0.0,

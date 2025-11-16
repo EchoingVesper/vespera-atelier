@@ -92,6 +92,13 @@ config = "0.14"
 # Additional dependencies for task management, role system, and hooks
 regex = "1.10"
 
+# LLM provider dependencies
+which = "6.0"
+base64 = "0.22"
+
+# Secret storage (Phase 17.5)
+keyring = { version = "3.0", features = ["async-secret-service", "tokio", "crypto-rust"] }
+
 # CLI parsing
 clap = { version = "4.4", features = ["derive"] }
 
@@ -110,7 +117,7 @@ ort = { version = "2.0.0-rc.8", optional = true }
 tokenizers = { version = "0.20", optional = true }
 hf-hub = { version = "0.3", optional = true }
 
-# API clients for external embeddings and provider HTTP communication
+# API clients for external embeddings and LLM providers
 reqwest = { version = "0.12", features = ["json", "rustls-tls", "stream"], default-features = false }
 
 # Environment variables for API keys
@@ -163,7 +170,7 @@ hook-system = []
 # Embedding features
 embeddings-local = ["candle-core", "candle-nn", "candle-transformers", "tokenizers", "hf-hub"]
 embeddings-onnx = ["ort", "tokenizers", "hf-hub"]
-embeddings-api = ["dotenvy"]
+embeddings-api = ["dotenvy"]  # reqwest is now always available
 embeddings-all = ["embeddings-local", "embeddings-onnx", "embeddings-api"]
 
 # Observability features

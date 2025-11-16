@@ -15,8 +15,10 @@ use rand_xorshift::XorShiftRng;
 use crate::{
     crdt::{
         VesperaCRDT, CRDTOperation, OperationType, TemplateValue, CodexReference,
-        ReferenceType, CRDTLayer, LWWMap, ORSet, ORTag, LWWEntry, MemoryStats, GCStats
+        ReferenceType, CRDTLayer, LWWMap, ORSet, MemoryStats, GarbageCollectionStats
     },
+    crdt::metadata_layer::LWWEntry,
+    crdt::reference_layer::ORTag,
     types::{CodexId, UserId, VectorClock},
     tests::utils::{create_test_crdt, TestDataGenerator, assert_crdt_convergence},
     GarbageCollectionConfig,
@@ -40,6 +42,15 @@ fn arb_timestamp() -> impl Strategy<Value = DateTime<Utc>> {
         .prop_map(|secs| Utc::now() - Duration::seconds(secs))
 }
 
+/// Generate arbitrary JSON values for testing
+fn arb_json_value() -> impl Strategy<Value = serde_json::Value> {
+    prop_oneof![
+        any::<String>().prop_map(serde_json::Value::String),
+        any::<i64>().prop_map(|n| serde_json::json!(n)),
+        any::<bool>().prop_map(serde_json::Value::Bool),
+    ]
+}
+
 /// Generate arbitrary TemplateValue for testing
 fn arb_template_value() -> impl Strategy<Value = TemplateValue> {
     prop_oneof![
@@ -49,13 +60,13 @@ fn arb_template_value() -> impl Strategy<Value = TemplateValue> {
                 timestamp,
                 user_id,
             }),
-        (any::<CodexId>(), arb_timestamp(), arb_user_id())
+        (arb_codex_id(), arb_timestamp(), arb_user_id())
             .prop_map(|(codex_id, timestamp, user_id)| TemplateValue::Reference {
                 codex_id,
                 timestamp,
                 user_id,
             }),
-        (proptest::arbitrary::any::<serde_json::Value>(), arb_timestamp(), arb_user_id())
+        (arb_json_value(), arb_timestamp(), arb_user_id())
             .prop_map(|(value, timestamp, user_id)| TemplateValue::Structured {
                 value,
                 timestamp,
@@ -182,24 +193,30 @@ mod property_tests {
         fn test_operation_commutativity(
             codex_id in arb_codex_id(),
             user_id in arb_user_id(),
-            operations in prop::collection::vec(arb_crdt_operation(codex_id), 1..=10)
         ) {
-            // Create two identical CRDTs
-            let mut crdt1 = VesperaCRDT::new(codex_id, user_id.clone());
-            let mut crdt2 = VesperaCRDT::new(codex_id, user_id.clone());
+            // Generate operations using the codex_id
+            let strategy = prop::collection::vec(arb_crdt_operation(codex_id), 1..=10);
+            let mut runner = TestRunner::default();
 
-            // Apply operations in original order to crdt1
-            for op in &operations {
-                let _ = crdt1.apply_operation(op.clone());
-            }
+            runner.run(&strategy, |operations| {
+                // Create two identical CRDTs
+                let mut crdt1 = VesperaCRDT::new(codex_id, user_id.clone());
+                let mut crdt2 = VesperaCRDT::new(codex_id, user_id.clone());
 
-            // Apply operations in reverse order to crdt2
-            for op in operations.iter().rev() {
-                let _ = crdt2.apply_operation(op.clone());
-            }
+                // Apply operations in original order to crdt1
+                for op in &operations {
+                    let _ = crdt1.apply_operation(op.clone());
+                }
 
-            // CRDTs should converge to the same state regardless of operation order
-            assert_crdt_convergence(&crdt1, &crdt2);
+                // Apply operations in reverse order to crdt2
+                for op in operations.iter().rev() {
+                    let _ = crdt2.apply_operation(op.clone());
+                }
+
+                // CRDTs should converge to the same state regardless of operation order
+                assert_crdt_convergence(&crdt1, &crdt2);
+                Ok(())
+            }).unwrap();
         }
     }
 
@@ -209,41 +226,47 @@ mod property_tests {
         fn test_merge_associativity(
             codex_id in arb_codex_id(),
             user_ids in prop::collection::vec(arb_user_id(), 3..=3),
-            operations_per_crdt in prop::collection::vec(
+        ) {
+            // Generate operations for each CRDT
+            let strategy = prop::collection::vec(
                 prop::collection::vec(arb_crdt_operation(codex_id), 1..=5),
                 3..=3
-            )
-        ) {
-            // Create three CRDTs
-            let mut crdt_a = VesperaCRDT::new(codex_id, user_ids[0].clone());
-            let mut crdt_b = VesperaCRDT::new(codex_id, user_ids[1].clone());
-            let mut crdt_c = VesperaCRDT::new(codex_id, user_ids[2].clone());
+            );
+            let mut runner = TestRunner::default();
 
-            // Apply different operations to each CRDT
-            for op in &operations_per_crdt[0] {
-                let _ = crdt_a.apply_operation(op.clone());
-            }
-            for op in &operations_per_crdt[1] {
-                let _ = crdt_b.apply_operation(op.clone());
-            }
-            for op in &operations_per_crdt[2] {
-                let _ = crdt_c.apply_operation(op.clone());
-            }
+            runner.run(&strategy, |operations_per_crdt| {
+                // Create three CRDTs
+                let mut crdt_a = VesperaCRDT::new(codex_id, user_ids[0].clone());
+                let mut crdt_b = VesperaCRDT::new(codex_id, user_ids[1].clone());
+                let mut crdt_c = VesperaCRDT::new(codex_id, user_ids[2].clone());
 
-            // Test (A ∪ B) ∪ C
-            let mut test1_ab = crdt_a.clone();
-            let _ = test1_ab.merge(&crdt_b);
-            let mut test1_result = test1_ab;
-            let _ = test1_result.merge(&crdt_c);
+                // Apply different operations to each CRDT
+                for op in &operations_per_crdt[0] {
+                    let _ = crdt_a.apply_operation(op.clone());
+                }
+                for op in &operations_per_crdt[1] {
+                    let _ = crdt_b.apply_operation(op.clone());
+                }
+                for op in &operations_per_crdt[2] {
+                    let _ = crdt_c.apply_operation(op.clone());
+                }
 
-            // Test A ∪ (B ∪ C)
-            let mut test2_bc = crdt_b.clone();
-            let _ = test2_bc.merge(&crdt_c);
-            let mut test2_result = crdt_a.clone();
-            let _ = test2_result.merge(&test2_bc);
+                // Test (A ∪ B) ∪ C
+                let mut test1_ab = crdt_a.clone();
+                let _ = test1_ab.merge(&crdt_b);
+                let mut test1_result = test1_ab;
+                let _ = test1_result.merge(&crdt_c);
 
-            // Results should be equivalent
-            assert_crdt_convergence(&test1_result, &test2_result);
+                // Test A ∪ (B ∪ C)
+                let mut test2_bc = crdt_b.clone();
+                let _ = test2_bc.merge(&crdt_c);
+                let mut test2_result = crdt_a.clone();
+                let _ = test2_result.merge(&test2_bc);
+
+                // Results should be equivalent
+                assert_crdt_convergence(&test1_result, &test2_result);
+                Ok(())
+            }).unwrap();
         }
     }
 
@@ -253,24 +276,29 @@ mod property_tests {
         fn test_operation_idempotency(
             codex_id in arb_codex_id(),
             user_id in arb_user_id(),
-            operations in prop::collection::vec(arb_crdt_operation(codex_id), 1..=5)
         ) {
-            let mut crdt1 = VesperaCRDT::new(codex_id, user_id.clone());
-            let mut crdt2 = VesperaCRDT::new(codex_id, user_id.clone());
+            let strategy = prop::collection::vec(arb_crdt_operation(codex_id), 1..=5);
+            let mut runner = TestRunner::default();
 
-            // Apply operations once to crdt1
-            for op in &operations {
-                let _ = crdt1.apply_operation(op.clone());
-            }
+            runner.run(&strategy, |operations| {
+                let mut crdt1 = VesperaCRDT::new(codex_id, user_id.clone());
+                let mut crdt2 = VesperaCRDT::new(codex_id, user_id.clone());
 
-            // Apply operations twice to crdt2
-            for op in &operations {
-                let _ = crdt2.apply_operation(op.clone());
-                let _ = crdt2.apply_operation(op.clone()); // Apply again
-            }
+                // Apply operations once to crdt1
+                for op in &operations {
+                    let _ = crdt1.apply_operation(op.clone());
+                }
 
-            // Both CRDTs should have the same state
-            assert_crdt_convergence(&crdt1, &crdt2);
+                // Apply operations twice to crdt2
+                for op in &operations {
+                    let _ = crdt2.apply_operation(op.clone());
+                    let _ = crdt2.apply_operation(op.clone()); // Apply again
+                }
+
+                // Both CRDTs should have the same state
+                assert_crdt_convergence(&crdt1, &crdt2);
+                Ok(())
+            }).unwrap();
         }
     }
 
@@ -507,25 +535,30 @@ mod property_tests {
         fn test_merge_idempotency(
             codex_id in arb_codex_id(),
             user_id in arb_user_id(),
-            operations in prop::collection::vec(arb_crdt_operation(codex_id), 1..=5)
         ) {
-            let mut source_crdt = VesperaCRDT::new(codex_id, user_id.clone());
-            let mut target_crdt = VesperaCRDT::new(codex_id, user_id.clone());
+            let strategy = prop::collection::vec(arb_crdt_operation(codex_id), 1..=5);
+            let mut runner = TestRunner::default();
 
-            // Apply operations to source CRDT
-            for op in &operations {
-                let _ = source_crdt.apply_operation(op.clone());
-            }
+            runner.run(&strategy, |operations| {
+                let mut source_crdt = VesperaCRDT::new(codex_id, user_id.clone());
+                let mut target_crdt = VesperaCRDT::new(codex_id, user_id.clone());
 
-            // Merge source into target once
-            let _ = target_crdt.merge(&source_crdt);
-            let target_after_first_merge = target_crdt.clone();
+                // Apply operations to source CRDT
+                for op in &operations {
+                    let _ = source_crdt.apply_operation(op.clone());
+                }
 
-            // Merge source into target again
-            let _ = target_crdt.merge(&source_crdt);
+                // Merge source into target once
+                let _ = target_crdt.merge(&source_crdt);
+                let target_after_first_merge = target_crdt.clone();
 
-            // Target should be unchanged after the second merge
-            assert_crdt_convergence(&target_after_first_merge, &target_crdt);
+                // Merge source into target again
+                let _ = target_crdt.merge(&source_crdt);
+
+                // Target should be unchanged after the second merge
+                assert_crdt_convergence(&target_after_first_merge, &target_crdt);
+                Ok(())
+            }).unwrap();
         }
     }
 }
@@ -542,22 +575,29 @@ mod fuzz_tests {
         let strategy = (
             arb_codex_id(),
             prop::collection::vec(arb_user_id(), 1..=5),
-            prop::collection::vec(arb_crdt_operation(Uuid::new_v4()), 1..=50)
         );
 
-        runner.run(&strategy, |(codex_id, user_ids, operations)| {
-            let mut crdt = VesperaCRDT::new(codex_id, user_ids[0].clone());
+        runner.run(&strategy, |(codex_id, user_ids)| {
+            // Generate operations with the codex_id
+            let ops_strategy = prop::collection::vec(arb_crdt_operation(codex_id), 1..=50);
+            let mut ops_runner = TestRunner::default();
 
-            // Apply all operations and ensure no panics
-            for operation in operations {
-                let _ = crdt.apply_operation(operation);
-            }
+            ops_runner.run(&ops_strategy, |operations| {
+                let mut crdt = VesperaCRDT::new(codex_id, user_ids[0].clone());
 
-            // CRDT should remain in a valid state
-            let stats = crdt.memory_stats();
-            prop_assert!(stats.operation_log_size >= 0);
-            prop_assert!(stats.metadata_stats.active_entries >= 0);
-            prop_assert!(stats.reference_stats.active_elements >= 0);
+                // Apply all operations and ensure no panics
+                for operation in operations {
+                    let _ = crdt.apply_operation(operation);
+                }
+
+                // CRDT should remain in a valid state
+                let stats = crdt.memory_stats();
+                prop_assert!(stats.operation_log_size >= 0);
+                prop_assert!(stats.metadata_stats.active_entries >= 0);
+                prop_assert!(stats.reference_stats.active_elements >= 0);
+
+                Ok(())
+            }).expect("Ops fuzz test should not panic");
 
             Ok(())
         }).expect("Fuzz test should not panic");
@@ -672,23 +712,28 @@ mod performance_property_tests {
         fn test_operation_performance_bounds(
             codex_id in arb_codex_id(),
             user_id in arb_user_id(),
-            operations in prop::collection::vec(arb_crdt_operation(codex_id), 10..=100)
         ) {
-            let mut crdt = VesperaCRDT::new(codex_id, user_id.clone());
-            let start_time = Instant::now();
+            let strategy = prop::collection::vec(arb_crdt_operation(codex_id), 10..=100);
+            let mut runner = TestRunner::default();
 
-            for operation in operations {
-                let _ = crdt.apply_operation(operation);
-            }
+            runner.run(&strategy, |operations| {
+                let mut crdt = VesperaCRDT::new(codex_id, user_id.clone());
+                let start_time = Instant::now();
 
-            let elapsed = start_time.elapsed();
+                for operation in operations {
+                    let _ = crdt.apply_operation(operation);
+                }
 
-            // Operations should complete within reasonable time
-            prop_assert!(
-                elapsed.as_millis() < 1000,
-                "Operations took too long: {}ms",
-                elapsed.as_millis()
-            );
+                let elapsed = start_time.elapsed();
+
+                // Operations should complete within reasonable time
+                prop_assert!(
+                    elapsed.as_millis() < 1000,
+                    "Operations took too long: {}ms",
+                    elapsed.as_millis()
+                );
+                Ok(())
+            }).unwrap();
         }
     }
 
@@ -758,35 +803,40 @@ mod invariant_tests {
         fn test_state_consistency_invariant(
             codex_id in arb_codex_id(),
             user_id in arb_user_id(),
-            operations in prop::collection::vec(arb_crdt_operation(codex_id), 1..=20)
         ) {
-            let mut crdt = VesperaCRDT::new(codex_id, user_id.clone());
+            let strategy = prop::collection::vec(arb_crdt_operation(codex_id), 1..=20);
+            let mut runner = TestRunner::default();
 
-            for operation in operations {
-                let _ = crdt.apply_operation(operation);
+            runner.run(&strategy, |operations| {
+                let mut crdt = VesperaCRDT::new(codex_id, user_id.clone());
 
-                // Verify invariants after each operation
+                for operation in operations {
+                    let _ = crdt.apply_operation(operation);
 
-                // 1. Vector clock should never decrease
-                let current_clock = crdt.vector_clock.get(&user_id).copied().unwrap_or(0);
-                prop_assert!(current_clock >= 0);
+                    // Verify invariants after each operation
 
-                // 2. Operation log should be bounded
-                prop_assert!(crdt.operation_log.len() <= 1000);
+                    // 1. Vector clock should never decrease
+                    let current_clock = crdt.vector_clock.get(&user_id).copied().unwrap_or(0);
+                    prop_assert!(current_clock >= 0);
 
-                // 3. Metadata layer should be consistent
-                let metadata_stats = crdt.metadata_layer.stats();
-                prop_assert!(metadata_stats.active_entries >= 0);
-                prop_assert!(metadata_stats.tombstones >= 0);
+                    // 2. Operation log should be bounded
+                    prop_assert!(crdt.operation_log.len() <= 1000);
 
-                // 4. Reference layer should be consistent
-                let reference_stats = crdt.reference_layer.stats();
-                prop_assert!(reference_stats.active_elements >= 0);
-                prop_assert!(reference_stats.total_elements >= reference_stats.active_elements);
+                    // 3. Metadata layer should be consistent
+                    let metadata_stats = crdt.metadata_layer.stats();
+                    prop_assert!(metadata_stats.active_entries >= 0);
+                    prop_assert!(metadata_stats.tombstones >= 0);
 
-                // 5. Timestamps should be valid
-                prop_assert!(crdt.created_at <= crdt.updated_at);
-            }
+                    // 4. Reference layer should be consistent
+                    let reference_stats = crdt.reference_layer.stats();
+                    prop_assert!(reference_stats.active_elements >= 0);
+                    prop_assert!(reference_stats.total_elements >= reference_stats.active_elements);
+
+                    // 5. Timestamps should be valid
+                    prop_assert!(crdt.created_at <= crdt.updated_at);
+                }
+                Ok(())
+            }).unwrap();
         }
     }
 
@@ -867,11 +917,11 @@ mod gc_property_tests {
             for i in 0..initial_operations {
                 let field_name = format!("gc_field_{}", i % 100);
                 let field_value = format!("gc_value_{}", i);
-                crdt.set_text_field(&field_name, &field_value);
+                crate::tests::utils::set_text_field(&mut crdt, &field_name, &field_value);
             }
 
             let pre_gc_stats = crdt.memory_stats();
-            prop_assert!(pre_gc_stats.operation_count >= initial_operations);
+            prop_assert!(pre_gc_stats.operation_log_size >= initial_operations);
             prop_assert!(pre_gc_stats.total_size_bytes > 0);
 
             // Perform garbage collection
@@ -884,15 +934,15 @@ mod gc_property_tests {
             let post_gc_stats = crdt.memory_stats();
 
             // Verify GC invariants
-            prop_assert!(post_gc_stats.operation_count <= pre_gc_stats.operation_count);
+            prop_assert!(post_gc_stats.operation_log_size <= pre_gc_stats.operation_log_size);
             prop_assert!(post_gc_stats.total_size_bytes <= pre_gc_stats.total_size_bytes);
             prop_assert!(gc_stats.operations_removed <= initial_operations);
             prop_assert!(gc_stats.memory_freed_bytes <= pre_gc_stats.total_size_bytes);
 
             // Ensure CRDT is still functional after GC
-            crdt.set_text_field("post_gc_field", "post_gc_value");
+            crate::tests::utils::set_text_field(&mut crdt, "post_gc_field", "post_gc_value");
             let final_stats = crdt.memory_stats();
-            prop_assert!(final_stats.operation_count > 0);
+            prop_assert!(final_stats.operation_log_size > 0);
         }
     }
 }
@@ -924,7 +974,7 @@ mod serialization_property_tests {
                     "v".repeat(std::cmp::min(field_value_length, 100))
                 );
 
-                original_crdt.set_text_field(&field_name, &field_value);
+                crate::tests::utils::set_text_field(&mut original_crdt, &field_name, &field_value);
             }
 
             // Test JSON serialization roundtrip
@@ -947,7 +997,7 @@ mod serialization_property_tests {
             // Verify all formats produce valid operation logs
             for operations in [&json_deserialized, &msgpack_deserialized] {
                 for operation in operations {
-                    prop_assert!(!operation.id.is_empty());
+                    prop_assert!(!operation.id.is_nil());
                     prop_assert!(!operation.user_id.is_empty());
                 }
             }

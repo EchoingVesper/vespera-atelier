@@ -1,0 +1,401 @@
+{
+  // Vespera Template Definition: Ollama Provider
+  // This template defines how Ollama local LLM provider configurations are structured
+  // Templates enable dynamic provider types without hardcoding
+
+  // ========================================================================
+  // TEMPLATE METADATA
+  // ========================================================================
+
+  template_id: "vespera.templates.provider.ollama",
+  template_version: "1.0.0",
+  template_name: "Ollama Local LLM Provider",
+  content_type: "vespera.provider",
+
+  created_by: "vespera_system",
+  created_at: "2025-01-16T00:00:00.000Z",
+  updated_at: "2025-01-16T09:00:00.000Z",
+
+  description: "Provider configuration for Ollama local LLM server. Runs models locally for privacy and cost-effective inference.",
+
+  // Template inheritance
+  extends: ["vespera.templates.base_provider"],
+  mixins: [
+    "vespera.mixins.provider_capabilities",
+    "vespera.mixins.streaming_support",
+    "vespera.mixins.local_server"
+  ],
+
+  // ========================================================================
+  // PROVIDER METADATA
+  // ========================================================================
+
+  provider_info: {
+    provider_name: "Ollama",
+    provider_type: "ollama",
+    vendor: "Ollama",
+    authentication_method: "none",  // Local server, no auth required
+    requires_api_key: false,
+    requires_local_installation: true,
+
+    capabilities: {
+      supports_streaming: true,
+      supports_tools: false,  // Model-dependent, most don't support it
+      supports_system_prompt: true,
+      supports_vision: false,  // Model-dependent
+      supports_multi_turn: true,
+      max_tokens: 4096,  // Model-dependent, conservative default
+      max_context_length: 8192,  // Model-dependent
+    },
+
+    models: [
+      "llama3.2",
+      "llama3.1",
+      "mistral",
+      "codellama",
+      "deepseek-coder",
+      "phi-3",
+      "qwen2.5-coder"
+    ],
+
+    priority_level: "primary",  // Great for cost-effective, privacy-focused tasks
+    cost_model: "free",  // Runs locally, no API costs
+  },
+
+  // ========================================================================
+  // FIELD DEFINITIONS
+  // ========================================================================
+
+  fields: {
+    // Base URL for Ollama server
+    base_url: {
+      type: "string",
+      default: "http://localhost:11434",
+      required: true,
+
+      ui_hints: {
+        display_name: "Ollama Server URL",
+        widget: "url_input",
+        primary_field: true,
+        placeholder: "http://localhost:11434",
+        help_text: "URL of the Ollama server. Default is local installation."
+      },
+
+      validation: {
+        url_format: true,
+        protocols: ["http", "https"],
+        reachable: true
+      }
+    },
+
+    // Model selection
+    model: {
+      type: "string",
+      default: "llama3.2",
+      required: true,
+
+      ui_hints: {
+        display_name: "Model",
+        widget: "text_input_with_suggestions",
+        primary_field: true,
+        suggestions: [
+          "llama3.2",
+          "llama3.1",
+          "mistral",
+          "codellama",
+          "deepseek-coder",
+          "phi-3",
+          "qwen2.5-coder"
+        ],
+        help_text: "Ollama model name. Must be pulled first via: ollama pull <model>"
+      },
+
+      validation: {
+        not_empty: true,
+        lowercase: true,
+        pattern: "^[a-z0-9-_.]+$"
+      }
+    },
+
+    // API endpoint
+    api_endpoint: {
+      type: "string",
+      default: "/api/generate",
+      optional: true,
+
+      ui_hints: {
+        display_name: "API Endpoint",
+        widget: "text_input",
+        tertiary_field: true,
+        help_text: "Ollama API endpoint path. Usually /api/generate or /v1/completions."
+      },
+
+      validation: {
+        starts_with: "/",
+        no_whitespace: true
+      }
+    },
+
+    // Temperature
+    temperature: {
+      type: "float",
+      default: 0.7,
+      optional: true,
+
+      ui_hints: {
+        display_name: "Temperature",
+        widget: "slider",
+        secondary_field: true,
+        min: 0.0,
+        max: 2.0,
+        step: 0.1,
+        help_text: "Randomness in responses. Lower = more focused, Higher = more creative."
+      },
+
+      validation: {
+        range: [0.0, 2.0]
+      }
+    },
+
+    // Max tokens
+    max_tokens: {
+      type: "integer",
+      default: 2048,
+      optional: true,
+
+      ui_hints: {
+        display_name: "Max Tokens",
+        widget: "number_input",
+        secondary_field: true,
+        min: 1,
+        max: 8192,
+        help_text: "Maximum tokens in response. Model-dependent limit."
+      },
+
+      validation: {
+        range: [1, 8192],
+        recommended_range: [512, 4096]
+      }
+    },
+
+    // Context window
+    context_window: {
+      type: "integer",
+      default: 4096,
+      optional: true,
+
+      ui_hints: {
+        display_name: "Context Window",
+        widget: "number_input",
+        secondary_field: true,
+        min: 512,
+        max: 32768,
+        help_text: "Model context window size. Depends on model capability."
+      },
+
+      validation: {
+        range: [512, 32768]
+      }
+    },
+
+    // Request timeout
+    timeout: {
+      type: "integer",
+      default: 120,
+      optional: true,
+
+      ui_hints: {
+        display_name: "Timeout (seconds)",
+        widget: "number_input",
+        tertiary_field: true,
+        min: 10,
+        max: 600,
+        help_text: "Request timeout in seconds. Local models may be slower."
+      },
+
+      validation: {
+        range: [10, 600]
+      }
+    },
+
+    // Keep alive
+    keep_alive: {
+      type: "string",
+      default: "5m",
+      optional: true,
+
+      ui_hints: {
+        display_name: "Keep Alive",
+        widget: "text_input",
+        tertiary_field: true,
+        placeholder: "5m",
+        help_text: "How long to keep model loaded in memory (e.g., '5m', '1h')"
+      },
+
+      validation: {
+        duration_format: true,
+        examples: ["5m", "30m", "1h", "0"]
+      }
+    }
+  },
+
+  // ========================================================================
+  // UI CONFIGURATION
+  // ========================================================================
+
+  ui_configuration: {
+    field_groups: {
+      "Server Connection": {
+        fields: ["base_url", "api_endpoint"],
+        layout: "vertical",
+        primary: true,
+        description: "Ollama must be running locally or accessible via network"
+      },
+
+      "Model Selection": {
+        fields: ["model", "context_window"],
+        layout: "vertical",
+        primary: true
+      },
+
+      "Generation Parameters": {
+        fields: ["max_tokens", "temperature"],
+        layout: "horizontal",
+        secondary: true
+      },
+
+      "Advanced Settings": {
+        fields: ["timeout", "keep_alive"],
+        layout: "vertical",
+        tertiary: true,
+        collapsible: true
+      }
+    },
+
+    layout_modes: {
+      compact: {
+        visible_groups: ["Server Connection", "Model Selection"],
+        field_size: "small"
+      },
+
+      standard: {
+        visible_groups: ["Server Connection", "Model Selection", "Generation Parameters"],
+        field_size: "medium"
+      },
+
+      detailed: {
+        visible_groups: "all",
+        field_size: "large"
+      }
+    }
+  },
+
+  // ========================================================================
+  // INTEGRATION CONFIGURATION
+  // ========================================================================
+
+  integrations: {
+    authentication: {
+      method: "none",
+      setup_instructions: [
+        "1. Install Ollama: curl -fsSL https://ollama.com/install.sh | sh",
+        "2. Start server: ollama serve",
+        "3. Pull model: ollama pull llama3.2",
+        "4. Verify: ollama list"
+      ],
+      requires_internet: false,  // After models are pulled
+      session_persistence: "stateless"
+    },
+
+    backend_integration: {
+      provider_manager: {
+        instantiation_class: "OllamaProvider",
+        config_struct: "OllamaConfig",
+        supports_hot_reload: true
+      }
+    }
+  },
+
+  // ========================================================================
+  // VALIDATION & HEALTH CHECKS
+  // ========================================================================
+
+  health_checks: {
+    server_running: {
+      check: "http_reachable",
+      url_field: "base_url",
+      endpoint: "/api/tags",
+      severity: "critical"
+    },
+
+    model_available: {
+      check: "model_exists",
+      url_field: "base_url",
+      model_field: "model",
+      endpoint: "/api/tags",
+      severity: "critical"
+    },
+
+    performance_acceptable: {
+      check: "response_time",
+      max_latency_ms: 5000,
+      severity: "warning"
+    }
+  },
+
+  // ========================================================================
+  // USAGE EXAMPLES
+  // ========================================================================
+
+  examples: [
+    {
+      name: "Default Local Setup",
+      description: "Standard local Ollama configuration",
+      configuration: {
+        base_url: "http://localhost:11434",
+        model: "llama3.2",
+        max_tokens: 2048,
+        temperature: 0.7
+      }
+    },
+
+    {
+      name: "Code Assistant",
+      description: "Optimized for coding tasks",
+      configuration: {
+        base_url: "http://localhost:11434",
+        model: "deepseek-coder",
+        max_tokens: 4096,
+        temperature: 0.3,
+        context_window: 8192
+      }
+    },
+
+    {
+      name: "Remote Server",
+      description: "Connect to remote Ollama server",
+      configuration: {
+        base_url: "https://ollama.example.com",
+        model: "llama3.1",
+        api_endpoint: "/api/generate",
+        timeout: 180
+      }
+    }
+  ]
+}
+
+/*
+This template definition shows:
+
+1. **Local Server Provider**: No API key required, runs locally
+2. **Model Flexibility**: Support for various open-source models
+3. **Privacy-Focused**: All inference happens locally
+4. **Cost-Effective**: No API costs after initial setup
+5. **Health Checks**: Validates server connectivity and model availability
+
+This enables the ProviderManager to:
+- Configure Ollama providers dynamically
+- Validate server connectivity before use
+- Support both local and remote Ollama instances
+- Provide appropriate UI for local model management
+*/
