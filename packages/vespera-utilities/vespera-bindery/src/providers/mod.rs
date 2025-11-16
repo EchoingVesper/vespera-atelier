@@ -13,7 +13,6 @@
 pub mod claude_code;
 pub mod ollama;
 pub mod manager;
-pub mod adapters;
 pub mod types;
 
 use async_trait::async_trait;

@@ -100,8 +100,7 @@ pub mod database;
 // RAG (Retrieval-Augmented Generation) module
 pub mod rag;
 
-// LLM provider integrations
-pub mod llm;
+// LLM provider integrations - types consolidated into src/providers/types.rs (Phase 17.5 Task 8)
 
 // Secret storage system (Phase 17.5)
 pub mod secrets;
