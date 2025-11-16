@@ -103,14 +103,13 @@ mod cross_component_integration_tests {
                     value: "Test Title".to_string(),
                     timestamp: Utc::now(),
                     user_id: "test_user".to_string(),
-                    format: None,
                 },
             },
-            CRDTLayer::Metadata,
+            "test_user".to_string(),
         );
 
         // 2. Apply the operation
-        crdt.apply_operation(op).await.expect("Should apply operation");
+        crdt.apply_operation(op).expect("Should apply operation");
 
         // 3. Verify the operation was applied
         assert_eq!(crdt.operation_log.len(), 1, "Should have one operation in log");

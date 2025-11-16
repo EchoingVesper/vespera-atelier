@@ -376,8 +376,9 @@ mod role_manager_tests {
         let config = fixture.config.clone();
 
         // Test creating role manager with configuration
-        let result = RoleManager::new(config);
-        assert!(result.is_ok(), "RoleManager creation should succeed");
+        // Note: RoleManager::new() is async and doesn't take config
+        let result = RoleManager::new().await;
+        assert!(result.is_ok(), "RoleManager creation should succeed with default roles");
 
         let _manager = result.unwrap();
         // Additional tests would go here once the manager is implemented

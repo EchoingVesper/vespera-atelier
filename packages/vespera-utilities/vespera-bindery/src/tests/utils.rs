@@ -6,10 +6,24 @@ use uuid::Uuid;
 use crate::{
     crdt::{VesperaCRDT, OperationType, TemplateValue, CodexReference, ReferenceType},
     types::{CodexId, UserId},
-    CodexManager, BinderyConfig,
+    CodexManager, BinderyConfig, BinderyResult,
     task_management::{TaskStatus, TaskPriority, TaskInput},
-    role_management::{Role, ToolGroup},
+    role_management::{Role, ToolGroup, FileRestrictions, ExecutionContext},
+    database::DatabasePoolConfig,
 };
+
+/// Helper function to set a text field on CRDT using the correct API
+/// This provides a convenient way to set text metadata without manual TemplateValue construction
+pub fn set_text_field(crdt: &mut VesperaCRDT, field_name: &str, field_value: &str) -> BinderyResult<()> {
+    crdt.set_metadata(
+        field_name.to_string(),
+        TemplateValue::Text {
+            value: field_value.to_string(),
+            timestamp: Utc::now(),
+            user_id: crdt.created_by.clone(),
+        }
+    )
+}
 
 /// Create a test CRDT with some initial data
 pub fn create_test_crdt(codex_id: CodexId, user_id: &str) -> VesperaCRDT {
@@ -32,6 +46,10 @@ pub fn create_test_crdt(codex_id: CodexId, user_id: &str) -> VesperaCRDT {
 pub fn create_test_config() -> BinderyConfig {
     BinderyConfig {
         storage_path: Some(std::env::temp_dir().join(format!("test_{}", Uuid::new_v4()))),
+        database_path: Some(std::env::temp_dir().join(format!("test_db_{}.sqlite", Uuid::new_v4()))),
+        audit_db_path: Some(std::env::temp_dir().join(format!("test_audit_{}.sqlite", Uuid::new_v4()))),
+        database_pool: DatabasePoolConfig::default(),
+        audit_config: None,
         collaboration_enabled: false,
         max_operations_in_memory: 100,
         auto_gc_enabled: true,
@@ -39,6 +57,7 @@ pub fn create_test_config() -> BinderyConfig {
         compression_enabled: false, // Disable for faster tests
         user_id: Some("test_user".to_string()),
         project_id: Some("test_project".to_string()),
+        audit_logging_enabled: false,
     }
 }
 
@@ -150,11 +169,15 @@ impl TestFixture {
 pub fn assert_crdt_convergence(crdt1: &VesperaCRDT, crdt2: &VesperaCRDT) {
     assert_eq!(crdt1.codex_id, crdt2.codex_id, "CRDTs should have same codex_id");
 
-    // Check metadata convergence
-    for (key, value1) in crdt1.metadata_layer.iter() {
-        if let Some(value2) = crdt2.metadata_layer.get(key) {
-            assert_eq!(value1, value2, "Metadata key '{}' should converge", key);
-        }
+    // Check metadata convergence - compare all keys
+    let keys1: std::collections::HashSet<_> = crdt1.metadata_layer.keys().collect();
+    let keys2: std::collections::HashSet<_> = crdt2.metadata_layer.keys().collect();
+    assert_eq!(keys1, keys2, "Metadata keys should match");
+
+    for key in keys1 {
+        let value1 = crdt1.metadata_layer.get(key);
+        let value2 = crdt2.metadata_layer.get(key);
+        assert_eq!(value1, value2, "Metadata key '{}' should converge", key);
     }
 
     // Check reference convergence
@@ -168,9 +191,15 @@ pub fn create_mock_task_input(title: &str) -> TaskInput {
     TaskInput {
         title: title.to_string(),
         description: Some(format!("Test task: {}", title)),
-        priority: TaskPriority::Medium,
+        priority: Some(TaskPriority::Normal),
         due_date: None,
-        metadata: HashMap::new(),
+        role: None,
+        project_id: None,
+        parent_id: None,
+        assignee: None,
+        tags: vec![],
+        labels: HashMap::new(),
+        subtasks: vec![],
     }
 }
 
@@ -179,11 +208,21 @@ pub fn create_mock_role(name: &str, tool_groups: Vec<ToolGroup>) -> Role {
     Role {
         name: name.to_string(),
         description: format!("Test role: {}", name),
-        tool_groups,
-        file_patterns: vec!["*.rs".to_string(), "*.md".to_string()],
-        excluded_patterns: vec!["target/*".to_string()],
-        max_file_size_mb: 10,
-        max_files_per_operation: 100,
+        capabilities: tool_groups,
+        file_restrictions: FileRestrictions {
+            allowed_read_patterns: vec!["*.rs".to_string(), "*.md".to_string()],
+            allowed_write_patterns: vec!["*.rs".to_string(), "*.md".to_string()],
+            denied_patterns: vec!["target/*".to_string()],
+            working_directory_restrictions: vec!["./".to_string()],
+        },
+        execution_context: ExecutionContext {
+            max_execution_time: Some(300), // 5 minutes in seconds
+            max_memory_usage: Some(512),   // 512MB
+            network_access: false,
+            subprocess_allowed: false,
+            environment_variables: HashMap::new(),
+        },
+        metadata: HashMap::new(),
     }
 }
 
@@ -257,7 +296,7 @@ impl MemoryLeakDetector {
 pub async fn run_concurrent_operations<F, Fut>(
     operations: Vec<F>,
     max_concurrency: usize,
-) -> Vec<anyhow::Result<()>>
+) -> Vec<Result<(), anyhow::Error>>
 where
     F: FnOnce() -> Fut + Send + 'static,
     Fut: std::future::Future<Output = anyhow::Result<()>> + Send + 'static,
@@ -271,8 +310,11 @@ where
     for operation in operations {
         if pending >= max_concurrency {
             if let Some(result) = futures.next().await {
-                results.push(result);
-                pending -= 1;
+                let result: Result<Result<(), anyhow::Error>, tokio::task::JoinError> = result;
+                match result {
+                    Ok(inner) => results.push(inner),
+                    Err(e) => results.push(Err(e.into())),
+                }
             }
         }
 
@@ -281,7 +323,11 @@ where
     }
 
     while let Some(result) = futures.next().await {
-        results.push(result.unwrap_or_else(|e| Err(anyhow::Error::from(e))));
+        let result = result;
+        match result {
+            Ok(inner) => results.push(inner),
+            Err(e) => results.push(Err(e.into())),
+        }
     }
 
     results

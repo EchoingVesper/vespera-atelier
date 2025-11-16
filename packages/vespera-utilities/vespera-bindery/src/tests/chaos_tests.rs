@@ -22,7 +22,7 @@ use crate::{
     CodexManager, BinderyConfig, BinderyResult,
     crdt::{VesperaCRDT, CRDTOperation, OperationType},
     database::{Database, DatabasePoolConfig, TaskInput},
-    rag::{circuit_breaker::CircuitBreaker, health_monitor::HealthMonitor},
+    rag::{circuit_breaker::{CircuitBreaker, CircuitBreakerConfig}, health_monitor::HealthMonitor},
     observability::{MetricsCollector, BinderyMetrics},
     types::{CodexId, UserId},
     tests::utils::{create_test_crdt, TestDataGenerator},
@@ -121,11 +121,15 @@ pub struct FailingService {
 
 impl FailingService {
     pub fn new(config: ChaosConfig) -> Self {
-        let circuit_breaker = Arc::new(CircuitBreaker::new(
-            5,  // failure_threshold
-            Duration::from_secs(10), // timeout
-            Duration::from_secs(30), // recovery_timeout
-        ));
+        let cb_config = CircuitBreakerConfig {
+            failure_threshold: 5,
+            recovery_timeout: Duration::from_secs(30),
+            request_timeout: Duration::from_secs(10),
+            ..Default::default()
+        };
+        let circuit_breaker = Arc::new(
+            CircuitBreaker::new("failing_service".to_string(), cb_config).unwrap()
+        );
 
         Self {
             harness: Arc::new(tokio::sync::Mutex::new(ChaosTestHarness::new(config))),
@@ -142,15 +146,31 @@ impl FailingService {
         // Check if should fail
         if harness.should_fail(operation) {
             drop(harness); // Release lock before circuit breaker call
-            self.circuit_breaker.record_failure().await;
-            return Err(crate::BinderyError::ServiceError(
-                format!("Simulated failure for operation: {}", operation)
-            ));
+
+            // Use execute method to record failure through circuit breaker
+            let op_name = operation.to_string();
+            let result = self.circuit_breaker.execute(|| {
+                let op_name_clone = op_name.clone();
+                Box::pin(async move {
+                    Err::<String, _>(crate::BinderyError::InternalError(
+                        format!("Simulated failure for operation: {}", op_name_clone)
+                    ))
+                })
+            }).await;
+
+            return result.map_err(|e| crate::BinderyError::InternalError(e.to_string()));
         }
 
         drop(harness); // Release lock before circuit breaker call
-        self.circuit_breaker.record_success().await;
-        Ok(format!("Success: {}", operation))
+
+        // Use execute method to record success through circuit breaker
+        let op_name = operation.to_string();
+        self.circuit_breaker.execute(|| {
+            let op_name_clone = op_name.clone();
+            Box::pin(async move {
+                Ok::<String, crate::BinderyError>(format!("Success: {}", op_name_clone))
+            })
+        }).await.map_err(|e| crate::BinderyError::InternalError(e.to_string()))
     }
 
     pub async fn get_circuit_breaker_state(&self) -> String {
@@ -283,7 +303,7 @@ async fn test_database_chaos_scenarios() {
 
     let temp_dir = tempfile::tempdir().unwrap();
     let db_path = temp_dir.path().join("chaos_test.db");
-    let database = Database::new_with_config(db_path.to_str().unwrap(), db_config).await.unwrap();
+    let database = Arc::new(Database::new_with_config(db_path.to_str().unwrap(), db_config).await.unwrap());
 
     const NUM_OPERATIONS: usize = 50;
     const NUM_WORKERS: usize = 8; // More workers than connections
@@ -430,7 +450,7 @@ async fn test_crdt_concurrent_chaos() {
                 // Try to perform operation with potential conflicts
                 {
                     let mut crdt_guard = crdt_clone.write().await;
-                    crdt_guard.set_text_field(&field_name, &field_value);
+                    crate::tests::utils::set_text_field(&mut crdt_guard, &field_name, &field_value);
                     operations_applied += 1;
                 }
 
@@ -477,11 +497,11 @@ async fn test_crdt_concurrent_chaos() {
     let memory_stats = final_crdt.memory_stats();
 
     println!("Final CRDT state:");
-    println!("  Operations in memory: {}", memory_stats.operation_count);
+    println!("  Operations in memory: {}", memory_stats.operation_log_size);
     println!("  Memory usage: {} bytes", memory_stats.total_size_bytes);
 
     // Verify CRDT remained consistent despite chaos
-    assert!(memory_stats.operation_count > 0, "CRDT should have some operations");
+    assert!(memory_stats.operation_log_size > 0, "CRDT should have some operations");
     assert!(memory_stats.total_size_bytes > 0, "CRDT should use memory");
 
     // Verify convergence property holds

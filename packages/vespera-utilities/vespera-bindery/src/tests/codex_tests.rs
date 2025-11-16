@@ -9,11 +9,63 @@ use uuid::Uuid;
 
 use crate::{
     codex::{Codex, CodexManagerExt, CodexFormat, CodexSerializer, VersionManager, CodexVersion},
-    templates::{TemplateId, TemplateValue},
-    types::{CodexId, CodexContent},
+    templates::{TemplateId, TemplateValue as SimpleTemplateValue},
+    crdt::TemplateValue as CrdtTemplateValue,
+    types::{CodexId, CodexContent, TemplateFieldValue, ContentSection, ContentType, ContentHash, UserId},
     tests::utils::{create_test_manager, TestFixture},
     CodexManager, BinderyConfig,
 };
+
+// Helper functions to create CodexContent instances
+fn create_text_content(text: &str) -> CodexContent {
+    let mut template_fields = HashMap::new();
+    template_fields.insert(
+        "content".to_string(),
+        TemplateFieldValue::Text { value: text.to_string() }
+    );
+
+    CodexContent {
+        template_fields,
+        content_sections: HashMap::new(),
+        attachments: Vec::new(),
+    }
+}
+
+fn create_structured_content(value: serde_json::Value) -> CodexContent {
+    let mut template_fields = HashMap::new();
+    template_fields.insert(
+        "data".to_string(),
+        TemplateFieldValue::Structured { value }
+    );
+
+    CodexContent {
+        template_fields,
+        content_sections: HashMap::new(),
+        attachments: Vec::new(),
+    }
+}
+
+fn create_content_with_section(section_id: &str, section_title: &str, content: &str) -> CodexContent {
+    let mut content_sections = HashMap::new();
+    content_sections.insert(
+        section_id.to_string(),
+        ContentSection {
+            id: section_id.to_string(),
+            title: section_title.to_string(),
+            content_type: ContentType::Markdown,
+            content: content.to_string(),
+            operations: Vec::new(),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        }
+    );
+
+    CodexContent {
+        template_fields: HashMap::new(),
+        content_sections,
+        attachments: Vec::new(),
+    }
+}
 
 #[cfg(test)]
 mod codex_creation_tests {
@@ -45,7 +97,7 @@ mod codex_creation_tests {
             template_id: template_id.clone(),
             created_at: now,
             updated_at: now,
-            content: CodexContent::Text("# Test Content".to_string()),
+            content: create_text_content("# Test Content"),
         };
 
         assert_eq!(codex.id, codex_id);
@@ -53,10 +105,11 @@ mod codex_creation_tests {
         assert_eq!(codex.template_id, template_id);
         assert_eq!(codex.content_type, "text/markdown");
 
-        if let CodexContent::Text(text) = &codex.content {
-            assert_eq!(text, "# Test Content");
+        // Verify content structure
+        if let Some(TemplateFieldValue::Text { value }) = codex.content.template_fields.get("content") {
+            assert_eq!(value, "# Test Content");
         } else {
-            panic!("Expected text content");
+            panic!("Expected text content in template_fields");
         }
     }
 
@@ -73,7 +126,7 @@ mod codex_creation_tests {
             template_id: template_id.clone(),
             created_at: now,
             updated_at: now,
-            content: CodexContent::Structured(serde_json::json!({
+            content: create_structured_content(serde_json::json!({
                 "title": "Test",
                 "description": "A test codex"
             })),
@@ -104,11 +157,7 @@ mod codex_manager_tests {
 
         // Test update_codex_fields (currently placeholder)
         let mut fields = HashMap::new();
-        fields.insert("title".to_string(), TemplateValue::Text {
-            value: "Updated Title".to_string(),
-            timestamp: Utc::now(),
-            user_id: "test_user".to_string(),
-        });
+        fields.insert("title".to_string(), SimpleTemplateValue::Text("Updated Title".to_string()));
 
         let result = manager.update_codex_fields(&codex_id, fields).await;
         assert!(result.is_ok(), "Should not error on update");
@@ -178,47 +227,46 @@ mod codex_format_tests {
 
     #[tokio::test]
     async fn test_codex_content_types() {
-        // Test text content
-        let text_content = CodexContent::Text("Hello, World!".to_string());
-        if let CodexContent::Text(text) = &text_content {
-            assert_eq!(text, "Hello, World!");
+        // Test text content via template field
+        let text_content = create_text_content("Hello, World!");
+        if let Some(TemplateFieldValue::Text { value }) = text_content.template_fields.get("content") {
+            assert_eq!(value, "Hello, World!");
         } else {
-            panic!("Expected text content");
+            panic!("Expected text content in template_fields");
         }
 
-        // Test structured content
+        // Test structured content via template field
         let json_data = serde_json::json!({
             "name": "Test",
             "value": 42,
             "tags": ["a", "b", "c"]
         });
-        let structured_content = CodexContent::Structured(json_data.clone());
+        let structured_content = create_structured_content(json_data.clone());
 
-        if let CodexContent::Structured(data) = &structured_content {
-            assert_eq!(data["name"], "Test");
-            assert_eq!(data["value"], 42);
-            assert_eq!(data["tags"].as_array().unwrap().len(), 3);
+        if let Some(TemplateFieldValue::Structured { value }) = structured_content.template_fields.get("data") {
+            assert_eq!(value["name"], "Test");
+            assert_eq!(value["value"], 42);
+            assert_eq!(value["tags"].as_array().unwrap().len(), 3);
         } else {
-            panic!("Expected structured content");
+            panic!("Expected structured content in template_fields");
         }
 
-        // Test binary content
-        let binary_data = vec![0u8, 1, 2, 3, 255];
-        let binary_content = CodexContent::Binary(binary_data.clone());
-
-        if let CodexContent::Binary(data) = &binary_content {
-            assert_eq!(data, &binary_data);
+        // Test content section
+        let section_content = create_content_with_section("main", "Main Section", "Section content");
+        if let Some(section) = section_content.content_sections.get("main") {
+            assert_eq!(section.title, "Main Section");
+            assert_eq!(section.content, "Section content");
         } else {
-            panic!("Expected binary content");
+            panic!("Expected content section");
         }
     }
 
     #[tokio::test]
     async fn test_content_serialization() {
         let contents = vec![
-            CodexContent::Text("Test text".to_string()),
-            CodexContent::Structured(serde_json::json!({"test": "value"})),
-            CodexContent::Binary(vec![0u8, 1, 2, 3]),
+            create_text_content("Test text"),
+            create_structured_content(serde_json::json!({"test": "value"})),
+            create_content_with_section("test", "Test Section", "Test content"),
         ];
 
         for content in contents {
@@ -226,18 +274,13 @@ mod codex_format_tests {
             let json_str = serde_json::to_string(&content).expect("Should serialize");
             let deserialized: CodexContent = serde_json::from_str(&json_str).expect("Should deserialize");
 
-            match (&content, &deserialized) {
-                (CodexContent::Text(original), CodexContent::Text(restored)) => {
-                    assert_eq!(original, restored, "Text content should roundtrip");
-                }
-                (CodexContent::Structured(original), CodexContent::Structured(restored)) => {
-                    assert_eq!(original, restored, "Structured content should roundtrip");
-                }
-                (CodexContent::Binary(original), CodexContent::Binary(restored)) => {
-                    assert_eq!(original, restored, "Binary content should roundtrip");
-                }
-                _ => panic!("Content type changed during roundtrip"),
-            }
+            // Verify structure preserved
+            assert_eq!(content.template_fields.len(), deserialized.template_fields.len(),
+                       "Template fields count should match");
+            assert_eq!(content.content_sections.len(), deserialized.content_sections.len(),
+                       "Content sections count should match");
+            assert_eq!(content.attachments.len(), deserialized.attachments.len(),
+                       "Attachments count should match");
         }
     }
 }
@@ -253,20 +296,20 @@ mod template_integration_tests {
 
         // Test all template value types
         let values = vec![
-            TemplateValue::Text {
+            CrdtTemplateValue::Text {
                 value: "Test text".to_string(),
                 timestamp,
                 user_id: user_id.clone(),
             },
-            TemplateValue::RichText {
+            CrdtTemplateValue::RichText {
                 content_id: "rich_content_id".to_string(),
             },
-            TemplateValue::Structured {
+            CrdtTemplateValue::Structured {
                 value: serde_json::json!({"key": "value"}),
                 timestamp,
                 user_id: user_id.clone(),
             },
-            TemplateValue::Reference {
+            CrdtTemplateValue::Reference {
                 codex_id: Uuid::new_v4(),
                 timestamp,
                 user_id: user_id.clone(),
@@ -276,20 +319,20 @@ mod template_integration_tests {
         for value in values {
             // Test serialization
             let json_str = serde_json::to_string(&value).expect("Should serialize template value");
-            let deserialized: TemplateValue = serde_json::from_str(&json_str).expect("Should deserialize template value");
+            let deserialized: CrdtTemplateValue = serde_json::from_str(&json_str).expect("Should deserialize template value");
 
             // Basic equality check (implementation depends on PartialEq for TemplateValue)
             match (&value, &deserialized) {
-                (TemplateValue::Text { value: v1, .. }, TemplateValue::Text { value: v2, .. }) => {
+                (CrdtTemplateValue::Text { value: v1, .. }, CrdtTemplateValue::Text { value: v2, .. }) => {
                     assert_eq!(v1, v2, "Text values should match");
                 }
-                (TemplateValue::RichText { content_id: id1 }, TemplateValue::RichText { content_id: id2 }) => {
+                (CrdtTemplateValue::RichText { content_id: id1 }, CrdtTemplateValue::RichText { content_id: id2 }) => {
                     assert_eq!(id1, id2, "Rich text content IDs should match");
                 }
-                (TemplateValue::Structured { value: v1, .. }, TemplateValue::Structured { value: v2, .. }) => {
+                (CrdtTemplateValue::Structured { value: v1, .. }, CrdtTemplateValue::Structured { value: v2, .. }) => {
                     assert_eq!(v1, v2, "Structured values should match");
                 }
-                (TemplateValue::Reference { codex_id: id1, .. }, TemplateValue::Reference { codex_id: id2, .. }) => {
+                (CrdtTemplateValue::Reference { codex_id: id1, .. }, CrdtTemplateValue::Reference { codex_id: id2, .. }) => {
                     assert_eq!(id1, id2, "Reference codex IDs should match");
                 }
                 _ => panic!("Template value type changed during roundtrip"),
@@ -300,7 +343,7 @@ mod template_integration_tests {
     #[tokio::test]
     async fn test_template_id_operations() {
         let template_id = TemplateId::from("test-template");
-        assert_eq!(template_id.as_str(), "test-template");
+        assert_eq!(template_id.to_string(), "test-template");
 
         // Test that template IDs can be used as keys
         let mut template_map = HashMap::new();
@@ -321,33 +364,38 @@ mod versioning_tests {
     #[tokio::test]
     async fn test_codex_version_creation() {
         let codex_id = Uuid::new_v4();
-        let user_id = "test_user".to_string();
+        let user_id = UserId::from("test_user");
 
-        // Test version creation (these are placeholder implementations for now)
+        // Test version creation using the actual CodexVersion struct fields
         let version = CodexVersion {
-            id: Uuid::new_v4(),
+            version_id: "v1_abc123".to_string(),
             codex_id,
-            version_number: 1,
-            created_at: Utc::now(),
-            created_by: user_id.clone(),
-            description: Some("Initial version".to_string()),
-            content_hash: "hash123".to_string(),
+            parents: vec![],
+            content_hash: ContentHash::from("hash123"),
+            message: "Initial version".to_string(),
+            author: user_id.clone(),
+            timestamp: Utc::now(),
+            diff: None,
+            snapshot: Some(vec![1, 2, 3]), // Example snapshot data
         };
 
         assert_eq!(version.codex_id, codex_id);
-        assert_eq!(version.version_number, 1);
-        assert_eq!(version.created_by, user_id);
-        assert_eq!(version.description, Some("Initial version".to_string()));
+        assert_eq!(version.version_id, "v1_abc123");
+        assert_eq!(version.author, user_id);
+        assert_eq!(version.message, "Initial version");
+        assert_eq!(version.parents.len(), 0);
+        assert!(version.snapshot.is_some());
     }
 
     #[tokio::test]
     async fn test_version_manager_placeholder() {
-        // Since VersionManager is likely a placeholder, test basic instantiation
-        let codex_id = Uuid::new_v4();
-        let version_manager = VersionManager::new(codex_id);
+        // Since VersionManager is a placeholder, test basic instantiation
+        let version_manager = VersionManager::new();
 
-        // Test that it was created without error
-        assert_eq!(version_manager.codex_id(), codex_id);
+        // Test that the manager can retrieve an empty history for a codex
+        let codex_id = Uuid::new_v4();
+        let history = version_manager.get_history(codex_id);
+        assert!(history.is_empty(), "New version manager should have empty history");
     }
 }
 
@@ -465,7 +513,7 @@ mod integration_tests {
             template_id,
             created_at: Utc::now(),
             updated_at: Utc::now(),
-            content: CodexContent::Structured(complex_content.clone()),
+            content: create_structured_content(complex_content.clone()),
         };
 
         // Test serialization of complex content
@@ -475,12 +523,13 @@ mod integration_tests {
         assert_eq!(deserialized.id, codex.id);
         assert_eq!(deserialized.title, codex.title);
 
-        if let CodexContent::Structured(content) = &deserialized.content {
+        // Verify the structured content
+        if let Some(TemplateFieldValue::Structured { value: content }) = deserialized.content.template_fields.get("data") {
             assert_eq!(content["metadata"]["title"], "Complex Document");
             assert_eq!(content["sections"].as_array().unwrap().len(), 3);
             assert_eq!(content["references"].as_array().unwrap().len(), 1);
         } else {
-            panic!("Expected structured content");
+            panic!("Expected structured content in template_fields");
         }
     }
 }

@@ -7,12 +7,16 @@
 mod tests {
     use crate::task_management::{TaskExecutor, TaskService, TaskInput, TaskPriority, ExecutionContext};
     use crate::role_management::{RoleManager, RoleExecutor, Role, ToolGroup};
-    use crate::codex::{Codex, CodexContent};
+    use crate::codex::Codex;
+    use crate::types::{CodexContent, TemplateFieldValue};
+    use crate::templates::TemplateId;
     use crate::CodexManager;
     use crate::errors::BinderyResult;
+    use crate::observability::audit::UserContext;
     use std::sync::Arc;
     use std::collections::HashMap;
     use uuid::Uuid;
+    use chrono::Utc;
 
     /// Helper function to create a test codex manager
     async fn create_test_codex_manager() -> BinderyResult<Arc<CodexManager>> {
@@ -20,30 +24,50 @@ mod tests {
         Ok(Arc::new(manager))
     }
 
+    /// Helper function to create a test user context
+    fn create_test_user_context() -> UserContext {
+        UserContext {
+            user_id: Some("test_user".to_string()),
+            session_id: Some("test_session".to_string()),
+            source_ip: None,
+            user_agent: None,
+        }
+    }
+
     /// Helper function to create a test task
     fn create_test_task() -> Codex {
         let id = Uuid::new_v4();
         let mut template_fields = HashMap::new();
-        template_fields.insert("description".to_string(), serde_json::Value::String("Test task for executor".to_string()));
-        template_fields.insert("task_type".to_string(), serde_json::Value::String("general".to_string()));
-        template_fields.insert("assigned_role".to_string(), serde_json::Value::String("default_agent".to_string()));
+        template_fields.insert(
+            "description".to_string(),
+            TemplateFieldValue::Text {
+                value: "Test task for executor".to_string()
+            }
+        );
+        template_fields.insert(
+            "task_type".to_string(),
+            TemplateFieldValue::Text {
+                value: "general".to_string()
+            }
+        );
+        template_fields.insert(
+            "assigned_role".to_string(),
+            TemplateFieldValue::Text {
+                value: "default_agent".to_string()
+            }
+        );
 
         Codex {
             id,
             title: "Test Task".to_string(),
+            content_type: "application/json".to_string(),
+            template_id: TemplateId::from("task"),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
             content: CodexContent {
                 template_fields,
-                crdt_operations: Vec::new(),
-            },
-            metadata: crate::CodexMetadata {
-                created_at: chrono::Utc::now(),
-                updated_at: chrono::Utc::now(),
-                created_by: "test_user".to_string(),
-                template_id: Some("task".to_string()),
-                tags: vec!["test".to_string()],
-                references: Vec::new(),
-                version: 1,
-                content_hash: "test_hash".to_string(),
+                content_sections: HashMap::new(),
+                attachments: Vec::new(),
             },
         }
     }
@@ -85,9 +109,10 @@ mod tests {
 
         // Create a test task
         let task = create_test_task();
+        let user_context = create_test_user_context();
 
         // Test execution with role constraints
-        let result = executor.execute_with_role(&role, &task).await?;
+        let result = executor.execute_with_role(&role, &task, user_context).await?;
 
         // Verify the execution completed
         assert!(result.success);
@@ -111,32 +136,49 @@ mod tests {
         // Create a file operation task
         let id = Uuid::new_v4();
         let mut template_fields = HashMap::new();
-        template_fields.insert("description".to_string(), serde_json::Value::String("Read a file".to_string()));
-        template_fields.insert("task_type".to_string(), serde_json::Value::String("file_operation".to_string()));
-        template_fields.insert("operation".to_string(), serde_json::Value::String("read".to_string()));
-        template_fields.insert("file_path".to_string(), serde_json::Value::String("./Cargo.toml".to_string()));
+        template_fields.insert(
+            "description".to_string(),
+            TemplateFieldValue::Text {
+                value: "Read a file".to_string()
+            }
+        );
+        template_fields.insert(
+            "task_type".to_string(),
+            TemplateFieldValue::Text {
+                value: "file_operation".to_string()
+            }
+        );
+        template_fields.insert(
+            "operation".to_string(),
+            TemplateFieldValue::Text {
+                value: "read".to_string()
+            }
+        );
+        template_fields.insert(
+            "file_path".to_string(),
+            TemplateFieldValue::Text {
+                value: "./Cargo.toml".to_string()
+            }
+        );
 
         let task = Codex {
             id,
             title: "File Read Task".to_string(),
+            content_type: "application/json".to_string(),
+            template_id: TemplateId::from("task"),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
             content: CodexContent {
                 template_fields,
-                crdt_operations: Vec::new(),
-            },
-            metadata: crate::CodexMetadata {
-                created_at: chrono::Utc::now(),
-                updated_at: chrono::Utc::now(),
-                created_by: "test_user".to_string(),
-                template_id: Some("task".to_string()),
-                tags: vec!["test".to_string()],
-                references: Vec::new(),
-                version: 1,
-                content_hash: "test_hash".to_string(),
+                content_sections: HashMap::new(),
+                attachments: Vec::new(),
             },
         };
 
+        let user_context = create_test_user_context();
+
         // Test file operation execution
-        let result = executor.execute_with_role(&role, &task).await?;
+        let result = executor.execute_with_role(&role, &task, user_context).await?;
 
         // Verify the execution completed successfully
         assert!(result.success);
@@ -160,31 +202,43 @@ mod tests {
         // Create a command execution task (security auditor shouldn't have ProcessExecution)
         let id = Uuid::new_v4();
         let mut template_fields = HashMap::new();
-        template_fields.insert("description".to_string(), serde_json::Value::String("Execute a command".to_string()));
-        template_fields.insert("task_type".to_string(), serde_json::Value::String("command_execution".to_string()));
-        template_fields.insert("command".to_string(), serde_json::Value::String("ls".to_string()));
+        template_fields.insert(
+            "description".to_string(),
+            TemplateFieldValue::Text {
+                value: "Execute a command".to_string()
+            }
+        );
+        template_fields.insert(
+            "task_type".to_string(),
+            TemplateFieldValue::Text {
+                value: "command_execution".to_string()
+            }
+        );
+        template_fields.insert(
+            "command".to_string(),
+            TemplateFieldValue::Text {
+                value: "ls".to_string()
+            }
+        );
 
         let task = Codex {
             id,
             title: "Command Task".to_string(),
+            content_type: "application/json".to_string(),
+            template_id: TemplateId::from("task"),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
             content: CodexContent {
                 template_fields,
-                crdt_operations: Vec::new(),
-            },
-            metadata: crate::CodexMetadata {
-                created_at: chrono::Utc::now(),
-                updated_at: chrono::Utc::now(),
-                created_by: "test_user".to_string(),
-                template_id: Some("task".to_string()),
-                tags: vec!["test".to_string()],
-                references: Vec::new(),
-                version: 1,
-                content_hash: "test_hash".to_string(),
+                content_sections: HashMap::new(),
+                attachments: Vec::new(),
             },
         };
 
+        let user_context = create_test_user_context();
+
         // Test that execution fails due to insufficient permissions
-        let result = executor.execute_with_role(&role, &task).await?;
+        let result = executor.execute_with_role(&role, &task, user_context).await?;
 
         // The security_auditor doesn't have ProcessExecution capability, so it should fail
         assert!(!result.success);
@@ -205,7 +259,14 @@ mod tests {
             .expect("Default role should exist");
 
         // Test simple context execution
-        let result = executor.execute_with_context(&role, "Simple task context").await?;
+        // Create a test user context
+        let user_context = UserContext {
+            user_id: Some("test_user".to_string()),
+            session_id: Some("test_session".to_string()),
+            source_ip: Some("127.0.0.1".to_string()),
+            user_agent: Some("test".to_string()),
+        };
+        let result = executor.execute_with_context(&role, "Simple task context", user_context).await?;
 
         assert!(result.success);
         assert!(result.output.is_some());

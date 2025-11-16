@@ -3,6 +3,7 @@
 //! This module tests hook triggers, agents, scheduling, and automation rules.
 
 use std::collections::HashMap;
+use std::sync::Arc;
 use chrono::{DateTime, Utc, Duration};
 use uuid::Uuid;
 use serde_json::json;
@@ -13,7 +14,7 @@ use crate::{
     },
     types::CodexId,
     tests::utils::{TestFixture, PerformanceTest},
-    BinderyConfig,
+    BinderyConfig, CodexManager,
 };
 
 #[cfg(test)]
@@ -64,13 +65,17 @@ mod hook_core_tests {
         let mut template_data = HashMap::new();
         template_data.insert("interval_minutes".to_string(), json!(30));
 
+        let mut schedule_config = HashMap::new();
+        schedule_config.insert("interval".to_string(), json!("30m"));
+        schedule_config.insert("enabled".to_string(), json!(true));
+
         let timed_input = TimedAgentInput {
             template_id: "timed_template".to_string(),
             template_name: "Timed Template".to_string(),
             automation_rule: json!({"type": "scheduled", "interval": "30m"}),
             field_schema: HashMap::new(),
             template_data,
-            context: None,
+            schedule_config,
         };
 
         assert_eq!(timed_input.template_id, "timed_template");
@@ -79,9 +84,10 @@ mod hook_core_tests {
 }
 
 // Helper function for creating test hook managers
-async fn create_test_hook_manager() -> HookManager {
+fn create_test_hook_manager() -> HookManager {
     let config = BinderyConfig::default();
-    HookManager::new(config).await.expect("Should create HookManager")
+    let codex_manager = Arc::new(CodexManager::with_config(config).expect("Should create CodexManager"));
+    HookManager::new(codex_manager)
 }
 
 #[cfg(test)]
@@ -90,7 +96,7 @@ mod hook_manager_tests {
 
     #[tokio::test]
     async fn test_hook_manager_creation() {
-        let manager = create_test_hook_manager().await;
+        let manager = create_test_hook_manager();
         // Test that manager is created successfully
         // Note: More specific tests would require examining the manager's internal state
         // which may not be exposed in the public API
@@ -98,7 +104,7 @@ mod hook_manager_tests {
 
     #[tokio::test]
     async fn test_register_hook_agent() {
-        let mut manager = create_test_hook_manager().await;
+        let mut manager = create_test_hook_manager();
 
         let agent_input = HookAgentInput {
             template_id: "test_hook".to_string(),
@@ -121,7 +127,7 @@ mod hook_manager_tests {
 
     #[tokio::test]
     async fn test_trigger_hook_execution() {
-        let mut manager = create_test_hook_manager().await;
+        let mut manager = create_test_hook_manager();
 
         let codex_id = Uuid::new_v4();
         let trigger_data = json!({
@@ -138,7 +144,11 @@ mod hook_manager_tests {
 
     #[tokio::test]
     async fn test_schedule_timed_agent() {
-        let mut manager = create_test_hook_manager().await;
+        let mut manager = create_test_hook_manager();
+
+        let mut schedule_config = HashMap::new();
+        schedule_config.insert("cron".to_string(), json!("0 9 * * *"));
+        schedule_config.insert("enabled".to_string(), json!(true));
 
         let timed_input = TimedAgentInput {
             template_id: "daily_summary".to_string(),
@@ -150,7 +160,7 @@ mod hook_manager_tests {
             }),
             field_schema: HashMap::new(),
             template_data: HashMap::new(),
-            context: None,
+            schedule_config,
         };
 
         // TODO: Implement schedule_timed_agent method in HookManager
@@ -165,7 +175,7 @@ mod hook_integration_tests {
 
     #[tokio::test]
     async fn test_task_completion_hook_chain() {
-        let mut manager = create_test_hook_manager().await;
+        let mut manager = create_test_hook_manager();
 
         // Test a complete hook chain: task completion -> status update -> notification
         let task_id = Uuid::new_v4();
@@ -206,7 +216,7 @@ mod hook_integration_tests {
 
     #[tokio::test]
     async fn test_field_change_automation() {
-        let mut manager = create_test_hook_manager().await;
+        let mut manager = create_test_hook_manager();
 
         // Test field change automation (e.g., priority change triggers reassignment)
         let hook_input = HookAgentInput {
@@ -234,7 +244,7 @@ mod hook_integration_tests {
 
     #[tokio::test]
     async fn test_custom_event_handling() {
-        let mut manager = create_test_hook_manager().await;
+        let mut manager = create_test_hook_manager();
 
         // Test custom event handling for domain-specific events
         let custom_hook = HookAgentInput {
@@ -268,7 +278,7 @@ mod hook_performance_tests {
     #[tokio::test]
     #[ignore] // Performance test - run separately
     async fn test_hook_execution_performance() {
-        let mut manager = create_test_hook_manager().await;
+        let mut manager = create_test_hook_manager();
 
         // Register multiple hooks
         for i in 0..100 {
@@ -301,7 +311,7 @@ mod hook_performance_tests {
     #[tokio::test]
     #[ignore] // Performance test - run separately
     async fn test_concurrent_hook_execution() {
-        let mut manager = create_test_hook_manager().await;
+        let mut manager = create_test_hook_manager();
 
         // TODO: Test concurrent hook execution
         // 1. Register hooks that can run concurrently
@@ -317,7 +327,7 @@ mod hook_error_handling_tests {
 
     #[tokio::test]
     async fn test_hook_execution_failure() {
-        let mut manager = create_test_hook_manager().await;
+        let mut manager = create_test_hook_manager();
 
         // Test hook that intentionally fails
         let failing_hook = HookAgentInput {
@@ -341,7 +351,7 @@ mod hook_error_handling_tests {
 
     #[tokio::test]
     async fn test_hook_timeout_handling() {
-        let mut manager = create_test_hook_manager().await;
+        let mut manager = create_test_hook_manager();
 
         // Test hook that takes too long to execute
         let slow_hook = HookAgentInput {
