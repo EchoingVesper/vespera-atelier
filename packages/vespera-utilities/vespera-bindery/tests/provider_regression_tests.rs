@@ -743,3 +743,141 @@ mod structured_type_tests {
         assert_eq!(response.usage.total_tokens, 15);
     }
 }
+
+// ==================== Capabilities Reporting Tests (Task 5) ====================
+// Tests for provider capabilities() method
+
+#[cfg(test)]
+mod capabilities_tests {
+    use super::*;
+    use vespera_bindery::providers::types::ProviderCapabilities;
+
+    /// Test 29: Mock provider capabilities (default implementation)
+    #[test]
+    fn test_mock_provider_capabilities() {
+        let provider = MockPhase17Provider::new("Test".to_string());
+        let caps = provider.capabilities();
+
+        // Default implementation should return conservative defaults
+        assert!(!caps.supports_streaming); // Default is false
+        assert!(!caps.supports_tools);     // Default is false
+        assert!(caps.supports_system_prompt); // Default is true
+        assert_eq!(caps.max_tokens, 4096);
+        assert_eq!(caps.max_context_length, 8192);
+    }
+
+    /// Test 30: ClaudeCodeProvider capabilities
+    #[test]
+    fn test_claude_code_provider_capabilities() {
+        use vespera_bindery::providers::claude_code::ClaudeCodeConfig;
+        use vespera_bindery::providers::ClaudeCodeProvider;
+
+        let config = ClaudeCodeConfig {
+            executable_path: "/usr/local/bin/claude".to_string(),
+            model: Some("claude-sonnet-4".to_string()),
+            system_prompt: None,
+            max_tokens: Some(8192),
+            temperature: Some(0.7),
+            timeout: Some(120),
+        };
+
+        let provider = ClaudeCodeProvider::new(config);
+        let caps = provider.capabilities();
+
+        // Claude Code CLI supports streaming and tools
+        assert!(caps.supports_streaming, "Claude Code should support streaming");
+        assert!(caps.supports_tools, "Claude Code should support tools");
+        assert!(caps.supports_system_prompt, "Claude Code should support system prompts");
+        assert_eq!(caps.max_tokens, 8192); // From config
+        assert_eq!(caps.max_context_length, 200000); // Claude Sonnet 4.5 window
+    }
+
+    /// Test 31: ClaudeCodeProvider capabilities with default max_tokens
+    #[test]
+    fn test_claude_code_provider_default_capabilities() {
+        use vespera_bindery::providers::claude_code::ClaudeCodeConfig;
+        use vespera_bindery::providers::ClaudeCodeProvider;
+
+        let config = ClaudeCodeConfig {
+            executable_path: "/usr/local/bin/claude".to_string(),
+            model: Some("claude-sonnet-4".to_string()),
+            system_prompt: None,
+            max_tokens: None, // No max_tokens specified
+            temperature: Some(0.7),
+            timeout: Some(120),
+        };
+
+        let provider = ClaudeCodeProvider::new(config);
+        let caps = provider.capabilities();
+
+        // Should use default max_tokens
+        assert_eq!(caps.max_tokens, 4096); // Default value
+    }
+
+    /// Test 32: OllamaProvider capabilities
+    #[test]
+    fn test_ollama_provider_capabilities() {
+        use vespera_bindery::providers::ollama::OllamaConfig;
+        use vespera_bindery::providers::OllamaProvider;
+
+        let config = OllamaConfig {
+            base_url: "http://localhost:11434".to_string(),
+            model: "llama2".to_string(),
+            api_endpoint: "/api/generate".to_string(),
+            temperature: Some(0.7),
+            max_tokens: Some(4096),
+            system_prompt: None,
+            context_window: Some(8192),
+            timeout: Some(120),
+        };
+
+        let provider = OllamaProvider::new(config);
+        let caps = provider.capabilities();
+
+        // Ollama supports streaming but not tools
+        assert!(caps.supports_streaming, "Ollama should support streaming");
+        assert!(!caps.supports_tools, "Ollama should not support tools");
+        assert!(caps.supports_system_prompt, "Ollama should support system prompts");
+        assert_eq!(caps.max_tokens, 4096); // From config
+        assert_eq!(caps.max_context_length, 8192); // From context_window config
+    }
+
+    /// Test 33: OllamaProvider capabilities with defaults
+    #[test]
+    fn test_ollama_provider_default_capabilities() {
+        use vespera_bindery::providers::ollama::OllamaConfig;
+        use vespera_bindery::providers::OllamaProvider;
+
+        let config = OllamaConfig::default();
+        let provider = OllamaProvider::new(config);
+        let caps = provider.capabilities();
+
+        // Should use default values
+        assert_eq!(caps.max_tokens, 2048); // Ollama default
+        assert_eq!(caps.max_context_length, 4096); // Ollama default context_window
+    }
+
+    /// Test 34: Runtime feature detection
+    #[test]
+    fn test_runtime_feature_detection() {
+        let provider = MockPhase17Provider::new("Test".to_string());
+        let caps = provider.capabilities();
+
+        // Simulate runtime feature detection logic
+        if caps.supports_streaming {
+            // Use streaming
+            assert!(false, "Mock provider shouldn't support streaming");
+        } else {
+            // Fall back to non-streaming
+            assert!(true);
+        }
+
+        if caps.supports_tools {
+            // Enable tool calling UI
+            assert!(false, "Mock provider shouldn't support tools");
+        } else {
+            // Hide tool calling features
+            assert!(true);
+        }
+    }
+}

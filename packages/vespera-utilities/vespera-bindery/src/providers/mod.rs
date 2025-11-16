@@ -185,6 +185,23 @@ pub trait Provider: Send + Sync {
 
     /// Get provider display name
     fn display_name(&self) -> &str;
+
+    /// Get provider capabilities (new in Phase 17.5 Task 5)
+    ///
+    /// Returns information about what features this provider supports,
+    /// enabling runtime feature detection and graceful degradation.
+    ///
+    /// Default implementation returns conservative defaults (no special features).
+    /// Providers should override to report their actual capabilities.
+    fn capabilities(&self) -> types::ProviderCapabilities {
+        types::ProviderCapabilities {
+            supports_streaming: false,
+            supports_tools: false,
+            supports_system_prompt: true, // Most providers support this
+            max_tokens: 4096,
+            max_context_length: 8192,
+        }
+    }
 }
 
 /// Provider configuration loaded from Codex entry

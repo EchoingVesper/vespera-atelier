@@ -7,6 +7,31 @@
 //! 1. Phase 17.5 Task 4: Make types available, add optional trait methods
 //! 2. Future tasks: Gradually migrate call sites to use structured types
 //! 3. Eventually: Deprecate simple parameter methods in favor of structured types
+//!
+//! ## Provider Feature Matrix (Phase 17.5 Task 5)
+//!
+//! | Provider          | Streaming | Tools | System Prompt | Max Tokens | Context Length |
+//! |-------------------|-----------|-------|---------------|------------|----------------|
+//! | ClaudeCodeProvider| ✅        | ✅ *  | ✅            | 4096-8192  | 200,000        |
+//! | OllamaProvider    | ✅        | ❌    | ✅            | 2048-4096  | 4,096-8,192    |
+//!
+//! *Tool support exists but parsing not yet implemented (see Task 6)
+//!
+//! ### Claude Code CLI (ClaudeCodeProvider)
+//! - **Streaming**: Full support via stream-json format
+//! - **Tools**: Protocol supports tools, but parsing TODO in claude_code.rs:285
+//! - **System Prompt**: Supported via --system-prompt flag
+//! - **Max Tokens**: Configurable, defaults to 4096
+//! - **Context**: 200K tokens (Claude Sonnet 4.5)
+//!
+//! ### Ollama (OllamaProvider)
+//! - **Streaming**: Full support via newline-delimited JSON
+//! - **Tools**: Not supported (model-dependent, most don't have it)
+//! - **System Prompt**: Supported via system field in API
+//! - **Max Tokens**: Configurable, defaults to 2048
+//! - **Context**: Configurable context_window, defaults to 4096
+//!
+//! Use `provider.capabilities()` for runtime feature detection.
 
 // Re-export PR #85 types for use in Phase 17
 pub use crate::llm::types::{

@@ -335,6 +335,16 @@ impl Provider for ClaudeCodeProvider {
     fn display_name(&self) -> &str {
         "Claude Code CLI"
     }
+
+    fn capabilities(&self) -> crate::providers::types::ProviderCapabilities {
+        crate::providers::types::ProviderCapabilities {
+            supports_streaming: true,  // Claude Code CLI supports stream-json format
+            supports_tools: true,       // Supports tool calling (TODO: implement parsing)
+            supports_system_prompt: true,
+            max_tokens: self.config.max_tokens.unwrap_or(4096) as u32,
+            max_context_length: 200000, // Claude Sonnet 4.5 context window
+        }
+    }
 }
 
 impl ClaudeCodeProvider {

@@ -264,6 +264,16 @@ impl Provider for OllamaProvider {
     fn display_name(&self) -> &str {
         "Ollama Local"
     }
+
+    fn capabilities(&self) -> crate::providers::types::ProviderCapabilities {
+        crate::providers::types::ProviderCapabilities {
+            supports_streaming: true,  // Ollama API supports streaming via newline-delimited JSON
+            supports_tools: false,      // Ollama doesn't support tool calling (model-dependent)
+            supports_system_prompt: true,
+            max_tokens: self.config.max_tokens.unwrap_or(2048) as u32,
+            max_context_length: self.config.context_window.unwrap_or(4096) as u32,
+        }
+    }
 }
 
 // Ollama API request/response types
