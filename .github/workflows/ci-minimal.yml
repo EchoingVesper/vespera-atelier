@@ -166,7 +166,7 @@ jobs:
     #     npm run build || pnpm run build || echo "Build not configured"
     
     - name: Upload V2 build artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: mcp-build-artifacts
         path: |
