@@ -36,6 +36,13 @@ We use a lightweight format adapted from ADRs. See [CONCEPT-TEMPLATE.md](./CONCE
   - Summary: Template composition where Plans contain Questions that spawn Tasks and ADRs when answered
   - Impact: Automated workflow for phase planning and decision tracking
 
+### Task System Concepts
+
+- **[CONCEPT-002: Task Ordering Dependencies](./CONCEPT-002-task-ordering-dependencies.md)** 🔮
+  - Status: Exploratory
+  - Summary: Dual-mode task dependency system with hard locks and soft reminders to enforce or guide proper task sequencing
+  - Impact: Prevents workflow mistakes, encodes best practices, enables task orchestration
+
 ---
 
 ## How to Create a Concept
