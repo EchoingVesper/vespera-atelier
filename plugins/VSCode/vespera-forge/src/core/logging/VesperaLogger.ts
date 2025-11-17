@@ -7,7 +7,9 @@
 
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import { promises as fsPromises } from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 import { EnhancedDisposable } from '../disposal/DisposalManager';
 import { LoggingConfigurationManager } from './LoggingConfigurationManager';
 import { LogLevel, LogRotationStrategy } from './LoggingConfiguration';
@@ -55,10 +57,11 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
   private currentLogFileSize: number = 0;
   private componentName: string = 'global';
   private bufferOverflowCount: number = 0;
+  private fileLoggingEnabled: boolean = true;
+  private isLogDirectoryInitialized: boolean = false;
   // TODO: Async file writing support
   // private writeQueue: Promise<void> = Promise.resolve();
   // private isFlushInProgress = false;
-  // private isLogDirectoryInitialized = false;
 
   private constructor(private context: vscode.ExtensionContext, config: Partial<LoggerConfiguration> = {}) {
     this.sessionId = this.generateSessionId();
@@ -348,6 +351,12 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
       return;
     }
 
+    // If file logging is disabled, just clear the buffer
+    if (!this.fileLoggingEnabled) {
+      this.logBuffer = [];
+      return;
+    }
+
     // Write to file if enabled
     const config = this.configManager?.getConfiguration();
     if (config?.outputs.file.enabled && this.currentLogFile) {
@@ -363,13 +372,63 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
 
         // Update current file size
         this.currentLogFileSize += Buffer.byteLength(logLines, 'utf-8');
+
+        // Reset failure count on successful write
+        this.fileLoggingFailureCount = 0;
       } catch (error) {
-        console.error('Failed to write logs to file:', error);
+        const errorCode = (error as NodeJS.ErrnoException).code;
+        const errorMessage = error instanceof Error ? error.message : String(error);
+
+        // Provide specific error messages for different failure modes
+        if (errorCode === 'EACCES') {
+          console.error('Permission denied when writing to log file:', errorMessage);
+          this.handleFileLoggingFailure('Permission denied. Check file permissions.');
+        } else if (errorCode === 'ENOSPC') {
+          console.error('No space left on device when writing to log file:', errorMessage);
+          this.handleFileLoggingFailure('Disk full. Free up space or logging will be disabled.');
+        } else if (errorCode === 'EROFS') {
+          console.error('Read-only file system when writing to log file:', errorMessage);
+          this.handleFileLoggingFailure('File system is read-only.');
+        } else {
+          console.error('Failed to write logs to file:', error);
+          this.handleFileLoggingFailure('Unknown error writing logs.');
+        }
       }
     }
 
     // Clear the buffer
     this.logBuffer = [];
+  }
+
+  /**
+   * Handle persistent file logging failures
+   */
+  private fileLoggingFailureCount: number = 0;
+  private readonly MAX_FILE_LOGGING_FAILURES = 3;
+
+  private handleFileLoggingFailure(reason: string): void {
+    this.fileLoggingFailureCount++;
+
+    if (this.fileLoggingFailureCount >= this.MAX_FILE_LOGGING_FAILURES) {
+      console.error(`File logging disabled after ${this.MAX_FILE_LOGGING_FAILURES} consecutive failures.`);
+      this.fileLoggingEnabled = false;
+
+      vscode.window.showErrorMessage(
+        `Vespera Forge: File logging disabled due to persistent errors. ${reason}`,
+        'Retry'
+      ).then(selection => {
+        if (selection === 'Retry') {
+          this.retryFileLogging().then(success => {
+            if (success) {
+              vscode.window.showInformationMessage('File logging re-enabled successfully.');
+              this.fileLoggingFailureCount = 0;
+            } else {
+              vscode.window.showErrorMessage('Failed to re-enable file logging.');
+            }
+          });
+        }
+      });
+    }
   }
 
   private setupDevelopmentLogging(): void {
@@ -405,29 +464,121 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
   }
 
   /**
-   * Initialize log directory structure
+   * Initialize log directory structure with fallback chain
    */
   private initializeLogDirectory(): void {
-    try {
-      const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-      if (workspaceFolder) {
-        // Workspace-level logs
-        this.logDirectory = path.join(workspaceFolder.uri.fsPath, '.vespera', 'logs', 'frontend');
-      } else {
-        // User-level logs
-        const homeDir = process.env['HOME'] || process.env['USERPROFILE'] || '';
-        this.logDirectory = path.join(homeDir, '.vespera', 'logs', 'frontend');
-      }
-
-      // Create directory if it doesn't exist
-      if (!fs.existsSync(this.logDirectory)) {
-        fs.mkdirSync(this.logDirectory, { recursive: true });
-      }
-
-      // Initialize current log file
-      this.rotateLogFileIfNeeded();
-    } catch (error) {
+    // Use async initialization in background
+    this.ensureLogDirectoryInitialized().catch(error => {
       console.error('Failed to initialize log directory:', error);
+    });
+  }
+
+  /**
+   * Ensure log directory is initialized with graceful fallback
+   */
+  private async ensureLogDirectoryInitialized(): Promise<void> {
+    if (this.isLogDirectoryInitialized) {
+      return;
+    }
+
+    // Try workspace-level logs first
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    const directories: string[] = [];
+
+    if (workspaceFolder) {
+      directories.push(
+        path.join(workspaceFolder.uri.fsPath, '.vespera', 'logs', 'frontend')
+      );
+    }
+
+    // Fallback to user-level logs
+    const homeDir = process.env['HOME'] || process.env['USERPROFILE'] || '';
+    if (homeDir) {
+      directories.push(
+        path.join(homeDir, '.vespera', 'logs', 'frontend')
+      );
+    }
+
+    // Last resort: temp directory
+    const tmpDir = os.tmpdir();
+    directories.push(
+      path.join(tmpDir, 'vespera-forge-logs')
+    );
+
+    // Try each directory in order
+    for (const dir of directories) {
+      try {
+        await fsPromises.mkdir(dir, { recursive: true });
+
+        // Verify we can write to the directory
+        const canWrite = await this.checkDirectoryPermissions(dir);
+        if (!canWrite) {
+          console.warn(`Cannot write to directory ${dir}, trying next location...`);
+          continue;
+        }
+
+        this.logDirectory = dir;
+        this.isLogDirectoryInitialized = true;
+
+        // Initialize current log file
+        this.rotateLogFileIfNeeded();
+        return;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorCode = (error as NodeJS.ErrnoException).code;
+
+        // Provide specific error messages for common failure modes
+        if (errorCode === 'EACCES') {
+          console.warn(`Permission denied for log directory ${dir}:`, errorMessage);
+        } else if (errorCode === 'ENOSPC') {
+          console.warn(`No space left on device for log directory ${dir}:`, errorMessage);
+        } else {
+          console.warn(`Failed to create log directory ${dir}:`, errorMessage);
+        }
+        continue; // Try next directory
+      }
+    }
+
+    // If all fail, disable file logging
+    console.error('Failed to create any log directory. File logging disabled.');
+    vscode.window.showWarningMessage(
+      'Vespera Forge: Unable to create log directory. Logging to console only.',
+      'More Info'
+    ).then(selection => {
+      if (selection === 'More Info') {
+        vscode.window.showInformationMessage(
+          'Attempted locations:\n' + directories.join('\n')
+        );
+      }
+    });
+
+    this.fileLoggingEnabled = false;
+    this.isLogDirectoryInitialized = true;
+  }
+
+  /**
+   * Check if directory has write permissions
+   */
+  private async checkDirectoryPermissions(dirPath: string): Promise<boolean> {
+    try {
+      await fsPromises.access(dirPath, fs.constants.W_OK);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Retry file logging after it has been disabled
+   */
+  public async retryFileLogging(): Promise<boolean> {
+    this.fileLoggingEnabled = true;
+    this.isLogDirectoryInitialized = false;
+    try {
+      await this.ensureLogDirectoryInitialized();
+      return this.fileLoggingEnabled;
+    } catch {
+      return false;
     }
   }
 
@@ -461,6 +612,10 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
    * Rotate log file if needed
    */
   private rotateLogFileIfNeeded(): void {
+    if (!this.fileLoggingEnabled) {
+      return;
+    }
+
     const newLogFile = this.getLogFilePath();
     const config = this.configManager?.getConfiguration();
 
@@ -468,11 +623,22 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
     if (this.currentLogFile !== newLogFile) {
       const oldFile = this.currentLogFile;
       this.currentLogFile = newLogFile;
-      this.currentLogFileSize = fs.existsSync(newLogFile) ? fs.statSync(newLogFile).size : 0;
 
-      // Emit rotation event if not first initialization
-      if (oldFile) {
-        VesperaEvents.logFileRotated('frontend', oldFile, newLogFile);
+      try {
+        this.currentLogFileSize = fs.existsSync(newLogFile) ? fs.statSync(newLogFile).size : 0;
+
+        // Emit rotation event if not first initialization
+        if (oldFile) {
+          VesperaEvents.logFileRotated('frontend', oldFile, newLogFile);
+        }
+      } catch (error) {
+        const errorCode = (error as NodeJS.ErrnoException).code;
+        if (errorCode === 'EACCES') {
+          console.error('Permission denied when accessing log file:', error);
+          this.handleFileLoggingFailure('Cannot access log file due to permissions.');
+        } else {
+          console.error('Failed to check log file:', error);
+        }
       }
     }
 
@@ -488,7 +654,14 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
           this.currentLogFileSize = 0;
           VesperaEvents.logFileRotated('frontend', this.currentLogFile, archiveFile);
         } catch (error) {
-          console.error('Failed to rotate log file:', error);
+          const errorCode = (error as NodeJS.ErrnoException).code;
+          if (errorCode === 'EACCES') {
+            console.error('Permission denied when rotating log file:', error);
+            this.handleFileLoggingFailure('Cannot rotate log file due to permissions.');
+          } else {
+            console.error('Failed to rotate log file:', error);
+            this.handleFileLoggingFailure('Failed to rotate log file.');
+          }
         }
       }
     }
@@ -544,12 +717,18 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
     level: LogLevel;
     bufferSize: number;
     configuration: LoggerConfiguration;
+    fileLoggingEnabled: boolean;
+    currentLogFile: string;
+    logDirectory: string;
   } {
     return {
       sessionId: this.sessionId,
       level: this.config.level,
       bufferSize: this.logBuffer.length,
-      configuration: this.config
+      configuration: this.config,
+      fileLoggingEnabled: this.fileLoggingEnabled,
+      currentLogFile: this.currentLogFile,
+      logDirectory: this.logDirectory
     };
   }
 
