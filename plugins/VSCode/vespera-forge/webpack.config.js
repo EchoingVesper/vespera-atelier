@@ -151,7 +151,7 @@ const webviewConfig = {
       }
     ]
   },
-  devtool: 'nosources-source-map',
+  devtool: false, // Disabled source maps temporarily to fix build error
   infrastructureLogging: {
     level: "log",
   },

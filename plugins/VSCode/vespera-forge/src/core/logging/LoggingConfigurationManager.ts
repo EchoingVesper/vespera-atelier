@@ -14,7 +14,8 @@ import {
   DEFAULT_LOGGING_CONFIG,
   validateLoggingConfiguration,
   serializeLoggingConfiguration,
-  LogLevel
+  LogLevel,
+  LogRotationStrategy
 } from './LoggingConfiguration';
 import { VesperaEvents } from '../../utils/events';
 
@@ -35,7 +36,7 @@ export class LoggingConfigurationManager {
 
     // Determine config paths
     // User-level config: ~/.vespera/config/logging-config.json5 (or %APPDATA% on Windows)
-    const homeDir = process.env.HOME || process.env.USERPROFILE || '';
+    const homeDir = process.env['HOME'] || process.env['USERPROFILE'] || '';
     this.userConfigPath = path.join(homeDir, '.vespera', 'config', 'logging-config.json5');
 
     // Workspace-level config: {workspace}/.vespera/config/logging-config.json5
@@ -339,7 +340,7 @@ export class LoggingConfigurationManager {
     if (componentLevels) {
       updatedConfig.levels.components = {
         ...updatedConfig.levels.components,
-        ...componentLevels
+        ...(componentLevels as any)
       };
     }
 

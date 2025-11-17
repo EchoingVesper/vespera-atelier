@@ -160,8 +160,8 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
   private log(level: LogLevel, message: string, metadata?: Record<string, any>): void {
     // Check against configuration manager's log level if available
     const config = this.configManager?.getConfiguration();
-    const componentLevel = config ? this.configManager.getLogLevel(this.componentName) : this.config.level;
-    const minLevel = this.mapLogLevelToConfigLevel(componentLevel);
+    const componentLevel = config && this.configManager ? this.configManager.getLogLevel(this.componentName) : this.config.level;
+    const minLevel = this.mapLogLevelToConfigLevel(String(componentLevel));
 
     if (level < minLevel) {
       return; // Skip logging below configured level
@@ -390,7 +390,7 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
         this.logDirectory = path.join(workspaceFolder.uri.fsPath, '.vespera', 'logs', 'frontend');
       } else {
         // User-level logs
-        const homeDir = process.env.HOME || process.env.USERPROFILE || '';
+        const homeDir = process.env['HOME'] || process.env['USERPROFILE'] || '';
         this.logDirectory = path.join(homeDir, '.vespera', 'logs', 'frontend');
       }
 
@@ -497,10 +497,12 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
       // Delete files beyond retention limit
       if (files.length > maxFiles) {
         for (let i = maxFiles; i < files.length; i++) {
+          const file = files[i];
+          if (!file) continue;
           try {
-            fs.unlinkSync(files[i].path);
+            fs.unlinkSync(file.path);
           } catch (error) {
-            console.error(`Failed to delete old log file ${files[i].name}:`, error);
+            console.error(`Failed to delete old log file ${file.name}:`, error);
           }
         }
       }

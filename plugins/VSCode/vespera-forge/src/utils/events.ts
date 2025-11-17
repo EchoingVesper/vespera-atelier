@@ -426,7 +426,7 @@ export const VesperaEvents = {
   /**
    * Remove logging event listeners
    */
-  offLoggingEvent: (callback: (eventType: string, data: any) => void) => {
+  offLoggingEvent: (_callback?: (eventType: string, data: any) => void) => {
     // Note: This won't work perfectly due to wrapper functions, but provides API consistency
     // For proper cleanup, components should store and remove specific listener references
     eventBus.removeAllListeners('logEntryCreated');
