@@ -8,6 +8,7 @@
 import * as vscode from 'vscode';
 import { promises as fsPromises } from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 import JSON5 from 'json5';
 import {
   LoggingConfiguration,
@@ -18,6 +19,7 @@ import {
   LogRotationStrategy
 } from './LoggingConfiguration';
 import { VesperaEvents } from '../../utils/events';
+import { validateLogPath, PathValidationError } from './VesperaLogger';
 
 /**
  * Manager for logging configuration with hot-reload support
@@ -34,19 +36,62 @@ export class LoggingConfigurationManager {
   private constructor(private context: vscode.ExtensionContext) {
     this.config = DEFAULT_LOGGING_CONFIG;
 
-    // Determine config paths
+    // Get allowed roots for path validation
+    const allowedRoots = this.getAllowedConfigRoots();
+
+    // Determine config paths with validation
     // User-level config: ~/.vespera/config/logging-config.json5 (or %APPDATA% on Windows)
     const homeDir = process.env['HOME'] || process.env['USERPROFILE'] || '';
-    this.userConfigPath = path.join(homeDir, '.vespera', 'config', 'logging-config.json5');
+    const userConfigCandidate = path.join(homeDir, '.vespera', 'config', 'logging-config.json5');
+
+    try {
+      this.userConfigPath = validateLogPath(userConfigCandidate, allowedRoots);
+    } catch (error) {
+      console.error('[SECURITY] User config path validation failed:', error);
+      // Fall back to a safe default path in home directory
+      this.userConfigPath = path.join(homeDir, '.vespera', 'config', 'logging-config.json5');
+    }
 
     // Workspace-level config: {workspace}/.vespera/config/logging-config.json5
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-    this.workspaceConfigPath = workspaceFolder
-      ? path.join(workspaceFolder.uri.fsPath, '.vespera', 'config', 'logging-config.json5')
-      : '';
+    if (workspaceFolder) {
+      const workspaceConfigCandidate = path.join(workspaceFolder.uri.fsPath, '.vespera', 'config', 'logging-config.json5');
+      try {
+        this.workspaceConfigPath = validateLogPath(workspaceConfigCandidate, allowedRoots);
+      } catch (error) {
+        console.error('[SECURITY] Workspace config path validation failed:', error);
+        this.workspaceConfigPath = '';
+      }
+    } else {
+      this.workspaceConfigPath = '';
+    }
 
     // Workspace config takes precedence
     this.configPath = this.workspaceConfigPath || this.userConfigPath;
+  }
+
+  /**
+   * Get allowed root directories for configuration file paths
+   */
+  private getAllowedConfigRoots(): string[] {
+    const roots: string[] = [];
+
+    // Workspace directory
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    if (workspaceFolder) {
+      roots.push(workspaceFolder.uri.fsPath);
+    }
+
+    // User home directory
+    const homeDir = process.env['HOME'] || process.env['USERPROFILE'] || '';
+    if (homeDir) {
+      roots.push(homeDir);
+    }
+
+    // Temp directory (fallback)
+    roots.push(os.tmpdir());
+
+    return roots;
   }
 
   /**
@@ -204,18 +249,45 @@ export class LoggingConfigurationManager {
    */
   public async saveConfiguration(config: LoggingConfiguration): Promise<void> {
     try {
-      // Ensure directory exists
-      const configDir = path.dirname(this.configPath);
+      // Validate config path before writing
+      const allowedRoots = this.getAllowedConfigRoots();
+      let validatedConfigPath: string;
+
       try {
-        await fsPromises.access(configDir);
+        validatedConfigPath = validateLogPath(this.configPath, allowedRoots);
+      } catch (error) {
+        console.error('[SECURITY] Configuration path validation failed:', error);
+        throw new PathValidationError(
+          'Configuration path is invalid or outside allowed directories',
+          this.configPath
+        );
+      }
+
+      // Ensure directory exists
+      const configDir = path.dirname(validatedConfigPath);
+
+      // Validate directory path as well
+      let validatedConfigDir: string;
+      try {
+        validatedConfigDir = validateLogPath(configDir, allowedRoots);
+      } catch (error) {
+        console.error('[SECURITY] Configuration directory path validation failed:', error);
+        throw new PathValidationError(
+          'Configuration directory path is invalid or outside allowed directories',
+          configDir
+        );
+      }
+
+      try {
+        await fsPromises.access(validatedConfigDir);
       } catch {
         // Directory doesn't exist, create it
-        await fsPromises.mkdir(configDir, { recursive: true });
+        await fsPromises.mkdir(validatedConfigDir, { recursive: true });
       }
 
       // Serialize and write configuration
       const content = serializeLoggingConfiguration(config);
-      await fsPromises.writeFile(this.configPath, content, 'utf-8');
+      await fsPromises.writeFile(validatedConfigPath, content, 'utf-8');
 
       // Update in-memory config
       this.config = config;

@@ -527,7 +527,7 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
     }, flushInterval);
   }
 
-  private flushLogs(): Promise<void> {
+  private async flushLogs(): Promise<void> {
     if (this.logBuffer.length === 0) {
       return;
     }
@@ -859,7 +859,7 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
   /**
    * Rotate log file if needed
    */
-  private rotateLogFileIfNeeded(): Promise<void> {
+  private async rotateLogFileIfNeeded(): Promise<void> {
     if (!this.fileLoggingEnabled) {
       return;
     }
