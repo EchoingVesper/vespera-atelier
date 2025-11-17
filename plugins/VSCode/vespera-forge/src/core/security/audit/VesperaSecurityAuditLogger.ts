@@ -51,11 +51,24 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
   private static readonly MAX_AUDIT_ENTRIES = 10000;
   private static readonly MAX_ALERTS = 1000;
 
+  // Overflow thresholds (90% of max)
+  private static readonly AUDIT_OVERFLOW_THRESHOLD = Math.floor(VesperaSecurityAuditLogger.MAX_AUDIT_ENTRIES * 0.9);
+  private static readonly ALERTS_OVERFLOW_THRESHOLD = Math.floor(VesperaSecurityAuditLogger.MAX_ALERTS * 0.9);
+
+  // Trim amount (10% of max)
+  private static readonly AUDIT_TRIM_AMOUNT = Math.floor(VesperaSecurityAuditLogger.MAX_AUDIT_ENTRIES * 0.1);
+  private static readonly ALERTS_TRIM_AMOUNT = Math.floor(VesperaSecurityAuditLogger.MAX_ALERTS * 0.1);
+
   private auditLog: SecurityAuditEntry[] = [];
   private alerts: SecurityAlert[] = [];
   private disposed = false;
   private isDevelopment = false;
   private suppressNotifications = false;
+  private auditOverflowCount = 0;
+  private alertsOverflowCount = 0;
+
+  // Circular logging prevention
+  private loggingInProgress = false;
 
   /**
    * Check if service is disposed
@@ -123,65 +136,78 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
   async logSecurityEvent(event: VesperaSecurityEvent, context: SecurityEventContext): Promise<void> {
     if (this.disposed) return;
 
-    const auditEntry: SecurityAuditEntry = {
-      id: this.generateAuditId(),
-      timestamp: Date.now(),
-      event,
-      context,
-      severity: this.determineSeverity(event, context),
-      source: 'vespera-forge',
-      details: this.sanitizeContext(context),
-      resolved: false
-    };
+    // Prevent circular logging - check re-entry
+    if (this.loggingInProgress) {
+      console.error('[SecurityAuditLogger] Circular logging detected, skipping event:', event);
+      return;
+    }
 
-    // Check audit log size and remove oldest if at limit
-    if (this.auditLog.length >= VesperaSecurityAuditLogger.MAX_AUDIT_ENTRIES) {
-      this.auditLog.shift(); // Remove oldest entry
-      this.logger.debug('Audit log at capacity, removed oldest entry', {
-        maxEntries: VesperaSecurityAuditLogger.MAX_AUDIT_ENTRIES
+    this.loggingInProgress = true;
+
+    try {
+      const auditEntry: SecurityAuditEntry = {
+        id: this.generateAuditId(),
+        timestamp: Date.now(),
+        event,
+        context,
+        severity: this.determineSeverity(event, context),
+        source: 'vespera-forge',
+        details: this.sanitizeContext(context),
+        resolved: false
+      };
+
+      // Handle audit log overflow BEFORE adding entry
+      if (this.auditLog.length >= VesperaSecurityAuditLogger.AUDIT_OVERFLOW_THRESHOLD) {
+        this.handleAuditLogOverflow();
+      }
+
+      // Add to audit log
+      this.auditLog.push(auditEntry);
+
+      // Update event counters
+      const currentCount = this.eventCounters.get(event) || 0;
+      this.eventCounters.set(event, currentCount + 1);
+
+      // Update metrics
+      this.updateMetrics(event, context);
+
+      // Check for alert conditions
+      if (this.config?.realTimeAlerts) {
+        await this.checkAlertConditions(auditEntry);
+      }
+
+      // Send telemetry if enabled
+      if (this.telemetryService?.isEnabled()) {
+        this.telemetryService.trackEvent({
+          name: `Security.${event}`,
+          properties: {
+            severity: auditEntry.severity,
+            userId: context.userId,
+            resourceId: context.resourceId
+          },
+          measurements: {
+            timestamp: context.timestamp
+          }
+        });
+      }
+
+      this.logger.info('Security event logged', {
+        eventId: auditEntry.id,
+        event,
+        severity: auditEntry.severity,
+        userId: context.userId,
+        resourceId: context.resourceId
       });
+
+      // Cleanup old entries if needed
+      await this.performCleanup();
+    } catch (error) {
+      // Use console.error to avoid circular logging
+      console.error('[SecurityAuditLogger] Error logging security event:', error);
+    } finally {
+      // Always reset flag to prevent deadlock
+      this.loggingInProgress = false;
     }
-
-    // Add to audit log
-    this.auditLog.push(auditEntry);
-
-    // Update event counters
-    const currentCount = this.eventCounters.get(event) || 0;
-    this.eventCounters.set(event, currentCount + 1);
-
-    // Update metrics
-    this.updateMetrics(event, context);
-
-    // Check for alert conditions
-    if (this.config?.realTimeAlerts) {
-      await this.checkAlertConditions(auditEntry);
-    }
-
-    // Send telemetry if enabled
-    if (this.telemetryService?.isEnabled()) {
-      this.telemetryService.trackEvent({
-        name: `Security.${event}`,
-        properties: {
-          severity: auditEntry.severity,
-          userId: context.userId,
-          resourceId: context.resourceId
-        },
-        measurements: {
-          timestamp: context.timestamp
-        }
-      });
-    }
-
-    this.logger.info('Security event logged', {
-      eventId: auditEntry.id,
-      event,
-      severity: auditEntry.severity,
-      userId: context.userId,
-      resourceId: context.resourceId
-    });
-
-    // Cleanup old entries if needed
-    await this.performCleanup();
   }
 
   /**
@@ -646,12 +672,9 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
       acknowledged: false
     };
 
-    // Check alerts size and remove oldest if at limit
-    if (this.alerts.length >= VesperaSecurityAuditLogger.MAX_ALERTS) {
-      this.alerts.shift(); // Remove oldest alert
-      this.logger.debug('Alerts at capacity, removed oldest alert', {
-        maxAlerts: VesperaSecurityAuditLogger.MAX_ALERTS
-      });
+    // Handle alerts overflow BEFORE adding alert
+    if (this.alerts.length >= VesperaSecurityAuditLogger.ALERTS_OVERFLOW_THRESHOLD) {
+      this.handleAlertsOverflow();
     }
 
     this.alerts.push(securityAlert);
@@ -759,6 +782,70 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
   }
 
   /**
+   * Handle audit log overflow by trimming oldest entries
+   *
+   * When audit log reaches 90% capacity (9000/10000 entries):
+   * - Trim oldest 10% (1000 entries)
+   * - Emit overflow event
+   * - Log overflow occurrence
+   *
+   * This prevents hard limits and maintains a rolling audit trail.
+   */
+  private handleAuditLogOverflow(): void {
+    this.auditOverflowCount++;
+
+    // Remove oldest 10% of entries
+    const trimCount = VesperaSecurityAuditLogger.AUDIT_TRIM_AMOUNT;
+    this.auditLog.splice(0, trimCount);
+
+    // Use console.error to avoid circular logging via VesperaLogger
+    console.error(
+      `[SecurityAuditLogger] Audit log overflow #${this.auditOverflowCount}: ` +
+      `Trimmed ${trimCount} oldest entries. Current size: ${this.auditLog.length}/${VesperaSecurityAuditLogger.MAX_AUDIT_ENTRIES}`
+    );
+
+    // Emit overflow event (VesperaEvents should not trigger logger re-entry)
+    try {
+      VesperaEvents.logBufferOverflow('SecurityAuditLogger:auditLog', this.auditOverflowCount);
+    } catch (error) {
+      // Silently fail if event emission causes issues
+      console.error('[SecurityAuditLogger] Failed to emit audit overflow event:', error);
+    }
+  }
+
+  /**
+   * Handle alerts overflow by trimming oldest alerts
+   *
+   * When alerts reach 90% capacity (900/1000 alerts):
+   * - Trim oldest 10% (100 alerts)
+   * - Emit overflow event
+   * - Log overflow occurrence
+   *
+   * This prevents hard limits and maintains recent alert history.
+   */
+  private handleAlertsOverflow(): void {
+    this.alertsOverflowCount++;
+
+    // Remove oldest 10% of alerts
+    const trimCount = VesperaSecurityAuditLogger.ALERTS_TRIM_AMOUNT;
+    this.alerts.splice(0, trimCount);
+
+    // Use console.error to avoid circular logging via VesperaLogger
+    console.error(
+      `[SecurityAuditLogger] Alerts overflow #${this.alertsOverflowCount}: ` +
+      `Trimmed ${trimCount} oldest alerts. Current size: ${this.alerts.length}/${VesperaSecurityAuditLogger.MAX_ALERTS}`
+    );
+
+    // Emit overflow event (VesperaEvents should not trigger logger re-entry)
+    try {
+      VesperaEvents.logBufferOverflow('SecurityAuditLogger:alerts', this.alertsOverflowCount);
+    } catch (error) {
+      // Silently fail if event emission causes issues
+      console.error('[SecurityAuditLogger] Failed to emit alerts overflow event:', error);
+    }
+  }
+
+  /**
    * Get memory statistics for buffer management
    */
   public getMemoryStats(): {
@@ -768,6 +855,8 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
     maxAlerts: number;
     auditLogByteSize: number;
     alertsByteSize: number;
+    auditOverflowCount: number;
+    alertsOverflowCount: number;
   } {
     // Calculate approximate byte sizes
     const auditLogByteSize = this.auditLog.reduce((total, entry) => {
@@ -784,7 +873,9 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
       maxAuditEntries: VesperaSecurityAuditLogger.MAX_AUDIT_ENTRIES,
       maxAlerts: VesperaSecurityAuditLogger.MAX_ALERTS,
       auditLogByteSize,
-      alertsByteSize
+      alertsByteSize,
+      auditOverflowCount: this.auditOverflowCount,
+      alertsOverflowCount: this.alertsOverflowCount
     };
   }
 

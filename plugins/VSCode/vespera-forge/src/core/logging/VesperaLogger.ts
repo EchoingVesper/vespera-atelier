@@ -18,6 +18,16 @@ import { VesperaEvents } from '../../utils/events';
 // Re-export LogLevel for backward compatibility
 export { LogLevel };
 
+/**
+ * Security error for path validation failures
+ */
+export class PathValidationError extends Error {
+  constructor(message: string, public readonly attemptedPath: string) {
+    super(message);
+    this.name = 'PathValidationError';
+  }
+}
+
 export interface LogEntry {
   timestamp: number;
   level: LogLevel;
@@ -40,6 +50,136 @@ export interface LoggerConfiguration {
 }
 
 /**
+ * Sanitize component name to prevent path injection attacks
+ * Allows only alphanumeric characters, hyphens, and underscores
+ *
+ * @param componentName - Raw component name
+ * @returns Sanitized component name safe for use in file paths
+ * @throws PathValidationError if component name is empty after sanitization
+ */
+export function sanitizeComponentName(componentName: string): string {
+  // Remove all characters except alphanumeric, hyphens, and underscores
+  const sanitized = componentName.replace(/[^a-zA-Z0-9_-]/g, '');
+
+  if (sanitized.length === 0) {
+    throw new PathValidationError(
+      `Invalid component name: "${componentName}" contains no valid characters`,
+      componentName
+    );
+  }
+
+  // Limit length to prevent excessively long filenames
+  const maxLength = 100;
+  if (sanitized.length > maxLength) {
+    return sanitized.substring(0, maxLength);
+  }
+
+  return sanitized;
+}
+
+/**
+ * Validate and normalize log file paths to prevent directory traversal attacks
+ *
+ * Security checks:
+ * - Blocks directory traversal sequences (../, ..\, %2e%2e/, etc.)
+ * - Ensures paths are within allowed root directories
+ * - Normalizes paths to canonical form
+ * - Validates against path injection attempts
+ *
+ * @param logPath - Path to validate
+ * @param allowedRoots - Array of allowed root directories (workspace, user home, temp)
+ * @returns Sanitized absolute path
+ * @throws PathValidationError if path is invalid or outside allowed directories
+ */
+export function validateLogPath(logPath: string, allowedRoots: string[]): string {
+  // Security check: Detect directory traversal sequences
+  // Check for various encoding forms of ../
+  const traversalPatterns = [
+    /\.\.[/\\]/,           // ../ or ..\
+    /\.\.[/\\]?$/,         // .. at end
+    /%2e%2e[/\\]/i,        // URL encoded ../
+    /%252e%252e[/\\]/i,    // Double URL encoded ../
+    /\.\.%2f/i,            // Mixed encoding
+    /\.\.%5c/i,            // Mixed encoding with backslash
+  ];
+
+  for (const pattern of traversalPatterns) {
+    if (pattern.test(logPath)) {
+      const error = new PathValidationError(
+        'Directory traversal attempt detected in log path',
+        logPath
+      );
+
+      // Log security event
+      console.error('[SECURITY] Path validation failed:', {
+        path: logPath,
+        reason: 'Directory traversal pattern detected',
+        pattern: pattern.toString()
+      });
+
+      // Emit security event
+      VesperaEvents.criticalErrorOccurred(
+        error,
+        'VesperaLogger',
+        'Path validation security check failed',
+        false
+      );
+
+      throw error;
+    }
+  }
+
+  // Normalize path to resolve any relative components
+  const normalized = path.normalize(logPath);
+
+  // Convert to absolute path
+  const absolute = path.isAbsolute(normalized) ? normalized : path.resolve(normalized);
+
+  // Verify path is within allowed roots
+  let isWithinAllowedRoot = false;
+  for (const allowedRoot of allowedRoots) {
+    const normalizedRoot = path.normalize(allowedRoot);
+    const absoluteRoot = path.isAbsolute(normalizedRoot) ? normalizedRoot : path.resolve(normalizedRoot);
+
+    // Check if path starts with allowed root
+    const relative = path.relative(absoluteRoot, absolute);
+
+    // If relative path doesn't start with .., it's within the root
+    if (!relative.startsWith('..') && !path.isAbsolute(relative)) {
+      isWithinAllowedRoot = true;
+      break;
+    }
+  }
+
+  if (!isWithinAllowedRoot) {
+    const error = new PathValidationError(
+      'Log path is outside allowed directories',
+      logPath
+    );
+
+    // Log security event
+    console.error('[SECURITY] Path validation failed:', {
+      path: logPath,
+      absolutePath: absolute,
+      allowedRoots,
+      reason: 'Path outside allowed directories'
+    });
+
+    // Emit security event
+    VesperaEvents.criticalErrorOccurred(
+      error,
+      'VesperaLogger',
+      'Log path outside allowed directories',
+      false
+    );
+
+    throw error;
+  }
+
+  return absolute;
+}
+
+/**
  * Comprehensive logging service with VS Code integration and structured logging
  */
 export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
@@ -59,6 +199,21 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
   private bufferOverflowCount: number = 0;
   private fileLoggingEnabled: boolean = true;
   private isLogDirectoryInitialized: boolean = false;
+
+  /**
+   * Circular logging prevention flag
+   *
+   * Prevents infinite recursion when logger operations trigger additional log events.
+   * For example: if logging triggers an error that tries to log, this flag prevents re-entry.
+   *
+   * Strategy:
+   * 1. Set flag before entering log() method
+   * 2. Check flag at method start - if true, use console.error and return early
+   * 3. Always clear flag in finally block to prevent deadlock
+   * 4. Never emit VesperaEvents during error handling to avoid circular event loops
+   */
+  private loggingInProgress: boolean = false;
+
   // TODO: Async file writing support
   // private writeQueue: Promise<void> = Promise.resolve();
   // private isFlushInProgress = false;
@@ -161,58 +316,78 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
   }
 
   private log(level: LogLevel, message: string, metadata?: Record<string, any>): void {
-    // Check against configuration manager's log level if available
-    const config = this.configManager?.getConfiguration();
-    const componentLevel = config && this.configManager ? this.configManager.getLogLevel(this.componentName) : this.config.level;
-
-    if (this.getLevelPriority(level) < this.getLevelPriority(componentLevel)) {
-      return; // Skip logging below configured level
+    // Prevent circular logging - check re-entry
+    if (this.loggingInProgress) {
+      console.error('[VesperaLogger] Circular logging detected, skipping:', level, message);
+      return;
     }
 
-    const entry: LogEntry = {
-      timestamp: Date.now(),
-      level,
-      message,
-      metadata,
-      source: this.getCallerSource(),
-      sessionId: this.sessionId
-    };
+    this.loggingInProgress = true;
 
-    // Check buffer size and handle overflow BEFORE adding entry
-    const bufferConfig = config?.outputs.file.bufferConfig;
-    const maxBufferSize = bufferConfig?.maxBufferSize || 1000;
+    try {
+      // Check against configuration manager's log level if available
+      const config = this.configManager?.getConfiguration();
+      const componentLevel = config && this.configManager ? this.configManager.getLogLevel(this.componentName) : this.config.level;
 
-    if (this.logBuffer.length >= maxBufferSize) {
-      this.handleBufferOverflow(bufferConfig?.overflowStrategy || 'drop-oldest');
-    }
-
-    this.logBuffer.push(entry);
-
-    // Immediate output for console and VS Code
-    this.outputToChannels(entry);
-
-    // Emit log event to event bus if enabled
-    if (config?.outputs.events.enabled) {
-      const eventMinLevel = config.outputs.events.minLevel;
-      const shouldEmit = eventMinLevel
-        ? this.getLevelPriority(eventMinLevel) <= this.getLevelPriority(level)
-        : this.getLevelPriority(level) >= this.getLevelPriority(LogLevel.WARN); // Default: warn and above
-
-      if (shouldEmit) {
-        VesperaEvents.logEntryCreated(
-          level, // LogLevel is already a string enum matching the expected type
-          this.componentName,
-          message,
-          metadata,
-          entry.source
-        );
+      if (this.getLevelPriority(level) < this.getLevelPriority(componentLevel)) {
+        return; // Skip logging below configured level
       }
-    }
 
-    // Buffer for file logging (flushed based on threshold)
-    const flushThreshold = bufferConfig?.flushThreshold || 100;
-    if (this.logBuffer.length >= flushThreshold) {
-      this.flushLogs();
+      const entry: LogEntry = {
+        timestamp: Date.now(),
+        level,
+        message,
+        metadata,
+        source: this.getCallerSource(),
+        sessionId: this.sessionId
+      };
+
+      // Check buffer size and handle overflow BEFORE adding entry
+      const bufferConfig = config?.outputs.file.bufferConfig;
+      const maxBufferSize = bufferConfig?.maxBufferSize || 1000;
+
+      if (this.logBuffer.length >= maxBufferSize) {
+        this.handleBufferOverflow(bufferConfig?.overflowStrategy || 'drop-oldest');
+      }
+
+      this.logBuffer.push(entry);
+
+      // Immediate output for console and VS Code
+      this.outputToChannels(entry);
+
+      // Emit log event to event bus if enabled
+      if (config?.outputs.events.enabled) {
+        const eventMinLevel = config.outputs.events.minLevel;
+        const shouldEmit = eventMinLevel
+          ? this.getLevelPriority(eventMinLevel) <= this.getLevelPriority(level)
+          : this.getLevelPriority(level) >= this.getLevelPriority(LogLevel.WARN); // Default: warn and above
+
+        if (shouldEmit) {
+          VesperaEvents.logEntryCreated(
+            level, // LogLevel is already a string enum matching the expected type
+            this.componentName,
+            message,
+            metadata,
+            entry.source
+          );
+        }
+      }
+
+      // Buffer for file logging (flushed based on threshold)
+      const flushThreshold = bufferConfig?.flushThreshold || 100;
+      if (this.logBuffer.length >= flushThreshold) {
+        // Fire and forget - we don\'t want to block logging
+        this.flushLogs().catch(error => {
+          console.error(\'Error during threshold-based log flush:\', error);
+        });
+      }
+    } catch (error) {
+      // Use console.error to avoid circular logging - do NOT call this.error()
+      console.error('[VesperaLogger] Error during logging:', error);
+      // Do NOT emit VesperaEvents here to prevent circular event loops
+    } finally {
+      // Always reset flag to prevent deadlock
+      this.loggingInProgress = false;
     }
   }
 
@@ -329,7 +504,10 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
 
       case 'force-flush':
         // Force flush to make room
-        this.flushLogs();
+        // Fire and forget
+        this.flushLogs().catch(error => {
+          console.error(\'Error during force-flush overflow:\', error);
+        });
         break;
     }
 
@@ -342,11 +520,14 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
     const flushInterval = config?.outputs.file.bufferConfig?.flushIntervalMs || 10000;
 
     this.flushInterval = setInterval(() => {
-      this.flushLogs();
+      // Fire and forget - we don\'t want to block the interval
+      this.flushLogs().catch(error => {
+        console.error(\'Error during scheduled log flush:\', error);
+      });
     }, flushInterval);
   }
 
-  private flushLogs(): void {
+  private flushLogs(): Promise<void> {
     if (this.logBuffer.length === 0) {
       return;
     }
@@ -362,13 +543,13 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
     if (config?.outputs.file.enabled && this.currentLogFile) {
       try {
         // Check if rotation is needed before writing
-        this.rotateLogFileIfNeeded();
+        await this.rotateLogFileIfNeeded();
 
         // Format entries for file output
         const logLines = this.logBuffer.map(entry => this.formatLogEntry(entry)).join('\n') + '\n';
 
         // Append to log file
-        fs.appendFileSync(this.currentLogFile, logLines, 'utf-8');
+        await fsPromises.appendFile(this.currentLogFile, logLines, \'utf-8\');
 
         // Update current file size
         this.currentLogFileSize += Buffer.byteLength(logLines, 'utf-8');
@@ -474,12 +655,39 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
   }
 
   /**
+   * Get allowed root directories for log file paths
+   */
+  private getAllowedLogRoots(): string[] {
+    const roots: string[] = [];
+
+    // Workspace directory
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    if (workspaceFolder) {
+      roots.push(workspaceFolder.uri.fsPath);
+    }
+
+    // User home directory
+    const homeDir = process.env['HOME'] || process.env['USERPROFILE'] || '';
+    if (homeDir) {
+      roots.push(homeDir);
+    }
+
+    // Temp directory
+    roots.push(os.tmpdir());
+
+    return roots;
+  }
+
+  /**
    * Ensure log directory is initialized with graceful fallback
    */
   private async ensureLogDirectoryInitialized(): Promise<void> {
     if (this.isLogDirectoryInitialized) {
       return;
     }
+
+    // Get allowed roots for validation
+    const allowedRoots = this.getAllowedLogRoots();
 
     // Try workspace-level logs first
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
@@ -508,24 +716,33 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
     // Try each directory in order
     for (const dir of directories) {
       try {
-        await fsPromises.mkdir(dir, { recursive: true });
+        // Validate directory path before creating
+        const validatedDir = validateLogPath(dir, allowedRoots);
+
+        await fsPromises.mkdir(validatedDir, { recursive: true });
 
         // Verify we can write to the directory
-        const canWrite = await this.checkDirectoryPermissions(dir);
+        const canWrite = await this.checkDirectoryPermissions(validatedDir);
         if (!canWrite) {
-          console.warn(`Cannot write to directory ${dir}, trying next location...`);
+          console.warn(`Cannot write to directory ${validatedDir}, trying next location...`);
           continue;
         }
 
-        this.logDirectory = dir;
+        this.logDirectory = validatedDir;
         this.isLogDirectoryInitialized = true;
 
         // Initialize current log file
-        this.rotateLogFileIfNeeded();
+        await this.rotateLogFileIfNeeded();
         return;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         const errorCode = (error as NodeJS.ErrnoException).code;
+
+        // Specific handling for security validation errors
+        if (error instanceof PathValidationError) {
+          console.error(`[SECURITY] Path validation failed for log directory ${dir}:`, errorMessage);
+          continue; // Try next directory
+        }
 
         // Provide specific error messages for common failure modes
         if (errorCode === 'EACCES') {
@@ -601,17 +818,48 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
         break;
     }
 
-    const componentSuffix = config?.outputs.file.separateByComponent && this.componentName !== 'global'
-      ? `-${this.componentName}`
-      : '';
+    // Sanitize component name to prevent path injection
+    let componentSuffix = '';
+    if (config?.outputs.file.separateByComponent && this.componentName !== 'global') {
+      try {
+        const sanitizedComponent = sanitizeComponentName(this.componentName);
+        componentSuffix = `-${sanitizedComponent}`;
+      } catch (error) {
+        // If component name is invalid, log error and use 'invalid' placeholder
+        console.error(`[SECURITY] Invalid component name: ${this.componentName}`, error);
+        componentSuffix = '-invalid';
+      }
+    }
 
-    return path.join(this.logDirectory, `vespera-forge${componentSuffix}-${dateStr}.log`);
+    const logFilePath = path.join(this.logDirectory, `vespera-forge${componentSuffix}-${dateStr}.log`);
+
+    // Validate the constructed path
+    try {
+      const allowedRoots = this.getAllowedLogRoots();
+      return validateLogPath(logFilePath, allowedRoots);
+    } catch (error) {
+      // If validation fails, fall back to a safe default path
+      console.error('[SECURITY] Log file path validation failed, using fallback:', error);
+      const fallbackPath = path.join(this.logDirectory, `vespera-forge-${dateStr}.log`);
+
+      // Try to validate fallback path
+      try {
+        const allowedRoots = this.getAllowedLogRoots();
+        return validateLogPath(fallbackPath, allowedRoots);
+      } catch (fallbackError) {
+        // If even fallback fails, throw error to disable file logging
+        throw new PathValidationError(
+          'Unable to construct valid log file path',
+          logFilePath
+        );
+      }
+    }
   }
 
   /**
    * Rotate log file if needed
    */
-  private rotateLogFileIfNeeded(): void {
+  private rotateLogFileIfNeeded(): Promise<void> {
     if (!this.fileLoggingEnabled) {
       return;
     }
@@ -650,7 +898,7 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
         const timestamp = Date.now();
         const archiveFile = this.currentLogFile.replace('.log', `.${timestamp}.log`);
         try {
-          fs.renameSync(this.currentLogFile, archiveFile);
+          await fsPromises.rename(this.currentLogFile, archiveFile);
           this.currentLogFileSize = 0;
           VesperaEvents.logFileRotated('frontend', this.currentLogFile, archiveFile);
         } catch (error) {
@@ -750,9 +998,19 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
    * Create a child logger with additional context
    */
   public createChild(componentName: string): VesperaLogger {
+    // Sanitize component name to prevent path injection
+    let sanitizedComponentName: string;
+    try {
+      sanitizedComponentName = sanitizeComponentName(componentName);
+    } catch (error) {
+      // If component name is invalid, use a safe default
+      console.warn(`Invalid component name "${componentName}", using "unknown":`, error);
+      sanitizedComponentName = 'unknown';
+    }
+
     // Create a shallow copy with modified component name
     const childLogger = Object.create(this);
-    childLogger.componentName = componentName;
+    childLogger.componentName = sanitizedComponentName;
     return childLogger;
   }
 
@@ -793,7 +1051,10 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
       clearInterval(this.flushInterval);
     }
     
-    this.flushLogs();
+    // Fire and forget final flush - don\'t block disposal
+    this.flushLogs().catch(error => {
+      console.error(\'Error during final log flush on dispose:\', error);
+    });
     this.disposables.forEach(d => d.dispose());
     this.disposables = [];
     this._isDisposed = true;
