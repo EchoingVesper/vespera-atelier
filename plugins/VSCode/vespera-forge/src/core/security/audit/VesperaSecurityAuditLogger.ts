@@ -8,6 +8,7 @@
 import * as vscode from 'vscode';
 import { VesperaLogger } from '../../logging/VesperaLogger';
 import { VesperaTelemetryService } from '../../telemetry/VesperaTelemetryService';
+import { VesperaEvents } from '../../../utils/events';
 import {
   VesperaSecurityEvent,
   SecurityEventContext,
@@ -46,17 +47,36 @@ export interface SecurityAlert {
  * Security audit logger with real-time monitoring and alerting
  */
 export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface {
+  // Buffer limits
+  private static readonly MAX_AUDIT_ENTRIES = 10000;
+  private static readonly MAX_ALERTS = 1000;
+
+  // Overflow thresholds (90% of max)
+  private static readonly AUDIT_OVERFLOW_THRESHOLD = Math.floor(VesperaSecurityAuditLogger.MAX_AUDIT_ENTRIES * 0.9);
+  private static readonly ALERTS_OVERFLOW_THRESHOLD = Math.floor(VesperaSecurityAuditLogger.MAX_ALERTS * 0.9);
+
+  // Trim amount (10% of max)
+  private static readonly AUDIT_TRIM_AMOUNT = Math.floor(VesperaSecurityAuditLogger.MAX_AUDIT_ENTRIES * 0.1);
+  private static readonly ALERTS_TRIM_AMOUNT = Math.floor(VesperaSecurityAuditLogger.MAX_ALERTS * 0.1);
+
   private auditLog: SecurityAuditEntry[] = [];
   private alerts: SecurityAlert[] = [];
   private disposed = false;
-  
+  private isDevelopment = false;
+  private suppressNotifications = false;
+  private auditOverflowCount = 0;
+  private alertsOverflowCount = 0;
+
+  // Circular logging prevention
+  private loggingInProgress = false;
+
   /**
    * Check if service is disposed
    */
   public get isDisposed(): boolean {
     return this.disposed;
   }
-  
+
   // Statistics
   private metrics: SecurityMetrics = {
     rateLimiting: {
@@ -90,15 +110,23 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
   constructor(
     private logger: VesperaLogger,
     private telemetryService?: VesperaTelemetryService,
-    private config?: AuditConfiguration
+    private config?: AuditConfiguration,
+    options?: {
+      isDevelopment?: boolean;
+      suppressNotifications?: boolean;
+    }
   ) {
     this.logger = logger.createChild('SecurityAuditLogger');
+    this.isDevelopment = options?.isDevelopment ?? false;
+    this.suppressNotifications = options?.suppressNotifications ?? !this.isDevelopment;
     this.initializeEventCounters();
-    
+
     this.logger.info('SecurityAuditLogger initialized', {
       realTimeAlerts: config?.realTimeAlerts,
       retention: config?.retention,
-      includePII: config?.includePII
+      includePII: config?.includePII,
+      isDevelopment: this.isDevelopment,
+      suppressNotifications: this.suppressNotifications
     });
   }
 
@@ -108,57 +136,78 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
   async logSecurityEvent(event: VesperaSecurityEvent, context: SecurityEventContext): Promise<void> {
     if (this.disposed) return;
 
-    const auditEntry: SecurityAuditEntry = {
-      id: this.generateAuditId(),
-      timestamp: Date.now(),
-      event,
-      context,
-      severity: this.determineSeverity(event, context),
-      source: 'vespera-forge',
-      details: this.sanitizeContext(context),
-      resolved: false
-    };
-
-    // Add to audit log
-    this.auditLog.push(auditEntry);
-    
-    // Update event counters
-    const currentCount = this.eventCounters.get(event) || 0;
-    this.eventCounters.set(event, currentCount + 1);
-
-    // Update metrics
-    this.updateMetrics(event, context);
-
-    // Check for alert conditions
-    if (this.config?.realTimeAlerts) {
-      await this.checkAlertConditions(auditEntry);
+    // Prevent circular logging - check re-entry
+    if (this.loggingInProgress) {
+      console.error('[SecurityAuditLogger] Circular logging detected, skipping event:', event);
+      return;
     }
 
-    // Send telemetry if enabled
-    if (this.telemetryService?.isEnabled()) {
-      this.telemetryService.trackEvent({
-        name: `Security.${event}`,
-        properties: {
-          severity: auditEntry.severity,
-          userId: context.userId,
-          resourceId: context.resourceId
-        },
-        measurements: {
-          timestamp: context.timestamp
-        }
+    this.loggingInProgress = true;
+
+    try {
+      const auditEntry: SecurityAuditEntry = {
+        id: this.generateAuditId(),
+        timestamp: Date.now(),
+        event,
+        context,
+        severity: this.determineSeverity(event, context),
+        source: 'vespera-forge',
+        details: this.sanitizeContext(context),
+        resolved: false
+      };
+
+      // Handle audit log overflow BEFORE adding entry
+      if (this.auditLog.length >= VesperaSecurityAuditLogger.AUDIT_OVERFLOW_THRESHOLD) {
+        this.handleAuditLogOverflow();
+      }
+
+      // Add to audit log
+      this.auditLog.push(auditEntry);
+
+      // Update event counters
+      const currentCount = this.eventCounters.get(event) || 0;
+      this.eventCounters.set(event, currentCount + 1);
+
+      // Update metrics
+      this.updateMetrics(event, context);
+
+      // Check for alert conditions
+      if (this.config?.realTimeAlerts) {
+        await this.checkAlertConditions(auditEntry);
+      }
+
+      // Send telemetry if enabled
+      if (this.telemetryService?.isEnabled()) {
+        this.telemetryService.trackEvent({
+          name: `Security.${event}`,
+          properties: {
+            severity: auditEntry.severity,
+            userId: context.userId,
+            resourceId: context.resourceId
+          },
+          measurements: {
+            timestamp: context.timestamp
+          }
+        });
+      }
+
+      this.logger.info('Security event logged', {
+        eventId: auditEntry.id,
+        event,
+        severity: auditEntry.severity,
+        userId: context.userId,
+        resourceId: context.resourceId
       });
+
+      // Cleanup old entries if needed
+      await this.performCleanup();
+    } catch (error) {
+      // Use console.error to avoid circular logging
+      console.error('[SecurityAuditLogger] Error logging security event:', error);
+    } finally {
+      // Always reset flag to prevent deadlock
+      this.loggingInProgress = false;
     }
-
-    this.logger.info('Security event logged', {
-      eventId: auditEntry.id,
-      event,
-      severity: auditEntry.severity,
-      userId: context.userId,
-      resourceId: context.resourceId
-    });
-
-    // Cleanup old entries if needed
-    await this.performCleanup();
   }
 
   /**
@@ -623,8 +672,13 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
       acknowledged: false
     };
 
+    // Handle alerts overflow BEFORE adding alert
+    if (this.alerts.length >= VesperaSecurityAuditLogger.ALERTS_OVERFLOW_THRESHOLD) {
+      this.handleAlertsOverflow();
+    }
+
     this.alerts.push(securityAlert);
-    
+
     this.logger.warn('Security alert generated', {
       alertId: securityAlert.id,
       level: alert.level,
@@ -632,12 +686,26 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
       event: alert.event
     });
 
-    // Show VS Code notification for high-priority alerts
-    if (alert.level === 'critical' || alert.level === 'error') {
-      const action = alert.level === 'critical' ? 
-        vscode.window.showErrorMessage : 
+    // Emit security event to event bus
+    const shouldNotifyUser = !this.suppressNotifications && (alert.level === 'critical' || alert.level === 'error');
+    VesperaEvents.securityEventLogged(
+      alert.event,
+      this.mapAlertLevelToSeverity(alert.level),
+      alert.message,
+      shouldNotifyUser,
+      {
+        alertId: securityAlert.id,
+        title: alert.title,
+        context: alert.context
+      }
+    );
+
+    // Show VS Code notification for high-priority alerts (only if not suppressed)
+    if (shouldNotifyUser) {
+      const action = alert.level === 'critical' ?
+        vscode.window.showErrorMessage :
         vscode.window.showWarningMessage;
-      
+
       action(
         `Security Alert: ${alert.title}`,
         'View Details',
@@ -650,6 +718,26 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
           this.logger.info('User requested alert details', { alertId: securityAlert.id });
         }
       });
+    } else {
+      // In production or when suppressed, only log to file/event bus
+      this.logger.debug('Security alert suppressed (notifications disabled)', {
+        alertId: securityAlert.id,
+        level: alert.level,
+        suppressNotifications: this.suppressNotifications,
+        isDevelopment: this.isDevelopment
+      });
+    }
+  }
+
+  /**
+   * Map alert level to security event severity
+   */
+  private mapAlertLevelToSeverity(level: 'info' | 'warning' | 'error' | 'critical'): 'low' | 'medium' | 'high' | 'critical' {
+    switch (level) {
+      case 'info': return 'low';
+      case 'warning': return 'medium';
+      case 'error': return 'high';
+      case 'critical': return 'critical';
     }
   }
 
@@ -691,6 +779,104 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
    */
   private generateAlertId(): string {
     return `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Handle audit log overflow by trimming oldest entries
+   *
+   * When audit log reaches 90% capacity (9000/10000 entries):
+   * - Trim oldest 10% (1000 entries)
+   * - Emit overflow event
+   * - Log overflow occurrence
+   *
+   * This prevents hard limits and maintains a rolling audit trail.
+   */
+  private handleAuditLogOverflow(): void {
+    this.auditOverflowCount++;
+
+    // Remove oldest 10% of entries
+    const trimCount = VesperaSecurityAuditLogger.AUDIT_TRIM_AMOUNT;
+    this.auditLog.splice(0, trimCount);
+
+    // Use console.error to avoid circular logging via VesperaLogger
+    console.error(
+      `[SecurityAuditLogger] Audit log overflow #${this.auditOverflowCount}: ` +
+      `Trimmed ${trimCount} oldest entries. Current size: ${this.auditLog.length}/${VesperaSecurityAuditLogger.MAX_AUDIT_ENTRIES}`
+    );
+
+    // Emit overflow event (VesperaEvents should not trigger logger re-entry)
+    try {
+      VesperaEvents.logBufferOverflow('SecurityAuditLogger:auditLog', this.auditOverflowCount);
+    } catch (error) {
+      // Silently fail if event emission causes issues
+      console.error('[SecurityAuditLogger] Failed to emit audit overflow event:', error);
+    }
+  }
+
+  /**
+   * Handle alerts overflow by trimming oldest alerts
+   *
+   * When alerts reach 90% capacity (900/1000 alerts):
+   * - Trim oldest 10% (100 alerts)
+   * - Emit overflow event
+   * - Log overflow occurrence
+   *
+   * This prevents hard limits and maintains recent alert history.
+   */
+  private handleAlertsOverflow(): void {
+    this.alertsOverflowCount++;
+
+    // Remove oldest 10% of alerts
+    const trimCount = VesperaSecurityAuditLogger.ALERTS_TRIM_AMOUNT;
+    this.alerts.splice(0, trimCount);
+
+    // Use console.error to avoid circular logging via VesperaLogger
+    console.error(
+      `[SecurityAuditLogger] Alerts overflow #${this.alertsOverflowCount}: ` +
+      `Trimmed ${trimCount} oldest alerts. Current size: ${this.alerts.length}/${VesperaSecurityAuditLogger.MAX_ALERTS}`
+    );
+
+    // Emit overflow event (VesperaEvents should not trigger logger re-entry)
+    try {
+      VesperaEvents.logBufferOverflow('SecurityAuditLogger:alerts', this.alertsOverflowCount);
+    } catch (error) {
+      // Silently fail if event emission causes issues
+      console.error('[SecurityAuditLogger] Failed to emit alerts overflow event:', error);
+    }
+  }
+
+  /**
+   * Get memory statistics for buffer management
+   */
+  public getMemoryStats(): {
+    auditLogSize: number;
+    alertsSize: number;
+    maxAuditEntries: number;
+    maxAlerts: number;
+    auditLogByteSize: number;
+    alertsByteSize: number;
+    auditOverflowCount: number;
+    alertsOverflowCount: number;
+  } {
+    // Calculate approximate byte sizes
+    const auditLogByteSize = this.auditLog.reduce((total, entry) => {
+      return total + JSON.stringify(entry).length;
+    }, 0);
+
+    const alertsByteSize = this.alerts.reduce((total, alert) => {
+      return total + JSON.stringify(alert).length;
+    }, 0);
+
+    return {
+      auditLogSize: this.auditLog.length,
+      alertsSize: this.alerts.length,
+      maxAuditEntries: VesperaSecurityAuditLogger.MAX_AUDIT_ENTRIES,
+      maxAlerts: VesperaSecurityAuditLogger.MAX_ALERTS,
+      auditLogByteSize,
+      alertsByteSize,
+      auditOverflowCount: this.auditOverflowCount,
+      alertsOverflowCount: this.alertsOverflowCount
+    };
   }
 
   /**

@@ -11,11 +11,12 @@ import { registerCommands } from '@/commands';
 import { initializeProviders } from '@/providers';
 import { initializeViews, VesperaViewContext } from '@/views';
 import { getConfig, isDevelopment } from '@/utils';
-import { 
-  VesperaCoreServices, 
+import {
+  VesperaCoreServices,
   VesperaCoreServicesConfig,
   VesperaContextManager
 } from '@/core';
+import { LogLevel } from '@/core/logging/LoggingConfiguration';
 import { SecurityIntegrationManager } from './security-integration';
 
 // Core services instance - managed by VesperaCoreServices singleton
@@ -36,7 +37,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // Initialize core services first (includes memory management, logging, error handling)
     const coreConfig: VesperaCoreServicesConfig = {
       logging: {
-        level: isDevelopment() ? 1 : 2, // DEBUG in dev, INFO in prod
+        level: isDevelopment() ? LogLevel.DEBUG : LogLevel.INFO, // DEBUG in dev, INFO in prod
         enableConsole: true,
         enableVSCodeOutput: true,
         enableStructuredLogging: true

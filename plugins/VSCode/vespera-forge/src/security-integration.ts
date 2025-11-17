@@ -10,7 +10,7 @@
 import * as vscode from 'vscode';
 import { EnhancedDisposable } from './core/disposal/DisposalManager';
 import { SecurityEnhancedVesperaCoreServices } from './core/security/SecurityEnhancedCoreServices';
-import { LogLevel } from './core/logging/VesperaLogger';
+import { LogLevel } from './core/logging/LoggingConfiguration';
 import { SecureToolManager, ToolManagementPolicy } from './config/tool-management';
 import { ToolOverrideSecurityManager } from './security/tool-override-security';
 import { FileOperationsSecurityManager, FileSecurityPolicy } from './security/file-operations-security';

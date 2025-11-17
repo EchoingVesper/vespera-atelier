@@ -11,12 +11,12 @@ import * as vscode from 'vscode';
 // PROJECT TYPES - Phase 16a Foundation
 // =============================================================================
 export * from './project';
-import type { 
-  VesperaError, 
-  VesperaErrorCode, 
-  VesperaErrorCategory 
+import type {
+  VesperaError,
+  VesperaErrorCode,
+  VesperaErrorCategory
 } from '@/core/error-handling/VesperaErrors';
-import type { LogLevel } from '@/core/logging/VesperaLogger';
+import type { LogLevel } from '@/core/logging/LoggingConfiguration';
 
 // =============================================================================
 // CORE INFRASTRUCTURE TYPES
