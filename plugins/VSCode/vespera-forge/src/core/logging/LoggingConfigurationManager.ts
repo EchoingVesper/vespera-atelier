@@ -8,6 +8,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import JSON5 from 'json5';
 import {
   LoggingConfiguration,
   DEFAULT_LOGGING_CONFIG,
@@ -117,10 +118,8 @@ export class LoggingConfigurationManager {
       if (fs.existsSync(this.configPath)) {
         const content = fs.readFileSync(this.configPath, 'utf-8');
 
-        // Parse JSON5 (simple approach - can use json5 library for full support)
-        // For now, strip comments and parse as JSON
-        const jsonContent = this.stripJson5Comments(content);
-        const parsedConfig = JSON.parse(jsonContent);
+        // Parse JSON5 using the json5 library (handles comments and unquoted keys)
+        const parsedConfig = JSON5.parse(content);
 
         // Validate and set configuration
         this.config = validateLoggingConfiguration(parsedConfig);
@@ -297,23 +296,6 @@ export class LoggingConfigurationManager {
         );
       }
     }
-  }
-
-  /**
-   * Simple JSON5 comment stripper
-   * Note: This is a basic implementation. For full JSON5 support, use the json5 library.
-   */
-  private stripJson5Comments(content: string): string {
-    // Remove single-line comments (// ...)
-    let result = content.replace(/\/\/[^\n]*\n/g, '\n');
-
-    // Remove multi-line comments (/* ... */)
-    result = result.replace(/\/\*[\s\S]*?\*\//g, '');
-
-    // Remove trailing commas (allowed in JSON5 but not JSON)
-    result = result.replace(/,(\s*[}\]])/g, '$1');
-
-    return result;
   }
 
   /**
