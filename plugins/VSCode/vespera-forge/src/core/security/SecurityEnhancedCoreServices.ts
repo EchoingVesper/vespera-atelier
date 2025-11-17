@@ -171,10 +171,15 @@ export class SecurityEnhancedVesperaCoreServices implements vscode.Disposable {
       }
 
       // Initialize security audit logger first (other services may need it)
+      const isDevelopment = this.context.extensionMode === vscode.ExtensionMode.Development;
       this.securityAuditLogger = new VesperaSecurityAuditLogger(
         this.logger,
         this.telemetryService,
-        this.config.security.audit
+        this.config.security.audit,
+        {
+          isDevelopment,
+          suppressNotifications: !isDevelopment // Suppress notifications in production
+        }
       );
 
       // Initialize security manager

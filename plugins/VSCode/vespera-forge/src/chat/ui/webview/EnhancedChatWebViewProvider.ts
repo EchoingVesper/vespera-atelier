@@ -218,7 +218,16 @@ export class EnhancedChatWebViewProvider implements vscode.WebviewViewProvider {
 
     try {
       const sanitizer = VesperaInputSanitizer.getInstance();
-      const auditLogger = new VesperaSecurityAuditLogger(this.logger);
+      const isDevelopment = this.context.extensionMode === vscode.ExtensionMode.Development;
+      const auditLogger = new VesperaSecurityAuditLogger(
+        this.logger,
+        undefined, // No telemetry service
+        undefined, // No config
+        {
+          isDevelopment,
+          suppressNotifications: !isDevelopment
+        }
+      );
 
       this._securityManager = await WebViewSecurityManager.initialize({
         sanitizer,

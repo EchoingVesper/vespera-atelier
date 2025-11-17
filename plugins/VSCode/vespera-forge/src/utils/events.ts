@@ -23,7 +23,12 @@ export type VesperaEventType =
   | 'chatConfigurationChanged'
   | 'codexUpdated'
   | 'codexCreated'
-  | 'codexDeleted';
+  | 'codexDeleted'
+  | 'logEntryCreated'
+  | 'logLevelChanged'
+  | 'logFileRotated'
+  | 'criticalErrorOccurred'
+  | 'securityEventLogged';
 
 export interface VesperaEventData {
   taskCreated: { taskId: string; title: string };
@@ -43,6 +48,41 @@ export interface VesperaEventData {
   codexUpdated: { codexId: string; title: string };
   codexCreated: { codexId: string; title: string };
   codexDeleted: { codexId: string };
+  logEntryCreated: {
+    level: 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+    component: string;
+    message: string;
+    timestamp: string;
+    metadata?: any;
+    source?: string;
+  };
+  logLevelChanged: {
+    component: string;
+    oldLevel: string;
+    newLevel: string;
+    scope: 'global' | 'component';
+  };
+  logFileRotated: {
+    logType: string;
+    oldFile: string;
+    newFile: string;
+    timestamp: string;
+  };
+  criticalErrorOccurred: {
+    error: Error | string;
+    component: string;
+    context?: any;
+    userMessage: string;
+    requiresNotification: boolean;
+  };
+  securityEventLogged: {
+    eventType: string;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    description: string;
+    timestamp: string;
+    metadata?: any;
+    shouldNotifyUser: boolean;
+  };
 }
 
 /**
@@ -283,5 +323,116 @@ export const VesperaEvents = {
     eventBus.offEvent('codexCreated', refreshCallback);
     eventBus.offEvent('codexUpdated', refreshCallback);
     eventBus.offEvent('codexDeleted', refreshCallback);
+  },
+
+  /**
+   * Logging Events
+   */
+
+  /**
+   * Notify that a log entry was created
+   */
+  logEntryCreated: (
+    level: 'debug' | 'info' | 'warn' | 'error' | 'fatal',
+    component: string,
+    message: string,
+    metadata?: any,
+    source?: string
+  ) => {
+    eventBus.emitEvent('logEntryCreated', {
+      level,
+      component,
+      message,
+      timestamp: new Date().toISOString(),
+      metadata,
+      source
+    });
+  },
+
+  /**
+   * Notify that a log level changed
+   */
+  logLevelChanged: (
+    component: string,
+    oldLevel: string,
+    newLevel: string,
+    scope: 'global' | 'component' = 'component'
+  ) => {
+    eventBus.emitEvent('logLevelChanged', { component, oldLevel, newLevel, scope });
+  },
+
+  /**
+   * Notify that a log file was rotated
+   */
+  logFileRotated: (logType: string, oldFile: string, newFile: string) => {
+    eventBus.emitEvent('logFileRotated', {
+      logType,
+      oldFile,
+      newFile,
+      timestamp: new Date().toISOString()
+    });
+  },
+
+  /**
+   * Notify that a critical error occurred requiring user attention
+   */
+  criticalErrorOccurred: (
+    error: Error | string,
+    component: string,
+    userMessage: string,
+    requiresNotification: boolean = true,
+    context?: any
+  ) => {
+    eventBus.emitEvent('criticalErrorOccurred', {
+      error,
+      component,
+      context,
+      userMessage,
+      requiresNotification
+    });
+  },
+
+  /**
+   * Notify that a security event was logged
+   */
+  securityEventLogged: (
+    eventType: string,
+    severity: 'low' | 'medium' | 'high' | 'critical',
+    description: string,
+    shouldNotifyUser: boolean = false,
+    metadata?: any
+  ) => {
+    eventBus.emitEvent('securityEventLogged', {
+      eventType,
+      severity,
+      description,
+      timestamp: new Date().toISOString(),
+      metadata,
+      shouldNotifyUser
+    });
+  },
+
+  /**
+   * Listen for all logging events
+   */
+  onLoggingEvent: (callback: (eventType: string, data: any) => void, componentName: string) => {
+    eventBus.onEvent('logEntryCreated', (data) => callback('logEntryCreated', data), `${componentName}:logEntryCreated`);
+    eventBus.onEvent('logLevelChanged', (data) => callback('logLevelChanged', data), `${componentName}:logLevelChanged`);
+    eventBus.onEvent('logFileRotated', (data) => callback('logFileRotated', data), `${componentName}:logFileRotated`);
+    eventBus.onEvent('criticalErrorOccurred', (data) => callback('criticalErrorOccurred', data), `${componentName}:criticalErrorOccurred`);
+    eventBus.onEvent('securityEventLogged', (data) => callback('securityEventLogged', data), `${componentName}:securityEventLogged`);
+  },
+
+  /**
+   * Remove logging event listeners
+   */
+  offLoggingEvent: (callback: (eventType: string, data: any) => void) => {
+    // Note: This won't work perfectly due to wrapper functions, but provides API consistency
+    // For proper cleanup, components should store and remove specific listener references
+    eventBus.removeAllListeners('logEntryCreated');
+    eventBus.removeAllListeners('logLevelChanged');
+    eventBus.removeAllListeners('logFileRotated');
+    eventBus.removeAllListeners('criticalErrorOccurred');
+    eventBus.removeAllListeners('securityEventLogged');
   }
 };

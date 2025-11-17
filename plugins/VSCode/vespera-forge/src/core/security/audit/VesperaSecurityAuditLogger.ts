@@ -8,6 +8,7 @@
 import * as vscode from 'vscode';
 import { VesperaLogger } from '../../logging/VesperaLogger';
 import { VesperaTelemetryService } from '../../telemetry/VesperaTelemetryService';
+import { VesperaEvents } from '../../../utils/events';
 import {
   VesperaSecurityEvent,
   SecurityEventContext,
@@ -49,14 +50,16 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
   private auditLog: SecurityAuditEntry[] = [];
   private alerts: SecurityAlert[] = [];
   private disposed = false;
-  
+  private isDevelopment = false;
+  private suppressNotifications = false;
+
   /**
    * Check if service is disposed
    */
   public get isDisposed(): boolean {
     return this.disposed;
   }
-  
+
   // Statistics
   private metrics: SecurityMetrics = {
     rateLimiting: {
@@ -90,15 +93,23 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
   constructor(
     private logger: VesperaLogger,
     private telemetryService?: VesperaTelemetryService,
-    private config?: AuditConfiguration
+    private config?: AuditConfiguration,
+    options?: {
+      isDevelopment?: boolean;
+      suppressNotifications?: boolean;
+    }
   ) {
     this.logger = logger.createChild('SecurityAuditLogger');
+    this.isDevelopment = options?.isDevelopment ?? false;
+    this.suppressNotifications = options?.suppressNotifications ?? !this.isDevelopment;
     this.initializeEventCounters();
-    
+
     this.logger.info('SecurityAuditLogger initialized', {
       realTimeAlerts: config?.realTimeAlerts,
       retention: config?.retention,
-      includePII: config?.includePII
+      includePII: config?.includePII,
+      isDevelopment: this.isDevelopment,
+      suppressNotifications: this.suppressNotifications
     });
   }
 
@@ -624,7 +635,7 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
     };
 
     this.alerts.push(securityAlert);
-    
+
     this.logger.warn('Security alert generated', {
       alertId: securityAlert.id,
       level: alert.level,
@@ -632,12 +643,26 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
       event: alert.event
     });
 
-    // Show VS Code notification for high-priority alerts
-    if (alert.level === 'critical' || alert.level === 'error') {
-      const action = alert.level === 'critical' ? 
-        vscode.window.showErrorMessage : 
+    // Emit security event to event bus
+    const shouldNotifyUser = !this.suppressNotifications && (alert.level === 'critical' || alert.level === 'error');
+    VesperaEvents.securityEventLogged(
+      alert.event,
+      this.mapAlertLevelToSeverity(alert.level),
+      alert.message,
+      shouldNotifyUser,
+      {
+        alertId: securityAlert.id,
+        title: alert.title,
+        context: alert.context
+      }
+    );
+
+    // Show VS Code notification for high-priority alerts (only if not suppressed)
+    if (shouldNotifyUser) {
+      const action = alert.level === 'critical' ?
+        vscode.window.showErrorMessage :
         vscode.window.showWarningMessage;
-      
+
       action(
         `Security Alert: ${alert.title}`,
         'View Details',
@@ -650,6 +675,26 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
           this.logger.info('User requested alert details', { alertId: securityAlert.id });
         }
       });
+    } else {
+      // In production or when suppressed, only log to file/event bus
+      this.logger.debug('Security alert suppressed (notifications disabled)', {
+        alertId: securityAlert.id,
+        level: alert.level,
+        suppressNotifications: this.suppressNotifications,
+        isDevelopment: this.isDevelopment
+      });
+    }
+  }
+
+  /**
+   * Map alert level to security event severity
+   */
+  private mapAlertLevelToSeverity(level: 'info' | 'warning' | 'error' | 'critical'): 'low' | 'medium' | 'high' | 'critical' {
+    switch (level) {
+      case 'info': return 'low';
+      case 'warning': return 'medium';
+      case 'error': return 'high';
+      case 'critical': return 'critical';
     }
   }
 
