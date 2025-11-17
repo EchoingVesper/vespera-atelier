@@ -1,14 +1,14 @@
 # Phase 20: Reference System & Auto-Creation
 
 **Status**: Proposed
-**Duration**: 6-8 days
-**Related ADRs**: [ADR-020](../decisions/ADR-020-extreme-atomic-architecture.md), [ADR-021](../decisions/ADR-021-inline-reference-editing-pattern.md), [ADR-023](../decisions/ADR-023-reference-field-implementation.md), [ADR-027](../decisions/ADR-027-multi-context-array-implementation.md)
+**Duration**: 8-10 days
+**Related ADRs**: [ADR-020](../decisions/ADR-020-extreme-atomic-architecture.md), [ADR-021](../decisions/ADR-021-inline-reference-editing-pattern.md), [ADR-023](../decisions/ADR-023-reference-field-implementation.md), [ADR-027](../decisions/ADR-027-multi-context-array-implementation.md), [ADR-028](../decisions/ADR-028-ui-codex-presentation-layer.md)
 
 ---
 
 ## Executive Summary
 
-Phase 20 implements the composition mechanism that makes extreme atomicity usable through REFERENCE and MULTI_REFERENCE field types with inline editing patterns. This phase enables users to compose complex Codices from atomic building blocks transparently, introduces automatic Codex creation on field edit (the "inline reference" pattern), implements bidirectional relationship tracking for the knowledge graph, and creates the backlinks panel as the foundation for graph visualization. The work completes the core user-facing atomicity architecture, making composed Codices feel as natural to edit as traditional forms.
+Phase 20 implements the composition mechanism that makes extreme atomicity usable through REFERENCE and MULTI_REFERENCE field types with inline editing patterns. This phase enables users to compose complex Codices from atomic building blocks transparently, introduces automatic Codex creation on field edit (the "inline reference" pattern), implements bidirectional relationship tracking for the knowledge graph, and creates the backlinks panel as the foundation for graph visualization. Additionally, Phase 20 introduces UI Codices for storing layout/presentation metadata separately from data, enabling drag-drop form builders and user-customizable UIs using react-grid-layout. The work completes the core user-facing atomicity architecture and foundational layout system, making composed Codices feel as natural to edit as traditional forms.
 
 ---
 
@@ -22,6 +22,9 @@ Phase 20 implements the composition mechanism that makes extreme atomicity usabl
 - [ ] **Relationship Tracking** - Bidirectional graph edges in database
 - [ ] **Backlinks Panel** - Show all Codices referencing current Codex
 - [ ] **Circular Reference Detection** - Prevent infinite loops in graph
+- [ ] **UI Codex Templates** - UICodex and UIFieldConfig templates for layout metadata
+- [ ] **Basic Layout Engine** - Support flexbox, grid, and stack layouts using react-grid-layout
+- [ ] **Layout Preview Mode** - Render Codices using UICodex layout configurations
 
 ### Secondary Goals
 - [ ] **Reference Caching** - Cache loaded references for performance
@@ -29,12 +32,18 @@ Phase 20 implements the composition mechanism that makes extreme atomicity usabl
 - [ ] **Quick Create from Picker** - Create new Codex inline from picker
 - [ ] **Reference Validation** - Ensure target template matches field requirements
 - [ ] **Relationship Metadata** - Track relationship strength, types, creation dates
+- [ ] **Responsive Layouts** - Support breakpoints for mobile/tablet/desktop
+- [ ] **Layout Serialization** - Save/restore react-grid-layout configurations in UICodex
+- [ ] **UICodex Examples** - Character sheet, dashboard, and form builder examples
 
 ### Non-Goals
 - **File/Image Integration** - Deferred to Phase 21 (FILE/IMAGE field types)
 - **Multi-User Editing** - Real-time sync deferred to post-MVP
 - **Advanced Graph Queries** - Complex graph traversal deferred
 - **Automated Relationship Suggestions** - AI-suggested relationships deferred
+- **Drag-Drop Layout Editor** - Visual layout designer deferred to Phase 23+
+- **Advanced Widget Library** - Complex form widgets deferred (use basic inputs for now)
+- **Layout Templates Gallery** - Pre-built layout templates deferred
 
 ---
 
@@ -355,6 +364,56 @@ async function checkCircularReference(
 - Add "View in Graph" option (placeholder for future)
 - Tests: Menu display, option actions
 
+### UI Codex Tasks (Layout & Presentation)
+
+**Task 12: UICodex Template** (3 hours)
+- Create `ui-codex.template.json5` template
+- Add fields: data_source (REFERENCE), layout_type (SELECT), layout_config (COMPUTED)
+- Create `ui-field-config.template.json5` for field presentation metadata
+- Add validation for layout types (flexbox, grid, stack, flow)
+- Document template structure and field requirements
+- Tests: Template loading, validation, field requirements
+
+**Task 13: Install react-grid-layout** (2 hours)
+- Install `react-grid-layout` and `@types/react-grid-layout`
+- Install `react-resizable` for widget resizing support
+- Configure webpack to bundle CSS (`styles.css` and `resizable.css`)
+- Add CSS imports to main application entry point
+- Verify package compatibility with VS Code webview
+- Tests: Bundle size check, CSS loading verification
+
+**Task 14: Basic Layout Engine** (6 hours)
+- Implement `UICodexRenderer` class to interpret UI Codices
+- Support flexbox layouts (flex-direction, justify-content, align-items, gap)
+- Support grid layouts (grid-template-columns, grid-template-areas, gap)
+- Support stack layouts (simplified vertical/horizontal stacking)
+- Integrate with react-grid-layout for grid rendering
+- Tests: Layout rendering, CSS generation, react-grid-layout integration
+
+**Task 15: Layout Config Generator** (4 hours)
+- Create `generateLayoutConfig()` COMPUTED function
+- Convert UICodex layout_type + fields_to_show → CSS properties
+- Generate react-grid-layout JSON configuration from UI Codex
+- Support responsive breakpoints (desktop, tablet, mobile)
+- Implement layout serialization for UICodex storage
+- Tests: Config generation, serialization, responsive breakpoints
+
+**Task 16: Field Rendering Integration** (5 hours)
+- Extend CodexEditor to support UICodex rendering mode
+- Implement field widget selection (text-input, number-input, select, etc.)
+- Create widget registry for different field types
+- Add "Layout Preview" toggle in CodexEditor
+- Handle layout switching (Normal Editor ↔ Layout Preview)
+- Tests: Widget rendering, layout mode switching, field mapping
+
+**Task 17: UICodex Examples** (2 hours)
+- Create example: Character Sheet UI (grid layout)
+- Create example: Dashboard UI (multiple data sources)
+- Create example: Form Builder UI (flexbox layout)
+- Document UI Codex patterns and best practices
+- Add examples to template registry
+- Tests: Example loading, rendering verification
+
 ---
 
 ## Task Dependencies
@@ -374,15 +433,24 @@ Frontend Implementation (Depends on Backend):
   Task 3 + Task 5 → Task 10 (Validation UI)
   All Frontend → Task 11 (Context Menu)
 
+UI Codex Implementation (Parallel to Frontend):
+  Task 12 (UICodex Template) - Independent
+  Task 13 (Install react-grid-layout) - Independent
+  Task 12 + Task 13 → Task 14 (Basic Layout Engine)
+  Task 14 → Task 15 (Layout Config Generator)
+  Task 2 + Task 15 → Task 16 (Field Rendering)
+  Task 16 → Task 17 (UICodex Examples)
+
 Integration:
   All → Final testing and integration
 ```
 
 **Parallelization Strategy**:
-1. **Days 1-2**: Task 1-2 (schema, storage)
-2. **Days 3-4**: Task 3-4 (circular detection, backlinks) + Task 6 (inline editor)
-3. **Days 5-6**: Task 5 (validation) + Task 7-8 (pickers)
-4. **Days 7-8**: Task 9-11 (backlinks panel, validation UI, context menu) + integration
+1. **Days 1-2**: Task 1-2 (schema, storage) + Task 12-13 (UICodex template, install react-grid-layout)
+2. **Days 3-4**: Task 3-4 (circular detection, backlinks) + Task 6 (inline editor) + Task 14 (layout engine)
+3. **Days 5-6**: Task 5 (validation) + Task 7-8 (pickers) + Task 15 (layout config)
+4. **Days 7-8**: Task 9-11 (backlinks panel, validation UI, context menu) + Task 16-17 (field rendering, examples)
+5. **Day 9**: Integration testing, bug fixes, documentation updates
 
 ---
 
@@ -462,6 +530,10 @@ Integration:
 - ✅ Circular references prevented with clear error messages
 - ✅ Backlinks panel shows all referencing Codices
 - ✅ Relationships stored bidirectionally in database
+- ✅ UICodex and UIFieldConfig templates created and registered
+- ✅ react-grid-layout installed and integrated with webpack
+- ✅ Basic layout engine supports flexbox, grid, and stack layouts
+- ✅ Layout Preview mode renders Codices using UICodex configurations
 
 **Should-Have**:
 - ✅ Reference caching for performance
@@ -470,6 +542,9 @@ Integration:
 - ✅ Reference validation (type, existence, circular)
 - ✅ Context menu for reference actions
 - ✅ Broken reference detection and display
+- ✅ Layout config generator (COMPUTED function)
+- ✅ Responsive layout breakpoints (desktop, tablet, mobile)
+- ✅ UICodex examples (character sheet, dashboard, form builder)
 
 **Nice-to-Have**:
 - ✅ Relationship metadata (strength, custom types)
@@ -477,22 +552,29 @@ Integration:
 - ✅ "View in Graph" button (placeholder)
 - ✅ Reference search/filter
 - ✅ Reference templates (predefined relationship types)
+- ✅ Widget registry for different field types
+- ✅ Layout serialization to/from JSON
 
 ---
 
 ## Timeline Estimate
 
-**Optimistic**: 6 days (smooth implementation, minimal integration issues)
-**Realistic**: 8 days (accounting for circular detection complexity and UX tuning)
-**Pessimistic**: 11 days (if performance issues or auto-creation UX needs rework)
+**Original Scope (Tasks 1-11)**: 50 hours (6-8 days)
+**UI Codex Extension (Tasks 12-17)**: 22 hours (3 days)
+**Total**: 72 hours (9-11 days)
+
+**Optimistic**: 8 days (smooth implementation, parallel task execution, minimal integration issues)
+**Realistic**: 10 days (accounting for circular detection complexity, UX tuning, and layout engine integration)
+**Pessimistic**: 13 days (if performance issues, auto-creation UX needs rework, or react-grid-layout compatibility issues)
 
 **Week 1**:
-- Days 1-2: Backend schema and storage
-- Days 3-4: Circular detection, backlinks, inline editor
-- Days 5-6: Validation and pickers
+- Days 1-2: Backend schema and storage + UICodex template + react-grid-layout installation
+- Days 3-4: Circular detection, backlinks, inline editor + Basic layout engine
+- Days 5-6: Validation and pickers + Layout config generator
 
 **Week 2**:
-- Days 7-8: Backlinks panel, validation UI, context menu, integration
+- Days 7-8: Backlinks panel, validation UI, context menu + Field rendering integration
+- Days 9-10: UICodex examples, integration testing, bug fixes, documentation
 
 ---
 
@@ -506,6 +588,8 @@ Integration:
    - [ADR-020: Extreme Atomic Codex Architecture](../decisions/ADR-020-extreme-atomic-architecture.md) - Atomicity foundation
    - [ADR-021: Inline Reference Editing Pattern](../decisions/ADR-021-inline-reference-editing-pattern.md) - UX pattern
    - [ADR-023: Reference Field Implementation](../decisions/ADR-023-reference-field-implementation.md) - Technical details
+   - [ADR-028: UI Codex Presentation Layer](../decisions/ADR-028-ui-codex-presentation-layer.md) - Layout system
+   - [REACT_LAYOUT_LIBRARIES_RESEARCH.md](../reports/REACT_LAYOUT_LIBRARIES_RESEARCH.md) - Layout package evaluation
    - This file (PHASE_20_PLAN.md) - Current plan
 
 2. **Key mental models to understand**:
@@ -513,6 +597,8 @@ Integration:
    - **Type Filtering**: Codex picker only shows compatible templates
    - **Bidirectional Relationships**: Every reference creates graph edge in both directions
    - **Circular Prevention**: BFS traversal detects cycles before creation
+   - **UI Codex Separation**: Layout/presentation stored separately from data in UICodex
+   - **react-grid-layout**: Standards-based layout engine with JSON serialization (27.2 KB)
 
 3. **Current focus area**: Enabling composition while hiding atomicity complexity
 
@@ -544,11 +630,31 @@ Reference System:
     ├── Grouping by Type
     └── Navigation
 
-Knowledge Graph:
-CharacterCodex
-  ├──[name]──> StringCodex:string-001
-  ├──[age]──> NumberCodex:number-001
-  └──[portrait]──> ImageCodex:image-001
+UI Codex System:
+├── Template Layer
+│   ├── UICodex Template (layout metadata)
+│   └── UIFieldConfig Template (field presentation)
+├── Layout Engine
+│   ├── react-grid-layout Integration
+│   ├── Flexbox Renderer
+│   ├── Grid Renderer
+│   └── Stack Renderer
+├── Config Generator
+│   ├── Layout Type → CSS Properties
+│   ├── JSON Serialization
+│   └── Responsive Breakpoints
+└── Rendering Layer
+    ├── UICodexRenderer (interprets UICodex)
+    ├── Widget Registry (field widgets)
+    └── Layout Preview Mode
+
+Knowledge Graph with UI:
+UICodex:character-sheet
+  ├──[data_source]──> CharacterCodex
+  │                     ├──[name]──> StringCodex:string-001
+  │                     ├──[age]──> NumberCodex:number-001
+  │                     └──[portrait]──> ImageCodex:image-001
+  └──[layout_config]──> react-grid-layout JSON
 
 Each arrow is a relationship row in database
 ```
@@ -579,6 +685,7 @@ Each arrow is a relationship row in database
 
 Quick reference for key files:
 
+**Reference System**:
 - **Relationship Schema**: `src/database/schema/relationships.sql`
 - **Reference Fields**: `src/fields/ReferenceField.ts`, `src/fields/MultiReferenceField.ts`
 - **Inline Editors**: `src/components/InlineStringEditor.tsx`, `src/components/InlineNumberEditor.tsx`
@@ -588,17 +695,34 @@ Quick reference for key files:
 - **Circular Detection**: `src/validation/CircularReferenceValidator.ts`
 - **Tests**: `tests/references/` (reference CRUD, circular detection, inline editing)
 
+**UI Codex System**:
+- **Templates**: `.vespera/templates/ui-codex.template.json5`, `ui-field-config.template.json5`
+- **Layout Engine**: `src/layout/UICodexRenderer.ts`
+- **Config Generator**: `src/layout/generateLayoutConfig.ts`
+- **Widget Registry**: `src/layout/WidgetRegistry.ts`
+- **Layout Preview**: `src/components/LayoutPreviewMode.tsx`
+- **react-grid-layout CSS**: `node_modules/react-grid-layout/css/styles.css`
+- **Tests**: `tests/ui-codex/` (layout rendering, config generation, widget registry)
+
 ### Commands to Run
 
 ```bash
 # Create relationships table
 npm run migrate:create relationships
 
-# Install drag-drop library
+# Install drag-drop library (for multi-reference reordering)
 npm install @dnd-kit/core @dnd-kit/sortable
+
+# Install react-grid-layout (for UI Codex layouts)
+npm install react-grid-layout
+npm install @types/react-grid-layout --save-dev
+npm install react-resizable
 
 # Run reference tests
 npm test -- --grep="Reference"
+
+# Run UI Codex tests
+npm test -- --grep="UICodex"
 
 # Seed test data with references
 npm run seed:references
@@ -608,6 +732,9 @@ npm run check-circular-refs
 
 # Validate all references
 npm run validate-refs
+
+# Test layout rendering
+npm test -- --grep="Layout"
 ```
 
 ---
@@ -624,14 +751,19 @@ npm run validate-refs
 - [ADR-021: Inline Reference Editing Pattern](../decisions/ADR-021-inline-reference-editing-pattern.md) - UX approach
 - [ADR-023: Reference Field Implementation](../decisions/ADR-023-reference-field-implementation.md) - Technical design
 - [ADR-027: Multi-Context Array Implementation](../decisions/ADR-027-multi-context-array-implementation.md) - Related context handling
+- [ADR-028: UI Codex Presentation Layer](../decisions/ADR-028-ui-codex-presentation-layer.md) - Layout and rendering system
 
 ### Architecture Documentation
 - [Codex Architecture](../../architecture/core/CODEX_ARCHITECTURE.md) - Universal content system
 - [Hierarchical Template System](../../architecture/core/HIERARCHICAL_TEMPLATE_SYSTEM.md) - Template structure
 - [Project-Centric Architecture](../../architecture/core/PROJECT_CENTRIC_ARCHITECTURE.md) - Project boundaries
 
+### Research Reports
+- [React Layout Libraries Research](../reports/REACT_LAYOUT_LIBRARIES_RESEARCH.md) - Layout package evaluation and recommendation
+
 ---
 
 *Phase Plan Version: 1.0.0*
 *Created: 2025-01-17*
+*Updated: 2025-11-17 (UI Codex integration)*
 *Template: PHASE_TEMPLATE.md v1.0.0*
