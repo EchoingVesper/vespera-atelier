@@ -487,22 +487,72 @@ const layout = [
 
 **Full Research Report**: [REACT_LAYOUT_LIBRARIES_RESEARCH.md](../reports/REACT_LAYOUT_LIBRARIES_RESEARCH.md)
 
-## Phase 20 Integration
+## Implementation Strategy: Default-First Approach
 
-UI Codex implementation fits naturally into Phase 20:
+**Revised Strategy** (2025-11-17): After user feedback, the implementation approach has shifted to a **default-first pattern** with UI Codex as an optional enhancement.
 
-**Why Phase 20 is Ideal**:
-1. **REFERENCE fields**: UICodex is built on REFERENCE/MULTI_REFERENCE (Phase 20's focus)
-2. **Composition pattern**: UI Codex composes data Codices (core Phase 20 concept)
-3. **Reference tracking**: Relationship system tracks UI → Data references
-4. **Backlinks panel**: Show which UIs reference a data Codex
+### Phase 20: Default Rendering (Foundation)
 
-**Phase 20 Tasks to Add**:
-- Task 13: Create UICodex template
-- Task 14: Implement basic layout engine (flexbox/grid)
-- Task 15: Create UIFieldConfig template
-- Task 16: Integrate rendering engine with CodexEditor
-- Task 17: Research and evaluate layout packages
+**Default UI for Every Codex Type**:
+1. **Atomic Codices have built-in renderers**:
+   - StringCodex → `<input type="text" />`
+   - NumberCodex → `<input type="number" />`
+   - BooleanCodex → `<input type="checkbox" />`
+   - DateCodex → `<input type="date" />`
+   - TextCodex → `<textarea />`
+2. **Compositional rendering**:
+   - CharacterCodex auto-renders by recursively rendering its REFERENCE fields
+   - Each referenced field uses its default renderer
+   - Default layout: simple vertical stack
+3. **System works out-of-the-box**:
+   - No UICodex required for basic functionality
+   - Users can immediately view/edit Codices
+   - Progressive enhancement pattern
+
+**UI Codex Template Definition** (Phase 20):
+- Create `ui-codex.template.json5` and `ui-field-config.template.json5` templates
+- Document template structure for future use
+- **Do not implement** rendering engine yet (defer to Phase 23+)
+- Templates exist in registry but are not yet functional
+
+**Optional UI Codex Check** (Phase 20):
+```typescript
+function renderCodex(codex: Codex): React.ReactElement {
+  // Check for optional UICodex override
+  const uiCodex = findUICodexFor(codex.id);
+  if (uiCodex) {
+    // Phase 23+: Render with custom layout
+    return <UICodexRenderer uiCodex={uiCodex} dataCodex={codex} />;
+  }
+
+  // Phase 20: Fall back to default rendering
+  return <DefaultCodexRenderer codex={codex} />;
+}
+```
+
+### Phase 23+: Custom Layout Editor (Enhancement)
+
+**UI Codex Implementation** (deferred):
+- Install react-grid-layout (27.2 KB)
+- Implement UICodexRenderer with flexbox/grid support
+- Build drag-drop visual layout designer
+- Create layout templates gallery
+- Add responsive breakpoints
+
+**Why Defer**:
+- Phase 20 focus is **reference system** (primary goal)
+- Default rendering provides **immediate value**
+- Custom layouts are **nice-to-have**, not **must-have**
+- Reduces Phase 20 scope and complexity
+- Allows user feedback on defaults before building custom UI
+
+### Benefits of Default-First Approach
+
+1. **System works immediately**: No UICodex required to render Codices
+2. **Progressive enhancement**: Start simple, add complexity later
+3. **Reduced Phase 20 scope**: Focus on references, not layout customization
+4. **User-centered**: Let users experience defaults before offering customization
+5. **Composability**: CharacterCodex auto-composes UI from atomic field defaults
 
 ## Migration Path
 
@@ -519,9 +569,31 @@ UI Codex implementation fits naturally into Phase 20:
 - UICodex is optional enhancement, not requirement
 - Default UICodex auto-generated for Codices without custom UI
 
+## Modifier Codex Pattern
+
+**Insight** (2025-11-17): UI Codex represents a broader architectural pattern - **Modifier Codices** that augment or transform other Codices without modifying their data.
+
+**Examples of Modifier Codex Pattern**:
+1. **UICodex** - Modifies presentation/layout (this ADR)
+2. **ValidationCodex** - Could store custom validation rules for a Codex
+3. **PermissionCodex** - Could define access control and permissions
+4. **AutomationCodex** - Could store automation rules triggered by Codex state changes
+5. **ThemeCodex** - Could define styling/appearance overrides
+6. **BehaviorCodex** - Could specify custom interactions and workflows
+
+**Pattern Characteristics**:
+- **Non-destructive**: Modifier doesn't change data Codex structure
+- **Optional**: System works without modifier (uses defaults)
+- **Composable**: Multiple modifiers can apply to same Codex
+- **REFERENCE-based**: Modifier references target Codex
+- **Separation of concerns**: Data (Codex) vs. metadata (Modifier)
+
+**Future Exploration**: This pattern may warrant its own ADR documenting the general "Modifier Codex" or "Aspect-Oriented Codex" architecture.
+
 ## Links
 
 * Builds on [ADR-020: Extreme Atomic Codex Architecture](./ADR-020-extreme-atomic-architecture.md)
 * Related to [ADR-023: Reference Field Implementation](./ADR-023-reference-field-implementation.md)
 * Extends [ADR-021: Inline Reference Editing Pattern](./ADR-021-inline-reference-editing-pattern.md)
 * Complements [ADR-024: Formula and Computed Fields](./ADR-024-formula-computed-fields.md)
+* Implements [ADR-029: Navigator Filtering Levels](./ADR-029-navigator-filtering-levels.md) (UICodex hidden by default)
