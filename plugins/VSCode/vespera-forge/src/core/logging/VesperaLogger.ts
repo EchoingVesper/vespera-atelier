@@ -1,12 +1,17 @@
 /**
  * Vespera Forge - Comprehensive Logging Framework
- * 
+ *
  * VS Code integrated logger with structured logging, multiple output channels,
  * and development/production mode configuration.
  */
 
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 import { EnhancedDisposable } from '../disposal/DisposalManager';
+import { LoggingConfigurationManager } from './LoggingConfigurationManager';
+import { LogRotationStrategy } from './LoggingConfiguration';
+import { VesperaEvents } from '../../utils/events';
 
 export enum LogLevel {
   DEBUG = 0,
@@ -49,11 +54,16 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
   private flushInterval?: NodeJS.Timeout;
   private disposables: vscode.Disposable[] = [];
   private _isDisposed = false;
+  private configManager?: LoggingConfigurationManager;
+  private logDirectory: string = '';
+  private currentLogFile: string = '';
+  private currentLogFileSize: number = 0;
+  private componentName: string = 'global';
 
-  private constructor(_context: vscode.ExtensionContext, config: Partial<LoggerConfiguration> = {}) {
+  private constructor(private context: vscode.ExtensionContext, config: Partial<LoggerConfiguration> = {}) {
     this.sessionId = this.generateSessionId();
     this.config = this.mergeConfiguration(config);
-    
+
     this.outputChannel = vscode.window.createOutputChannel('Vespera Forge', 'log');
     this.disposables.push(this.outputChannel);
 
@@ -61,6 +71,12 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
       // Don't show automatically - let user choose when to view logs
       // this.outputChannel.show(true);
     }
+
+    // Initialize configuration manager
+    this.initializeConfigManager();
+
+    // Set up log directory
+    this.initializeLogDirectory();
 
     this.startLogFlushing();
     this.setupDevelopmentLogging();
@@ -142,7 +158,12 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
   }
 
   private log(level: LogLevel, message: string, metadata?: Record<string, any>): void {
-    if (level < this.config.level) {
+    // Check against configuration manager's log level if available
+    const config = this.configManager?.getConfiguration();
+    const componentLevel = config ? this.configManager.getLogLevel(this.componentName) : this.config.level;
+    const minLevel = this.mapLogLevelToConfigLevel(componentLevel);
+
+    if (level < minLevel) {
       return; // Skip logging below configured level
     }
 
@@ -160,9 +181,54 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
     // Immediate output for console and VS Code
     this.outputToChannels(entry);
 
+    // Emit log event to event bus if enabled
+    if (config?.outputs.events.enabled) {
+      const eventMinLevel = config.outputs.events.minLevel;
+      const shouldEmit = eventMinLevel
+        ? this.mapLogLevelToConfigLevel(eventMinLevel) <= level
+        : level >= LogLevel.WARN; // Default: warn and above
+
+      if (shouldEmit) {
+        VesperaEvents.logEntryCreated(
+          this.mapLogLevelToEventLevel(level),
+          this.componentName,
+          message,
+          metadata,
+          entry.source
+        );
+      }
+    }
+
     // Buffer for file logging (flushed periodically)
     if (this.logBuffer.length > 100) {
       this.flushLogs();
+    }
+  }
+
+  /**
+   * Map VesperaLogger LogLevel enum to LoggingConfiguration LogLevel
+   */
+  private mapLogLevelToConfigLevel(configLevel: string): LogLevel {
+    switch (configLevel.toLowerCase()) {
+      case 'debug': return LogLevel.DEBUG;
+      case 'info': return LogLevel.INFO;
+      case 'warn': return LogLevel.WARN;
+      case 'error': return LogLevel.ERROR;
+      case 'fatal': return LogLevel.FATAL;
+      default: return LogLevel.INFO;
+    }
+  }
+
+  /**
+   * Map VesperaLogger LogLevel enum to event level string
+   */
+  private mapLogLevelToEventLevel(level: LogLevel): 'debug' | 'info' | 'warn' | 'error' | 'fatal' {
+    switch (level) {
+      case LogLevel.DEBUG: return 'debug';
+      case LogLevel.INFO: return 'info';
+      case LogLevel.WARN: return 'warn';
+      case LogLevel.ERROR: return 'error';
+      case LogLevel.FATAL: return 'fatal';
     }
   }
 
@@ -257,8 +323,27 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
       return;
     }
 
-    // For file logging, we would write buffered entries
-    // For now, we just clear the buffer since we're doing immediate output
+    // Write to file if enabled
+    const config = this.configManager?.getConfiguration();
+    if (config?.outputs.file.enabled && this.currentLogFile) {
+      try {
+        // Check if rotation is needed before writing
+        this.rotateLogFileIfNeeded();
+
+        // Format entries for file output
+        const logLines = this.logBuffer.map(entry => this.formatLogEntry(entry)).join('\n') + '\n';
+
+        // Append to log file
+        fs.appendFileSync(this.currentLogFile, logLines, 'utf-8');
+
+        // Update current file size
+        this.currentLogFileSize += Buffer.byteLength(logLines, 'utf-8');
+      } catch (error) {
+        console.error('Failed to write logs to file:', error);
+      }
+    }
+
+    // Clear the buffer
     this.logBuffer = [];
   }
 
@@ -277,6 +362,151 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
 
   private generateSessionId(): string {
     return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Initialize configuration manager
+   */
+  private initializeConfigManager(): void {
+    try {
+      this.configManager = LoggingConfigurationManager.getInstance(this.context);
+      // Don't await - let it initialize in background
+      this.configManager.initialize().catch(error => {
+        console.error('Failed to initialize logging configuration:', error);
+      });
+    } catch (error) {
+      console.error('Failed to create logging configuration manager:', error);
+    }
+  }
+
+  /**
+   * Initialize log directory structure
+   */
+  private initializeLogDirectory(): void {
+    try {
+      const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+      if (workspaceFolder) {
+        // Workspace-level logs
+        this.logDirectory = path.join(workspaceFolder.uri.fsPath, '.vespera', 'logs', 'frontend');
+      } else {
+        // User-level logs
+        const homeDir = process.env.HOME || process.env.USERPROFILE || '';
+        this.logDirectory = path.join(homeDir, '.vespera', 'logs', 'frontend');
+      }
+
+      // Create directory if it doesn't exist
+      if (!fs.existsSync(this.logDirectory)) {
+        fs.mkdirSync(this.logDirectory, { recursive: true });
+      }
+
+      // Initialize current log file
+      this.rotateLogFileIfNeeded();
+    } catch (error) {
+      console.error('Failed to initialize log directory:', error);
+    }
+  }
+
+  /**
+   * Get the current log file path based on rotation strategy
+   */
+  private getLogFilePath(): string {
+    const now = new Date();
+    const config = this.configManager?.getConfiguration();
+    const rotation = config?.outputs.file.rotation || LogRotationStrategy.DAILY;
+
+    let dateStr: string;
+    switch (rotation) {
+      case LogRotationStrategy.HOURLY:
+        dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}`;
+        break;
+      case LogRotationStrategy.DAILY:
+      default:
+        dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        break;
+    }
+
+    const componentSuffix = config?.outputs.file.separateByComponent && this.componentName !== 'global'
+      ? `-${this.componentName}`
+      : '';
+
+    return path.join(this.logDirectory, `vespera-forge${componentSuffix}-${dateStr}.log`);
+  }
+
+  /**
+   * Rotate log file if needed
+   */
+  private rotateLogFileIfNeeded(): void {
+    const newLogFile = this.getLogFilePath();
+    const config = this.configManager?.getConfiguration();
+
+    // Check if rotation is needed
+    if (this.currentLogFile !== newLogFile) {
+      const oldFile = this.currentLogFile;
+      this.currentLogFile = newLogFile;
+      this.currentLogFileSize = fs.existsSync(newLogFile) ? fs.statSync(newLogFile).size : 0;
+
+      // Emit rotation event if not first initialization
+      if (oldFile) {
+        VesperaEvents.logFileRotated('frontend', oldFile, newLogFile);
+      }
+    }
+
+    // Size-based rotation
+    if (config?.outputs.file.rotation === LogRotationStrategy.SIZE_BASED) {
+      const maxSize = config.outputs.file.maxSizeBytes || 10 * 1024 * 1024;
+      if (this.currentLogFileSize >= maxSize) {
+        // Rename current file with timestamp suffix
+        const timestamp = Date.now();
+        const archiveFile = this.currentLogFile.replace('.log', `.${timestamp}.log`);
+        try {
+          fs.renameSync(this.currentLogFile, archiveFile);
+          this.currentLogFileSize = 0;
+          VesperaEvents.logFileRotated('frontend', this.currentLogFile, archiveFile);
+        } catch (error) {
+          console.error('Failed to rotate log file:', error);
+        }
+      }
+    }
+
+    // Clean up old log files
+    this.cleanupOldLogFiles();
+  }
+
+  /**
+   * Clean up old log files based on retention policy
+   */
+  private cleanupOldLogFiles(): void {
+    try {
+      const config = this.configManager?.getConfiguration();
+      const maxFiles = config?.outputs.file.maxFiles || 30;
+
+      if (!fs.existsSync(this.logDirectory)) {
+        return;
+      }
+
+      // Get all log files sorted by modification time
+      const files = fs.readdirSync(this.logDirectory)
+        .filter(file => file.startsWith('vespera-forge') && file.endsWith('.log'))
+        .map(file => ({
+          name: file,
+          path: path.join(this.logDirectory, file),
+          mtime: fs.statSync(path.join(this.logDirectory, file)).mtime.getTime()
+        }))
+        .sort((a, b) => b.mtime - a.mtime); // Newest first
+
+      // Delete files beyond retention limit
+      if (files.length > maxFiles) {
+        for (let i = maxFiles; i < files.length; i++) {
+          try {
+            fs.unlinkSync(files[i].path);
+          } catch (error) {
+            console.error(`Failed to delete old log file ${files[i].name}:`, error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to cleanup old log files:', error);
+    }
   }
 
   /**
@@ -313,10 +543,11 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
   /**
    * Create a child logger with additional context
    */
-  public createChild(_context: string): VesperaLogger {
-    // For now, return the same instance with context
-    // In a full implementation, this would create a new instance with context
-    return this;
+  public createChild(componentName: string): VesperaLogger {
+    // Create a shallow copy with modified component name
+    const childLogger = Object.create(this);
+    childLogger.componentName = componentName;
+    return childLogger;
   }
 
   public get isDisposed(): boolean {
