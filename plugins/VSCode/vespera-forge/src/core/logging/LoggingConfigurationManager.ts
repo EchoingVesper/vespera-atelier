@@ -134,7 +134,55 @@ export class LoggingConfigurationManager {
         }
       }
     } catch (error) {
-      console.error('Failed to load logging configuration:', error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+
+      // Log detailed error for debugging
+      console.error('Logging configuration error:', {
+        configPath: this.configPath,
+        error: errorMsg,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+
+      // Show user notification with action options
+      void vscode.window.showErrorMessage(
+        `Failed to load logging configuration: ${errorMsg}. Using default configuration.`,
+        'Open Config File',
+        'Reset to Defaults'
+      ).then(async (selection) => {
+        if (selection === 'Open Config File') {
+          // Open the config file for editing
+          try {
+            const doc = await vscode.workspace.openTextDocument(this.configPath);
+            await vscode.window.showTextDocument(doc);
+          } catch {
+            // File might not exist yet, offer to create it
+            const createSelection = await vscode.window.showWarningMessage(
+              'Configuration file does not exist. Create default config?',
+              'Create'
+            );
+            if (createSelection === 'Create') {
+              await this.createDefaultConfigFile();
+            }
+          }
+        } else if (selection === 'Reset to Defaults') {
+          // Reset to default configuration
+          try {
+            await this.resetToDefaults();
+            vscode.window.showInformationMessage('Logging configuration reset to defaults.');
+          } catch (resetError) {
+            vscode.window.showErrorMessage(`Failed to reset configuration: ${resetError}`);
+          }
+        }
+      });
+
+      // Emit error event for system monitoring
+      VesperaEvents.criticalErrorOccurred(
+        error instanceof Error ? error : new Error(errorMsg),
+        'LoggingConfigurationManager',
+        'Failed to load logging configuration',
+        true
+      );
+
       // Fall back to default config on error
       this.config = DEFAULT_LOGGING_CONFIG;
     }
@@ -331,6 +379,30 @@ export class LoggingConfigurationManager {
    */
   public async resetToDefaults(): Promise<void> {
     await this.saveConfiguration(DEFAULT_LOGGING_CONFIG);
+  }
+
+  /**
+   * Create default configuration file
+   */
+  public async createDefaultConfigFile(): Promise<void> {
+    try {
+      const config = DEFAULT_LOGGING_CONFIG;
+      await this.saveConfiguration(config);
+
+      const selection = await vscode.window.showInformationMessage(
+        `Created default logging configuration at ${this.configPath}`,
+        'Open File'
+      );
+
+      if (selection === 'Open File') {
+        const doc = await vscode.workspace.openTextDocument(this.configPath);
+        await vscode.window.showTextDocument(doc);
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      vscode.window.showErrorMessage(`Failed to create configuration file: ${errorMsg}`);
+      throw error;
+    }
   }
 
   /**

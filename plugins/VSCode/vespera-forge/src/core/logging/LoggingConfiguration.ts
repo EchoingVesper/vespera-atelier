@@ -180,35 +180,93 @@ export const DEFAULT_LOGGING_CONFIG: LoggingConfiguration = {
  * Validate logging configuration
  */
 export function validateLoggingConfiguration(config: any): LoggingConfiguration {
+  const errors: string[] = [];
+
   // Type guard and validation
   if (!config || typeof config !== 'object') {
     throw new Error('Invalid logging configuration: must be an object');
   }
 
   if (!config.version || typeof config.version !== 'string') {
-    throw new Error('Invalid logging configuration: missing or invalid version');
+    errors.push('Missing or invalid "version" field (expected string)');
   }
 
-  if (!config.levels || !config.levels.global) {
-    throw new Error('Invalid logging configuration: missing global log level');
-  }
-
-  if (!config.outputs || !config.outputs.console || !config.outputs.file) {
-    throw new Error('Invalid logging configuration: missing output configuration');
-  }
-
-  // Validate log levels
-  const validLevels = Object.values(LogLevel);
-  if (!validLevels.includes(config.levels.global)) {
-    throw new Error(`Invalid global log level: ${config.levels.global}`);
-  }
-
-  if (config.levels.components) {
-    for (const [component, level] of Object.entries(config.levels.components)) {
-      if (!validLevels.includes(level as LogLevel)) {
-        throw new Error(`Invalid log level for component ${component}: ${level}`);
+  if (!config.levels) {
+    errors.push('Missing "levels" section');
+  } else {
+    if (!config.levels.global) {
+      errors.push('Missing "levels.global" field');
+    } else {
+      // Validate global log level
+      const validLevels = Object.values(LogLevel);
+      if (!validLevels.includes(config.levels.global)) {
+        errors.push(
+          `Invalid global log level: "${config.levels.global}". Valid values: ${validLevels.join(', ')}`
+        );
       }
     }
+
+    // Validate component log levels
+    if (config.levels.components) {
+      const validLevels = Object.values(LogLevel);
+      for (const [component, level] of Object.entries(config.levels.components)) {
+        if (!validLevels.includes(level as LogLevel)) {
+          errors.push(
+            `Invalid log level for component "${component}": "${level}". Valid values: ${validLevels.join(', ')}`
+          );
+        }
+      }
+    }
+  }
+
+  if (!config.outputs) {
+    errors.push('Missing "outputs" section');
+  } else {
+    if (!config.outputs.console) {
+      errors.push('Missing "outputs.console" section');
+    } else if (typeof config.outputs.console.enabled !== 'boolean') {
+      errors.push('Invalid "outputs.console.enabled" (expected boolean)');
+    }
+
+    if (!config.outputs.file) {
+      errors.push('Missing "outputs.file" section');
+    } else {
+      if (typeof config.outputs.file.enabled !== 'boolean') {
+        errors.push('Invalid "outputs.file.enabled" (expected boolean)');
+      }
+
+      const validRotationStrategies = Object.values(LogRotationStrategy);
+      if (config.outputs.file.rotation && !validRotationStrategies.includes(config.outputs.file.rotation)) {
+        errors.push(
+          `Invalid rotation strategy: "${config.outputs.file.rotation}". Valid values: ${validRotationStrategies.join(', ')}`
+        );
+      }
+
+      if (config.outputs.file.maxFiles !== undefined && typeof config.outputs.file.maxFiles !== 'number') {
+        errors.push('Invalid "outputs.file.maxFiles" (expected number)');
+      }
+    }
+
+    if (!config.outputs.events) {
+      errors.push('Missing "outputs.events" section');
+    }
+  }
+
+  // Throw detailed error if validation failed
+  if (errors.length > 0) {
+    const errorMessage = [
+      'Logging configuration validation failed:',
+      ...errors.map((err, idx) => `  ${idx + 1}. ${err}`),
+      '',
+      'Common fixes:',
+      '  - Check for typos in field names (case-sensitive)',
+      '  - Ensure all required sections are present: version, levels, outputs',
+      '  - Verify log levels are one of: debug, info, warn, error, fatal',
+      '  - Ensure boolean values are lowercase: true/false (not True/False)',
+      '  - Remove trailing commas in JSON5 if using strict JSON parser'
+    ].join('\n');
+
+    throw new Error(errorMessage);
   }
 
   // Return validated config (with defaults for missing optional fields)
