@@ -6,7 +6,6 @@
  */
 
 import * as vscode from 'vscode';
-import * as fs from 'fs';
 import { promises as fsPromises } from 'fs';
 import * as path from 'path';
 import JSON5 from 'json5';
