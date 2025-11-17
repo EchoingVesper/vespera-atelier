@@ -378,7 +378,7 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
       if (this.logBuffer.length >= flushThreshold) {
         // Fire and forget - we don\'t want to block logging
         this.flushLogs().catch(error => {
-          console.error(\'Error during threshold-based log flush:\', error);
+          console.error('Error during threshold-based log flush:', error);
         });
       }
     } catch (error) {
@@ -506,7 +506,7 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
         // Force flush to make room
         // Fire and forget
         this.flushLogs().catch(error => {
-          console.error(\'Error during force-flush overflow:\', error);
+          console.error('Error during force-flush overflow:', error);
         });
         break;
     }
@@ -522,7 +522,7 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
     this.flushInterval = setInterval(() => {
       // Fire and forget - we don\'t want to block the interval
       this.flushLogs().catch(error => {
-        console.error(\'Error during scheduled log flush:\', error);
+        console.error('Error during scheduled log flush:', error);
       });
     }, flushInterval);
   }
@@ -549,7 +549,7 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
         const logLines = this.logBuffer.map(entry => this.formatLogEntry(entry)).join('\n') + '\n';
 
         // Append to log file
-        await fsPromises.appendFile(this.currentLogFile, logLines, \'utf-8\');
+        await fsPromises.appendFile(this.currentLogFile, logLines, 'utf-8');
 
         // Update current file size
         this.currentLogFileSize += Buffer.byteLength(logLines, 'utf-8');
@@ -1053,7 +1053,7 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
     
     // Fire and forget final flush - don\'t block disposal
     this.flushLogs().catch(error => {
-      console.error(\'Error during final log flush on dispose:\', error);
+      console.error('Error during final log flush on dispose:', error);
     });
     this.disposables.forEach(d => d.dispose());
     this.disposables = [];
