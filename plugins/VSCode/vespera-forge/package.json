@@ -517,6 +517,72 @@
           "type": "boolean",
           "default": true,
           "description": "Enable high-throughput optimizations for batch operations"
+        },
+        "vesperaForge.logging.globalLevel": {
+          "type": "string",
+          "default": "info",
+          "enum": [
+            "debug",
+            "info",
+            "warn",
+            "error",
+            "fatal"
+          ],
+          "description": "Global log level for all components"
+        },
+        "vesperaForge.logging.enableFileLogging": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable logging to files in .vespera/logs/"
+        },
+        "vesperaForge.logging.enableConsoleLogging": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable logging to VS Code Output Channel"
+        },
+        "vesperaForge.logging.enableEventBusLogging": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable logging events via VesperaEventBus"
+        },
+        "vesperaForge.logging.fileRotationStrategy": {
+          "type": "string",
+          "default": "daily",
+          "enum": [
+            "none",
+            "daily",
+            "hourly",
+            "size-based"
+          ],
+          "description": "Log file rotation strategy"
+        },
+        "vesperaForge.logging.maxLogFiles": {
+          "type": "number",
+          "default": 30,
+          "minimum": 1,
+          "maximum": 365,
+          "description": "Maximum number of log files to retain"
+        },
+        "vesperaForge.logging.componentLevels": {
+          "type": "object",
+          "default": {
+            "bindery": "debug",
+            "security": "warn",
+            "aiAssistant": "info",
+            "navigator": "info",
+            "editor": "info"
+          },
+          "description": "Per-component log levels"
+        },
+        "vesperaForge.logging.suppressSecurityNotifications": {
+          "type": "boolean",
+          "default": false,
+          "description": "Suppress security alert toast notifications (events still logged)"
+        },
+        "vesperaForge.logging.verboseLogging": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable verbose logging with source location and metadata"
         }
       }
     }

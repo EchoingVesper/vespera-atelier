@@ -67,6 +67,18 @@ export class LoggingConfigurationManager {
     // Try to load existing configuration
     await this.loadConfiguration();
 
+    // Sync with VS Code settings
+    this.syncWithVSCodeSettings();
+
+    // Watch for VS Code settings changes
+    this.context.subscriptions.push(
+      vscode.workspace.onDidChangeConfiguration(e => {
+        if (e.affectsConfiguration('vesperaForge.logging')) {
+          this.syncWithVSCodeSettings();
+        }
+      })
+    );
+
     // Set up file watcher for hot-reload
     if (this.configPath) {
       const pattern = new vscode.RelativePattern(
@@ -323,6 +335,80 @@ export class LoggingConfigurationManager {
    */
   public async resetToDefaults(): Promise<void> {
     await this.saveConfiguration(DEFAULT_LOGGING_CONFIG);
+  }
+
+  /**
+   * Sync configuration with VS Code settings
+   */
+  private syncWithVSCodeSettings(): void {
+    const vsConfig = vscode.workspace.getConfiguration('vesperaForge.logging');
+
+    // Update configuration from VS Code settings
+    const updatedConfig = { ...this.config };
+
+    // Global level
+    const globalLevel = vsConfig.get<string>('globalLevel');
+    if (globalLevel) {
+      updatedConfig.levels.global = globalLevel as any;
+    }
+
+    // Component levels
+    const componentLevels = vsConfig.get<Record<string, string>>('componentLevels');
+    if (componentLevels) {
+      updatedConfig.levels.components = {
+        ...updatedConfig.levels.components,
+        ...componentLevels
+      };
+    }
+
+    // File logging
+    const enableFileLogging = vsConfig.get<boolean>('enableFileLogging');
+    if (enableFileLogging !== undefined) {
+      updatedConfig.outputs.file.enabled = enableFileLogging;
+    }
+
+    // Console logging
+    const enableConsoleLogging = vsConfig.get<boolean>('enableConsoleLogging');
+    if (enableConsoleLogging !== undefined) {
+      updatedConfig.outputs.console.enabled = enableConsoleLogging;
+    }
+
+    // Event bus logging
+    const enableEventBusLogging = vsConfig.get<boolean>('enableEventBusLogging');
+    if (enableEventBusLogging !== undefined) {
+      updatedConfig.outputs.events.enabled = enableEventBusLogging;
+    }
+
+    // Rotation strategy
+    const rotationStrategy = vsConfig.get<string>('fileRotationStrategy');
+    if (rotationStrategy) {
+      updatedConfig.outputs.file.rotation = rotationStrategy as LogRotationStrategy;
+    }
+
+    // Max log files
+    const maxLogFiles = vsConfig.get<number>('maxLogFiles');
+    if (maxLogFiles !== undefined) {
+      updatedConfig.outputs.file.maxFiles = maxLogFiles;
+    }
+
+    // Security notifications
+    const suppressSecurityNotifications = vsConfig.get<boolean>('suppressSecurityNotifications');
+    if (suppressSecurityNotifications !== undefined) {
+      updatedConfig.production.suppressNotifications = suppressSecurityNotifications;
+    }
+
+    // Verbose logging
+    const verboseLogging = vsConfig.get<boolean>('verboseLogging');
+    if (verboseLogging !== undefined) {
+      updatedConfig.development.verboseLogging = verboseLogging;
+      updatedConfig.development.showSourceLocation = verboseLogging;
+    }
+
+    // Update in-memory config
+    this.config = updatedConfig;
+
+    // Notify listeners
+    this.notifyConfigurationChanged();
   }
 
   /**
