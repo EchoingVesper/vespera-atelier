@@ -7,15 +7,11 @@
 
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { promises as fsPromises } from 'fs';
 import * as path from 'path';
 import { EnhancedDisposable } from '../disposal/DisposalManager';
 import { LoggingConfigurationManager } from './LoggingConfigurationManager';
 import { LogLevel, LogRotationStrategy } from './LoggingConfiguration';
 import { VesperaEvents } from '../../utils/events';
-
-// Re-export LogLevel for backward compatibility
-export { LogLevel };
 
 export interface LogEntry {
   timestamp: number;
@@ -56,10 +52,6 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
   private currentLogFileSize: number = 0;
   private componentName: string = 'global';
   private bufferOverflowCount: number = 0;
-  // TODO: Async file writing support
-  // private writeQueue: Promise<void> = Promise.resolve();
-  // private isFlushInProgress = false;
-  // private isLogDirectoryInitialized = false;
 
   private constructor(private context: vscode.ExtensionContext, config: Partial<LoggerConfiguration> = {}) {
     this.sessionId = this.generateSessionId();
@@ -576,32 +568,6 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
     const childLogger = Object.create(this);
     childLogger.componentName = componentName;
     return childLogger;
-  }
-
-  /**
-   * Get memory statistics for buffer management
-   */
-  public getMemoryStats(): {
-    bufferSize: number;
-    bufferByteSize: number;
-    overflowCount: number;
-    maxBufferSize: number;
-  } {
-    const config = this.configManager?.getConfiguration();
-    const maxBufferSize = config?.outputs.file.bufferConfig?.maxBufferSize || 1000;
-
-    // Calculate approximate byte size of buffer
-    const bufferByteSize = this.logBuffer.reduce((total, entry) => {
-      const entrySize = JSON.stringify(entry).length;
-      return total + entrySize;
-    }, 0);
-
-    return {
-      bufferSize: this.logBuffer.length,
-      bufferByteSize,
-      overflowCount: this.bufferOverflowCount,
-      maxBufferSize
-    };
   }
 
   public get isDisposed(): boolean {

@@ -14,9 +14,6 @@ import { LoggingConfigurationManager } from './LoggingConfigurationManager';
 import { LogLevel, LogRotationStrategy } from './LoggingConfiguration';
 import { VesperaEvents } from '../../utils/events';
 
-// Re-export LogLevel for backward compatibility
-export { LogLevel };
-
 export interface LogEntry {
   timestamp: number;
   level: LogLevel;
@@ -55,11 +52,10 @@ export class VesperaLogger implements vscode.Disposable, EnhancedDisposable {
   private currentLogFile: string = '';
   private currentLogFileSize: number = 0;
   private componentName: string = 'global';
+  private writeQueue: Promise<void> = Promise.resolve();
+  private isFlushInProgress = false;
+  private isLogDirectoryInitialized = false;
   private bufferOverflowCount: number = 0;
-  // TODO: Async file writing support
-  // private writeQueue: Promise<void> = Promise.resolve();
-  // private isFlushInProgress = false;
-  // private isLogDirectoryInitialized = false;
 
   private constructor(private context: vscode.ExtensionContext, config: Partial<LoggerConfiguration> = {}) {
     this.sessionId = this.generateSessionId();

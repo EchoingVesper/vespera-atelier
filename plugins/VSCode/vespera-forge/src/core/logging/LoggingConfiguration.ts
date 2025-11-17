@@ -47,6 +47,16 @@ export interface ConsoleOutputConfig {
 }
 
 /**
+ * Buffer configuration for log flushing
+ */
+export interface BufferConfig {
+  maxBufferSize?: number; // Maximum buffer size before forcing flush (default: 1000)
+  flushIntervalMs?: number; // Interval to flush logs (default: 10000ms)
+  flushThreshold?: number; // Size threshold to trigger flush (default: 100)
+  overflowStrategy?: 'drop-oldest' | 'drop-newest' | 'force-flush'; // Strategy when buffer is full (default: 'drop-oldest')
+}
+
+/**
  * File output configuration
  */
 export interface FileOutputConfig {
@@ -56,6 +66,7 @@ export interface FileOutputConfig {
   maxSizeBytes?: number; // For size-based rotation
   directory?: string; // Custom log directory (defaults to .vespera/logs)
   separateByComponent?: boolean; // Create separate files per component
+  bufferConfig?: BufferConfig; // Buffer management configuration
 }
 
 /**
@@ -134,7 +145,13 @@ export const DEFAULT_LOGGING_CONFIG: LoggingConfiguration = {
       rotation: LogRotationStrategy.DAILY,
       maxFiles: 30,
       maxSizeBytes: 10 * 1024 * 1024, // 10MB per file
-      separateByComponent: true
+      separateByComponent: true,
+      bufferConfig: {
+        maxBufferSize: 1000,
+        flushIntervalMs: 10000,
+        flushThreshold: 100,
+        overflowStrategy: 'drop-oldest'
+      }
     },
     events: {
       enabled: true,

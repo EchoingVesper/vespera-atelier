@@ -47,6 +47,10 @@ export interface SecurityAlert {
  * Security audit logger with real-time monitoring and alerting
  */
 export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface {
+  // Buffer limits
+  private static readonly MAX_AUDIT_ENTRIES = 10000;
+  private static readonly MAX_ALERTS = 1000;
+
   private auditLog: SecurityAuditEntry[] = [];
   private alerts: SecurityAlert[] = [];
   private disposed = false;
@@ -130,9 +134,17 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
       resolved: false
     };
 
+    // Check audit log size and remove oldest if at limit
+    if (this.auditLog.length >= VesperaSecurityAuditLogger.MAX_AUDIT_ENTRIES) {
+      this.auditLog.shift(); // Remove oldest entry
+      this.logger.debug('Audit log at capacity, removed oldest entry', {
+        maxEntries: VesperaSecurityAuditLogger.MAX_AUDIT_ENTRIES
+      });
+    }
+
     // Add to audit log
     this.auditLog.push(auditEntry);
-    
+
     // Update event counters
     const currentCount = this.eventCounters.get(event) || 0;
     this.eventCounters.set(event, currentCount + 1);
@@ -634,6 +646,14 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
       acknowledged: false
     };
 
+    // Check alerts size and remove oldest if at limit
+    if (this.alerts.length >= VesperaSecurityAuditLogger.MAX_ALERTS) {
+      this.alerts.shift(); // Remove oldest alert
+      this.logger.debug('Alerts at capacity, removed oldest alert', {
+        maxAlerts: VesperaSecurityAuditLogger.MAX_ALERTS
+      });
+    }
+
     this.alerts.push(securityAlert);
 
     this.logger.warn('Security alert generated', {
@@ -736,6 +756,36 @@ export class VesperaSecurityAuditLogger implements SecurityAuditLoggerInterface 
    */
   private generateAlertId(): string {
     return `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Get memory statistics for buffer management
+   */
+  public getMemoryStats(): {
+    auditLogSize: number;
+    alertsSize: number;
+    maxAuditEntries: number;
+    maxAlerts: number;
+    auditLogByteSize: number;
+    alertsByteSize: number;
+  } {
+    // Calculate approximate byte sizes
+    const auditLogByteSize = this.auditLog.reduce((total, entry) => {
+      return total + JSON.stringify(entry).length;
+    }, 0);
+
+    const alertsByteSize = this.alerts.reduce((total, alert) => {
+      return total + JSON.stringify(alert).length;
+    }, 0);
+
+    return {
+      auditLogSize: this.auditLog.length,
+      alertsSize: this.alerts.length,
+      maxAuditEntries: VesperaSecurityAuditLogger.MAX_AUDIT_ENTRIES,
+      maxAlerts: VesperaSecurityAuditLogger.MAX_ALERTS,
+      auditLogByteSize,
+      alertsByteSize
+    };
   }
 
   /**

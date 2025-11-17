@@ -7,6 +7,7 @@
 
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import { promises as fsPromises } from 'fs';
 import * as path from 'path';
 import JSON5 from 'json5';
 import {
@@ -106,7 +107,7 @@ export class LoggingConfigurationManager {
     }
 
     // If no config file exists, create default
-    if (!fs.existsSync(this.configPath)) {
+    if (!(await this.configFileExists())) {
       await this.saveConfiguration(DEFAULT_LOGGING_CONFIG);
     }
   }
@@ -116,17 +117,22 @@ export class LoggingConfigurationManager {
    */
   private async loadConfiguration(): Promise<void> {
     try {
-      if (fs.existsSync(this.configPath)) {
-        const content = fs.readFileSync(this.configPath, 'utf-8');
+      // Check if file exists using async
+      try {
+        const content = await fsPromises.readFile(this.configPath, 'utf-8');
 
         // Parse JSON5 using the json5 library (handles comments and unquoted keys)
         const parsedConfig = JSON5.parse(content);
 
         // Validate and set configuration
         this.config = validateLoggingConfiguration(parsedConfig);
-      } else {
-        // Use default configuration
-        this.config = DEFAULT_LOGGING_CONFIG;
+      } catch (error: any) {
+        if (error.code === 'ENOENT') {
+          // File doesn't exist - use default configuration
+          this.config = DEFAULT_LOGGING_CONFIG;
+        } else {
+          throw error;
+        }
       }
     } catch (error) {
       console.error('Failed to load logging configuration:', error);
@@ -153,13 +159,16 @@ export class LoggingConfigurationManager {
     try {
       // Ensure directory exists
       const configDir = path.dirname(this.configPath);
-      if (!fs.existsSync(configDir)) {
-        fs.mkdirSync(configDir, { recursive: true });
+      try {
+        await fsPromises.access(configDir);
+      } catch {
+        // Directory doesn't exist, create it
+        await fsPromises.mkdir(configDir, { recursive: true });
       }
 
       // Serialize and write configuration
       const content = serializeLoggingConfiguration(config);
-      fs.writeFileSync(this.configPath, content, 'utf-8');
+      await fsPromises.writeFile(this.configPath, content, 'utf-8');
 
       // Update in-memory config
       this.config = config;
@@ -309,8 +318,13 @@ export class LoggingConfigurationManager {
   /**
    * Check if configuration file exists
    */
-  public configFileExists(): boolean {
-    return fs.existsSync(this.configPath);
+  public async configFileExists(): Promise<boolean> {
+    try {
+      await fsPromises.access(this.configPath);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /**

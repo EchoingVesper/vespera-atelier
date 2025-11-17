@@ -27,6 +27,7 @@ export type VesperaEventType =
   | 'logEntryCreated'
   | 'logLevelChanged'
   | 'logFileRotated'
+  | 'logBufferOverflow'
   | 'criticalErrorOccurred'
   | 'securityEventLogged';
 
@@ -66,6 +67,11 @@ export interface VesperaEventData {
     logType: string;
     oldFile: string;
     newFile: string;
+    timestamp: string;
+  };
+  logBufferOverflow: {
+    component: string;
+    overflowCount: number;
     timestamp: string;
   };
   criticalErrorOccurred: {
@@ -374,6 +380,17 @@ export const VesperaEvents = {
   },
 
   /**
+   * Notify that a log buffer overflow occurred
+   */
+  logBufferOverflow: (component: string, overflowCount: number) => {
+    eventBus.emitEvent('logBufferOverflow', {
+      component,
+      overflowCount,
+      timestamp: new Date().toISOString()
+    });
+  },
+
+  /**
    * Notify that a critical error occurred requiring user attention
    */
   criticalErrorOccurred: (
@@ -419,6 +436,7 @@ export const VesperaEvents = {
     eventBus.onEvent('logEntryCreated', (data) => callback('logEntryCreated', data), `${componentName}:logEntryCreated`);
     eventBus.onEvent('logLevelChanged', (data) => callback('logLevelChanged', data), `${componentName}:logLevelChanged`);
     eventBus.onEvent('logFileRotated', (data) => callback('logFileRotated', data), `${componentName}:logFileRotated`);
+    eventBus.onEvent('logBufferOverflow', (data) => callback('logBufferOverflow', data), `${componentName}:logBufferOverflow`);
     eventBus.onEvent('criticalErrorOccurred', (data) => callback('criticalErrorOccurred', data), `${componentName}:criticalErrorOccurred`);
     eventBus.onEvent('securityEventLogged', (data) => callback('securityEventLogged', data), `${componentName}:securityEventLogged`);
   },
@@ -432,6 +450,7 @@ export const VesperaEvents = {
     eventBus.removeAllListeners('logEntryCreated');
     eventBus.removeAllListeners('logLevelChanged');
     eventBus.removeAllListeners('logFileRotated');
+    eventBus.removeAllListeners('logBufferOverflow');
     eventBus.removeAllListeners('criticalErrorOccurred');
     eventBus.removeAllListeners('securityEventLogged');
   }
