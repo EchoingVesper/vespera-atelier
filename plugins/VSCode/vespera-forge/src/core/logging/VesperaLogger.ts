@@ -7,7 +7,6 @@
 
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { promises as fsPromises } from 'fs';
 import * as path from 'path';
 import { EnhancedDisposable } from '../disposal/DisposalManager';
 import { LoggingConfigurationManager } from './LoggingConfigurationManager';
