@@ -152,7 +152,7 @@ jobs:
         uv run twine check dist/* || (echo "Installing twine in uv environment..." && uv add twine && uv run twine check dist/*)
         
     - name: Upload artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: dist
         path: packages/vespera-scriptorium/dist/
